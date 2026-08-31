@@ -1,0 +1,24 @@
+# / .gitignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Environment variables
+.env
+
+# User uploads (Security/Privacy)
+uploads/ids/
+uploads/
+
+# PHP/Web
+vendor/
+node_modules/
+.cache/
+
+# Log files
+*.log
