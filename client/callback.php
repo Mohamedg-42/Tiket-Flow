@@ -38,8 +38,19 @@ $reference = 'PAY-' . strtoupper($methode) . '-' . strtoupper(substr(uniqid(), -
 $transaction_api_id = 'TXN-' . date('YmdHis') . '-' . random_int(1000, 9999);
 $user_id = $order['user_id'];
 $client_nom = $order['client_nom'] ?: 'Client';
-$client_email = $order['client_email'] ?: '';
 $client_telephone = $order['client_telephone'] ?: '';
+
+// Récupération de l'email : depuis la commande, sinon depuis la session (client connecté),
+// sinon depuis la table users si un user_id est disponible
+$client_email = $order['client_email'] ?: '';
+if (empty($client_email) && !empty($_SESSION['user_email'])) {
+    $client_email = $_SESSION['user_email'];
+}
+if (empty($client_email) && !empty($user_id)) {
+    $stmt_ue = $pdo->prepare('SELECT email FROM users WHERE id = ?');
+    $stmt_ue->execute([$user_id]);
+    $client_email = $stmt_ue->fetchColumn() ?: '';
+}
 
 $generated_tickets_list = [];
 
@@ -183,8 +194,9 @@ try {
 
     // 7. Envoi automatique de la copie des billets par email
     require_once '../includes/mailer.php';
-    if (!empty($client_email)) {
-        sendTicketEmail($client_email, $client_nom, $order['numero_commande'], $generated_tickets_list, $order_id);
+    $email_sent = false;
+    if (!empty($client_email) && filter_var($client_email, FILTER_VALIDATE_EMAIL)) {
+        $email_sent = sendTicketEmail($client_email, $client_nom, $order['numero_commande'], $generated_tickets_list, $order_id);
     }
 
 } catch (Exception $e) {
@@ -211,7 +223,19 @@ include 'header.php';
         <span class="page-kicker" style="color: #16a34a;"><i class="fa-solid fa-circle-check"></i> Paiement Réussi avec Succès</span>
         <h1 style="color: var(--navy); margin: 0.2rem 0 0.5rem; font-size: 1.85rem;">Vos Billets sont Prêts !</h1>
         <p style="color: var(--muted); font-size: 0.95rem; max-width: 600px; margin: 0 auto 1.5rem;">
-            Merci <strong><?php echo htmlspecialchars($client_nom); ?></strong>. Une copie de confirmation a été adressée à <strong><?php echo htmlspecialchars($client_email); ?></strong>.
+            Merci <strong><?php echo htmlspecialchars($client_nom); ?></strong>.
+            <?php if ($email_sent && !empty($client_email)): ?>
+                Une copie de vos billets (avec QR Codes) a été envoyée à
+                <strong><?php echo htmlspecialchars($client_email); ?></strong>.
+                Vérifiez aussi vos <em>spams</em> si vous ne la recevez pas dans quelques minutes.
+            <?php elseif (!empty($client_email)): ?>
+                Nous avons essayé d'envoyer la confirmation à
+                <strong><?php echo htmlspecialchars($client_email); ?></strong>
+                mais la transmission a échoué. Téléchargez vos billets ci-dessous.
+            <?php else: ?>
+                Aucune adresse email n'était disponible pour l'envoi automatique.
+                Téléchargez vos billets directement ci-dessous.
+            <?php endif; ?>
         </p>
 
         <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">

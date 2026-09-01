@@ -62,7 +62,7 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
     $download_link = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform/client/telecharger-ticket.php?order_id=" . $order_id;
 
     // Corps de l'email HTML
-    $body = "
+    $body_html = "
     <!DOCTYPE html>
     <html lang='fr'>
     <head>
@@ -116,18 +116,47 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
     </body>
     </html>";
 
-    // En-têtes MIME pour e-mail HTML
-    $headers  = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-    $headers .= "From: Ticket Flow <billetterie@ticketflow.com>\r\n";
-    $headers .= "Reply-To: support@ticketflow.com\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion();
+    // ---- Pièce jointe PDF : génération des billets en PDF natif ----
+    require_once __DIR__ . '/pdf.php';
+    $pdf_data = generateTicketsPdf($tickets, $order_number, $to_name);
+    $pdf_filename = 'billets-' . preg_replace('/[^A-Za-z0-9\-]/', '', $order_number) . '.pdf';
 
-    // Envoi effectif via mail() (protégé contre tout blocage WAMP local)
-    try {
-        @mail($to_email, $subject, $body, $headers);
-        return true;
-    } catch (Exception $e) {
-        return false;
+    if ($pdf_data !== '') {
+        // Message MIME multipart/mixed : corps HTML + PDF en pièce jointe
+        $boundary = 'TFMIX' . md5(uniqid((string)$order_id, true));
+
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "From: Ticket Flow <billetterie@ticketflow.com>\r\n";
+        $headers .= "Reply-To: support@ticketflow.com\r\n";
+        $headers .= "X-Mailer: PHP/" . phpversion();
+        $headers .= "Content-Type: multipart/mixed; boundary=\"" . $boundary . "\"\r\n";
+
+        $body  = "--" . $boundary . "\r\n";
+        $body .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $body .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
+        $body .= $body_html . "\r\n";
+        $body .= "--" . $boundary . "\r\n";
+        $body .= "Content-Type: application/pdf; name=\"" . $pdf_filename . "\"\r\n";
+        $body .= "Content-Transfer-Encoding: base64\r\n";
+        $body .= "Content-Disposition: attachment; filename=\"" . $pdf_filename . "\"\r\n\r\n";
+        $body .= chunk_split(base64_encode($pdf_data)) . "\r\n";
+        $body .= "--" . $boundary . "--\r\n";
+    } else {
+        // Repli : email HTML seul si le PDF n'a pas pu être généré
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: Ticket Flow <billetterie@ticketflow.com>\r\n";
+        $headers .= "Reply-To: support@ticketflow.com\r\n";
+        $headers .= "X-Mailer: PHP/" . phpversion();
+        $body = $body_html;
     }
+
+    // Envoi effectif via le client SMTP configuré, ou mail() en dernier recours
+    require_once __DIR__ . '/smtp.php';
+    $res = smtp_send($to_email, $to_name, $subject, $headers, $body);
+    if (!$res['ok']) {
+        // L'envoi a échoué : on le signale sans bloquer la confirmation de paiement
+        error_log('[TicketFlow] Échec envoi billets -> ' . $to_email . ' : ' . $res['error']);
+    }
+    return $res['ok'];
 }

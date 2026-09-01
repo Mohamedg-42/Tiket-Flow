@@ -1,0 +1,752 @@
+/* ==============================================================================
+   DASHBOARD SAAS ENTERPRISE ULTRA-COMPLET (Css/dashboard-pro.css)
+   Composants professionnels : KPIs enrichis, filtres de dates, multi-graphiques,
+   jauges d'occupation, flux en temps réel, actions rapides et tableaux avancés.
+   ============================================================================== */
+
+:root {
+    --dash-bg: #f8fafc;
+    --dash-surface: #ffffff;
+    --dash-card: #ffffff;
+    --dash-text: #0f172a;
+    --dash-muted: #64748b;
+    --dash-border: #e2e8f0;
+    --dash-border-light: #f1f5f9;
+    --dash-primary: #5b50e6;
+    --dash-primary-light: #eeedfd;
+    --dash-primary-hover: #493ecc;
+    --dash-secondary: #0ea5e9;
+    --dash-success: #10b981;
+    --dash-success-light: #ecfdf5;
+    --dash-warning: #f59e0b;
+    --dash-warning-light: #fffbeb;
+    --dash-danger: #ef4444;
+    --dash-danger-light: #fef2f2;
+    --dash-radius-lg: 16px;
+    --dash-radius-md: 12px;
+    --dash-radius-sm: 8px;
+    --dash-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+    --dash-shadow-hover: 0 12px 28px -4px rgba(15, 23, 42, 0.09), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+}
+
+/* Layout parent & neutralisation des débordements */
+.dash-pro-layout .main-content {
+    padding: 0 !important;
+    max-width: calc(100vw - 270px) !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 991px) {
+    .dash-pro-layout .main-content {
+        max-width: 100vw !important;
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+}
+
+.dash-container {
+    background: var(--dash-bg);
+    min-height: 100vh;
+    padding: 1.5rem 1.5rem 3rem;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--dash-text);
+}
+
+/* ==============================================================================
+   1. BARRE D'ACTIONS & FILTRES SUPÉRIEURS
+   ============================================================================== */
+.dash-header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.dash-title-box h1 {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--dash-text);
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.025em;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.dash-title-box p {
+    color: var(--dash-muted);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.dash-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.dash-control-select, .dash-btn-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #ffffff;
+    border: 1px solid var(--dash-border);
+    padding: 0.6rem 1.1rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--dash-text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    outline: none;
+}
+
+.dash-control-select:hover, .dash-btn-action:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+.dash-btn-action.btn-primary {
+    background: var(--dash-primary);
+    color: #ffffff;
+    border-color: var(--dash-primary);
+    box-shadow: 0 4px 14px rgba(91, 80, 230, 0.35);
+}
+
+.dash-btn-action.btn-primary:hover {
+    background: var(--dash-primary-hover);
+    border-color: var(--dash-primary-hover);
+}
+
+/* ==============================================================================
+   2. GRILLE KPI ÉTENDUE (6 CARTES HAUT DE GAMME)
+   ============================================================================== */
+.dash-kpi-grid-6 {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1600px) {
+    .dash-kpi-grid-6 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+@media (max-width: 900px) {
+    .dash-kpi-grid-6 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 600px) {
+    .dash-kpi-grid-6 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-kpi-card {
+    background: var(--dash-card);
+    border-radius: var(--dash-radius-lg);
+    padding: 1.25rem 1.25rem 0.85rem;
+    box-shadow: var(--dash-shadow);
+    border: 1px solid var(--dash-border-light);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.dash-kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--dash-shadow-hover);
+    border-color: #cbd5e1;
+}
+
+.dash-clickable-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.dash-clickable-row:hover td {
+    background-color: #f1f5f9 !important;
+}
+
+a.dash-stream-card {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+a.dash-legend-entry {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+}
+
+a.dash-legend-entry:hover {
+    background-color: #f1f5f9;
+}
+
+.dash-kpi-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.dash-kpi-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.dash-kpi-icon-wrap.purple { background: #5b50e6; color: #ffffff; }
+.dash-kpi-icon-wrap.blue   { background: #0ea5e9; color: #ffffff; }
+.dash-kpi-icon-wrap.green  { background: #10b981; color: #ffffff; }
+.dash-kpi-icon-wrap.orange { background: #f97316; color: #ffffff; }
+.dash-kpi-icon-wrap.pink   { background: #ec4899; color: #ffffff; }
+.dash-kpi-icon-wrap.amber  { background: #eab308; color: #ffffff; }
+
+.dash-kpi-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.dash-kpi-badge-pill.up   { background: #ecfdf5; color: #059669; }
+.dash-kpi-badge-pill.down { background: #fef2f2; color: #dc2626; }
+.dash-kpi-badge-pill.neutral { background: #f1f5f9; color: #64748b; }
+
+.dash-kpi-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--dash-muted);
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash-kpi-amount {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--dash-text);
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+}
+
+.dash-kpi-sub {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.dash-sparkline-box {
+    position: relative;
+    height: 42px;
+    max-height: 42px;
+    width: 100%;
+    overflow: hidden;
+    margin-top: 0.4rem;
+}
+
+.dash-sparkline-box canvas, .dash-sparkline-canvas {
+    height: 42px !important;
+    max-height: 42px !important;
+    width: 100% !important;
+    display: block;
+}
+
+.dash-chart-fixed-height {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* ==============================================================================
+   3. DISPOSITION EN GRILLES ANALYTIQUES
+   ============================================================================== */
+.dash-grid-2-1 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+}
+
+.dash-row-3cols {
+    display: grid;
+    grid-template-columns: 1.4fr minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1400px) {
+    .dash-row-3cols {
+        grid-template-columns: 1fr 1fr;
+    }
+    .dash-row-3cols > .dash-card:first-child {
+        grid-column: 1 / -1;
+    }
+}
+@media (max-width: 800px) {
+    .dash-row-3cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-grid-3cols {
+    display: grid;
+    grid-template-columns: 1.5fr minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1400px) {
+    .dash-grid-3cols {
+        grid-template-columns: 1fr 1fr;
+    }
+    .dash-grid-3cols > .dash-card:first-child {
+        grid-column: 1 / -1;
+    }
+}
+@media (max-width: 850px) {
+    .dash-grid-3cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-grid-4-cols {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1200px) {
+    .dash-grid-4-cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-card {
+    background: var(--dash-surface);
+    border-radius: var(--dash-radius-lg);
+    padding: 1.25rem 1.4rem;
+    box-shadow: var(--dash-shadow);
+    border: 1px solid var(--dash-border-light);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.dash-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.dash-card-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--dash-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dash-card-subtitle {
+    font-size: 0.8rem;
+    color: var(--dash-muted);
+    margin-top: 0.2rem;
+}
+
+/* Onglets de graphiques intégrés */
+.dash-chart-tabs {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 8px;
+    gap: 2px;
+}
+
+.dash-chart-tab {
+    border: none;
+    background: transparent;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--dash-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dash-chart-tab.active {
+    background: #ffffff;
+    color: var(--dash-primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* Donut & Légendes */
+.dash-donut-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 220px;
+}
+
+.dash-donut-info-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+}
+
+.dash-donut-info-center strong {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--dash-text);
+    line-height: 1.1;
+}
+
+.dash-donut-info-center span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--dash-muted);
+    text-transform: uppercase;
+}
+
+.dash-donut-legend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-top: 1.25rem;
+}
+
+.dash-legend-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.84rem;
+}
+
+.dash-legend-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--dash-text);
+}
+
+.dash-legend-bullet {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.dash-legend-details {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dash-legend-num {
+    color: var(--dash-muted);
+    font-size: 0.8rem;
+}
+
+.dash-legend-percent {
+    font-weight: 800;
+    color: var(--dash-text);
+    min-width: 38px;
+    text-align: right;
+}
+
+/* ==============================================================================
+   4. TABLEAU HAUTE DENSITÉ (TOP ÉVÉNEMENTS & REVENUS)
+   ============================================================================== */
+.dash-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.dash-pro-table {
+    width: 100%;
+    min-width: 480px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.85rem;
+}
+
+.dash-pro-table th {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #94a3b8;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--dash-border);
+    text-align: left;
+    background: #ffffff;
+}
+
+.dash-pro-table td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--dash-border-light);
+    vertical-align: middle;
+    color: var(--dash-text);
+}
+
+.dash-pro-table tr:hover td {
+    background: #fafbfc;
+}
+
+.dash-event-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.dash-event-poster {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: #e2e8f0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+}
+
+.dash-event-meta strong {
+    display: block;
+    font-weight: 700;
+    color: var(--dash-text);
+    font-size: 0.88rem;
+    line-height: 1.3;
+}
+
+.dash-event-meta small {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--dash-muted);
+    font-size: 0.76rem;
+    margin-top: 2px;
+}
+
+.dash-gauge-track {
+    width: 90px;
+    height: 7px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+.dash-gauge-progress {
+    height: 100%;
+    border-radius: 999px;
+}
+
+/* ==============================================================================
+   5. FLUX D'ACTIVITÉ EN TEMPS RÉEL (LIVE FEED)
+   ============================================================================== */
+.dash-live-stream {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.dash-stream-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.85rem;
+    padding: 0.75rem 0.95rem;
+    background: #f8fafc;
+    border: 1px solid var(--dash-border-light);
+    border-radius: 12px;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.dash-stream-card:hover {
+    background: #ffffff;
+    transform: translateX(3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+}
+
+.dash-stream-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.dash-stream-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.dash-stream-texts {
+    min-width: 0;
+}
+
+.dash-stream-title {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--dash-text);
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash-stream-desc {
+    font-size: 0.74rem;
+    color: var(--dash-muted);
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash-stream-right {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.dash-stream-val {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #10b981;
+    display: block;
+}
+
+.dash-stream-time {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    display: block;
+}
+
+/* ==============================================================================
+   6. ACTIONS RAPIDES (QUICK SHORTCUTS)
+   ============================================================================== */
+.dash-quick-shortcuts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1200px) {
+    .dash-quick-shortcuts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 600px) {
+    .dash-quick-shortcuts {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-shortcut-card {
+    background: #ffffff;
+    border: 1px solid var(--dash-border);
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    text-decoration: none;
+    color: var(--dash-text);
+    transition: all 0.2s ease;
+}
+
+.dash-shortcut-card:hover {
+    border-color: var(--dash-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--dash-shadow);
+}
+
+.dash-shortcut-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--dash-primary-light);
+    color: var(--dash-primary);
+    display: grid;
+    place-items: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.dash-shortcut-text strong {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--dash-text);
+}
+
+.dash-shortcut-text small {
+    font-size: 0.72rem;
+    color: var(--dash-muted);
+}

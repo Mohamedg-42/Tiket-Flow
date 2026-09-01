@@ -35,6 +35,18 @@ $user_role = $_SESSION['user_role'] ?? 'client';
         <a href="accueil.php"><i class="fa-solid fa-house"></i> Accueil</a>
         
         <?php if ($is_logged_in): ?>
+            <?php if ($user_role === 'promoteur'): ?>
+                <!-- Raccourci vers l'espace Promoteur -->
+                <a href="../promoteur/dashboard.php" class="btn-espace-promoteur">
+                    <i class="fa-solid fa-bullhorn"></i> Mon Espace Promoteur
+                </a>
+            <?php elseif ($user_role === 'admin'): ?>
+                <!-- Raccourci vers l'espace Administration -->
+                <a href="../admin/dashboard.php" class="btn-espace-admin">
+                    <i class="fa-solid fa-shield-halved"></i> Espace Administration
+                </a>
+            <?php endif; ?>
+
             <!-- Menu visible uniquement pour les clients connectés -->
             <a href="mes-commandes.php"><i class="fa-solid fa-cart-shopping"></i> Mes Commandes</a>
             <a href="mes-tickets.php"><i class="fa-solid fa-qrcode"></i> Mes Tickets</a>

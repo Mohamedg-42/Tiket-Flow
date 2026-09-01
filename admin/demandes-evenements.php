@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                 $pdo->beginTransaction();
 
                 // 1. Création de l'événement officiel dans 'events'
-                $sql_ev = "INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, commission_rate, statut) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')";
+                $sql_ev = "INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, statut) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')";
                 $stmt_ev = $pdo->prepare($sql_ev);
                 $stmt_ev->execute([
                     $req['user_id'],
@@ -41,6 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                     $req['date_evenement'],
                     $req['heure'],
                     $req['lieu'],
+                    (float)($req['prix_vote'] ?? 0),
+                    $req['type_vote'] ?? 'concours',
+                    $req['vote_question'] ?? null,
                     $commission_rate
                 ]);
 
@@ -49,14 +52,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                 // 2. Création automatique des types de tickets dans 'ticket_types'
                 $ticket_types = json_decode($req['ticket_types_data'] ?? '[]', true);
                 if (!empty($ticket_types) && is_array($ticket_types)) {
-                    $sql_tt = "INSERT INTO ticket_types (event_id, nom, prix, quantite, quantite_vendue) VALUES (?, ?, ?, ?, 0)";
+                    require_once '../includes/places.php';
+                    $sql_tt = "INSERT INTO ticket_types (event_id, nom, prix, frais_place, quantite, quantite_vendue) VALUES (?, ?, ?, ?, ?, 0)";
                     $stmt_tt = $pdo->prepare($sql_tt);
                     foreach ($ticket_types as $tt) {
                         $stmt_tt->execute([
                             $new_event_id,
                             $tt['nom'],
                             (float)$tt['prix'],
+                            (float)($tt['frais_place'] ?? 0),
                             (int)$tt['quantite']
+                        ]);
+                        // Génération automatique des places pour ce tarif
+                        generer_places_type($pdo, (int)$pdo->lastInsertId(), (int)$tt['quantite']);
+                    }
+                }
+
+                // 3. Création automatique des candidats / options de vote dans 'event_candidats'
+                $candidats_data = json_decode($req['candidats_data'] ?? '[]', true);
+                if (!empty($candidats_data) && is_array($candidats_data)) {
+                    $stmt_c_ins = $pdo->prepare("INSERT INTO event_candidats (event_id, nom, description, photo) VALUES (?, ?, ?, ?)");
+                    foreach ($candidats_data as $cd) {
+                        $stmt_c_ins->execute([
+                            $new_event_id,
+                            $cd['nom'],
+                            $cd['description'] ?? null,
+                            $cd['photo'] ?? null
                         ]);
                     }
                 }

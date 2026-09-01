@@ -1,7 +1,7 @@
 <?php
 // ==============================================================================
 // GESTION DES DEMANDES DE RETRAIT (admin/retraits.php)
-// Validation, traitement et confirmation des virements Mobile Money aux promoteurs
+// Design Dashboard Pro - Validation et confirmation des virements Mobile Money aux promoteurs
 // ==============================================================================
 
 $admin_page_title = "Gestion des Retraits - Administration";
@@ -80,127 +80,197 @@ if ($tab !== 'tous') {
     $stmt = $pdo->query($sql . " ORDER BY w.created_at DESC");
 }
 $withdrawals = $stmt->fetchAll();
+
+// KPIs globaux
+$tot_en_attente = (float)$pdo->query("SELECT COALESCE(SUM(montant), 0) FROM withdrawals WHERE statut = 'en_attente'")->fetchColumn();
+$nb_en_attente  = (int)$pdo->query("SELECT COUNT(*) FROM withdrawals WHERE statut = 'en_attente'")->fetchColumn();
+$tot_paye       = (float)$pdo->query("SELECT COALESCE(SUM(montant), 0) FROM withdrawals WHERE statut = 'paye'")->fetchColumn();
 ?>
 
-<div class="page-header">
-    <div class="page-heading">
-        <span class="page-kicker">Trésorerie & Virements</span>
-        <h1>Gestion des Demandes de Retrait</h1>
-        <p>Validez et effectuez les virements Mobile Money aux promoteurs partenaires.</p>
+<div class="dash-container">
+    <!-- ==============================================================================
+         1. EN-TÊTE DASHBOARD PRO
+         ============================================================================== -->
+    <div class="dash-header-section" style="margin-bottom: 1.25rem;">
+        <div class="dash-title-box">
+            <h1>
+                <i class="fa-solid fa-money-bill-transfer" style="color: #10b981; font-size: 1.55rem;"></i>
+                Gestion des Retraits & Virements Promoteurs
+            </h1>
+            <p>Validez les demandes de transfert de fonds et confirmez les virements Mobile Money aux organisateurs.</p>
+        </div>
     </div>
-</div>
 
-<?php if (!empty($message)): ?>
-    <div class="alert alert-<?php echo $msg_type; ?>">
-        <i class="fa-solid <?php echo ($msg_type === 'success') ? 'fa-circle-check' : 'fa-circle-exclamation'; ?>"></i>
-        <?php echo $message; ?>
+    <?php if (!empty($message)): ?>
+        <div style="background: <?php echo $msg_type === 'success' ? '#f0fdf4' : '#fef2f2'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#bbf7d0' : '#fecaca'; ?>; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; color: <?php echo $msg_type === 'success' ? '#166534' : '#991b1b'; ?>; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+            <i class="fa-solid <?php echo ($msg_type === 'success') ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>"></i>
+            <span><?php echo htmlspecialchars($message); ?></span>
+        </div>
+    <?php endif; ?>
+
+    <!-- ==============================================================================
+         2. BARRE DE FILTRES EN HAUT (PILULES D'ÉTAT ACTIF)
+         ============================================================================== -->
+    <div style="display: flex; gap: 0.4rem; margin-bottom: 1.5rem; background: #ffffff; padding: 0.65rem 0.85rem; border-radius: 12px; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); flex-wrap: wrap;">
+        <a href="?tab=en_attente" style="text-decoration: none; border-radius: 9px; padding: 0.45rem 1rem; font-size: 0.83rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; <?php echo $tab === 'en_attente' ? 'background: #0f172a; color: #ffffff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);' : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; ?>">
+            <i class="fa-solid fa-clock" style="color: #f59e0b;"></i>
+            <span>À Traiter</span>
+            <?php if ($nb_en_attente > 0): ?>
+                <span style="background: #ef4444; color: #ffffff; padding: 1px 7px; border-radius: 999px; font-size: 0.72rem; font-weight: 800;"><?php echo $nb_en_attente; ?></span>
+            <?php endif; ?>
+        </a>
+
+        <a href="?tab=paye" style="text-decoration: none; border-radius: 9px; padding: 0.45rem 1rem; font-size: 0.83rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; <?php echo $tab === 'paye' ? 'background: #0f172a; color: #ffffff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);' : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; ?>">
+            <i class="fa-solid fa-circle-check" style="color: #10b981;"></i>
+            <span>Virements Effectués</span>
+        </a>
+
+        <a href="?tab=refuse" style="text-decoration: none; border-radius: 9px; padding: 0.45rem 1rem; font-size: 0.83rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; <?php echo $tab === 'refuse' ? 'background: #0f172a; color: #ffffff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);' : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; ?>">
+            <i class="fa-solid fa-ban" style="color: #ef4444;"></i>
+            <span>Refusés</span>
+        </a>
+
+        <a href="?tab=tous" style="text-decoration: none; border-radius: 9px; padding: 0.45rem 1rem; font-size: 0.83rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; <?php echo $tab === 'tous' ? 'background: #0f172a; color: #ffffff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);' : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; ?>">
+            <i class="fa-solid fa-list"></i>
+            <span>Historique Complet</span>
+        </a>
     </div>
-<?php endif; ?>
 
-<!-- Onglets -->
-<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--line); padding-bottom: 0.5rem;">
-    <a href="?tab=en_attente" class="btn-submit" style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'en_attente') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
-        <i class="fa-solid fa-clock"></i> En Attente
-    </a>
-    <a href="?tab=paye" class="btn-submit" style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'paye') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
-        <i class="fa-solid fa-check"></i> Payés / Virement fait
-    </a>
-    <a href="?tab=refuse" class="btn-submit" style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'refuse') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
-        <i class="fa-solid fa-xmark"></i> Refusés
-    </a>
-    <a href="?tab=tous" class="btn-submit" style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'tous') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
-        Tous les retraits
-    </a>
-</div>
+    <!-- ==============================================================================
+         3. CARTES KPIS DE TRÉSORERIE (AU-DESSOUS DES FILTRES)
+         ============================================================================== -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #b45309; text-transform: uppercase;">En Attente de Virement</span>
+                <span style="background: #fef3c7; color: #b45309; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-clock"></i></span>
+            </div>
+            <div style="font-size: 1.65rem; font-weight: 800; color: #b45309;"><?php echo number_format($tot_en_attente, 0, ',', ' '); ?> F</div>
+            <small style="color: #b45309; font-size: 0.75rem;"><?php echo $nb_en_attente; ?> demande(s) en file d'attente</small>
+        </div>
 
-<!-- Liste des demandes de retrait -->
-<div class="content-section">
-    <div class="section-title">Demandes de Retrait (<?php echo count($withdrawals); ?>)</div>
+        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #16a34a; text-transform: uppercase;">Total Transféré aux Promoteurs</span>
+                <span style="background: #dcfce7; color: #16a34a; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i></span>
+            </div>
+            <div style="font-size: 1.65rem; font-weight: 800; color: #16a34a;"><?php echo number_format($tot_paye, 0, ',', ' '); ?> F</div>
+            <small style="color: #16a34a; font-size: 0.75rem;">Fonds effectivement virés avec succès</small>
+        </div>
+    </div>
 
-    <div class="table-wrapper">
-        <table class="events-table">
-            <thead>
-                <tr>
-                    <th>Promoteur</th>
-                    <th>Montant Demandé</th>
-                    <th>Moyen Mobile Money</th>
-                    <th>Numéro de compte</th>
-                    <th>Date demande</th>
-                    <th>Statut</th>
-                    <th style="text-align: right;">Action Admin</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (count($withdrawals) > 0): ?>
-                    <?php foreach ($withdrawals as $w): ?>
+    <!-- ==============================================================================
+         4. TABLEAU DES DEMANDES DE RETRAIT
+         ============================================================================== -->
+    <div class="dash-card">
+        <div class="dash-card-head" style="margin-bottom: 1rem;">
+            <h3 class="dash-card-title">
+                <i class="fa-solid fa-list-check" style="color: #10b981;"></i> Demandes de Retrait (<?php echo count($withdrawals); ?>)
+            </h3>
+        </div>
+
+        <?php if (empty($withdrawals)): ?>
+            <div style="text-align: center; padding: 3rem 1rem; color: var(--dash-muted);">
+                <i class="fa-solid fa-check-double" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+                Aucune demande de retrait dans cette catégorie.
+            </div>
+        <?php else: ?>
+            <div style="overflow-x: auto;">
+                <table class="dash-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <strong><?php echo htmlspecialchars($w['nom_commercial'] ?: $w['promoteur_nom']); ?></strong><br>
-                                <small style="color: var(--muted);"><?php echo htmlspecialchars($w['promoteur_email']); ?></small>
-                            </td>
-
-                            <td>
-                                <strong style="color: var(--primary); font-size: 1.1rem;">
-                                    <?php echo number_format($w['montant'], 0, ',', ' '); ?> F
-                                </strong>
-                            </td>
-
-                            <td>
-                                <span style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; text-transform: uppercase;">
-                                    <?php echo htmlspecialchars(str_replace('_', ' ', $w['methode'])); ?>
-                                </span>
-                            </td>
-
-                            <td>
-                                <strong style="font-size: 0.95rem;"><i class="fa-solid fa-phone"></i> <?php echo htmlspecialchars($w['numero_telephone']); ?></strong>
-                            </td>
-
-                            <td>
-                                <?php echo date('d/m/Y H:i', strtotime($w['created_at'])); ?>
-                            </td>
-
-                            <td>
-                                <?php if ($w['statut'] === 'paye'): ?>
-                                    <span style="color: #16a34a; font-weight: bold;"><i class="fa-solid fa-circle-check"></i> Payé</span>
-                                <?php elseif ($w['statut'] === 'refuse'): ?>
-                                    <span style="color: #ef4444; font-weight: bold;"><i class="fa-solid fa-circle-xmark"></i> Refusé</span>
-                                <?php else: ?>
-                                    <span style="color: #f59e0b; font-weight: bold;"><i class="fa-solid fa-clock"></i> À payer</span>
-                                <?php endif; ?>
-                            </td>
-
-                            <td style="text-align: right; white-space: nowrap;">
-                                <?php if ($w['statut'] === 'en_attente'): ?>
-                                    <form method="POST" style="display: inline-block;">
-                                        <input type="hidden" name="withdraw_id" value="<?php echo $w['id']; ?>">
-                                        <input type="hidden" name="action_retrait" value="pay">
-                                        <button type="submit" class="btn-submit" style="display: inline-block; width: auto; padding: 0.4rem 0.85rem; background: #10b981; font-size: 0.82rem; margin: 0 4px 0 0;" onclick="return confirm('Confirmez-vous que le virement Mobile Money a été effectué au promoteur ?')">
-                                            <i class="fa-solid fa-check"></i> Marquer Payé
-                                        </button>
-                                    </form>
-
-                                    <form method="POST" style="display: inline-block;">
-                                        <input type="hidden" name="withdraw_id" value="<?php echo $w['id']; ?>">
-                                        <input type="hidden" name="action_retrait" value="reject">
-                                        <button type="submit" class="btn-submit" style="display: inline-block; width: auto; padding: 0.4rem 0.85rem; background: #ef4444; font-size: 0.82rem; margin: 0;" onclick="return confirm('Refuser ce retrait et restituer le solde au promoteur ?')">
-                                            <i class="fa-solid fa-xmark"></i> Refuser
-                                        </button>
-                                    </form>
-                                <?php else: ?>
-                                    <small style="color: var(--muted);">Traité</small>
-                                <?php endif; ?>
-                            </td>
+                            <th>Date Demande</th>
+                            <th>Promoteur</th>
+                            <th>Montant</th>
+                            <th>Moyen de Paiement</th>
+                            <th>Solde Actuel</th>
+                            <th>Statut</th>
+                            <th style="text-align: right;">Action / Traitement</th>
                         </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr>
-                        <td colspan="7" style="text-align: center; color: var(--muted); padding: 2.5rem;">
-                            Aucune demande de retrait dans cette section.
-                        </td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($withdrawals as $w): ?>
+                            <?php
+                            $is_p = ($w['statut'] === 'en_attente');
+                            $op_label = ucfirst(str_replace('_', ' ', $w['moyen_paiement']));
+                            $statut_badge = [
+                                'en_attente' => ['À payer', '#fef3c7', '#b45309'],
+                                'paye'       => ['Payé', '#dcfce7', '#166534'],
+                                'refuse'     => ['Refusé', '#fee2e2', '#991b1b']
+                            ];
+                            [$st_label, $st_bg, $st_fg] = $statut_badge[$w['statut']] ?? ['Inconnu', '#f1f5f9', '#64748b'];
+                            ?>
+                            <tr>
+                                <td>
+                                    <span style="color: var(--dash-text); font-weight: 700; font-size: 0.84rem; display: block;">
+                                        <?php echo date('d/m/Y', strtotime($w['created_at'])); ?>
+                                    </span>
+                                    <small style="color: var(--dash-muted); font-size: 0.74rem;">
+                                        <?php echo date('H:i', strtotime($w['created_at'])); ?>
+                                    </small>
+                                </td>
+                                <td>
+                                    <strong style="color: var(--dash-text); font-size: 0.9rem; display: block;">
+                                        <?php echo htmlspecialchars($w['nom_commercial'] ?: $w['promoteur_nom']); ?>
+                                    </strong>
+                                    <small style="color: var(--dash-muted); font-size: 0.76rem;">
+                                        <?php echo htmlspecialchars($w['promoteur_email']); ?>
+                                    </small>
+                                </td>
+                                <td>
+                                    <strong style="color: #059669; font-size: 1.05rem; font-weight: 800;">
+                                        <?php echo number_format((float)$w['montant'], 0, ',', ' '); ?> F
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span style="font-weight: 700; font-size: 0.84rem; color: var(--dash-text); display: block;">
+                                        <i class="fa-solid fa-mobile-screen-button" style="color: #0284c7;"></i> <?php echo htmlspecialchars($op_label); ?>
+                                    </span>
+                                    <small style="color: var(--dash-muted); font-family: monospace; font-size: 0.8rem;">
+                                        <?php echo htmlspecialchars($w['numero_compte']); ?>
+                                    </small>
+                                </td>
+                                <td>
+                                    <span style="font-size: 0.84rem; font-weight: 700; color: #475569;">
+                                        <?php echo number_format((float)$w['solde_actuel'], 0, ',', ' '); ?> F
+                                    </span>
+                                </td>
+                                <td>
+                                    <span style="background: <?php echo $st_bg; ?>; color: <?php echo $st_fg; ?>; padding: 3px 9px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">
+                                        <?php echo $st_label; ?>
+                                    </span>
+                                </td>
+                                <td style="text-align: right;">
+                                    <?php if ($is_p): ?>
+                                        <div style="display: inline-flex; gap: 6px;">
+                                            <form method="POST" onsubmit="return confirm('Confirmez-vous que le virement Mobile Money a été envoyé avec succès ?');" style="margin: 0;">
+                                                <input type="hidden" name="withdraw_id" value="<?php echo $w['id']; ?>">
+                                                <input type="hidden" name="action_retrait" value="pay">
+                                                <button type="submit" class="dash-btn-action" style="background: #16a34a; color: #ffffff; padding: 0.35rem 0.85rem; font-size: 0.76rem; font-weight: 800;">
+                                                    <i class="fa-solid fa-check"></i> Marquer Payé
+                                                </button>
+                                            </form>
+
+                                            <form method="POST" onsubmit="return confirm('Confirmez-vous le refus ? Le montant sera immédiatement re-crédité sur le solde du promoteur.');" style="margin: 0;">
+                                                <input type="hidden" name="withdraw_id" value="<?php echo $w['id']; ?>">
+                                                <input type="hidden" name="action_retrait" value="reject">
+                                                <button type="submit" class="dash-btn-action" style="background: #fee2e2; color: #ef4444; padding: 0.35rem 0.65rem; font-size: 0.76rem; font-weight: 800;" title="Rejeter et recréditer">
+                                                    <i class="fa-solid fa-xmark"></i> Refuser
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php else: ?>
+                                        <small style="color: var(--dash-muted); font-size: 0.78rem;">
+                                            <?php echo !empty($w['reviewed_at']) ? 'Traité le ' . date('d/m/Y', strtotime($w['reviewed_at'])) : 'Archivé'; ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 
