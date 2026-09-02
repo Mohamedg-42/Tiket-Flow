@@ -1,0 +1,16 @@
+﻿git : warning: in the working copy of 
+'client/header.php', LF will be replaced by 
+CRLF the next time Git touches it
+Au caractère Ligne:1 : 1
++ git -C c:\wamp64\www\ticket-platform diff 
+--stat -- client/header.php ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (wa 
+   rning: in the... Git touches it:String) [],  
+   RemoteException
+    + FullyQualifiedErrorId : NativeCommandErro 
+   r
+ 
+ client/header.php | 93 +++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 91 insertions(+), 2 deletions(-)

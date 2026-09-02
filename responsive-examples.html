@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemples Responsives - Ticket Flow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="./Css/style.css">
+    <link rel="stylesheet" href="./Css/responsive-pro.css">
+    <style>
+        .example-card {
+            background: var(--paper);
+            border: 2px dashed var(--line);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .example-code {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-top: var(--spacing-md);
+            border-left: 4px solid var(--primary);
+        }
+
+        .example-label {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 0.35rem 0.85rem;
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+        }
+
+        .before-after-box {
+            border: 1px solid var(--line);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .before-after-title {
+            background: var(--canvas);
+            padding: var(--spacing-sm);
+            font-weight: 700;
+            border-bottom: 1px solid var(--line);
+            font-size: 0.9rem;
+        }
+
+        .before-after-content {
+            padding: var(--spacing-md);
+        }
+
+        .demo-element {
+            background: linear-gradient(135deg, var(--primary-soft), #e0f2fe);
+            border: 1px dashed var(--primary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            color: var(--navy);
+            font-weight: 600;
+        }
+
+        .navbar-demo {
+            background: var(--navy-surface);
+            color: white;
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .navbar-demo a {
+            color: white;
+            margin-left: 1rem;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 767px) {
+            .navbar-demo a:not(:first-child) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="client-header">
+    <a href="#" class="client-brand">
+        <i class="fa-solid fa-lightbulb"></i> EXEMPLES RESPONSIVES
+    </a>
+</header>
+
+<div class="container p-responsive">
+
+    <!-- Exemple 1: Dashboard Layout -->
+    <div class="example-card">
+        <span class="example-label">Exemple 1</span>
+        <h2><i class="fa-solid fa-chart-line"></i> Dashboard Responsive</h2>
+        <p>Layout classique avec statistiques adaptatives</p>
+
+        <h3>Rendu:</h3>
+        <div class="stats-grid">
+            <div class="demo-element">
+                <i class="fa-solid fa-ticket" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                <p style="margin: 0;">Billets Vendus</p>
+                <p style="font-size: 1.5rem; margin: 0.5rem 0 0;">1,234</p>
+            </div>
+            <div class="demo-element">
+                <i class="fa-solid fa-dollar-sign" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                <p style="margin: 0;">Revenus</p>
+                <p style="font-size: 1.5rem; margin: 0.5rem 0 0;">54,320 F</p>
+            </div>
+            <div class="demo-element">
+                <i class="fa-solid fa-users" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                <p style="margin: 0;">Clients</p>
+                <p style="font-size: 1.5rem; margin: 0.5rem 0 0;">892</p>
+            </div>
+            <div class="demo-element">
+                <i class="fa-solid fa-star" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                <p style="margin: 0;">Avis Clients</p>
+                <p style="font-size: 1.5rem; margin: 0.5rem 0 0;">4.8/5</p>
+            </div>
+        </div>
+
+        <div class="example-code">
+&lt;div class="stats-grid"&gt;
+  &lt;div class="stat-card"&gt;
+    &lt;i class="fa-solid fa-chart-line"&gt;&lt;/i&gt;
+    &lt;div&gt;
+      &lt;h4&gt;Metric&lt;/h4&gt;
+      &lt;p&gt;Value&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+/* Auto-adapté: */
+/* Desktop: 4 colonnes */
+/* Tablette: 2 colonnes */
+/* Mobile: 1 colonne */
+        </div>
+    </div>
+
+    <!-- Exemple 2: Formulaire -->
+    <div class="example-card">
+        <span class="example-label">Exemple 2</span>
+        <h2><i class="fa-solid fa-pen-to-square"></i> Formulaire Multi-Colonnes</h2>
+        <p>Formulaire qui s'adapte automatiquement à l'écran</p>
+
+        <h3>Rendu:</h3>
+        <form>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ex2_fname"><i class="fa-solid fa-user"></i> Prénom</label>
+                    <input type="text" id="ex2_fname" placeholder="Jean" disabled value="Jean" />
+                </div>
+                <div class="form-group">
+                    <label for="ex2_lname"><i class="fa-solid fa-user"></i> Nom</label>
+                    <input type="text" id="ex2_lname" placeholder="Dupont" disabled value="Dupont" />
+                </div>
+                <div class="form-group">
+                    <label for="ex2_email"><i class="fa-solid fa-envelope"></i> Email</label>
+                    <input type="email" id="ex2_email" placeholder="jean@example.com" disabled value="jean@example.com" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="ex2_phone"><i class="fa-solid fa-phone"></i> Téléphone</label>
+                    <input type="tel" id="ex2_phone" placeholder="+33 6 XX XX XX XX" disabled value="+33 6 12 34 56 78" />
+                </div>
+                <div class="form-group">
+                    <label for="ex2_pays"><i class="fa-solid fa-globe"></i> Pays</label>
+                    <select id="ex2_pays" disabled>
+                        <option>France</option>
+                        <option>Belgique</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+
+        <div class="example-code">
+&lt;div class="form-row"&gt;
+  &lt;div class="form-group"&gt;
+    &lt;label&gt;Prénom&lt;/label&gt;
+    &lt;input type="text" /&gt;
+  &lt;/div&gt;
+  &lt;div class="form-group"&gt;
+    &lt;label&gt;Nom&lt;/label&gt;
+    &lt;input type="text" /&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+/* Auto-adapté: */
+/* Desktop: 3+ champs par ligne */
+/* Mobile: 1 champ par ligne (100%) */
+        </div>
+    </div>
+
+    <!-- Exemple 3: Galerie de Cartes -->
+    <div class="example-card">
+        <span class="example-label">Exemple 3</span>
+        <h2><i class="fa-solid fa-images"></i> Galerie de Cartes Événements</h2>
+        <p>Cartes qui se réorganisent automatiquement</p>
+
+        <h3>Rendu:</h3>
+        <div class="cards-container">
+            <div class="card">
+                <div style="height: 180px; background: linear-gradient(135deg, #0d9488, #14b8a6); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                    <i class="fa-solid fa-guitar"></i>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">Concert Jazz</h3>
+                    <p class="card-text">Une soirée musicale inoubliable avec les meilleurs artistes.</p>
+                    <div class="card-actions">
+                        <button class="btn-submit" style="flex: 1; font-size: 0.85rem;">Voir Plus</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="height: 180px; background: linear-gradient(135deg, #0284c7, #06b6d4); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                    <i class="fa-solid fa-theater-masks"></i>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">Théâtre Classique</h3>
+                    <p class="card-text">Une adaptation contemporaine des grandes pièces classiques.</p>
+                    <div class="card-actions">
+                        <button class="btn-submit" style="flex: 1; font-size: 0.85rem;">Voir Plus</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="height: 180px; background: linear-gradient(135deg, #8b5cf6, #a855f7); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                    <i class="fa-solid fa-film"></i>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">Cinéma en Plein Air</h3>
+                    <p class="card-text">Projection de films sous les étoiles avec bonne ambiance.</p>
+                    <div class="card-actions">
+                        <button class="btn-submit" style="flex: 1; font-size: 0.85rem;">Voir Plus</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="height: 180px; background: linear-gradient(135deg, #dc2626, #ef4444); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                    <i class="fa-solid fa-person-running"></i>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">Marathon Urbain</h3>
+                    <p class="card-text">Course 10km et 42km dans les rues de la ville.</p>
+                    <div class="card-actions">
+                        <button class="btn-submit" style="flex: 1; font-size: 0.85rem;">Voir Plus</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="example-code">
+&lt;div class="cards-container"&gt;
+  &lt;div class="card"&gt;
+    &lt;img class="card-image" src="..." /&gt;
+    &lt;div class="card-body"&gt;...&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+/* Auto-adapté: */
+/* 1280px+: 4 cartes/ligne */
+/* 1024px: 3 cartes/ligne */
+/* 768px: 2 cartes/ligne */
+/* &lt;768px: 1 carte/ligne */
+        </div>
+    </div>
+
+    <!-- Exemple 4: Tableau Responsive -->
+    <div class="example-card">
+        <span class="example-label">Exemple 4</span>
+        <h2><i class="fa-solid fa-table"></i> Tableau Empilé Mobile</h2>
+        <p>Tableau qui s'empile en cartes sur mobile</p>
+
+        <h3>Rendu:</h3>
+        <div class="table-responsive table-mobile-stack">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Événement</th>
+                        <th>Date</th>
+                        <th>Lieu</th>
+                        <th>Billets Vendus</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-label="Événement">Concert Jazz</td>
+                        <td data-label="Date">15/09/2026</td>
+                        <td data-label="Lieu">Salle A</td>
+                        <td data-label="Billets">234</td>
+                        <td data-label="Statut"><span style="background: #ecfdf5; color: #065f46; padding: 0.25rem 0.65rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Actif</span></td>
+                    </tr>
+                    <tr>
+                        <td data-label="Événement">Théâtre</td>
+                        <td data-label="Date">20/09/2026</td>
+                        <td data-label="Lieu">Salle B</td>
+                        <td data-label="Billets">456</td>
+                        <td data-label="Statut"><span style="background: #fef2f2; color: #991b1b; padding: 0.25rem 0.65rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Complet</span></td>
+                    </tr>
+                    <tr>
+                        <td data-label="Événement">Marathon</td>
+                        <td data-label="Date">30/09/2026</td>
+                        <td data-label="Lieu">Centre-ville</td>
+                        <td data-label="Billets">1.2k</td>
+                        <td data-label="Statut"><span style="background: #fffbeb; color: #b45309; padding: 0.25rem 0.65rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">En Attente</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="example-code">
+&lt;div class="table-responsive table-mobile-stack"&gt;
+  &lt;table&gt;
+    &lt;tr&gt;
+      &lt;td data-label="Colonne"&gt;Valeur&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/table&gt;
+&lt;/div&gt;
+
+/* Important: */
+/* • Ajouter class="table-mobile-stack" */
+/* • Ajouter data-label="..." sur chaque TD */
+/* Résultat: */
+/* Desktop: tableau normal */
+/* Mobile: empilage vertical avec labels */
+        </div>
+    </div>
+
+    <!-- Exemple 5: Layout Deux Colonnes -->
+    <div class="example-card">
+        <span class="example-label">Exemple 5</span>
+        <h2><i class="fa-solid fa-columns"></i> Layout Deux Colonnes</h2>
+        <p>Contenu côte à côte qui s'empile sur mobile</p>
+
+        <h3>Rendu:</h3>
+        <div class="two-column-grid">
+            <div class="demo-element" style="min-height: 250px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
+                <i class="fa-solid fa-newspaper" style="font-size: 2.5rem; color: var(--primary);"></i>
+                <h3 style="margin: 0;">Actualités</h3>
+                <p style="margin: 0; font-size: 0.9rem; color: var(--muted);">Les dernières infos sur nos événements</p>
+            </div>
+            <div class="demo-element" style="min-height: 250px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
+                <i class="fa-solid fa-message" style="font-size: 2.5rem; color: var(--primary);"></i>
+                <h3 style="margin: 0;">Support</h3>
+                <p style="margin: 0; font-size: 0.9rem; color: var(--muted);">Besoin d'aide? Contactez-nous</p>
+            </div>
+        </div>
+
+        <div class="example-code">
+&lt;div class="two-column-grid"&gt;
+  &lt;div&gt;Colonne Gauche&lt;/div&gt;
+  &lt;div&gt;Colonne Droite&lt;/div&gt;
+&lt;/div&gt;
+
+/* Auto-adapté: */
+/* Desktop: 2 colonnes côte à côte */
+/* Mobile: 1 colonne empilée */
+        </div>
+    </div>
+
+    <!-- Exemple 6: Espacements Adaptatifs -->
+    <div class="example-card">
+        <span class="example-label">Exemple 6</span>
+        <h2><i class="fa-solid fa-ruler"></i> Espacements Adaptatifs</h2>
+        <p>Les marges et paddings s'ajustent automatiquement</p>
+
+        <h3>Rendu:</h3>
+        <div class="demo-element" style="margin-bottom: 1rem;">
+            <strong>Padding Responsive</strong>
+            <p style="margin: 0.5rem 0 0;">Padding s'ajuste automatiquement selon l'écran</p>
+        </div>
+
+        <div class="demo-element" style="margin-bottom: 1rem;">
+            <strong>Espacements Variables</strong>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: var(--spacing-md); margin-top: 1rem;">
+                <div style="background: var(--primary); color: white; padding: 0.5rem; border-radius: 4px; text-align: center; font-size: 0.8rem;">xs</div>
+                <div style="background: var(--primary); color: white; padding: 0.5rem; border-radius: 4px; text-align: center; font-size: 0.8rem;">sm</div>
+                <div style="background: var(--primary); color: white; padding: 0.5rem; border-radius: 4px; text-align: center; font-size: 0.8rem;">md</div>
+                <div style="background: var(--primary); color: white; padding: 0.5rem; border-radius: 4px; text-align: center; font-size: 0.8rem;">lg</div>
+                <div style="background: var(--primary); color: white; padding: 0.5rem; border-radius: 4px; text-align: center; font-size: 0.8rem;">xl</div>
+            </div>
+        </div>
+
+        <div class="example-code">
+/* Padding responsive */
+&lt;div class="p-responsive"&gt;...&lt;/div&gt;
+
+/* Padding horizontal */
+&lt;div class="px-responsive"&gt;...&lt;/div&gt;
+
+/* Padding vertical */
+&lt;div class="py-responsive"&gt;...&lt;/div&gt;
+
+/* Marge adaptative */
+&lt;div class="m-responsive"&gt;...&lt;/div&gt;
+
+/* Gap responsive */
+&lt;div style="gap: var(--spacing-md);"&gt;...&lt;/div&gt;
+        </div>
+    </div>
+
+    <!-- Exemple 7: Affichage Conditionnel -->
+    <div class="example-card">
+        <span class="example-label">Exemple 7</span>
+        <h2><i class="fa-solid fa-eye"></i> Affichage Conditionnel par Breakpoint</h2>
+        <p>Montrer/Masquer du contenu selon la taille d'écran</p>
+
+        <h3>Rendu:</h3>
+        <div class="show-mobile" style="background: #fef2f2; border: 2px solid #ef4444; padding: var(--spacing-md); border-radius: var(--radius-sm); margin-bottom: 1rem;">
+            <i class="fa-solid fa-mobile" style="color: #ef4444; margin-right: 0.5rem;"></i>
+            <strong>📱 Visible UNIQUEMENT sur MOBILE (&lt;768px)</strong>
+        </div>
+
+        <div class="hide-mobile" style="background: #ecfdf5; border: 2px solid #10b981; padding: var(--spacing-md); border-radius: var(--radius-sm); margin-bottom: 1rem;">
+            <i class="fa-solid fa-desktop" style="color: #10b981; margin-right: 0.5rem;"></i>
+            <strong>🖥️ Visible sur DESKTOP (≥768px)</strong>
+        </div>
+
+        <div class="show-tablet" style="background: #fffbeb; border: 2px solid #f59e0b; padding: var(--spacing-md); border-radius: var(--radius-sm);">
+            <i class="fa-solid fa-tablet" style="color: #f59e0b; margin-right: 0.5rem;"></i>
+            <strong>📱 Visible UNIQUEMENT sur TABLETTE (768px-1023px)</strong>
+        </div>
+
+        <div class="example-code">
+&lt;!-- Visible sur mobile seulement --&gt;
+&lt;div class="show-mobile"&gt;Menu Mobile&lt;/div&gt;
+
+&lt;!-- Masqué sur mobile --&gt;
+&lt;div class="hide-mobile"&gt;Menu Desktop&lt;/div&gt;
+
+&lt;!-- Visible sur tablette seulement --&gt;
+&lt;div class="show-tablet"&gt;Vue Tablette&lt;/div&gt;
+        </div>
+    </div>
+
+    <!-- Conclusion -->
+    <div class="example-card">
+        <span class="example-label">🎉</span>
+        <h2>Vous maîtrisez maintenant le système responsive!</h2>
+        <p>Consultez les fichiers pour plus de détails:</p>
+        <ul>
+            <li><strong><a href="./RESPONSIVE_GUIDE.md">RESPONSIVE_GUIDE.md</a></strong> - Guide complet avec toutes les classes</li>
+            <li><strong><a href="./RESPONSIVE_BEST_PRACTICES.md">RESPONSIVE_BEST_PRACTICES.md</a></strong> - Bonnes pratiques et patterns</li>
+            <li><strong><a href="./responsive-test.html">responsive-test.html</a></strong> - Page de test interactive</li>
+            <li><strong><a href="./Css/responsive-pro.css">Css/responsive-pro.css</a></strong> - Fichier CSS complet</li>
+        </ul>
+    </div>
+
+</div>
+
+</body>
+</html>

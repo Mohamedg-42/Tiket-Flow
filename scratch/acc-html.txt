@@ -1,0 +1,93 @@
+﻿; Événements</title>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Style CSS -->
+    <link rel="stylesheet" href="../css/style.css">
+    <!-- Responsive Professional CSS -->
+    <link rel="stylesheet" href="../css/responsive-pro.css">
+</head>
+<body class="client-page client-home-page">
+
+<header class="client-header shared-client-header">
+    <a href="accueil.php" class="client-brand">
+        <i class="fa-solid fa-ticket"></i> TICKET FLOW
+    </a>
+
+    <button type="button" class="client-nav-toggle" onclick="toggleClientNav(event)" aria-label="Ouvrir le menu" aria-controls="clientNav" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <nav class="client-nav" id="clientNav">
+        <a href="accueil.php"><i class="fa-solid fa-house"></i> Accueil</a>
+        
+                    <!-- Menu pour les visiteurs non connectés -->
+            <a href="../connexion.php"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
+            <a href="../inscription.php" class="client-register"><i class="fa-solid fa-user-plus"></i> Inscription</a>
+            </nav>
+</header>
+
+<script>
+    // ========== HAMBURGER MENU - SIMPLIFIÉ ET FIABLE (page d'accueil) ==========
+    // État unique du menu (source de vérité)
+    let menuOpen = false;
+
+    // Toggle du menu (icône ☰ ↔ ✕, verrouillage du scroll, ARIA)
+    function toggleClientNav(event) {
+        if (event) event.stopPropagation();
+
+        const nav = document.getElementById('clientNav');
+        const btn = document.querySelector('.client-nav-toggle');
+
+        if (!nav || !btn) return;
+
+        menuOpen = !menuOpen;
+
+        if (menuOpen) {
+            // Ouvrir le menu
+            nav.classList.add('nav-open');
+            btn.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+
+            // Animation icône : bars → xmark
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-xmark');
+            }
+        } else {
+            // Fermer le menu
+            closeMenu();
+        }
+    }
+
+    // Fermeture centralisée du menu
+    function closeMenu() {
+        const nav = document.getElementById('clientNav');
+        const btn = document.querySelector('.client-nav-toggle');
+
+        if (!nav) return;
+
+        menuOpen = false;
+        nav.classList.remove('nav-open');
+
+        if (btn) {
+            btn.setAttribute('aria-expanded', 'false');
+
+            // Animation icône : xmark → bars
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-xmark');
+                icon.classList.add('fa-bars');
+            }
+        }
+
+        document.body.style.overflow = '';
+    }
+
+    // Au chargement complet du DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        const nav = document.getElementById('clientNav');
+        const btn = document.querySelector('.client-nav-toggle');
+        const header = document.querySelector('.client-header');
+
+        if (!nav

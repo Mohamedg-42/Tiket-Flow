@@ -291,6 +291,24 @@ foreach ($tt_stats as $tts) {
 }
 
 // ==============================================================================
+// 7 bis. TYPES DE BILLETS VENDUS PAR ÉVÉNEMENT
+// ==============================================================================
+$stmt_tt_ev = $pdo->query("
+    SELECT e.id as event_id, e.nom as event_nom,
+           COALESCE(tt.nom, 'Non catégorisé') as type_nom,
+           COUNT(t.id) as nb_vendus,
+           COALESCE(SUM(t.prix), 0) as ca_type
+    FROM tickets t
+    JOIN events e ON t.event_id = e.id
+    LEFT JOIN ticket_types tt ON t.ticket_type_id = tt.id
+    WHERE t.statut IN ('vendu', 'utilise') AND $sql_period_cur_tkt $sql_ev_filter_tkt
+    GROUP BY e.id, tt.nom
+    ORDER BY e.nom ASC, nb_vendus DESC
+    LIMIT 60
+");
+$tt_by_event = $stmt_tt_ev->fetchAll();
+
+// ==============================================================================
 // 8. FLUX OPÉRATIONNEL 100% EN DIRECT (DERNIÈRES ACTIONS RÉELLES DE LA BD)
 // ==============================================================================
 $live_activities = [];
@@ -617,13 +635,13 @@ try {
             </div>
         </div>
 
-        <!-- 3. Donut Statut des Commandes -->
+        <!-- 3. Donut Statut des tickets -->
         <div class="dash-card">
             <div class="dash-card-head">
                 <div>
                     <h3 class="dash-card-title">
                         <i class="fa-solid fa-pie-chart" style="color: #10b981;"></i>
-                        Statut des Commandes
+                        Statut des tickets
                     </h3>
                     <div class="dash-card-subtitle">Volume réel sur la période</div>
                 </div>
@@ -686,7 +704,7 @@ try {
                 </div>
             </div>
             <div class="dash-table-wrapper">
-                <table class="dash-pro-table">
+                <table class="dash-pro-table mv-stack">
                     <thead>
                         <tr>
                             <th>Événement</th>
@@ -715,7 +733,7 @@ try {
                                 }
                                 ?>
                                 <tr class="dash-clickable-row" onclick="window.location='modifier-evenement.php?id=<?php echo $ev['id']; ?>'" title="Cliquer pour gérer cet événement">
-                                    <td>
+                                    <td data-label="Événement">
                                         <div class="dash-event-cell">
                                             <img src="<?php echo $ev_img; ?>" alt="" class="dash-event-poster">
                                             <div class="dash-event-meta">
@@ -724,10 +742,10 @@ try {
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="white-space: nowrap; font-size: 0.8rem;"><?php echo date('d/m/Y', strtotime($ev['date_evenement'])); ?></td>
-                                    <td><strong><?php echo number_format($vds, 0, ',', ' '); ?></strong></td>
-                                    <td style="font-weight: 700; color: var(--dash-primary);"><?php echo number_format((float)$ev['ca_total'], 0, ',', ' '); ?> F</td>
-                                    <td>
+                                    <td data-label="Date" style="white-space: nowrap; font-size: 0.8rem;"><?php echo date('d/m/Y', strtotime($ev['date_evenement'])); ?></td>
+                                    <td data-label="Vendus"><strong><?php echo number_format($vds, 0, ',', ' '); ?></strong></td>
+                                    <td data-label="Recette" style="font-weight: 700; color: var(--dash-primary);"><?php echo number_format((float)$ev['ca_total'], 0, ',', ' '); ?> F</td>
+                                    <td data-label="Occupation">
                                         <div style="display: flex; align-items: center;">
                                             <span class="dash-gauge-track">
                                                 <span class="dash-gauge-progress" style="width: <?php echo $pct; ?>%; background: <?php echo $color; ?>; display: block;"></span>
@@ -805,6 +823,67 @@ try {
                     </div>
                 <?php endif; ?>
             </div>
+        </div>
+    </div>
+
+    <!-- ==============================================================================
+         5 bis. TYPES DE BILLETS VENDUS PAR ÉVÉNEMENT
+         ============================================================================== -->
+    <div class="dash-card" style="margin-bottom: 1.75rem;">
+        <div class="dash-card-head">
+            <div>
+                <h3 class="dash-card-title">
+                    <i class="fa-solid fa-layer-group" style="color: #0ea5e9;"></i>
+                    Types de Billets Vendus par Événement
+                </h3>
+                <div class="dash-card-subtitle">Répartition détaillée des ventes par formule et par événement</div>
+            </div>
+            <span style="background: #f0f9ff; color: #0ea5e9; padding: 4px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 800;">
+                <?php echo count($tt_by_event); ?> ligne(s)
+            </span>
+        </div>
+        <div class="dash-table-wrapper">
+            <table class="dash-pro-table mv-stack">
+                <thead>
+                    <tr>
+                        <th>Événement</th>
+                        <th>Type de Billet</th>
+                        <th>Billets Vendus</th>
+                        <th>Recette</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($tt_by_event)): ?>
+                        <?php foreach ($tt_by_event as $tbe): ?>
+                            <tr>
+                                <td data-label="Événement">
+                                    <a href="dashboard.php?period=<?php echo urlencode($period); ?>&event_id=<?php echo $tbe['event_id']; ?>" style="color: var(--dash-text); text-decoration: none; font-weight: 700;" title="Filtrer le dashboard sur cet événement">
+                                        <?php echo htmlspecialchars($tbe['event_nom']); ?>
+                                    </a>
+                                </td>
+                                <td data-label="Type de Billet">
+                                    <span style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 2px 8px; border-radius: 5px; font-weight: 700; font-size: 0.78rem; display: inline-block;">
+                                        <?php echo htmlspecialchars($tbe['type_nom']); ?>
+                                    </span>
+                                </td>
+                                <td data-label="Billets Vendus">
+                                    <strong style="font-size: 0.92rem;"><?php echo number_format($tbe['nb_vendus'], 0, ',', ' '); ?></strong>
+                                </td>
+                                <td data-label="Recette">
+                                    <strong style="color: var(--dash-primary); font-size: 0.92rem;"><?php echo number_format((float)$tbe['ca_type'], 0, ',', ' '); ?> F</strong>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--dash-muted); padding: 2.5rem 1rem;">
+                                <i class="fa-solid fa-inbox" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display: block;"></i>
+                                Aucune vente de billet enregistrée pour cette période.
+                            </td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -1014,7 +1093,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // 4. Donut Statut des Commandes
+    // 4. Donut Statut des tickets
     const ctxOrdersSt = document.getElementById('ordersStatusChart');
     if (ctxOrdersSt) {
         new Chart(ctxOrdersSt, {

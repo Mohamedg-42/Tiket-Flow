@@ -36,8 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $pdo->beginTransaction();
 
-                $stmt_ev = $pdo->prepare("INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, commission_rate, statut) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')");
-                $stmt_ev->execute([$req['user_id'], $req['nom'], $req['description'], $req['image'], $req['categorie'], $req['date_evenement'], $req['heure'], $req['lieu'], (float)($req['prix_vote'] ?? 0), $commission_rate]);
+                $stmt_ev = $pdo->prepare("INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, statut) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')");
+                $stmt_ev->execute([$req['user_id'], $req['nom'], $req['description'], $req['image'], $req['categorie'], $req['date_evenement'], $req['heure'], $req['lieu'], (float)($req['prix_vote'] ?? 0), $req['type_vote'] ?? 'aucun', $req['vote_question'] ?? null, $commission_rate]);
                 $new_event_id = (int)$pdo->lastInsertId();
 
                 $ticket_types = json_decode($req['ticket_types_data'] ?? '[]', true);
@@ -54,6 +54,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]);
                         // Génération automatique des places pour ce tarif
                         generer_places_type($pdo, (int)$pdo->lastInsertId(), (int)$tt['quantite']);
+                    }
+                }
+
+                // Création automatique des candidats / options de vote dans 'event_candidats'
+                $candidats_data = json_decode($req['candidats_data'] ?? '[]', true);
+                if (!empty($candidats_data) && is_array($candidats_data)) {
+                    $stmt_c_ins = $pdo->prepare("INSERT INTO event_candidats (event_id, nom, description, photo) VALUES (?, ?, ?, ?)");
+                    foreach ($candidats_data as $cd) {
+                        $stmt_c_ins->execute([
+                            $new_event_id,
+                            $cd['nom'],
+                            $cd['description'] ?? null,
+                            $cd['photo'] ?? null
+                        ]);
                     }
                 }
 
@@ -195,182 +209,351 @@ $nb_campagnes_pending= count(array_filter($campagnes_list, fn($c) => $c['statut'
     </div>
 
     <!-- ==============================================================================
+         2bis. KPIS DE SYNTHÈSE (style commun des pages admin)
+         ============================================================================== -->
+    <?php
+    $kpi_evt_attente   = (int)$pdo->query("SELECT COUNT(*) FROM event_requests WHERE statut = 'en_attente'")->fetchColumn();
+    $kpi_evt_approuves = (int)$pdo->query("SELECT COUNT(*) FROM event_requests WHERE statut = 'approuve'")->fetchColumn();
+    $kpi_camp_attente  = (int)$pdo->query("SELECT COUNT(*) FROM cotisation_campagnes WHERE statut = 'en_attente'")->fetchColumn();
+    $kpi_votes_total   = (int)$pdo->query("SELECT COUNT(*) FROM event_votes")->fetchColumn();
+    ?>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: clamp(0.75rem, 2vw, 1rem); margin-bottom: 1.75rem;">
+        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #ca8a04; text-transform: uppercase;">Événements en Attente</span>
+                <span style="background: #fef9c3; color: #ca8a04; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-hourglass-half"></i></span>
+            </div>
+            <div style="font-size: 1.65rem; font-weight: 800; color: #ca8a04;"><?php echo $kpi_evt_attente; ?></div>
+            <small style="color: #ca8a04; font-size: 0.75rem;">Demandes d'événements à traiter</small>
+        </div>
+
+        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #16a34a; text-transform: uppercase;">Événements Validés</span>
+                <span style="background: #dcfce7; color: #16a34a; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-calendar-check"></i></span>
+            </div>
+            <div style="font-size: 1.65rem; font-weight: 800; color: #16a34a;"><?php echo $kpi_evt_approuves; ?></div>
+            <small style="color: #16a34a; font-size: 0.75rem;">Publiés sur la billetterie</small>
+        </div>
+
+        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #ec4899; text-transform: uppercase;">Campagnes en Attente</span>
+                <span style="background: #fce7f3; color: #ec4899; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-hand-holding-heart"></i></span>
+            </div>
+            <div style="font-size: 1.65rem; font-weight: 800; color: #ec4899;"><?php echo $kpi_camp_attente; ?></div>
+            <small style="color: #ec4899; font-size: 0.75rem;">Cotisations à examiner</small>
+        </div>
+
+        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7; text-transform: uppercase;">Votes du Public</span>
+                <span style="background: #e0f2fe; color: #0284c7; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-chart-simple"></i></span>
+            </div>
+            <div style="font-size: 1.65rem; font-weight: 800; color: #0284c7;"><?php echo $kpi_votes_total; ?></div>
+            <small style="color: #0284c7; font-size: 0.75rem;">Suffrages exprimés sur la plateforme</small>
+        </div>
+    </div>
+
+    <!-- ==============================================================================
          3. CONTENU SELON L'ONGLET SÉLECTIONNÉ
          ============================================================================== -->
     <?php if ($tab === 'evenements'): ?>
-        <!-- A. DEMANDES D'ÉVÉNEMENTS -->
-        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- A. DEMANDES D'ÉVÉNEMENTS (tableau style Dashboard Pro) -->
+        <div class="dash-card">
+            <div class="dash-card-head" style="margin-bottom: 1rem;">
+                <h3 class="dash-card-title">
+                    <i class="fa-solid fa-calendar-plus" style="color: #f59e0b;"></i> Demandes d'Événements Reçues
+                </h3>
+            </div>
+
             <?php if (empty($event_requests)): ?>
-                <div class="dash-card" style="text-align: center; padding: 3rem 1rem; color: var(--dash-muted);">
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--dash-muted);">
                     <i class="fa-solid fa-calendar-xmark" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
                     Aucune proposition d'événement enregistrée pour l'instant.
                 </div>
             <?php else: ?>
-                <?php foreach ($event_requests as $r): ?>
-                    <?php
-                    $is_pending = ($r['statut'] === 'en_attente');
-                    $t_data = json_decode($r['ticket_types_data'] ?? '[]', true) ?: [];
-                    $badge_st = [
-                        'en_attente' => ['En attente', '#fef3c7', '#b45309'],
-                        'approuve'   => ['Approuvée', '#dcfce7', '#166534'],
-                        'refuse'     => ['Refusée', '#fee2e2', '#991b1b']
-                    ];
-                    [$st_text, $st_bg, $st_fg] = $badge_st[$r['statut']] ?? ['Inconnu', '#f1f5f9', '#64748b'];
-                    ?>
-                    <div class="dash-card" style="padding: 1.5rem; <?php echo $is_pending ? 'border-left: 4px solid #f59e0b;' : ''; ?>">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
-                            <div>
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.35rem;">
-                                    <span style="background: <?php echo $st_bg; ?>; color: <?php echo $st_fg; ?>; padding: 2px 9px; border-radius: 6px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">
-                                        <?php echo $st_text; ?>
+                <div style="overflow-x: auto;">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>Demande</th>
+                                <th>Organisateur</th>
+                                <th>Date & Lieu</th>
+                                <th>Billetterie</th>
+                                <th>Statut</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($event_requests as $r): ?>
+                            <?php
+                            $is_pending = ($r['statut'] === 'en_attente');
+                            $t_data = json_decode($r['ticket_types_data'] ?? '[]', true) ?: [];
+                            $r_candidats = json_decode($r['candidats_data'] ?? '[]', true) ?: [];
+                            $has_vote = !empty($r['type_vote']) && $r['type_vote'] !== 'aucun' && $r['type_vote'] !== '';
+                            $total_places_demandees = 0;
+                            foreach ($t_data as $tt) { $total_places_demandees += (int)($tt['quantite'] ?? 0); }
+                            $badge_st = [
+                                'en_attente' => ['En attente', '#fef3c7', '#b45309'],
+                                'approuve'   => ['Approuvée', '#dcfce7', '#166534'],
+                                'refuse'     => ['Refusée', '#fee2e2', '#991b1b']
+                            ];
+                            [$st_text, $st_bg, $st_fg] = $badge_st[$r['statut']] ?? ['Inconnu', '#f1f5f9', '#64748b'];
+                            ?>
+                            <tr>
+                                <td style="max-width: 340px;">
+                                    <strong style="color: var(--dash-text); font-size: 0.9rem; display: block;">
+                                        <?php echo htmlspecialchars($r['nom']); ?>
+                                    </strong>
+                                    <span style="color: var(--dash-muted); font-size: 0.76rem;">
+                                        <i class="fa-solid fa-tag" style="color: var(--dash-primary);"></i> <?php echo htmlspecialchars($r['categorie']); ?>
+                                        <?php if ($has_vote): ?> &nbsp;•&nbsp; <?php echo ($r['type_vote'] === 'concours') ? '🏆 Concours' : '🗳️ Réalisation'; ?><?php endif; ?>
+                                        <?php if (!empty($r_candidats)): ?> &nbsp;•&nbsp; <i class="fa-solid fa-users"></i> <?php echo count($r_candidats); ?> candidat(s)<?php endif; ?>
+                                        <br><i class="fa-regular fa-clock"></i> Soumise le <?php echo date('d/m/Y à H:i', strtotime($r['created_at'])); ?>
                                     </span>
-                                    <span style="color: var(--dash-muted); font-size: 0.8rem;">
-                                        <i class="fa-regular fa-clock"></i> Soumise le <?php echo date('d/m/Y à H:i', strtotime($r['created_at'])); ?>
-                                    </span>
-                                </div>
+                                    <details style="margin-top: 6px;">
+                                        <summary style="font-size: 0.74rem; color: #0284c7; font-weight: 700; cursor: pointer;">Voir les détails</summary>
+                                        <div style="margin-top: 8px; padding: 10px 12px; background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.8rem; color: #475569; line-height: 1.5;">
+                                            <?php echo nl2br(htmlspecialchars($r['description'])); ?>
 
-                                <h3 style="margin: 0; color: var(--dash-text); font-size: 1.25rem; font-weight: 800;">
-                                    <?php echo htmlspecialchars($r['nom']); ?>
-                                </h3>
-                                <small style="color: var(--dash-muted); font-size: 0.82rem;">
-                                    Organisé par <strong><?php echo htmlspecialchars($r['promoteur_nom'] ?? 'Promoteur inconnu'); ?></strong> (<?php echo htmlspecialchars($r['promoteur_email']); ?>)
-                                </small>
-                            </div>
-
-                            <div style="text-align: right;">
-                                <span style="font-size: 0.76rem; color: var(--dash-muted); display: block;">Date de l'événement</span>
-                                <strong style="font-size: 0.98rem; color: var(--dash-text);">
-                                    <?php echo date('d/m/Y', strtotime($r['date_evenement'])); ?> à <?php echo date('H\hi', strtotime($r['heure'])); ?>
-                                </strong>
-                                <small style="display: block; color: var(--dash-muted); font-size: 0.78rem;">
-                                    <i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> <?php echo htmlspecialchars($r['lieu']); ?>
-                                </small>
-                            </div>
-                        </div>
-
-                        <!-- Description -->
-                        <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0 0 1rem; background: #f8fafc; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid var(--dash-border);">
-                            <?php echo nl2br(htmlspecialchars($r['description'])); ?>
-                        </p>
-
-                        <!-- Justificatifs légaux & Billetterie proposée -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; border-top: 1px solid var(--dash-border); padding-top: 1rem;">
-                            <div style="display: flex; gap: 1rem; font-size: 0.82rem; flex-wrap: wrap;">
-                                <span><i class="fa-solid fa-tag" style="color: var(--dash-primary);"></i> Catégorie : <strong><?php echo htmlspecialchars($r['categorie']); ?></strong></span>
-                                <span><i class="fa-solid fa-building-user"></i> Type : <strong><?php echo $r['type_personne'] === 'morale' ? 'Personne morale' : 'Personne physique'; ?></strong></span>
-                                <?php if ($r['document_justificatif']): ?>
-                                    <a href="../uploads/event_docs/<?php echo htmlspecialchars($r['document_justificatif']); ?>" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: underline;"><i class="fa-solid fa-file-pdf"></i> Pièce justificative</a>
+                        <!-- Système de vote demandé & candidats proposés (aide à la décision) -->
+                        <?php
+                        $r_candidats = json_decode($r['candidats_data'] ?? '[]', true) ?: [];
+                        $has_vote = !empty($r['type_vote']) && $r['type_vote'] !== 'aucun' && $r['type_vote'] !== '';
+                        ?>
+                        <?php if ($has_vote || !empty($r_candidats)): ?>
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.85rem 1rem; margin: 0 0 1rem;">
+                            <?php if ($has_vote): ?>
+                            <div style="font-size: 0.82rem; color: #1e40af; margin-bottom: <?php echo !empty($r_candidats) ? '0.5rem' : '0'; ?>;">
+                                <i class="fa-solid fa-chart-simple"></i> <strong>Système de vote demandé :</strong>
+                                <?php echo ($r['type_vote'] === 'concours') ? '🏆 Concours (avec candidats)' : '🗳️ Réalisation'; ?>
+                                <?php if ((float)($r['prix_vote'] ?? 0) > 0): ?>
+                                    — <strong><?php echo number_format((float)$r['prix_vote'], 0, ',', ' '); ?> F</strong> / vote (payant)
+                                <?php else: ?>
+                                    — Gratuit
                                 <?php endif; ?>
-                                <?php if ($r['document_autorisation']): ?>
-                                    <a href="../uploads/event_docs/<?php echo htmlspecialchars($r['document_autorisation']); ?>" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: underline;"><i class="fa-solid fa-file-shield"></i> Autorisation légale</a>
+                                <?php if (!empty($r['vote_question'])): ?>
+                                    <div style="margin-top: 0.25rem; font-style: italic;">« <?php echo htmlspecialchars($r['vote_question']); ?> »</div>
                                 <?php endif; ?>
                             </div>
-
-                            <!-- Actions de validation si en attente -->
-                            <?php if ($is_pending): ?>
-                                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <form method="POST" style="display: inline-flex; align-items: center; gap: 0.5rem; margin: 0;">
-                                        <input type="hidden" name="action" value="approuver_evenement">
-                                        <input type="hidden" name="request_id" value="<?php echo $r['id']; ?>">
-                                        
-                                        <div style="display: inline-flex; align-items: center; gap: 4px; background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; padding: 2px 8px;">
-                                            <span style="font-size: 0.74rem; color: var(--dash-muted); font-weight: 700;">Com.</span>
-                                            <input type="number" name="commission_rate" value="5.0" min="0" max="30" step="0.5" style="width: 45px; border: 0; background: transparent; font-weight: 800; font-size: 0.8rem; text-align: center; outline: none;">
-                                            <span style="font-size: 0.74rem; color: var(--dash-muted); font-weight: 700;">%</span>
-                                        </div>
-
-                                        <button type="submit" class="dash-btn-action" style="background: #16a34a; color: #ffffff; padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 800;">
-                                            <i class="fa-solid fa-check"></i> Approuver
-                                        </button>
-                                    </form>
-
-                                    <form method="POST" onsubmit="return confirm('Confirmez-vous le refus de cette proposition ?');" style="margin: 0;">
-                                        <input type="hidden" name="action" value="refuser_evenement">
-                                        <input type="hidden" name="request_id" value="<?php echo $r['id']; ?>">
-                                        <input type="hidden" name="commentaire_admin" value="Dossier incomplet ou non conforme">
-                                        <button type="submit" class="dash-btn-action" style="background: #fee2e2; color: #ef4444; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 800;">
-                                            <i class="fa-solid fa-xmark"></i> Refuser
-                                        </button>
-                                    </form>
-                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($r_candidats)): ?>
+                            <div style="font-size: 0.8rem; color: #1e3a8a;">
+                                <strong><i class="fa-solid fa-users"></i> <?php echo count($r_candidats); ?> candidat(s) proposé(s) :</strong>
+                                <ul style="margin: 0.35rem 0 0; padding-left: 1.2rem;">
+                                    <?php foreach ($r_candidats as $rc): ?>
+                                        <li><?php echo htmlspecialchars($rc['nom'] ?? 'Candidat'); ?><?php echo !empty($rc['description']) ? ' — ' . htmlspecialchars($rc['description']) : ''; ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
                             <?php endif; ?>
                         </div>
-                    </div>
-                <?php endforeach; ?>
+                        <?php endif; ?>
+
+                        <!-- Billetterie proposée -->
+                        <?php if (!empty($t_data)): ?>
+                        <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; padding: 0.7rem 1rem; margin: 0 0 1rem; font-size: 0.8rem; color: #115e59;">
+                            <strong><i class="fa-solid fa-ticket"></i> Billetterie proposée :</strong>
+                            <?php foreach ($t_data as $i => $tt): ?>
+                                <span style="display: inline-block; background: #ffffff; border: 1px solid #ccfbf1; border-radius: 6px; padding: 2px 8px; margin: 3px 4px 0 0;">
+                                    <?php echo htmlspecialchars($tt['nom'] ?? 'Tarif'); ?> — <?php echo number_format((float)($tt['prix'] ?? 0), 0, ',', ' '); ?> F × <?php echo (int)($tt['quantite'] ?? 0); ?> places
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Justificatifs & type de demandeur (dans les détails) -->
+                        <div style="display: flex; gap: 1rem; font-size: 0.82rem; flex-wrap: wrap; margin-top: 8px;">
+                            <span><i class="fa-solid fa-building-user"></i> Type : <strong><?php echo $r['type_personne'] === 'morale' ? 'Personne morale' : 'Personne physique'; ?></strong></span>
+                            <?php if ($r['document_justificatif']): ?>
+                                <a href="../uploads/event_docs/<?php echo htmlspecialchars($r['document_justificatif']); ?>" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: underline;"><i class="fa-solid fa-file-pdf"></i> Pièce justificative</a>
+                            <?php endif; ?>
+                            <?php if ($r['document_autorisation']): ?>
+                                <a href="../uploads/event_docs/<?php echo htmlspecialchars($r['document_autorisation']); ?>" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: underline;"><i class="fa-solid fa-file-shield"></i> Autorisation légale</a>
+                            <?php endif; ?>
+                        </div>
+                        </div>
+                                    </details>
+                                </td>
+                                <td>
+                                    <span style="font-size: 0.84rem; font-weight: 700; color: var(--dash-text); display: block;">
+                                        <?php echo htmlspecialchars($r['promoteur_nom'] ?? 'Promoteur inconnu'); ?>
+                                    </span>
+                                    <small style="color: var(--dash-muted); font-size: 0.76rem;">
+                                        <?php echo htmlspecialchars($r['promoteur_email']); ?>
+                                    </small>
+                                </td>
+                                <td>
+                                    <span style="font-size: 0.84rem; color: var(--dash-text); display: block;">
+                                        <i class="fa-regular fa-calendar"></i> <?php echo date('d/m/Y', strtotime($r['date_evenement'])); ?>
+                                    </span>
+                                    <small style="color: var(--dash-muted); font-size: 0.76rem;">
+                                        <?php echo date('H\hi', strtotime($r['heure'])); ?> — <i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> <?php echo htmlspecialchars(mb_strimwidth($r['lieu'] ?? '', 0, 20, '...')); ?>
+                                    </small>
+                                </td>
+                                <td>
+                                    <?php if (!empty($t_data)): ?>
+                                        <strong style="font-size: 0.84rem; color: var(--dash-text);"><?php echo count($t_data); ?> tarif(s)</strong>
+                                        <small style="color: var(--dash-muted); font-size: 0.76rem; display: block;"><?php echo $total_places_demandees; ?> places</small>
+                                    <?php else: ?>
+                                        <span style="color: var(--dash-muted); font-size: 0.8rem;">Sans billetterie</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <span style="background: <?php echo $st_bg; ?>; color: <?php echo $st_fg; ?>; padding: 3px 9px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">
+                                        <?php echo $st_text; ?>
+                                    </span>
+                                    <?php if (!$is_pending && !empty($r['reviewed_at'])): ?>
+                                        <small style="color: var(--dash-muted); font-size: 0.72rem; display: block; margin-top: 3px;">Le <?php echo date('d/m/Y', strtotime($r['reviewed_at'])); ?></small>
+                                    <?php endif; ?>
+                                    <?php if ($r['statut'] === 'refuse' && !empty($r['commentaire_admin'])): ?>
+                                        <small style="color: #b91c1c; font-size: 0.72rem; display: block; margin-top: 3px;" title="<?php echo htmlspecialchars($r['commentaire_admin']); ?>">
+                                            <i class="fa-solid fa-comment-dots"></i> <?php echo htmlspecialchars(mb_strimwidth($r['commentaire_admin'], 0, 26, '...')); ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="text-align: right;">
+                                    <?php if ($is_pending): ?>
+                                        <div style="display: inline-flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+
+                                            <form method="POST" style="display: inline-flex; align-items: center; gap: 0.5rem; margin: 0;">
+                                                <input type="hidden" name="action" value="approuver_evenement">
+                                                <input type="hidden" name="request_id" value="<?php echo $r['id']; ?>">
+                                                <div style="display: inline-flex; align-items: center; gap: 4px; background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; padding: 2px 8px;">
+                                                    <span style="font-size: 0.74rem; color: var(--dash-muted); font-weight: 700;">Com.</span>
+                                                    <input type="number" name="commission_rate" value="5.0" min="0" max="30" step="0.5" style="width: 45px; border: 0; background: transparent; font-weight: 800; font-size: 0.8rem; text-align: center; outline: none;">
+                                                    <span style="font-size: 0.74rem; color: var(--dash-muted); font-weight: 700;">%</span>
+                                                </div>
+                                                <button type="submit" class="dash-btn-action" style="background: #16a34a; color: #ffffff; padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 800;">
+                                                    <i class="fa-solid fa-check"></i> Approuver
+                                                </button>
+                                            </form>
+                                            <form method="POST" onsubmit="var m = prompt('Motif du refus (visible par le promoteur) :', 'Dossier incomplet ou non conforme'); if (m === null || m.trim() === '') return false; this.querySelector('[name=commentaire_admin]').value = m.trim(); return true;" style="margin: 0;">
+                                                <input type="hidden" name="action" value="refuser_evenement">
+                                                <input type="hidden" name="request_id" value="<?php echo $r['id']; ?>">
+                                                <input type="hidden" name="commentaire_admin" value="Dossier incomplet ou non conforme">
+                                                <button type="submit" class="dash-btn-action" style="background: #fee2e2; color: #ef4444; padding: 0.35rem 0.8rem; font-size: 0.78rem; font-weight: 800;">
+                                                    <i class="fa-solid fa-xmark"></i> Refuser
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php else: ?>
+                                        <a href="../client/accueil.php" target="_blank" class="dash-btn-action" style="padding: 0.35rem 0.6rem; font-size: 0.74rem;" title="Voir la vitrine publique">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
         </div>
 
     <?php elseif ($tab === 'cotisations'): ?>
-        <!-- B. CAMPAGNES DE COTISATION -->
-        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <!-- B. CAMPAGNES DE COTISATION (tableau style Dashboard Pro) -->
+        <div class="dash-card">
+            <div class="dash-card-head" style="margin-bottom: 1rem;">
+                <h3 class="dash-card-title">
+                    <i class="fa-solid fa-hand-holding-heart" style="color: #ec4899;"></i> Campagnes de Cotisation Proposées
+                </h3>
+            </div>
+
             <?php if (empty($campagnes_list)): ?>
-                <div class="dash-card" style="text-align: center; padding: 3rem 1rem; color: var(--dash-muted);">
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--dash-muted);">
                     <i class="fa-solid fa-hand-holding-heart" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
                     Aucune campagne de cotisation proposée pour l'instant.
                 </div>
             <?php else: ?>
-                <?php foreach ($campagnes_list as $c): ?>
-                    <?php
-                    $is_pending = ($c['statut'] === 'en_attente');
-                    $badge_st = [
-                        'en_attente' => ['En attente', '#fef3c7', '#b45309'],
-                        'active'     => ['Active', '#dcfce7', '#166534'],
-                        'terminee'   => ['Terminée', '#f1f5f9', '#475569'],
-                        'refuse'     => ['Refusée', '#fee2e2', '#991b1b']
-                    ];
-                    [$st_text, $st_bg, $st_fg] = $badge_st[$c['statut']] ?? ['Inconnu', '#f1f5f9', '#64748b'];
-                    ?>
-                    <div class="dash-card" style="padding: 1.5rem; <?php echo $is_pending ? 'border-left: 4px solid #ec4899;' : ''; ?>">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
-                            <div>
-                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.35rem;">
-                                    <span style="background: <?php echo $st_bg; ?>; color: <?php echo $st_fg; ?>; padding: 2px 9px; border-radius: 6px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase;">
+                <div style="overflow-x: auto;">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>Campagne</th>
+                                <th>Organisateur</th>
+                                <th>Objectif</th>
+                                <th>Statut</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($campagnes_list as $c): ?>
+                            <?php
+                            $is_pending = ($c['statut'] === 'en_attente');
+                            $badge_st = [
+                                'en_attente' => ['En attente', '#fef3c7', '#b45309'],
+                                'active'     => ['Active', '#dcfce7', '#166534'],
+                                'terminee'   => ['Terminée', '#f1f5f9', '#475569'],
+                                'refuse'     => ['Refusée', '#fee2e2', '#991b1b']
+                            ];
+                            [$st_text, $st_bg, $st_fg] = $badge_st[$c['statut']] ?? ['Inconnu', '#f1f5f9', '#64748b'];
+                            ?>
+                            <tr>
+                                <td style="max-width: 340px;">
+                                    <strong style="color: var(--dash-text); font-size: 0.9rem; display: block;">
+                                        <?php echo htmlspecialchars($c['titre']); ?>
+                                    </strong>
+                                    <?php if (!empty($c['date_limite'])): ?>
+                                        <small style="color: var(--dash-muted); font-size: 0.76rem;">
+                                            <i class="fa-regular fa-calendar"></i> Échéance : <?php echo date('d/m/Y', strtotime($c['date_limite'])); ?>
+                                        </small>
+                                    <?php endif; ?>
+                                    <details style="margin-top: 6px;">
+                                        <summary style="font-size: 0.74rem; color: #0284c7; font-weight: 700; cursor: pointer;">Voir la description</summary>
+                                        <div style="margin-top: 8px; padding: 10px 12px; background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.8rem; color: #475569; line-height: 1.5;">
+                                            <?php echo nl2br(htmlspecialchars($c['description'] ?? '')); ?>
+                                        </div>
+                                    </details>
+                                </td>
+                                <td>
+                                    <span style="font-size: 0.84rem; font-weight: 700; color: var(--dash-text);">
+                                        <?php echo htmlspecialchars($c['promoteur_nom'] ?? 'Promoteur'); ?>
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <strong style="font-size: 0.9rem; color: #059669;">
+                                        <?php echo number_format((float)$c['montant_objectif'], 0, ',', ' '); ?> F
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span style="background: <?php echo $st_bg; ?>; color: <?php echo $st_fg; ?>; padding: 3px 9px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">
                                         <?php echo $st_text; ?>
                                     </span>
-                                    <span style="color: var(--dash-muted); font-size: 0.8rem;">
-                                        Initié par <strong><?php echo htmlspecialchars($c['promoteur_nom'] ?? 'Promoteur'); ?></strong>
-                                    </span>
-                                </div>
-
-                                <h3 style="margin: 0; color: var(--dash-text); font-size: 1.25rem; font-weight: 800;">
-                                    <?php echo htmlspecialchars($c['titre']); ?>
-                                </h3>
-                            </div>
-
-                            <div style="text-align: right;">
-                                <span style="font-size: 0.76rem; color: var(--dash-muted); display: block;">Objectif de collecte</span>
-                                <strong style="font-size: 1.15rem; color: #059669; font-weight: 800;">
-                                    <?php echo number_format((float)$c['montant_objectif'], 0, ',', ' '); ?> FCFA
-                                </strong>
-                            </div>
-                        </div>
-
-                        <p style="color: #475569; font-size: 0.88rem; line-height: 1.5; margin: 0 0 1rem; background: #f8fafc; padding: 0.85rem 1rem; border-radius: 8px; border: 1px solid var(--dash-border);">
-                            <?php echo nl2br(htmlspecialchars($c['description'] ?? '')); ?>
-                        </p>
-
-                        <?php if ($is_pending): ?>
-                            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--dash-border); padding-top: 1rem;">
-                                <form method="POST" style="margin: 0;">
-                                    <input type="hidden" name="action" value="approuver_campagne">
-                                    <input type="hidden" name="campagne_id" value="<?php echo $c['id']; ?>">
-                                    <button type="submit" class="dash-btn-action" style="background: #16a34a; color: #ffffff; padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 800;">
-                                        <i class="fa-solid fa-check"></i> Valider et Mettre en Ligne
-                                    </button>
-                                </form>
-
-                                <form method="POST" onsubmit="return confirm('Refuser cette campagne de cotisation ?');" style="margin: 0;">
-                                    <input type="hidden" name="action" value="refuser_campagne">
-                                    <input type="hidden" name="campagne_id" value="<?php echo $c['id']; ?>">
-                                    <input type="hidden" name="commentaire_admin" value="Campagne non validée">
-                                    <button type="submit" class="dash-btn-action" style="background: #fee2e2; color: #ef4444; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 800;">
-                                        <i class="fa-solid fa-xmark"></i> Refuser
-                                    </button>
-                                </form>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                <?php endforeach; ?>
+                                    <?php if ($c['statut'] === 'refuse' && !empty($c['commentaire_admin'])): ?>
+                                        <small style="color: #b91c1c; font-size: 0.72rem; display: block; margin-top: 3px;" title="<?php echo htmlspecialchars($c['commentaire_admin']); ?>">
+                                            <i class="fa-solid fa-comment-dots"></i> <?php echo htmlspecialchars(mb_strimwidth($c['commentaire_admin'], 0, 26, '...')); ?>
+                                        </small>
+                                    <?php endif; ?>
+                                </td>
+                                <td style="text-align: right;">
+                                    <?php if ($is_pending): ?>
+                                        <div style="display: inline-flex; gap: 5px;">
+                                            <form method="POST" style="margin: 0;">
+                                                <input type="hidden" name="action" value="approuver_campagne">
+                                                <input type="hidden" name="campagne_id" value="<?php echo $c['id']; ?>">
+                                                <button type="submit" class="dash-btn-action" style="background: #16a34a; color: #ffffff; padding: 0.35rem 0.8rem; font-size: 0.78rem; font-weight: 800;">
+                                                    <i class="fa-solid fa-check"></i> Valider
+                                                </button>
+                                            </form>
+                                            <form method="POST" onsubmit="var m = prompt('Motif du refus (visible par le promoteur) :', 'Campagne non conforme aux règles de la plateforme'); if (m === null || m.trim() === '') return false; this.querySelector('[name=commentaire_admin]').value = m.trim(); return true;" style="margin: 0;">
+                                                <input type="hidden" name="action" value="refuser_campagne">
+                                                <input type="hidden" name="campagne_id" value="<?php echo $c['id']; ?>">
+                                                <input type="hidden" name="commentaire_admin" value="Campagne non validée">
+                                                <button type="submit" class="dash-btn-action" style="background: #fee2e2; color: #ef4444; padding: 0.35rem 0.8rem; font-size: 0.78rem; font-weight: 800;">
+                                                    <i class="fa-solid fa-xmark"></i> Refuser
+                                                </button>
+                                            </form>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
         </div>
 

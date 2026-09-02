@@ -63,7 +63,7 @@ if (empty($tickets)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>e-Ticket Officiel - Ticket Flow</title>
+    <title>e-Ticket Officiel - Eventia</title>
     <!-- Google Fonts & FontAwesome -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;600;700&family=Space+Mono:wght@700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -299,6 +299,17 @@ if (empty($tickets)) {
             .ticket-stub::before { top: -12px; left: 50%; transform: translateX(-50%); }
             .ticket-stub::after { display: none; }
         }
+
+        @media (max-width: 420px) {
+            .ticket-details-grid {
+                grid-template-columns: 1fr;
+            }
+            .ticket-buyer-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.35rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -322,7 +333,7 @@ if (empty($tickets)) {
                 <div class="ticket-main">
                     <div class="ticket-header">
                         <div class="ticket-brand">
-                            <i class="fa-solid fa-ticket"></i> TICKET FLOW
+                            <i class="fa-solid fa-ticket"></i> EVENTIA
                         </div>
                         <div class="ticket-badge">
                             <i class="fa-solid fa-circle-check"></i> <?php echo strtoupper($t['statut']); ?>

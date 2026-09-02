@@ -420,7 +420,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
     <!-- ==============================================================================
          3. SECTION GRAPHIQUES ANALYTIQUES (2 COLONNES ÉQUILIBRÉES)
          ============================================================================== -->
-    <div style="display: grid; grid-template-columns: 1.6fr minmax(0, 1fr); gap: 1.25rem; margin-bottom: 1.75rem; width: 100%;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: clamp(0.75rem, 2vw, 1.25rem); margin-bottom: 1.75rem; width: 100%;">
         <!-- 1. Tendance 14 jours (Courbe principale) -->
         <div class="dash-card">
             <div class="dash-card-head">
@@ -503,7 +503,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
         </div>
 
         <div class="dash-table-wrapper">
-            <table class="dash-pro-table">
+            <table class="dash-pro-table mv-stack">
                 <thead>
                     <tr>
                         <th>Événement</th>
@@ -525,23 +525,23 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                             $bar_color = ($pct >= 85) ? '#ef4444' : (($pct >= 50) ? '#f59e0b' : '#10b981');
                             ?>
                             <tr>
-                                <td>
+                                <td data-label="Événement">
                                     <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>" style="color: var(--dash-text); text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Filtrer les ventes de cet événement">
                                         <span><?php echo htmlspecialchars($stk['event_nom']); ?></span>
                                         <i class="fa-solid fa-filter" style="font-size: 0.68rem; color: var(--dash-muted);"></i>
                                     </a>
                                 </td>
-                                <td>
+                                <td data-label="Catégorie">
                                     <a href="mes-ventes.php?type=<?php echo urlencode($stk['category_name']); ?>" style="text-decoration: none;" title="Filtrer toutes les ventes de catégorie <?php echo htmlspecialchars($stk['category_name']); ?>">
                                         <span style="background: #eeedfd; color: #5b50e6; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; display: inline-block; transition: background 0.15s;" onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#eeedfd'">
                                             <i class="fa-solid fa-tag" style="font-size: 0.7rem; margin-right: 4px;"></i><?php echo htmlspecialchars($stk['category_name']); ?>
                                         </span>
                                     </a>
                                 </td>
-                                <td>
+                                <td data-label="Prix Unitaire">
                                     <strong style="color: var(--dash-text);"><?php echo number_format($stk['prix'], 0, ',', ' '); ?> F</strong>
                                 </td>
-                                <td>
+                                <td data-label="Billets Vendus">
                                     <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs" style="text-decoration: none; color: #0ea5e9;" title="Voir les acheteurs de cette catégorie">
                                         <strong style="font-size: 0.92rem; display: inline-flex; align-items: center; gap: 4px;">
                                             <i class="fa-solid fa-circle-check"></i> <?php echo number_format($v, 0, ',', ' '); ?>
@@ -549,7 +549,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                         </strong>
                                     </a>
                                 </td>
-                                <td>
+                                <td data-label="Billets Restants">
                                     <?php if ($r === 0 && $tot > 0): ?>
                                         <span style="background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; border-radius: 6px; padding: 3px 8px; font-weight: 800; font-size: 0.78rem;">
                                             <i class="fa-solid fa-ban"></i> Épuisé
@@ -560,13 +560,13 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                         </span>
                                     <?php endif; ?>
                                 </td>
-                                <td>
-                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 8px;" title="Cliquez pour filtrer cette formule">
-                                        <span class="dash-gauge-track" style="width: 100px;">
+                                <td data-label="Jauge & Quota Global">
+                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-wrap: nowrap;" title="Cliquez pour filtrer cette formule">
+                                        <span class="dash-gauge-track" style="width: clamp(60px, 8vw, 85px); flex-shrink: 0;">
                                             <span class="dash-gauge-progress" style="width: <?php echo $pct; ?>%; background: <?php echo $bar_color; ?>; display: block;"></span>
                                         </span>
-                                        <strong style="font-size: 0.78rem; color: var(--dash-text);"><?php echo $pct; ?>%</strong>
-                                        <small style="color: var(--dash-muted); font-size: 0.74rem;">(sur <?php echo $tot; ?>)</small>
+                                        <strong style="font-size: 0.78rem; color: var(--dash-text); white-space: nowrap;"><?php echo $pct; ?>%</strong>
+                                        <small style="color: var(--dash-muted); font-size: 0.74rem; white-space: nowrap;">(sur <?php echo $tot; ?>)</small>
                                     </a>
                                 </td>
                             </tr>
@@ -607,7 +607,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
 
         <!-- Tableau des billets vendus -->
         <div class="dash-table-wrapper">
-            <table class="dash-pro-table">
+            <table class="dash-pro-table mv-stack">
                 <thead>
                     <tr>
                         <th>Code Unique</th>
@@ -623,7 +623,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                     <?php if (count($sales) > 0): ?>
                         <?php foreach ($sales as $s): ?>
                             <tr>
-                                <td>
+                                <td data-label="Code Unique">
                                     <div style="display: flex; align-items: center; gap: 6px;">
                                         <strong style="font-family: monospace; font-size: 0.88rem; color: var(--dash-primary); background: #f5f3ff; border: 1px solid #ddd6fe; padding: 3px 7px; border-radius: 6px; letter-spacing: 0.5px;">
                                             <?php echo htmlspecialchars($s['code_unique']); ?>
@@ -633,7 +633,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                         </button>
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="Événement">
                                     <a href="mes-ventes.php?event_id=<?php echo $s['event_id']; ?>" style="color: var(--dash-text); text-decoration: none; font-weight: 700; display: block;" title="Filtrer cet événement">
                                         <?php echo htmlspecialchars($s['event_name']); ?>
                                     </a>
@@ -643,17 +643,17 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                         </small>
                                     <?php endif; ?>
                                 </td>
-                                <td>
+                                <td data-label="Catégorie">
                                     <a href="mes-ventes.php?type=<?php echo urlencode($s['type_ticket']); ?>" style="text-decoration: none;" title="Filtrer par catégorie <?php echo htmlspecialchars($s['type_ticket']); ?>">
                                         <span style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 2px 8px; border-radius: 5px; font-weight: 700; font-size: 0.78rem; display: inline-block;">
                                             <?php echo htmlspecialchars($s['type_ticket']); ?>
                                         </span>
                                     </a>
                                 </td>
-                                <td>
+                                <td data-label="Prix Payé">
                                     <strong style="color: var(--dash-primary); font-size: 0.92rem;"><?php echo number_format($s['prix'], 0, ',', ' '); ?> F</strong>
                                 </td>
-                                <td>
+                                <td data-label="Acheteur & Contact">
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <div style="width: 28px; height: 28px; border-radius: 50%; background: #eeedfd; color: var(--dash-primary); display: grid; place-items: center; font-size: 0.72rem; font-weight: 800; flex-shrink: 0;">
                                             <?php echo strtoupper(mb_substr($s['buyer_name'], 0, 1)); ?>
@@ -673,10 +673,10 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                         </div>
                                     </div>
                                 </td>
-                                <td style="white-space: nowrap; font-size: 0.8rem; color: var(--dash-muted);">
+                                <td data-label="Date d'Achat" style="white-space: nowrap; font-size: 0.8rem; color: var(--dash-muted);">
                                     <?php echo date('d/m/Y H:i', strtotime($s['date_achat'])); ?>
                                 </td>
-                                <td>
+                                <td data-label="Statut aux Portes">
                                     <?php if ($s['statut'] === 'vendu'): ?>
                                         <a href="mes-ventes.php?statut=vendu#table-acheteurs" style="text-decoration: none;" title="Filtrer tous les billets valides">
                                             <span style="display: inline-flex; align-items: center; gap: 5px; background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">

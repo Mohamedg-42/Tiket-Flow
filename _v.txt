@@ -1,0 +1,30 @@
+13: // Onglet actif de la page (Événement | Cotisation | Vote) — navigation à bulles
+15: if (!in_array($onglet, ['evenement', 'cotisation', 'vote'], true)) {
+27: $prix_vote     = (float)($_POST['prix_vote'] ?? 0);
+117: user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote,
+132: $prix_vote,
+194: // ===== Traitement : Définir le prix du vote payant (onglet Vote) =====
+195: if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'definir_prix_vote') {
+197: $prix_v    = filter_input(INPUT_POST, 'prix_vote', FILTER_VALIDATE_FLOAT);
+201: $stmt_v = $pdo->prepare("UPDATE events SET prix_vote = ? WHERE id = ? AND user_id = ?");
+205: ? "Le vote pour cet événement coûte désormais " . number_format($prix_v, 0, ',', ' ') . " FCFA par v
+206: : "Le vote pour cet événement est désormais gratuit.";
+213: $message = "Veuillez sélectionner un événement concerné par ce prix de vote.";
+218: // Événements actifs du promoteur (pour l'onglet Vote)
+219: $evts_vote = [];
+221: $stmt_ev = $pdo->prepare("SELECT id, nom, prix_vote FROM events WHERE user_id = ? AND statut = 'acti
+223: $evts_vote = $stmt_ev->fetchAll();
+225: $evts_vote = [];
+386: /* Bulles de navigation de la page Proposer (Événement | Cotisation | Vote) */
+450: <!-- Bulles de navigation : Événement | Cotisation | Vote (comme les catégories de l'accueil) -->
+458: <a href="demande-evenement.php?onglet=vote" class="onglet-chip <?php echo $onglet === 'vote' ? 'acti
+459: <i class="fa-solid fa-vote-yea"></i> Vote Payant
+603: <label for="prix_vote"><i class="fa-solid fa-vote-yea"></i> Prix du vote (FCFA) — optionnel</label>
+604: <input type="number" id="prix_vote" name="prix_vote" min="0" step="500" placeholder="0 = vote gratui
+605: <small style="color: var(--muted); font-size: 0.78rem;">Le client paiera ce montant par Mobile Money
+746: <!-- ============ SECTION : VOTE PAYANT ============ -->
+747: <div class="onglet-section <?php echo $onglet === 'vote' ? 'active' : ''; ?>" id="section-vote">
+750: <i class="fa-solid fa-vote-yea" style="color: var(--primary);"></i> Configurer le vote payant
+753: Fixez un montant que chaque client devra payer par Mobile Money avant que son vote soit compté. Lais
+756: <?php if (empty($evts_vote)): ?>
+763: <input type="hidden" name="action" value="definir_prix_vote">

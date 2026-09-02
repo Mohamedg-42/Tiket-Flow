@@ -9,7 +9,7 @@ require_once '../includes/auth.php';
 
 requireLogin('../connexion.php');
 
-$page_title = "Mes Tickets - Ticket Flow";
+$page_title = "Mes Tickets - Eventia";
 $body_class = "client-page tickets-page";
 include 'header.php';
 
@@ -75,7 +75,7 @@ $stmt->execute(array_merge([$user_id], $params_filtres));
 $tickets = $stmt->fetchAll();
 ?>
 
-<main class="client-main" style="max-width: 1000px; margin: 0 auto; padding: 2rem 1rem;">
+<main class="client-main" style="max-width: 1000px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2rem) clamp(0.75rem, 2vw, 1.5rem);">
     <div class="page-header" style="margin-bottom: 2rem;">
         <div class="page-heading">
             <span class="page-kicker">Votre Espace Billetterie</span>
@@ -110,28 +110,89 @@ $tickets = $stmt->fetchAll();
                 <?php foreach ($types_billets as $tb): ?>
                     <option value="<?php echo htmlspecialchars($tb); ?>" <?php echo ($filtre_type === $tb) ? 'selected' : ''; ?>>
                         <?php echo htmlspecialchars($tb); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+<main class="client-main tickets-container" style="max-width: 1200px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2.5rem) clamp(0.75rem, 2vw, 1.5rem);">
 
-            <select name="statut" onchange="this.form.submit()"
-                    style="padding: 0.5rem 0.85rem; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 0.88rem; background: #ffffff; color: var(--ink); cursor: pointer;">
-                <option value="">Tous les statuts</option>
-                <option value="vendu" <?php echo ($filtre_statut === 'vendu') ? 'selected' : ''; ?>>Valide</option>
-                <option value="utilise" <?php echo ($filtre_statut === 'utilise') ? 'selected' : ''; ?>>Utilisé</option>
-                <option value="annule" <?php echo ($filtre_statut === 'annule') ? 'selected' : ''; ?>>Annulé</option>
-            </select>
+    <div class="tickets-header-banner" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: #ffffff; padding: clamp(1.5rem, 3vw, 2.25rem); border-radius: 20px; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 0.35rem;">Espace Portefeuille</span>
+            <h1 style="margin: 0; font-size: clamp(1.4rem, 3vw, 1.85rem); font-weight: 800; display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i> Mes Billets & Accès
+            </h1>
+            <p style="margin: 0.4rem 0 0; color: #94a3b8; font-size: 0.92rem;">
+                Retrouvez tous vos billets électroniques sécurisés pour le contrôle d'accès le jour de l'événement.
+            </p>
+        </div>
+        <div style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 0.85rem 1.5rem; text-align: center;">
+            <div style="font-size: 1.6rem; font-weight: 900; color: #38bdf8;"><?php echo count($tickets); ?></div>
+            <div style="font-size: 0.75rem; color: #cbd5e1; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Billet(s) Total</div>
+        </div>
+    </div>
 
-            <?php if ($filtre_event > 0 || $filtre_type !== '' || $filtre_statut !== ''): ?>
-                <a href="mes-tickets.php" style="font-size: 0.82rem; font-weight: 700; color: var(--danger); text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;">
-                    <i class="fa-solid fa-xmark"></i> Réinitialiser
-                </a>
-            <?php endif; ?>
+    <!-- Barre d'actions & Filtres -->
+    <div style="background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 1.25rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+        <form method="GET" action="mes-tickets.php" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 2; min-width: 200px;">
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.35rem; text-transform: uppercase;">Événement</label>
+                <select name="event" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--line); border-radius: 8px; font-size: 0.88rem; background: var(--bg); color: var(--text);">
+                    <option value="">Tous les événements</option>
+                    <?php foreach ($events_pour_filtre as $ev): ?>
+                        <option value="<?php echo $ev['id']; ?>" <?php echo ($filtre_event === (int)$ev['id']) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($ev['nom']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.35rem; text-transform: uppercase;">Catégorie</label>
+                <select name="type" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--line); border-radius: 8px; font-size: 0.88rem; background: var(--bg); color: var(--text);">
+                    <option value="">Toutes catégories</option>
+                    <?php foreach ($types_pour_filtre as $tp): ?>
+                        <option value="<?php echo htmlspecialchars($tp); ?>" <?php echo ($filtre_type === $tp) ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($tp); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div style="flex: 1; min-width: 150px;">
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 0.35rem; text-transform: uppercase;">Statut</label>
+                <select name="statut" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--line); border-radius: 8px; font-size: 0.88rem; background: var(--bg); color: var(--text);">
+                    <option value="">Tous statuts</option>
+                    <option value="vendu" <?php echo ($filtre_statut === 'vendu') ? 'selected' : ''; ?>>🟢 Valide</option>
+                    <option value="utilise" <?php echo ($filtre_statut === 'utilise') ? 'selected' : ''; ?>>⚪ Déjà Utilisé</option>
+                    <option value="annule" <?php echo ($filtre_statut === 'annule') ? 'selected' : ''; ?>>🔴 Annulé</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn-primary" style="padding: 0.65rem 1.25rem; font-size: 0.88rem; border-radius: 8px; font-weight: 700;">
+                    <i class="fa-solid fa-filter"></i> Filtrer
+                </button>
+                <?php if ($filtre_event > 0 || !empty($filtre_type) || !empty($filtre_statut)): ?>
+                    <a href="mes-tickets.php" class="btn-secondary" style="padding: 0.65rem 1rem; font-size: 0.88rem; border-radius: 8px; text-decoration: none; color: var(--muted); border: 1px solid var(--line); display: inline-flex; align-items: center;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
         </form>
-    <?php endif; ?>
+    </div>
 
-    <?php if (count($tickets) > 0): ?>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+    <?php if (empty($tickets)): ?>
+        <div style="text-align: center; padding: 4rem 1rem; background: var(--paper); border: 1px dashed var(--line); border-radius: 20px;">
+            <div style="width: 70px; height: 70px; background: #f1f5f9; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 1.25rem; font-size: 1.8rem; color: var(--muted);">
+                <i class="fa-solid fa-ticket-simple"></i>
+            </div>
+            <h3 style="font-size: 1.25rem; color: var(--navy); margin-bottom: 0.5rem;">Aucun billet trouvé</h3>
+            <p style="color: var(--muted); font-size: 0.92rem; max-width: 420px; margin: 0 auto 1.5rem;">
+                <?php echo ($filtre_event > 0 || !empty($filtre_type) || !empty($filtre_statut)) ? 'Aucun billet ne correspond à vos filtres de recherche.' : 'Vous n\'avez pas encore réservé de billet pour les événements à venir.'; ?>
+            </p>
+            <a href="accueil.php" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 700;">
+                <i class="fa-solid fa-compass"></i> Découvrir les Événements
+            </a>
+        </div>
+    <?php else: ?>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
             <?php foreach ($tickets as $t): ?>
                 <?php
                 $is_used = ($t['statut'] === 'utilise');
@@ -139,7 +200,7 @@ $tickets = $stmt->fetchAll();
 
                 // Lien de partage WhatsApp du billet
                 $ticket_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/') . '/telecharger-ticket.php?code=' . urlencode($t['code_unique']);
-                $wa_text = "🎟️ Mon billet Ticket Flow\nÉvénement : " . $t['event_name']
+                $wa_text = "🎟️ Mon billet Eventia\nÉvénement : " . $t['event_name']
                     . "\nType : " . $t['type_ticket']
                     . (!empty($t['place_numero']) ? "\nPlace : " . $t['place_numero'] : '')
                     . "\nCode : " . $t['code_unique']

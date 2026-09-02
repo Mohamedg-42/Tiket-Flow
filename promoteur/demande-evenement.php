@@ -536,6 +536,17 @@ try {
         background: #ffffff;
     }
 
+    @media (max-width: 700px) {
+        .dash-ticket-row {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    @media (max-width: 420px) {
+        .dash-ticket-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .dash-summary-strip {
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         color: #ffffff;

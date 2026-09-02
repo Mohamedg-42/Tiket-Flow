@@ -1,0 +1,100 @@
+﻿diff --git a/client/accueil.php b/client/accueil.php
+index 8a772e7..b7a70dc 100644
+--- a/client/accueil.php
++++ b/client/accueil.php
+@@ -13,10 +13,27 @@ include 'header.php';
+ 
+ $is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+ 
++// Message de confirmation apr├¿s d├⌐connexion (redirection depuis deconnexion.php)
++$logout_msg = isset($_GET['logout']);
++
++
+ // R├┤le du visiteur : les promoteurs et administrateurs ne peuvent pas effectuer
+ // d'actions client (achat de billets, cotisation, vote, like) ΓÇö consultation seule
+ $user_role = $_SESSION['user_role'] ?? '';
+ $peut_agir = !$is_logged_in || $user_role === 'client';
++?>
++
++<?php if (!empty($logout_msg)): ?>
++    <div style="max-width: 1200px; margin: 1rem auto 0; padding: 0 1rem;">
++        <div
++            style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 0.85rem 1.25rem; color: #166534; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600;">
++            <i class="fa-solid fa-circle-check"></i>
++            <span>Vous avez ├⌐t├⌐ d├⌐connect├⌐ avec succ├¿s. ├Ç bient├┤t sur Ticket Flow !</span>
++        </div>
++    </div>
++<?php endif; ?>
++
++<?php // Le contenu de la page continue ci-dessous
+ 
+ // T├⌐l├⌐phone du client connect├⌐ (pr├⌐-rempli automatiquement, sans ressaisie)
+ $user_telephone = '';
+@@ -890,7 +907,8 @@ try {
+     }
+ </style>
+ 
+-<main class="client-main" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
++<main class="client-main"
++    style="max-width: 1200px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2rem) clamp(0.75rem, 2vw, 1.5rem);">
+     <!-- ===== Onglets principaux (tout en haut) ===== -->
+     <div class="main-tabs">
+         <a href="accueil.php?onglet=evenements"
+@@ -904,7 +922,7 @@ try {
+             <span class="main-tab-badge"><?php echo $nb_campagnes_total; ?></span>
+         </a>
+         <a href="accueil.php?onglet=voter" class="main-tab <?php echo ($onglet === 'voter') ? 'active' : ''; ?>">
+-            <i class="fa-solid fa-vote-yea"></i> Voter
++            <i class="fa-solid fa-vote-yea"></i> Vote
+             <span class="main-tab-badge"><?php echo $nb_votes_total; ?></span>
+         </a>
+     </div>
+@@ -933,7 +951,8 @@ try {
+ 
+             <?php if (!empty($campagnes)): ?>
+                 <!-- Grille des campagnes de cotisation (pr├⌐sent├⌐es comme des ├⌐v├⌐nements) -->
+-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.75rem;">
++                <div
++                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: clamp(1rem, 2.5vw, 1.75rem);">
+                     <?php foreach ($campagnes as $campagne): ?>
+                         <?php
+                         $collecte = (float) $campagne['montant_collecte'];
+@@ -1123,7 +1142,7 @@ try {
+                             </button>
+                             <p style="color: var(--muted); font-size: 0.78rem; margin-top: 0.75rem; text-align: center;">
+                                 <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Paiement s├⌐curis├⌐ par
+-                                Mobile Money (Wave, Orange, MTN, Moov)
++                                Mobile Money
+                             </p>
+                         </form>
+                     <?php else: ?>
+@@ -1192,7 +1211,8 @@ try {
+             ?>
+ 
+             <?php if (!empty($classement)): ?>
+-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.75rem;">
++                <div
++                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: clamp(1rem, 2.5vw, 1.75rem);">
+                     <?php foreach ($classement as $rang => $ev): ?>
+                         <?php
+                         $deja_vote = !empty($voted_events[$ev['id']]);
+@@ -1337,12 +1357,13 @@ try {
+                                     style="margin-top: auto; border-top: 1px solid var(--line-light); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                                     <span class="vote-counter" style="color: var(--navy); font-weight: 800; font-size: 1rem;">
+                                         <i class="fa-solid fa-star" style="color: #f59e0b;"></i>
+-                                        <?php echo (int) $ev['nb_votes']; ?> vote<?php echo ((int) $ev['nb_votes'] > 1) ? 's' : ''; ?>
++                                        <?php echo (int) $ev['nb_votes']; ?>
++                                        vote<?php echo ((int) $ev['nb_votes'] > 1) ? 's' : ''; ?>
+                                     </span>
+                                     <button type="button" class="vote-btn <?php echo $deja_vote ? 'voted' : ''; ?>"
+                                         data-event-id="<?php echo (int) $ev['id']; ?>" <?php if ($peut_agir): ?>onclick="toggleVote(event, this)" <?php else: ?>disabled title="R├⌐serv├⌐ aux clients" <?php endif; ?>>
+                                         <i class="fa-solid <?php echo $peut_agir ? 'fa-thumbs-up' : 'fa-lock'; ?>"></i>
+-                                        <?php echo $peut_agir ? ($deja_vote ? 'Vot├⌐' : ($est_payant ? 'Voter (Choix)' : 'Voter')) : 'R├⌐serv├⌐ aux clients'; ?>
++                                        <?php echo $peut_agir ? ($deja_vote ? 'Vot├⌐' : ($est_payant ? 'Vote (Choix)' : 'Vote')) : 'R├⌐serv├⌐ aux clients'; ?>
+                                     </button>
+                                 </div>
+                             </div>
+@@ -1461,7 +1482,8 @@ try {
+             </div>
+ 
+             <?php if (count($events) > 0): ?>

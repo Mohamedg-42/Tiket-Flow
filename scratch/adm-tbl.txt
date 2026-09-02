@@ -1,0 +1,5 @@
+﻿dashboard.php:255: // 6. TOP ÉVÉNEMENTS DYNAMIQUES
+dashboard.php:674: 5. LIGNE 3 : TOP ÉVÉNEMENTS + TYPES DE TICKETS + FLUX TEMPS RÉEL
+dashboard.php:677: <!-- 1. Top Événements avec Barres de Remplissage -->
+dashboard.php:683: Top Événements les Plus Rentables
+dashboard.php:689: <table class="dash-pro-table">

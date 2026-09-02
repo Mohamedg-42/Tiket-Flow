@@ -1,0 +1,158 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Hamburger - Accueil (validation auto)</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/responsive-pro.css">
+<style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    main { padding: 2rem 1rem; background: #f1f5f9; min-height: 200vh; }
+    #result { position: fixed; bottom: 0; left: 0; right: 0; background: #111827; color: #fff; font-family: monospace; font-size: 12px; padding: 10px; z-index: 99999; white-space: pre-wrap; }
+</style>
+</head>
+<body class="client-page">
+<header class="client-header shared-client-header">
+    <a href="accueil.php" class="client-brand"><i class="fa-solid fa-ticket"></i> TICKET FLOW</a>
+    <button type="button" class="client-nav-toggle" id="clientNavToggle" onclick="toggleClientNav(event)" aria-label="Ouvrir le menu" aria-controls="clientNav" aria-expanded="false">
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+        <span class="bar" aria-hidden="true"></span>
+    </button>
+    <nav class="client-nav" id="clientNav">
+        <a href="accueil.php"><i class="fa-solid fa-house"></i> Accueil</a>
+        <a href="../connexion.php"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
+        <a href="../inscription.php" class="client-register"><i class="fa-solid fa-user-plus"></i> Inscription</a>
+    </nav>
+</header>
+<main id="content">zone hors header pour tester le clic extÃ©rieur</main>
+<script>
+    // ====== Script du client/header.php (copie fidÃ¨le) ======
+    (function () {
+        'use strict';
+
+        var nav, btn;
+
+        function isOpen() {
+            return !!(nav && nav.classList.contains('nav-open'));
+        }
+
+        function openMenu() {
+            if (!nav || !btn) return;
+            nav.classList.add('nav-open');
+            btn.setAttribute('aria-expanded', 'true');
+            btn.setAttribute('aria-label', 'Fermer le menu');
+        }
+
+        function closeMenu() {
+            if (!nav || !btn) return;
+            nav.classList.remove('nav-open');
+            btn.setAttribute('aria-expanded', 'false');
+            btn.setAttribute('aria-label', 'Ouvrir le menu');
+        }
+
+        function toggleClientNav(event) {
+            if (event) {
+                event.stopPropagation();
+                event.preventDefault();
+            }
+            if (isOpen()) { closeMenu(); } else { openMenu(); }
+        }
+
+        window.toggleClientNav = toggleClientNav;
+        window.closeClientNav = closeMenu;
+
+        function init() {
+            nav = document.getElementById('clientNav');
+            btn = document.getElementById('clientNavToggle');
+            if (!nav || !btn) return;
+
+            nav.addEventListener('click', function (e) {
+                if (e.target.closest('a')) setTimeout(closeMenu, 100);
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && isOpen()) closeMenu();
+            });
+
+            document.addEventListener('click', function (e) {
+                if (isOpen() && !nav.contains(e.target) && !btn.contains(e.target)) {
+                    closeMenu();
+                }
+            });
+
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 767 && isOpen()) closeMenu();
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+</script>
+<div id="result">PENDING</div>
+<script>
+    // ====== Harness de test automatique ======
+    (function() {
+        const results = [];
+        function ok(name, cond) {
+            results.push((cond ? 'PASS' : 'FAIL') + ' - ' + name);
+        }
+        function writeResults() {
+            const el = document.getElementById('result');
+            if (el) el.innerText = results.join('\n');
+        }
+        function run() {
+            try {
+                const nav = document.getElementById('clientNav');
+                const btn = document.querySelector('.client-nav-toggle');
+
+                ok('menu initialement ferme (pas nav-open)', !nav.classList.contains('nav-open'));
+                ok('aria-expanded initial false', btn.getAttribute('aria-expanded') === 'false');
+
+                toggleClientNav();
+                ok('ouverture: classe nav-open ajoutee', nav.classList.contains('nav-open'));
+                ok('ouverture: aria-expanded true', btn.getAttribute('aria-expanded') === 'true');
+                const cs = getComputedStyle(nav);
+                ok('ouverture: menu visible (visibility visible)', cs.visibility === 'visible');
+                ok('ouverture: menu ancre sous le header (top 100%)', cs.position === 'absolute');
+                ok('ouverture: menu opaque au-dessus du contenu', parseFloat(cs.opacity) > 0.99);
+
+                toggleClientNav();
+                ok('fermeture toggle: nav-open retiree', !nav.classList.contains('nav-open'));
+                ok('fermeture toggle: aria-expanded false', btn.getAttribute('aria-expanded') === 'false');
+
+                toggleClientNav();
+                ok('reouverture pour test clic exterieur', nav.classList.contains('nav-open'));
+                document.getElementById('content').click();
+                ok('clic exterieur: menu ferme', !nav.classList.contains('nav-open'));
+
+                toggleClientNav();
+                ok('reouverture pour test lien', nav.classList.contains('nav-open'));
+                const firstLink = document.querySelector('.client-nav a');
+                firstLink.addEventListener('click', function(e) { e.preventDefault(); });
+                firstLink.click();
+                setTimeout(function() {
+                    ok('clic lien: menu ferme apres 100ms', !nav.classList.contains('nav-open'));
+                    writeResults();
+                }, 300);
+                return;
+            } catch (e) {
+                results.push('ERROR - ' + e.message);
+                writeResults();
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() { setTimeout(run, 250); });
+        } else {
+            setTimeout(run, 250);
+        }
+    })();
+</script>
+</body>
+</html>

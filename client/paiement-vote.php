@@ -13,6 +13,20 @@ if (!$id) {
     exit();
 }
 
+$is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+
+// Téléphone du client connecté (pré-rempli comme pour l'achat de billets)
+$user_telephone = '';
+if ($is_logged_in) {
+    try {
+        $stmt_utel = $pdo->prepare("SELECT telephone FROM users WHERE id = ?");
+        $stmt_utel->execute([$_SESSION['user_id']]);
+        $user_telephone = (string)$stmt_utel->fetchColumn();
+    } catch (PDOException $e) {
+        $user_telephone = '';
+    }
+}
+
 // Récupération du paiement de vote en attente + infos de l'événement
 $stmt = $pdo->prepare("
     SELECT vp.*, e.nom AS event_nom
@@ -44,11 +58,11 @@ if (!empty($cands_ids) && is_array($cands_ids)) {
     }
 }
 
-$page_title = "Paiement de votre Vote - Ticket Flow";
+$page_title = "Paiement de votre Vote - Eventia";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>
-<div class="payment-container" style="max-width: 600px; margin: 2rem auto; padding: 0 1rem;">
+<div class="payment-container" style="max-width: 580px; margin: 2rem auto; padding: 0 clamp(0.75rem, 2vw, 1rem);">
     <a href="accueil.php?onglet=voter" class="back-link" style="margin-bottom: 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; color: var(--muted); text-decoration: none; font-weight: 600;">
         <i class="fa-solid fa-arrow-left"></i> Annuler et retourner au classement
     </a>
@@ -105,7 +119,7 @@ include 'header.php';
             </div>
         <?php endif; ?>
 
-        <div class="payment-amount" style="background: #ffffff; border-bottom: 1px solid var(--line); padding: 1.25rem 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div class="payment-amount" style="background: #f8fafc; border-bottom: 1px solid var(--line); padding: 1.25rem 2rem; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <span style="color: var(--navy); font-weight: 700; font-size: 0.95rem; display: block;">Montant total du vote :</span>
                 <?php if (!empty($candidats_choisis)): ?>
@@ -115,14 +129,22 @@ include 'header.php';
             <strong style="color: var(--primary); font-size: 1.6rem;"><?php echo number_format((float)$vote_pay['montant'], 0, ',', ' '); ?> FCFA</strong>
         </div>
         <div class="payment-methods" style="padding: 2rem;">
-            <form method="POST" action="callback-vote.php">
+            <form method="POST" action="callback-vote.php" style="display: grid; gap: 1rem;">
                 <input type="hidden" name="vote_paiement_id" value="<?php echo (int)$vote_pay['id']; ?>">
 
-                <?php if (empty($_SESSION['user_telephone'])): ?>
-                    <p style="color: var(--navy); font-weight: 700; font-size: 0.85rem; margin-bottom: 0.75rem;">
-                        <i class="fa-solid fa-phone"></i> Votre numéro Mobile Money :
-                    </p>
-                    <input type="tel" name="telephone" placeholder="Ex : 07 01 02 03 04" required style="width: 100%; padding: 0.85rem; border: 1px solid var(--line); border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+                <?php if (!$is_logged_in && empty($user_telephone)): ?>
+                    <!-- Saisie du numéro Mobile Money demandée uniquement pour les invités sans téléphone pré-renseigné (comme pour l'achat de billets) -->
+                    <div class="form-group" style="margin-bottom: 0.5rem;">
+                        <label for="telephone_paiement" style="font-weight: 700; color: var(--navy); font-size: 0.88rem;">
+                            <i class="fa-solid fa-phone" style="color: var(--primary);"></i> Numéro Mobile Money pour le débit *
+                        </label>
+                        <input type="tel" id="telephone_paiement" name="telephone_paiement" required
+                               placeholder="Ex: 07 00 00 00 00"
+                               value="<?php echo htmlspecialchars($user_telephone ?? ''); ?>"
+                               style="padding: 0.8rem 1rem; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.5px;">
+                    </div>
+                <?php elseif ($is_logged_in && !empty($user_telephone)): ?>
+                    <input type="hidden" name="telephone_paiement" value="<?php echo htmlspecialchars($user_telephone); ?>">
                 <?php endif; ?>
 
                 <p style="color: var(--navy); font-weight: 700; font-size: 0.85rem; margin-bottom: 0.75rem;">
@@ -138,7 +160,7 @@ include 'header.php';
                     </div>
                 </label>
 
-                <label class="payment-option" style="display: flex; align-items: center; gap: 1rem; padding: 0.95rem 1.25rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: #ffffff; margin-top: 0.6rem; cursor: pointer;">
+                <label class="payment-option payment-orange" style="display: flex; align-items: center; gap: 1rem; padding: 0.95rem 1.25rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: #ffffff; margin-top: 0.6rem; cursor: pointer;">
                     <input type="radio" name="methode" value="orange_money" style="accent-color: #ea580c; transform: scale(1.2);">
                     <i class="fa-solid fa-wallet" style="color: #ea580c; font-size: 1.3rem;"></i>
                     <div>
@@ -147,7 +169,7 @@ include 'header.php';
                     </div>
                 </label>
 
-                <label class="payment-option" style="display: flex; align-items: center; gap: 1rem; padding: 0.95rem 1.25rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: #ffffff; margin-top: 0.6rem; cursor: pointer;">
+                <label class="payment-option payment-mtn" style="display: flex; align-items: center; gap: 1rem; padding: 0.95rem 1.25rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: #ffffff; margin-top: 0.6rem; cursor: pointer;">
                     <input type="radio" name="methode" value="mtn_money" style="accent-color: #ca8a04; transform: scale(1.2);">
                     <i class="fa-solid fa-money-bill-transfer" style="color: #ca8a04; font-size: 1.3rem;"></i>
                     <div>
@@ -156,7 +178,7 @@ include 'header.php';
                     </div>
                 </label>
 
-                <label class="payment-option" style="display: flex; align-items: center; gap: 1rem; padding: 0.95rem 1.25rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: #ffffff; margin-top: 0.6rem; cursor: pointer;">
+                <label class="payment-option payment-moov" style="display: flex; align-items: center; gap: 1rem; padding: 0.95rem 1.25rem; border: 1px solid var(--line); border-radius: var(--radius-md); background: #ffffff; margin-top: 0.6rem; cursor: pointer;">
                     <input type="radio" name="methode" value="moov_money" style="accent-color: #16a34a; transform: scale(1.2);">
                     <i class="fa-solid fa-building-columns" style="color: #16a34a; font-size: 1.3rem;"></i>
                     <div>

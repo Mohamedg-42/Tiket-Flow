@@ -1,0 +1,22 @@
+﻿git : warning: in the working copy of 
+'admin/header.php', LF will be replaced by CRLF 
+the next time Git touches it
+Au caractère Ligne:1 : 1
++ git -C c:\wamp64\www\ticket-platform diff -- 
+agent/header.php admin/h ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (wa 
+   rning: in the... Git touches it:String) [],  
+   RemoteException
+    + FullyQualifiedErrorId : NativeCommandErro 
+   r
+ 
+warning: in the working copy of 
+'agent/header.php', LF will be replaced by CRLF 
+the next time Git touches it
+warning: in the working copy of 
+'promoteur/header.php', LF will be replaced by 
+CRLF the next time Git touches it
+diff --git a/admin/header.php b/admin/header.php
+index 3a58a84..3f83ff4 100644

@@ -1,0 +1,7 @@
+﻿dashboard-pro.css:522: .dash-table-wrapper {
+dashboard-pro.css:531: .dash-pro-table {
+dashboard-pro.css:539: .dash-pro-table th {
+dashboard-pro.css:551: .dash-pro-table td {
+dashboard-pro.css:558: .dash-pro-table tr:hover td {
+dashboard-pro.css:595: .dash-gauge-track {
+dashboard-pro.css:606: .dash-gauge-progress {

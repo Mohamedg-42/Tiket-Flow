@@ -630,6 +630,28 @@ body:has(.auth-container:not(.dashboard-wrapper .auth-container)) {
     flex-wrap: wrap;
 }
 
+.client-nav-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: #ffffff;
+    color: var(--ink);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.client-nav-toggle:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-soft);
+}
+
 .client-nav a {
     display: inline-flex;
     align-items: center;
@@ -781,6 +803,31 @@ body:has(.auth-container:not(.dashboard-wrapper .auth-container)) {
 /* ==============================================================================
    RESPONSIVE DESIGN (Tablettes & Mobiles)
    ============================================================================== */
+/* Grilles à deux colonnes avec une colonne de largeur fixe (formulaires + listes,
+   fiches promoteur, réclamations...) : repassent en une seule colonne sur tablette. */
+@media (max-width: 800px) {
+    .responsive-side-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Paires de champs de formulaire en grille inline (display:grid, deux colonnes
+   quasi égales) utilisées sur les pages Promoteur/Client : repassent en une
+   seule colonne sur mobile pour éviter des champs trop étroits. */
+@media (max-width: 560px) {
+    [style*="grid-template-columns: 1fr 1fr"],
+    [style*="grid-template-columns: 1.2fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Mise en page 2 blocs inégaux (ex : profil promoteur, aperçu + formulaire) */
+@media (max-width: 780px) {
+    [style*="grid-template-columns: 1.15fr 0.85fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 @media (max-width: 900px) {
     .sidebar {
         position: static;
@@ -819,15 +866,27 @@ body:has(.auth-container:not(.dashboard-wrapper .auth-container)) {
     .stats-grid {
         grid-template-columns: 1fr;
     }
+}
 
+/* ==============================================================================
+   MENU MOBILE DE LA NAVIGATION CLIENT (Hamburger)
+   ============================================================================== */
+@media (max-width: 860px) {
     .shared-client-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+        flex-wrap: wrap;
+        row-gap: 0.75rem;
     }
+}
 
-    .client-nav {
-        width: 100%;
-        justify-content: flex-start;
+/*
+   MENU MOBILE (HAMBURGER) — SOURCE UNIQUE : Css/responsive-pro.css.
+   Ce fichier (style.css) ne conserve que les micro-ajustements complémentaires
+   qui n'entrent pas en conflit avec les media queries responsive (chargées en dernier).
+*/
+@media (max-width: 767px) {
+    .client-nav .client-register,
+    .client-nav .btn-espace-promoteur,
+    .client-nav .btn-espace-admin {
+        justify-content: center;
     }
 }

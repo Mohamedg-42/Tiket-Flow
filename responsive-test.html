@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Responsive - Ticket Flow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="./Css/style.css">
+    <link rel="stylesheet" href="./Css/responsive-pro.css">
+    <style>
+        .test-section {
+            margin-bottom: 3rem;
+            scroll-margin-top: 100px;
+        }
+
+        .breakpoint-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            z-index: 9999;
+            font-size: 0.85rem;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        @media (max-width: 479px) {
+            .breakpoint-indicator::before {
+                content: "📱 XS (320px - 479px)";
+            }
+        }
+
+        @media (min-width: 480px) and (max-width: 767px) {
+            .breakpoint-indicator::before {
+                content: "📱 SM (480px - 767px)";
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .breakpoint-indicator::before {
+                content: "📱 MD (768px - 1023px)";
+            }
+        }
+
+        @media (min-width: 1024px) and (max-width: 1279px) {
+            .breakpoint-indicator::before {
+                content: "🖥️ LG (1024px - 1279px)";
+            }
+        }
+
+        @media (min-width: 1280px) and (max-width: 1535px) {
+            .breakpoint-indicator::before {
+                content: "🖥️ XL (1280px - 1535px)";
+            }
+        }
+
+        @media (min-width: 1536px) {
+            .breakpoint-indicator::before {
+                content: "🖥️ 2XL (1536px+)";
+            }
+        }
+
+        .test-box {
+            background: linear-gradient(135deg, var(--primary-soft), #e0f2fe);
+            border: 2px dashed var(--primary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            text-align: center;
+            font-weight: 600;
+            color: var(--navy);
+        }
+
+        .test-grid-item {
+            background: var(--primary-soft);
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-md);
+            text-align: center;
+            font-weight: 600;
+            color: var(--navy);
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .test-summary {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            max-width: 300px;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 9998;
+        }
+
+        .code-example {
+            background: var(--canvas);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-md);
+            overflow-x: auto;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+            margin-top: var(--spacing-md);
+        }
+
+        @media (max-width: 767px) {
+            .test-summary {
+                display: none;
+            }
+        }
+
+        .test-nav {
+            position: sticky;
+            top: 0;
+            background: var(--paper);
+            border-bottom: 1px solid var(--line);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            z-index: 100;
+        }
+
+        .test-nav a {
+            display: inline-block;
+            margin-right: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            padding: 0.5rem 1rem;
+            background: var(--primary-soft);
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            color: var(--primary-dark);
+            font-weight: 600;
+            font-size: var(--font-size-sm);
+        }
+
+        .test-nav a:hover {
+            background: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="breakpoint-indicator"></div>
+
+<div class="test-summary">
+    <strong>📋 Test Responsive</strong>
+    <p>Redimensionnez votre fenêtre pour voir comment le design s'adapte à différents breakpoints.</p>
+</div>
+
+<header class="client-header">
+    <a href="#" class="client-brand">
+        <i class="fa-solid fa-ticket"></i> TICKET FLOW - TEST RESPONSIVE
+    </a>
+    <button type="button" class="client-nav-toggle" onclick="toggleNav()" aria-label="Menu">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    <nav class="client-nav" id="clientNav">
+        <a href="#typography">Typographie</a>
+        <a href="#grids">Grilles</a>
+        <a href="#forms">Formulaires</a>
+        <a href="#cards">Cartes</a>
+        <a href="#tables">Tableaux</a>
+        <a href="#flex">Flexbox</a>
+    </nav>
+</header>
+
+<div class="container py-responsive">
+
+    <!-- Typographie -->
+    <div class="test-section" id="typography">
+        <h2><i class="fa-solid fa-font"></i> Typographie Responsive</h2>
+        <p>La typographie s'ajuste automatiquement selon la taille de l'écran (clamp CSS).</p>
+
+        <div class="test-box">
+            <h1>Titre H1 - Responsive</h1>
+            <p><small>Ajuste entre 1.9rem et 2.5rem</small></p>
+        </div>
+
+        <div class="test-box" style="margin-top: 1rem;">
+            <h2>Titre H2 - Responsive</h2>
+            <p><small>Ajuste entre 1.6rem et 2rem</small></p>
+        </div>
+
+        <div class="test-box" style="margin-top: 1rem;">
+            <h3>Titre H3 - Responsive</h3>
+            <p><small>Ajuste entre 1.3rem et 1.5rem</small></p>
+        </div>
+
+        <div class="test-box" style="margin-top: 1rem;">
+            <p>Paragraphe normal - s'ajuste entre 0.9rem et 1rem. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt.</p>
+        </div>
+
+        <div class="code-example">
+&lt;h1&gt;Titre&lt;/h1&gt; &lt;!-- 1.9rem → 2.5rem --&gt;
+&lt;h2&gt;Titre&lt;/h2&gt; &lt;!-- 1.6rem → 2rem --&gt;
+&lt;p&gt;Texte&lt;/p&gt; &lt;!-- 0.9rem → 1rem --&gt;
+        </div>
+    </div>
+
+    <!-- Grilles -->
+    <div class="test-section" id="grids">
+        <h2><i class="fa-solid fa-grip"></i> Grilles Responsive</h2>
+
+        <h3>Stats Grid (auto-fit, minmax 230px)</h3>
+        <p>Réductible automatiquement selon la largeur. Testez en redimensionnant!</p>
+        <div class="stats-grid">
+            <div class="test-grid-item">Item 1</div>
+            <div class="test-grid-item">Item 2</div>
+            <div class="test-grid-item">Item 3</div>
+            <div class="test-grid-item">Item 4</div>
+            <div class="test-grid-item">Item 5</div>
+            <div class="test-grid-item">Item 6</div>
+        </div>
+
+        <div class="code-example">
+&lt;div class="stats-grid"&gt;
+  &lt;div class="stat-card"&gt;...&lt;/div&gt;
+&lt;/div&gt;
+        </div>
+
+        <h3 style="margin-top: 2rem;">Content Grid</h3>
+        <div class="content-grid">
+            <div class="test-grid-item">Item 1</div>
+            <div class="test-grid-item">Item 2</div>
+            <div class="test-grid-item">Item 3</div>
+            <div class="test-grid-item">Item 4</div>
+        </div>
+
+        <h3 style="margin-top: 2rem;">Two Column Grid</h3>
+        <div class="two-column-grid">
+            <div class="test-grid-item" style="min-height: 200px;">Colonne 1</div>
+            <div class="test-grid-item" style="min-height: 200px;">Colonne 2</div>
+        </div>
+        <p><small>📱 Sur mobile: empilage vertical</small></p>
+
+        <div class="code-example">
+&lt;div class="two-column-grid"&gt;
+  &lt;div&gt;...&lt;/div&gt;
+  &lt;div&gt;...&lt;/div&gt;
+&lt;/div&gt;
+        </div>
+    </div>
+
+    <!-- Formulaires -->
+    <div class="test-section" id="forms">
+        <h2><i class="fa-solid fa-pen-to-square"></i> Formulaires Responsive</h2>
+        <p>Les formulaires s'ajustent automatiquement. Sur mobile: 1 colonne. Sur desktop: 2+ colonnes.</p>
+
+        <form>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="fname">Prénom</label>
+                    <input type="text" id="fname" placeholder="Votre prénom" />
+                </div>
+                <div class="form-group">
+                    <label for="lname">Nom</label>
+                    <input type="text" id="lname" placeholder="Votre nom" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="example@email.com" />
+                </div>
+                <div class="form-group">
+                    <label for="phone">Téléphone</label>
+                    <input type="tel" id="phone" placeholder="+33 6 XX XX XX XX" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="message">Message</label>
+                <textarea id="message" rows="4" placeholder="Votre message..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fa-solid fa-paper-plane"></i> Envoyer
+            </button>
+        </form>
+
+        <div class="code-example">
+&lt;div class="form-row"&gt;
+  &lt;div class="form-group"&gt;...&lt;/div&gt;
+  &lt;div class="form-group"&gt;...&lt;/div&gt;
+&lt;/div&gt;
+        </div>
+    </div>
+
+    <!-- Cartes -->
+    <div class="test-section" id="cards">
+        <h2><i class="fa-solid fa-layer-group"></i> Cartes Responsive</h2>
+        <p>Desktop: 3-4 cartes/ligne | Tablette: 2 cartes/ligne | Mobile: 1 carte/ligne</p>
+
+        <div class="cards-container">
+            <div class="card">
+                <div style="height: 200px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); border-radius: var(--radius-lg) var(--radius-lg) 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                    <i class="fa-solid fa-ticket"></i>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">Événement 1</h3>
+                    <p class="card-text">Description courte du type d'événement. Tickets disponibles maintenant.</p>
+                    <div class="card-actions">
+                        <button class="btn-submit" style="flex: 1;">Détails</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="height: 200px; background: linear-gradient(135deg, #0284c7, #06b6d4); border-radius: var(--radius-lg) var(--radius-lg) 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                    <i class="fa-solid fa-music"></i>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">Événement 2</h3>
+                    <p class="card-text">Un autre type d'événement intéressant pour votre audience.</p>
+                    <div class="card-actions">
+                        <button class="btn-submit" style="flex: 1;">Détails</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="height: 200px; background: linear-gradient(135deg, #8b5cf6, #a855f7); border-radius: var(--radius-lg) var(--radius-lg) 0 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
+                    <i class="fa-solid fa-theater-masks"></i>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">Événement 3</h3>
+                    <p class="card-text">Événement spécial disponible pour les réservations.</p>
+                    <div class="card-actions">
+                        <button class="btn-submit" style="flex: 1;">Détails</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="code-example">
+&lt;div class="cards-container"&gt;
+  &lt;div class="card"&gt;
+    &lt;img class="card-image" src="..." /&gt;
+    &lt;div class="card-body"&gt;...&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+        </div>
+    </div>
+
+    <!-- Tableaux -->
+    <div class="test-section" id="tables">
+        <h2><i class="fa-solid fa-table"></i> Tableaux Responsive</h2>
+        <p>Desktop: tableau normal | Mobile: empilage vertical avec labels</p>
+
+        <h3>Tableau avec défilement horizontal</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Jean Dupont</td>
+                        <td>jean@example.com</td>
+                        <td>+33 6 12 34 56 78</td>
+                        <td><span style="background: #ecfdf5; color: #065f46; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem;">Actif</span></td>
+                        <td>01/09/2026</td>
+                    </tr>
+                    <tr>
+                        <td>Marie Martin</td>
+                        <td>marie@example.com</td>
+                        <td>+33 6 98 76 54 32</td>
+                        <td><span style="background: #fef2f2; color: #991b1b; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem;">Inactif</span></td>
+                        <td>02/09/2026</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 style="margin-top: 2rem;">Tableau empilé (mobile-friendly)</h3>
+        <div class="table-responsive table-mobile-stack">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th>Prix</th>
+                        <th>Quantité</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-label="Produit">Ticket Gala</td>
+                        <td data-label="Prix">85 F</td>
+                        <td data-label="Quantité">2</td>
+                        <td data-label="Total">170 F</td>
+                    </tr>
+                    <tr>
+                        <td data-label="Produit">Ticket Normal</td>
+                        <td data-label="Prix">45 F</td>
+                        <td data-label="Quantité">1</td>
+                        <td data-label="Total">45 F</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="code-example">
+&lt;td data-label="Colonne"&gt;Valeur&lt;/td&gt;
+        </div>
+    </div>
+
+    <!-- Flexbox -->
+    <div class="test-section" id="flex">
+        <h2><i class="fa-solid fa-align-justify"></i> Flexbox Responsive</h2>
+
+        <h3>Flex Responsive (flex-wrap)</h3>
+        <div class="flex-responsive" style="gap: var(--spacing-md);">
+            <div class="test-grid-item" style="flex: 1; min-width: 150px;">Item 1</div>
+            <div class="test-grid-item" style="flex: 1; min-width: 150px;">Item 2</div>
+            <div class="test-grid-item" style="flex: 1; min-width: 150px;">Item 3</div>
+        </div>
+
+        <h3 style="margin-top: 2rem;">Flex Column Mobile (ligne → colonne)</h3>
+        <div class="flex-column-mobile">
+            <div class="test-grid-item" style="flex: 1;">Gauche</div>
+            <div class="test-grid-item" style="flex: 1;">Droite</div>
+        </div>
+        <p><small>📱 Sur mobile: colonne. Sur desktop: ligne.</small></p>
+
+        <h3 style="margin-top: 2rem;">Flex Between</h3>
+        <div class="flex-between">
+            <div>Gauche</div>
+            <div>Droite</div>
+        </div>
+
+        <div class="code-example">
+&lt;div class="flex-column-mobile"&gt;
+  &lt;div&gt;...&lt;/div&gt;
+  &lt;div&gt;...&lt;/div&gt;
+&lt;/div&gt;
+        </div>
+    </div>
+
+    <!-- Affichage Conditionnel -->
+    <div class="test-section">
+        <h2><i class="fa-solid fa-eye"></i> Affichage Conditionnel</h2>
+
+        <div class="show-mobile" style="background: #fef2f2; border: 2px solid #ef4444; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+            <strong style="color: #991b1b;">📱 Visible uniquement sur MOBILE</strong>
+            <p style="margin: 0.5rem 0 0;">Résolution &lt; 768px</p>
+        </div>
+
+        <div class="hide-mobile" style="background: #ecfdf5; border: 2px solid #10b981; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+            <strong style="color: #065f46;">🖥️ Visible sur DESKTOP</strong>
+            <p style="margin: 0.5rem 0 0;">Résolution ≥ 768px</p>
+        </div>
+
+        <div class="show-tablet" style="background: #fffbeb; border: 2px solid #f59e0b; padding: 1rem; border-radius: var(--radius-md);">
+            <strong style="color: #b45309;">📱 Visible uniquement sur TABLETTE</strong>
+            <p style="margin: 0.5rem 0 0;">Résolution 768px - 1023px</p>
+        </div>
+    </div>
+
+    <!-- Espacements -->
+    <div class="test-section">
+        <h2><i class="fa-solid fa-ruler"></i> Espacements Adaptatifs</h2>
+
+        <div class="p-responsive" style="background: var(--primary-soft); border: 2px dashed var(--primary); border-radius: var(--radius-md); margin-bottom: 1rem;">
+            <strong>Padding Responsive (.p-responsive)</strong>
+            <p>Ajuste automatiquement selon la taille de l'écran.</p>
+        </div>
+
+        <div class="px-responsive" style="background: var(--primary-soft); border: 2px dashed var(--primary); border-radius: var(--radius-md); margin-bottom: 1rem;">
+            <strong>Padding Horizontal (.px-responsive)</strong>
+            <p>Padding latéral adaptatif.</p>
+        </div>
+
+        <div style="display: flex; gap: var(--spacing-md);">
+            <div class="test-grid-item" style="flex: 1;">--spacing-xs</div>
+            <div class="test-grid-item" style="flex: 1;">--spacing-sm</div>
+            <div class="test-grid-item" style="flex: 1;">--spacing-md</div>
+            <div class="test-grid-item" style="flex: 1;">--spacing-lg</div>
+            <div class="test-grid-item" style="flex: 1;">--spacing-xl</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function toggleNav() {
+        const nav = document.getElementById('clientNav');
+        nav.classList.toggle('nav-open');
+    }
+
+    // Fermer le menu au clic sur un lien
+    document.querySelectorAll('.client-nav a').forEach(link => {
+        link.addEventListener('click', () => {
+            document.getElementById('clientNav').classList.remove('nav-open');
+        });
+    });
+</script>
+
+</body>
+</html>

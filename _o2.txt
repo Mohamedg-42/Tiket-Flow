@@ -1,0 +1,41 @@
+﻿30:         $req = $stmt->fetch();
+31: 
+32:         if (!$req || $req['statut'] !== 'en_attente') {
+33:             $message = "Cette demande n'existe pas ou a d├⌐j├á ├⌐t├⌐ trait├⌐e.";
+34:             $msg_type = "error";
+35:         } elseif ($action === 'approuver_evenement') {
+36:             $commission_rate = (float)($_POST['commission_rate'] ?? 5.00);
+37:             if ($commission_rate < 0) $commission_rate = 5.00;
+38: 
+39:             try {
+40:                 $pdo->beginTransaction();
+41: 
+42:                 $stmt_ev = $pdo->prepare("INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, commission_rate, statut) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')");
+43:                 $stmt_ev->execute([$req['user_id'], $req['nom'], $req['description'], $req['image'], $req['categorie'], $req['date_evenement'], $req['heure'], $req['lieu'], (float)($req['prix_vote'] ?? 0), $commission_rate]);
+44:                 $new_event_id = (int)$pdo->lastInsertId();
+45: 
+46:                 $ticket_types = json_decode($req['ticket_types_data'] ?? '[]', true);
+47:                 if (!empty($ticket_types) && is_array($ticket_types)) {
+48:                     require_once '../includes/places.php';
+49:                     $stmt_tt = $pdo->prepare("INSERT INTO ticket_types (event_id, nom, prix, frais_place, quantite, quantite_vendue) VALUES (?, ?, ?, ?, ?, 0)");
+50:                     foreach ($ticket_types as $tt) {
+51:                         $stmt_tt->execute([
+52:                             $new_event_id,
+53:                             $tt['nom'],
+54:                             (float)$tt['prix'],
+55:                             (float)($tt['frais_place'] ?? 0),
+56:                             (int)$tt['quantite']
+57:                         ]);
+58:                         // G├⌐n├⌐ration automatique des places pour ce tarif
+59:                         generer_places_type($pdo, (int)$pdo->lastInsertId(), (int)$tt['quantite']);
+60:                     }
+61:                 }
+62: 
+63:                 $pdo->prepare("UPDATE event_requests SET statut = 'approuve', reviewed_at = NOW() WHERE id = ?")->execute([$request_id]);
+64:                 $pdo->commit();
+65: 
+66:                 $message = "L'├⌐v├⌐nement ┬½ " . htmlspecialchars($req['nom']) . " ┬╗ a ├⌐t├⌐ approuv├⌐ et publi├⌐ (commission : " . $commission_rate . "%).";
+67:                 $msg_type = "success";
+68:             } catch (Exception $e) {
+69:                 if ($pdo->inTransaction()) $pdo->rollBack();
+70:                 $message = "Erreur lors de la validation : " . $e->getMessage();

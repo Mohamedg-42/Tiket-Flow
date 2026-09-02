@@ -1,0 +1,25 @@
+﻿7: require_once '../config/database.php';
+12: include 'header.php';
+317: color: var(--navy);
+344: color: var(--navy);
+370: color: var(--navy);
+450: color: var(--navy);
+670: color: var(--navy);
+872: color: var(--navy);
+937: <h2 style="font-size: 1.6rem; color: var(--navy);">Cotisations & Contributions</h2>
+997: <h3 style="margin: 0 0 0.5rem; color: var(--navy); font-size: 1.2rem;">
+1030: <span style="color: var(--navy);">
+1106: <input type="text" id="cot_nom" name="nom" required placeholder="Ex: Jean Koffi"
+1118: <input type="tel" id="cot_tel" name="telephone" required placeholder="Ex: 07 00 00 00 00">
+1124: <input type="number" id="cot_montant" name="montant" required min="500" step="500"
+1166: <h2 style="font-size: 1.6rem; color: var(--navy);">Votez pour la Réalisation des Événements</h2>
+1249: <h3 style="margin: 0; color: var(--navy); font-size: 1.2rem; line-height: 1.3;">
+1313: style="color: var(--navy); font-weight: 700; text-transform: uppercase; font-size: 0.72rem; display: block; margin-bottom: 0.5rem;">
+1336: style="font-size: 0.82rem; font-weight: 600; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">
+1358: <span class="vote-counter" style="color: var(--navy); font-weight: 800; font-size: 1rem;">
+1378: <h3 style="color: var(--navy); margin-bottom: 0.5rem;">Aucun événement à voter pour le moment</h3>
+1475: <h2 style="margin: 0; font-size: 1.6rem; color: var(--navy);">
+1556: <h3 style="margin: 0 0 0.5rem; color: var(--navy); font-size: 1.25rem;">
+1598: <span style="color: var(--navy);">
+1669: <h3 style="color: var(--navy); margin-bottom: 0.5rem;">Aucun événement ne correspond à votre recherche</h3>
+1704: id="clientModalDate" style="color: var(--navy);"></strong> à <strong id="clientModalTime"

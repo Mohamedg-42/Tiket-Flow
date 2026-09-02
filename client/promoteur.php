@@ -79,11 +79,11 @@ $words = explode(' ', trim($nom_titre));
 $initials = strtoupper(substr($words[0] ?? 'O', 0, 1) . substr($words[1] ?? '', 0, 1));
 ?>
 
-<main class="client-main" style="max-width: 1100px; margin: 2rem auto; padding: 0 1.25rem;">
+<main class="client-main" style="max-width: 1100px; margin: 2rem auto; padding: 0 clamp(0.75rem, 2vw, 1.5rem);">
     <!-- ==============================================================================
          1. HERO BANNER ORGANISATEUR CERTIFIÉ
          ============================================================================== -->
-    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 2.25rem; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04); position: relative; overflow: hidden;">
+    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: clamp(1.25rem, 3vw, 2.25rem); margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04); position: relative; overflow: hidden;">
         <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #0d9488, #0284c7);"></div>
 
         <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
@@ -152,7 +152,7 @@ $initials = strtoupper(substr($words[0] ?? 'O', 0, 1) . substr($words[1] ?? '', 
     <!-- ==============================================================================
          2. GRILLE : ÉVÉNEMENTS DU PROMOTEUR & FORMULAIRE DE PRISE DE CONTACT
          ============================================================================== -->
-    <div style="display: grid; grid-template-columns: 1fr 380px; gap: 2rem; align-items: start;">
+    <div class="responsive-side-grid" style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 380px); gap: 2rem; align-items: start;">
         <!-- LISTE DES ÉVÉNEMENTS DISPONIBLES -->
         <div>
             <h2 style="margin: 0 0 1.25rem; font-size: 1.2rem; color: #0f172a; font-weight: 800; display: flex; align-items: center; gap: 8px;">
@@ -166,7 +166,7 @@ $initials = strtoupper(substr($words[0] ?? 'O', 0, 1) . substr($words[1] ?? '', 
                             $img_ev = !empty($ev['image']) ? '../uploads/' . htmlspecialchars($ev['image']) : '../images/default-event.jpg';
                             $prix_min = (float)($ev['prix_min'] ?? 0);
                         ?>
-                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s ease;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.25rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: all 0.2s ease;">
                             <div style="display: flex; gap: 1rem; align-items: center;">
                                 <img src="<?php echo $img_ev; ?>" alt="Affiche" style="width: 72px; height: 72px; border-radius: 10px; object-fit: cover; border: 1px solid #e2e8f0; flex-shrink: 0;" onerror="this.src='../images/default-event.jpg';">
                                 <div>

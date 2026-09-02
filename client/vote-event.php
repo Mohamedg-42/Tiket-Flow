@@ -76,9 +76,8 @@ try {
 
     // ===== VOTE PAYANT : le promoteur a fixé un prix pour voter =====
     if ($prix_vote > 0) {
-        // Phase 1 : annonce du prix & envoi des candidats éventuels (la modale s'ouvre côté client)
-        $methode = $_POST['methode'] ?? '';
-        if ($methode === '') {
+        // Phase 1 (sans confirmation) : annonce du prix & envoi des candidats éventuels (la modale s'ouvre côté client)
+        if (($_POST['phase'] ?? '') !== '2') {
             echo json_encode([
                 'needs_payment' => true,
                 'prix'          => $prix_vote,
@@ -91,12 +90,8 @@ try {
         }
 
         // Phase 2 : création du paiement de vote en attente
-        $methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money'];
-        if (!in_array($methode, $methodes_autorisees, true)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Méthode de paiement non reconnue.']);
-            exit();
-        }
+        // (l'opérateur Mobile Money et le numéro seront choisis sur la page de paiement sécurisée,
+        //  exactement comme pour l'achat de billets — aucune sélection ici)
 
         // Traitement des choix multiples (candidats)
         $raw_candidats = $_POST['candidat_ids'] ?? [];
@@ -121,9 +116,9 @@ try {
         $reference = 'VOTE-' . strtoupper(substr(uniqid(), -6));
         $stmt_ins = $pdo->prepare("
             INSERT INTO vote_paiements (event_id, candidat_id, candidats_ids, user_id, visitor_id, montant, methode, reference, statut)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'en_attente')
+            VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 'en_attente')
         ");
-        $stmt_ins->execute([$event_id, $primary_cand, $cands_json, $user_id, $visitor_id, $montant_total, $methode, $reference]);
+        $stmt_ins->execute([$event_id, $primary_cand, $cands_json, $user_id, $visitor_id, $montant_total, $reference]);
 
         echo json_encode(['redirect' => 'paiement-vote.php?id=' . $pdo->lastInsertId()]);
         exit();

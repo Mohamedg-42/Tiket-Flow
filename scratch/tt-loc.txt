@@ -1,0 +1,4 @@
+﻿752: <!-- 2. Ventes par Type de Billet -->
+758: Recettes par Type de Billet
+764: <canvas id="ticketTypeBarChart"></canvas>
+1041: const ctxBar = document.getElementById('ticketTypeBarChart');

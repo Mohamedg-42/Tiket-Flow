@@ -1,0 +1,1 @@
+﻿C:\wamp64\www\ticket-platform\client\accueil.php:11: $body_class = "client-page client-home-page";

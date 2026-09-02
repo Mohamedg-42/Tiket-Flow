@@ -338,7 +338,7 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
             <div>
                 <h3 style="margin: 0; font-size: 1rem; color: var(--dash-text); font-weight: 700;">
                     <i class="fa-solid fa-bullhorn" style="color: var(--dash-primary); margin-right: 6px;"></i>
-                    Événements Publiés sur Ticket Flow (<?php echo count($all_events); ?>)
+                    Événements Publiés sur Eventia (<?php echo count($all_events); ?>)
                 </h3>
                 <small style="color: var(--dash-muted); font-size: 0.78rem;">Suivi en direct des ventes, entrées scannées et pilotage de la billetterie.</small>
             </div>

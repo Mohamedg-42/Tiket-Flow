@@ -70,12 +70,12 @@ try {
     exit();
 }
 
-$page_title = "Contribution Confirmée - Ticket Flow";
+$page_title = "Contribution Confirmée - Eventia";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>
 
-<main class="client-main" style="max-width: 640px; margin: 0 auto; padding: 2rem 1rem;">
+<main class="client-main" style="max-width: 640px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2rem) clamp(0.75rem, 2vw, 1rem);">
 
     <!-- ===== Confirmation du paiement de la contribution ===== -->
     <div style="background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-xl);">

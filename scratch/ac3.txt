@@ -1,0 +1,13 @@
+﻿total: 2511
+    }
+
+    clientEventModal.addEventListener('click', function (e) {
+        if (e.target === clientEventModal) closeEventModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !clientEventModal.hidden) closeEventModal();
+    });
+</script>
+
+<?php include 'footer.php'; ?>

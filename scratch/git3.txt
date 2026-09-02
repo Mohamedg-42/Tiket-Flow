@@ -1,0 +1,78 @@
+﻿ M Css/dashboard-pro.css
+ M Css/style.css
+ M admin/dashboard.php
+ M admin/demandes.php
+ M admin/evenements.php
+ M admin/header.php
+ M admin/votes.php
+ M agent/header.php
+ M agent/historique.php
+ M agent/verification.php
+ M client/accueil.php
+ M client/callback-cotisation.php
+ M client/callback-vote.php
+ M client/callback.php
+ M client/devenir-promoteur.php
+ M client/header.php
+ M client/mes-commandes.php
+ M client/mes-tickets.php
+ M client/paiement-cotisation.php
+ M client/paiement-vote.php
+ M client/paiement.php
+ M client/promoteur.php
+ M client/reclamations.php
+ M client/telecharger-ticket.php
+ M client/vote-event.php
+ M deconnexion.php
+ M promoteur/dashboard.php
+ M promoteur/demande-evenement.php
+ M promoteur/footer.php
+ M promoteur/header.php
+ M promoteur/mes-ventes.php
+?? Css/responsive-pro.css
+?? DEMARRAGE_RAPIDE.md
+?? HAMBURGER_FIX_DEBUG.md
+?? HAMBURGER_MENU_FIXED.md
+?? HAMBURGER_MENU_UPDATES.md
+?? INDEX_RESPONSIVE.md
+?? QUICK_FIX_SUMMARY.md
+?? RESPONSIVE_AGENT_UPDATES.md
+?? RESPONSIVE_BEST_PRACTICES.md
+?? RESPONSIVE_GUIDE.md
+?? RESUME_IMPLEMENTATION.md
+?? _a1.txt
+?? _a2.txt
+?? _a3.txt
+?? _a4.txt
+?? _a5.txt
+?? _c1.txt
+?? _c2.txt
+?? _c3.txt
+?? _c4.txt
+?? _c5.txt
+?? _c6.txt
+?? _db.txt
+?? _dump.php
+?? _insp.php
+?? _o1.txt
+?? _o2.txt
+?? _o3.txt
+?? _o4.txt
+?? _r1.txt
+?? _r2.txt
+?? _r4.txt
+?? _rd.txt
+?? _v.txt
+?? _v2.txt
+?? _z1.txt
+?? _z2.txt
+?? _z3.txt
+?? _z4.txt
+?? _z5.txt
+?? _zall.txt
+?? client/accueil.php`
+?? responsive-examples.html
+?? responsive-test-agent.html
+?? responsive-test.html
+?? scratch/
+?? test-hamburger-menu.html

@@ -46,13 +46,13 @@ $transaction_api_id = 'TXN-' . date('YmdHis') . '-' . random_int(1000, 9999);
 try {
     $pdo->beginTransaction();
 
-    // 2. Validation du paiement (statut 'paye' + référence)
+    // 2. Validation du paiement (statut 'paye' + référence + téléphone)
     $stmt_pay = $pdo->prepare("
         UPDATE vote_paiements
-        SET statut = 'paye', methode = ?, reference = ?, transaction_id_api = ?
+        SET statut = 'paye', methode = ?, reference = ?, transaction_id_api = ?, telephone = ?
         WHERE id = ? AND statut = 'en_attente'
     ");
-    $stmt_pay->execute([$methode, $reference, $transaction_api_id, $vote_paiement_id]);
+    $stmt_pay->execute([$methode, $reference, $transaction_api_id, $telephone, $vote_paiement_id]);
     if ($stmt_pay->rowCount() === 0) {
         throw new Exception('Paiement déjà réglé ou introuvable.');
     }
@@ -93,11 +93,11 @@ if (!empty($cands_ids) && is_array($cands_ids)) {
     }
 }
 
-$page_title = "Vote Confirmé - Ticket Flow";
+$page_title = "Vote Confirmé - Eventia";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>
-<main class="client-main" style="max-width: 640px; margin: 0 auto; padding: 2rem 1rem;">
+<main class="client-main" style="max-width: 640px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2rem) clamp(0.75rem, 2vw, 1rem);">
     <div style="background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-xl);">
         <div style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: #ffffff; padding: 2.25rem 2rem; text-align: center;">
             <div style="width: 60px; height: 60px; background: rgba(22, 163, 74, 0.25); border-radius: 50%; display: grid; place-items: center; font-size: 1.7rem; color: #4ade80; margin: 0 auto 1rem;">

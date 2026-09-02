@@ -1,0 +1,15 @@
+﻿<?php
+// ==============================================================================
+// PAGE D'ACCUEIL CLIENT & CATALOGUE (client/accueil.php)
+// Recherche et rÃ©servation multi-tickets (choix de plusieurs types et quantitÃ©s)
+// ==============================================================================
+
+require_once '../config/database.php';
+session_start();
+
+$page_title = "Ticket Flow - Billetterie en ligne & Ã‰vÃ©nements";
+$body_class = "client-page client-home-page";
+include 'header.php';
+
+$is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+

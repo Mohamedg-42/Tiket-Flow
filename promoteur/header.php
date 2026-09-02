@@ -11,7 +11,7 @@ require_once '../includes/auth.php';
 checkRole(['promoteur', 'admin'], '../connexion.php');
 
 $current_page = basename($_SERVER['PHP_SELF']);
-$page_title = $page_title ?? 'Centre de Contrôle Promoteur - Ticket Flow';
+$page_title = $page_title ?? 'Centre de Contrôle Promoteur - Eventia';
 $user_id = (int) $_SESSION['user_id'];
 
 // 1. Récupération des informations et du solde du promoteur
@@ -54,7 +54,10 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0d9488">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($page_title); ?></title>
 
     <!-- Google Fonts: Plus Jakarta Sans -->
@@ -69,6 +72,8 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
     <!-- Styles CSS -->
     <link rel="stylesheet" href="../Css/style.css">
     <link rel="stylesheet" href="../Css/dashboard-pro.css">
+    <!-- Responsive Professional CSS -->
+    <link rel="stylesheet" href="../Css/responsive-pro.css">
 
     <style>
         /* ==============================================================================
@@ -88,7 +93,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             color: #ffffff;
             border-right: 1px solid rgba(255, 255, 255, 0.07);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
             overflow: hidden;
         }
 
@@ -96,7 +101,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.15rem;
+            margin-bottom: 1.1rem;
             padding-bottom: 0.85rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             text-decoration: none;
@@ -110,6 +115,30 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             font-size: 1.15rem;
             font-weight: 800;
             letter-spacing: -0.2px;
+        }
+
+        /* Harmonisation des variables d'accentuation avec l'admin */
+        :root {
+            --dash-primary: #0d9488;
+            --dash-primary-light: #f0fdfa;
+            --dash-primary-hover: #0f766e;
+            --dash-secondary: #0284c7;
+            --primary: #0d9488;
+            --primary-light: #14b8a6;
+            --primary-dark: #0f766e;
+        }
+
+        .dash-btn-action.btn-primary,
+        .btn-submit {
+            background: linear-gradient(135deg, #0d9488, #0284c7) !important;
+            border-color: #0d9488 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3) !important;
+        }
+        .dash-btn-action.btn-primary:hover,
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #0f766e, #0369a1) !important;
+            box-shadow: 0 6px 18px rgba(13, 148, 136, 0.4) !important;
         }
 
         .ctrl-brand-icon {
@@ -128,7 +157,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
         .ctrl-badge-pro {
             background: rgba(13, 148, 136, 0.2);
             color: #2dd4bf;
-            border: 1px solid rgba(45, 212, 191, 0.3);
+            border: 1px solid rgba(45, 212, 191, 0.35);
             font-size: 0.65rem;
             font-weight: 800;
             padding: 2px 7px;
@@ -146,7 +175,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 12px;
             padding: 0.65rem 0.75rem;
-            margin-bottom: 0.85rem;
+            margin-bottom: 1.15rem;
             text-decoration: none;
             transition: all 0.2s ease;
         }
@@ -271,14 +300,14 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             margin: 0 0 0.65rem;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 3px;
         }
 
         .ctrl-menu a {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 0.55rem 0.75rem;
+            padding: 0.62rem 0.85rem;
             border-radius: 9px;
             color: #94a3b8;
             font-size: 0.82rem;
@@ -306,18 +335,33 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             color: #2dd4bf;
         }
 
+        /* ÉLÉMENT ACTIF DANS LE SLIDE LATÉRAL : MÊME DÉGRADÉ & LUMIÈRE QUE ADMIN */
         .ctrl-menu a.active {
-            color: #ffffff;
-            background: linear-gradient(135deg, rgba(13, 148, 136, 0.9), rgba(2, 132, 199, 0.85));
-            font-weight: 700;
-            box-shadow: 0 3px 12px rgba(13, 148, 136, 0.3);
+            color: #ffffff !important;
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.95), rgba(2, 132, 199, 0.9)) !important;
+            font-weight: 800 !important;
+            border-left: 4px solid #2dd4bf !important;
+            box-shadow: 0 4px 18px rgba(13, 148, 136, 0.45) !important;
+            padding-left: calc(0.85rem - 2px);
         }
-
         .ctrl-menu a.active i {
-            color: #ffffff;
+            color: #ffffff !important;
+            filter: drop-shadow(0 0 8px #2dd4bf) !important;
+        }
+        .ctrl-active-dot {
+            margin-left: auto;
+            color: #2dd4bf;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.15); }
         }
 
-        .ctrl-badge-count {
+        .badge-count {
             margin-left: auto;
             background: #ef4444;
             color: #ffffff;
@@ -355,7 +399,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
         .ctrl-btn-site:hover {
             background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
-            border-color: rgba(45, 212, 191, 0.3);
+            border-color: rgba(99, 102, 241, 0.4);
         }
 
         .ctrl-btn-logout {
@@ -376,15 +420,76 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             background: rgba(239, 68, 68, 0.12);
             color: #fca5a5;
         }
+
+        /* Barre mobile et overlay coulissant (identique à l'admin) */
+        .ctrl-mobile-topbar {
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            background: #0b1329;
+            padding: 0.75rem 1rem;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .ctrl-slide-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 99;
+        }
+        @media (max-width: 991px) {
+            .ctrl-mobile-topbar {
+                display: flex;
+            }
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 1000;
+            }
+            .sidebar.show-slide {
+                transform: translateX(0);
+                box-shadow: 10px 0 35px rgba(0, 0, 0, 0.5);
+            }
+            .ctrl-slide-overlay.active {
+                display: block;
+            }
+            .ctrl-close-slide-btn {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 30px;
+                height: 30px;
+            }
+        }
     </style>
 </head>
 
 <body class="dash-pro-layout">
+    <!-- Barre Mobile avec bouton d'ouverture du slide sur le côté (identique à l'admin) -->
+    <div class="ctrl-mobile-topbar">
+        <div style="display: flex; align-items: center; gap: 8px; color: #ffffff; font-weight: 800; font-size: 1rem;">
+            <div class="ctrl-brand-icon" style="width: 30px; height: 30px; font-size: 0.9rem;">
+                <i class="fa-solid fa-sliders"></i>
+            </div>
+            <span>Promoteur Control Center</span>
+        </div>
+
+        <button type="button" onclick="togglePromoterSidebar(true)" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-bars-staggered"></i> Menu Promoteur
+        </button>
+    </div>
+
+    <!-- Overlay sombre pour fermer le slide en cliquant à l'extérieur -->
+    <div id="ctrlPromoterOverlay" class="ctrl-slide-overlay" onclick="togglePromoterSidebar(false)"></div>
+
     <div class="dashboard-wrapper">
         <!-- ==============================================================================
              CENTRE DE CONTRÔLE LATÉRAL (SIDEBAR MODERNE)
              ============================================================================== -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="ctrlPromoterSidebar">
             <!-- 1. En-tête de Marque / Centre de Contrôle -->
             <div class="ctrl-brand">
                 <a href="dashboard.php" class="ctrl-brand-logo" style="text-decoration: none;">
@@ -392,13 +497,16 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         <i class="fa-solid fa-sliders"></i>
                     </div>
                     <div>
-                        <span style="display: block; line-height: 1.1;">Ticket Flow</span>
+                        <span style="display: block; line-height: 1.1;">Eventia</span>
                         <small
                             style="font-size: 0.62rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Control
                             Center</small>
                     </div>
                 </a>
-                <span class="ctrl-badge-pro">PRO</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span class="ctrl-badge-pro">PRO</span>
+                    <button type="button" onclick="togglePromoterSidebar(false)" style="background: transparent; border: 0; color: #94a3b8; font-size: 1.1rem; cursor: pointer; display: none;" class="ctrl-close-slide-btn">&times;</button>
+                </div>
             </div>
 
             <!-- 2. Profil Promoteur Connecté -->
@@ -435,6 +543,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                             class="<?php echo $current_page === 'dashboard.php' ? 'active' : ''; ?>">
                             <i class="fa-solid fa-chart-pie"></i>
                             <span>Tableau de Bord</span>
+                            <?php if ($current_page === 'dashboard.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
@@ -442,12 +551,14 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                             class="<?php echo in_array($current_page, ['mes-evenements.php', 'ticket-types.php'], true) ? 'active' : ''; ?>">
                             <i class="fa-solid fa-calendar-days"></i>
                             <span>Mes Événements</span>
+                            <?php if (in_array($current_page, ['mes-evenements.php', 'ticket-types.php'], true)): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
                         <a href="votes.php" class="<?php echo $current_page === 'votes.php' ? 'active' : ''; ?>">
                             <i class="fa-solid fa-trophy" style="color: #ca8a04;"></i>
                             <span>Concours & Votes</span>
+                            <?php if ($current_page === 'votes.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
@@ -455,6 +566,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                             class="<?php echo $current_page === 'demande-evenement.php' ? 'active' : ''; ?>">
                             <i class="fa-solid fa-plus-circle"></i>
                             <span>Proposer un Événement</span>
+                            <?php if ($current_page === 'demande-evenement.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
@@ -462,8 +574,9 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                             <i class="fa-solid fa-inbox"></i>
                             <span>Mes Demandes</span>
                             <?php if ($badge_demandes_promoteur > 0): ?>
-                                <span class="ctrl-badge-count"><?php echo $badge_demandes_promoteur; ?></span>
+                                <span class="badge-count"><?php echo $badge_demandes_promoteur; ?></span>
                             <?php endif; ?>
+                            <?php if ($current_page === 'demandes.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                 </ul>
@@ -476,6 +589,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                             class="<?php echo $current_page === 'mes-ventes.php' ? 'active' : ''; ?>">
                             <i class="fa-solid fa-receipt"></i>
                             <span>Ventes & Billetterie</span>
+                            <?php if ($current_page === 'mes-ventes.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
@@ -483,12 +597,14 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                             class="<?php echo $current_page === 'cotisations.php' ? 'active' : ''; ?>">
                             <i class="fa-solid fa-hand-holding-heart"></i>
                             <span>Mes Cotisations</span>
+                            <?php if ($current_page === 'cotisations.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
                         <a href="solde.php" class="<?php echo $current_page === 'solde.php' ? 'active' : ''; ?>">
                             <i class="fa-solid fa-wallet"></i>
                             <span>Solde & Retraits</span>
+                            <?php if ($current_page === 'solde.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                 </ul>
@@ -500,6 +616,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         <a href="agents.php" class="<?php echo $current_page === 'agents.php' ? 'active' : ''; ?>">
                             <i class="fa-solid fa-shield-halved"></i>
                             <span>Agents de Contrôle</span>
+                            <?php if ($current_page === 'agents.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                 </ul>
@@ -511,6 +628,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         <a href="profil.php" class="<?php echo $current_page === 'profil.php' ? 'active' : ''; ?>">
                             <i class="fa-solid fa-id-card"></i>
                             <span>Mon Profil Public</span>
+                            <?php if ($current_page === 'profil.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
@@ -519,9 +637,10 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                             <i class="fa-solid fa-headset"></i>
                             <span>Support & Tickets</span>
                             <?php if ($badge_claims_promoteur > 0): ?>
-                                <span class="ctrl-badge-count"
+                                <span class="badge-count"
                                     style="background: #0284c7;"><?php echo $badge_claims_promoteur; ?></span>
                             <?php endif; ?>
+                            <?php if ($current_page === 'reclamations.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                 </ul>
@@ -540,6 +659,25 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                 </a>
             </div>
         </aside>
+
+        <script>
+        function togglePromoterSidebar(force) {
+            const sidebar = document.getElementById('ctrlPromoterSidebar');
+            const overlay = document.getElementById('ctrlPromoterOverlay');
+            if (!sidebar) return;
+
+            const isShown = sidebar.classList.contains('show-slide');
+            const shouldShow = (typeof force === 'boolean') ? force : !isShown;
+
+            if (shouldShow) {
+                sidebar.classList.add('show-slide');
+                if (overlay) overlay.classList.add('active');
+            } else {
+                sidebar.classList.remove('show-slide');
+                if (overlay) overlay.classList.remove('active');
+            }
+        }
+        </script>
 
         <!-- ==============================================================================
              CONTENU PRINCIPAL DE LA PAGE

@@ -1,0 +1,5 @@
+No syntax errors detected in c:\wamp64\www\ticket-platform\client\accueil.php
+No syntax errors detected in c:\wamp64\www\ticket-platform\client\header.php
+accolades: 165 / 165
+residus burger: 1
+accueil HTTP 200; burger servi: False

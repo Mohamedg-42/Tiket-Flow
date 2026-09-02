@@ -9,7 +9,7 @@ require_once '../includes/auth.php';
 
 requireLogin('../connexion.php');
 
-$page_title = "Mes Commandes - Ticket Flow";
+$page_title = "Mes Commandes - Eventia";
 $body_class = "client-page";
 include 'header.php';
 
@@ -214,7 +214,7 @@ if ($filtre_v_categorie !== '') {
 }
 ?>
 
-<main class="client-main" style="max-width: 1080px; margin: 0 auto; padding: 2rem 1rem;">
+<main class="client-main" style="max-width: 1080px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2rem) clamp(0.75rem, 2vw, 1.5rem);">
     <!-- En-tête de la page -->
     <div class="page-header">
         <div class="page-heading">
@@ -228,7 +228,7 @@ if ($filtre_v_categorie !== '') {
     </div>
 
     <!-- ===== Mini tableau de bord : accès rapide ===== -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: clamp(0.75rem, 2vw, 1rem); margin-bottom: 1.75rem;">
         <a href="#section-commandes" id="tile-commandes" onclick="showSection('commandes'); return false;" style="background: #ffffff; border: 1px solid var(--line); border-left: 4px solid var(--primary); border-radius: var(--radius-md); padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 0.9rem; text-decoration: none; transition: all 0.2s ease; cursor: pointer;"
            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.08)';"
            onmouseout="this.style.transform='none'; this.style.boxShadow='none';">

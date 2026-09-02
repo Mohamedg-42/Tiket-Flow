@@ -1,0 +1,16 @@
+﻿Tables_in_ticket_platform (%candidat%)
+event_candidats
+Field	Type	Null	Key	Default	Extra
+id	int	NO	PRI	NULL	auto_increment
+event_id	int	NO	MUL	NULL	
+candidat_id	int	YES		NULL	
+user_id	int	YES		NULL	
+visitor_id	varchar(64)	YES		NULL	
+montant	decimal(12,2)	NO		0.00	
+methode	varchar(30)	YES		NULL	
+reference	varchar(50)	YES		NULL	
+transaction_id_api	varchar(60)	YES		NULL	
+statut	enum('paye','en_attente','annule')	NO		en_attente	
+created_at	timestamp	YES		CURRENT_TIMESTAMP	DEFAULT_GENERATED
+Field	Type	Null	Key	Default	Extra
+candidats_data	text	YES		NULL	

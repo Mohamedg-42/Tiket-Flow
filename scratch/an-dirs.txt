@@ -1,0 +1,17 @@
+﻿admin
+agent
+client
+config
+Css
+includes
+js
+logs
+payment
+preview-assets
+promoteur
+scratch
+uploads
+uploads\candidats
+uploads\events
+uploads\event_docs
+uploads\ids

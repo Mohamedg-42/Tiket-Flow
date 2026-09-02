@@ -1,0 +1,12 @@
+﻿    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+
+    .content-section {
+        page-break-inside: avoid;
+    }
+}

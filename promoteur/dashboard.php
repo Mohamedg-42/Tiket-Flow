@@ -591,13 +591,13 @@ try {
             </div>
         </div>
 
-        <!-- 3. Donut Statut des Commandes -->
+        <!-- 3. Donut Statut des tickets -->
         <div class="dash-card">
             <div class="dash-card-head">
                 <div>
                     <h3 class="dash-card-title">
                         <i class="fa-solid fa-pie-chart" style="color: #10b981;"></i>
-                        Statut des Commandes
+                        Statut des tickets
                     </h3>
                     <div class="dash-card-subtitle">Volume réel de vos événements</div>
                 </div>
@@ -988,7 +988,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // 4. Donut Statut des Commandes
+    // 4. Donut Statut des tickets
     const ctxOrdersProm = document.getElementById('promOrdersStatusChart');
     if (ctxOrdersProm) {
         new Chart(ctxOrdersProm, {

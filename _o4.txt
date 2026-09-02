@@ -1,0 +1,116 @@
+﻿1690:             const frais = Number(qtyInput.dataset.fraisPlace) || 0;
+1691:             totalCount += seats.length;
+1692:             totalPrice += seats.length * (prix + frais);
+1693:         });
+1694: 
+1695:         document.getElementById('clientModalTicketsCount').textContent = totalCount + ' place(s) s├⌐lectionn├⌐e(s)';
+1696:         document.getElementById('clientModalTotal').textContent = totalPrice.toLocaleString('fr-FR') + ' FCFA';
+1697: 
+1698:         const submitBtn = document.getElementById('btnSubmitOrder');
+1699:         if (totalCount <= 0) {
+1700:             submitBtn.disabled = true;
+1701:             submitBtn.style.opacity = '0.6';
+1702:         } else {
+1703:             submitBtn.disabled = false;
+1704:             submitBtn.style.opacity = '1';
+1705:         }
+1706:     }
+1707: 
+1708:     /* ===== Vote pour un ├⌐v├⌐nement ===== */
+1709:     async function toggleVote(e, btn) {
+1710:         e.stopPropagation();
+1711:         const eventId = btn.dataset.eventId;
+1712:         try {
+1713:             const res = await fetch('vote-event.php', {
+1714:                 method: 'POST',
+1715:                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+1716:                 body: 'event_id=' + encodeURIComponent(eventId)
+1717:             });
+1718:             const data = await res.json();
+1719:             if (data.error) {
+1720:                 alert(data.error);
+1721:                 return;
+1722:             }
+1723:             // VOTE PAYANT : le promoteur a fix├⌐ un prix ΓåÆ ouverture de la modale de paiement
+1724:             if (data.needs_payment) {
+1725:                 openVoteModal(eventId, data.event_nom, data.prix);
+1726:                 return;
+1727:             }
+1728:             // Phase 2 valid├⌐e : redirection vers la page de paiement Mobile Money
+1729:             if (data.redirect) {
+1730:                 window.location.href = data.redirect;
+1731:                 return;
+1732:             }
+1733:             // VOTE GRATUIT : bascule voter / vot├⌐
+1734:             btn.classList.toggle('voted', data.voted);
+1735:             btn.innerHTML = data.voted
+1736:                 ? '<i class="fa-solid fa-thumbs-up"></i> Vot├⌐'
+1737:                 : '<i class="fa-solid fa-thumbs-up"></i> Voter';
+1738:             // Met ├á jour le compteur de votes affich├⌐ dans la carte (sans recharger la page)
+1739:             const card = btn.closest('.event-card-item, .vote-item');
+1740:             if (card) {
+1741:                 const counter = card.querySelector('.vote-counter');
+1742:                 if (counter) {
+1743:                     counter.innerHTML = '<i class="fa-solid fa-star" style="color:#f59e0b;"></i> '
+1744:                         + data.votes + (data.votes > 1 ? ' votes' : ' vote');
+1745:                 }
+1746:             }
+1747:         } catch (err) {
+1748:             alert("Impossible d'enregistrer le vote. Ex├⌐cutez config/migration-votes-cotisations.sql pour cr├⌐er la table event_votes.");
+1749:         }
+1750:     }
+1751: 
+1752:     /* ===== Modale de paiement d'un vote payant ===== */
+1753:     const voteModal = document.getElementById('voteModal');
+1754:     let voteModalEventId = null;
+1755: 
+1756:     function openVoteModal(eventId, eventNom, prix) {
+1757:         voteModalEventId = eventId;
+1758:         document.getElementById('voteModalEventName').textContent = eventNom || '';
+1759:         document.getElementById('voteModalPrix').textContent =
+1760:             Number(prix).toLocaleString('fr-FR') + ' FCFA';
+1761:         voteModal.hidden = false;
+1762:         document.body.classList.add('modal-open');
+1763:     }
+1764: 
+1765:     function closeVoteModal() {
+1766:         voteModal.hidden = true;
+1767:         document.body.classList.remove('modal-open');
+1768:         voteModalEventId = null;
+1769:     }
+1770: 
+1771:     async function submitVotePayment(e) {
+1772:         e.preventDefault();
+1773:         if (!voteModalEventId) return false;
+1774: 
+1775:         const submitBtn = document.getElementById('votePaySubmit');
+1776:         submitBtn.disabled = true;
+1777:         submitBtn.style.opacity = '0.6';
+1778: 
+1779:         try {
+1780:             const methode = document.querySelector('input[name="vote_methode"]:checked').value;
+1781:             const res = await fetch('vote-event.php', {
+1782:                 method: 'POST',
+1783:                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+1784:                 body: 'event_id=' + encodeURIComponent(voteModalEventId) + '&methode=' + encodeURIComponent(methode)
+1785:             });
+1786:             const data = await res.json();
+1787:             if (data.redirect) {
+1788:                 window.location.href = data.redirect;
+1789:                 return false;
+1790:             }
+1791:             alert(data.error || 'Une erreur est survenue, veuillez r├⌐essayer.');
+1792:         } catch (err) {
+1793:             alert('Erreur r├⌐seau lors de la cr├⌐ation du paiement.');
+1794:         }
+1795:         submitBtn.disabled = false;
+1796:         submitBtn.style.opacity = '1';
+1797:         return false;
+1798:     }
+1799: 
+1800:     // Fermeture de la modale de vote par clic sur le fond
+1801:     voteModal.addEventListener('click', function(ev) {
+1802:         if (ev.target === voteModal) closeVoteModal();
+1803:     });
+1804: 
+1805:     /* ===== Montants rapides de cotisation ===== */

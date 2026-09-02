@@ -1,0 +1,1050 @@
+/* ==============================================================================
+   RESPONSIVE PROFESSIONAL LAYOUT (Css/responsive-pro.css)
+   Optimisation PARFAITE pour mobile, tablette et desktop - SANS DÉPASSEMENTS
+   ============================================================================== */
+
+:root {
+    /* Breakpoints modernes */
+    --breakpoint-xs: 320px;
+    --breakpoint-sm: 480px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
+
+    /* Espacements adaptatifs - SANS DÉBORDEMENT */
+    --spacing-xs: clamp(0.25rem, 1vw, 0.5rem);
+    --spacing-sm: clamp(0.5rem, 1.5vw, 0.75rem);
+    --spacing-md: clamp(0.75rem, 2vw, 1rem);
+    --spacing-lg: clamp(1rem, 2.5vw, 1.5rem);
+    --spacing-xl: clamp(1.25rem, 3vw, 2rem);
+
+    /* Typographie responsive - POLICES OPTIMISÉES */
+    --font-size-xs: clamp(0.7rem, 1.5vw, 0.75rem);
+    --font-size-sm: clamp(0.8rem, 2vw, 0.875rem);
+    --font-size-base: clamp(0.9rem, 2.5vw, 1rem);
+    --font-size-lg: clamp(1rem, 3vw, 1.125rem);
+    --font-size-xl: clamp(1.1rem, 3.5vw, 1.25rem);
+    --font-size-2xl: clamp(1.3rem, 4vw, 1.5rem);
+    --font-size-3xl: clamp(1.5rem, 5vw, 2rem);
+
+    /* Padding/Margin de conteneurs - SANS DÉBORDEMENT */
+    --container-padding: clamp(0.75rem, 2vw, 1.5rem);
+    --container-max-width: 100%;
+
+    /* Couleurs */
+    --paper: #ffffff;
+    --canvas: #f8fafc;
+    --line: #e2e8f0;
+    --line-light: #cbd5e1;
+    --navy: #0f172a;
+    --muted: #64748b;
+    --primary: #0d9488;
+    --primary-light: #14b8a6;
+
+    /* Design */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+    
+    --transition: all 0.3s ease;
+}
+
+/* ==============================================================================
+   1. RESET & BASE STYLES - ZÉRO DÉBORDEMENT
+   ============================================================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+}
+
+body {
+    font-size: var(--font-size-base);
+    padding: 0;
+    margin: 0;
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    word-break: break-word;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Empêcher tout débordement */
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+/* ==============================================================================
+   2. HEADER & NAVIGATION RESPONSIVE - ZÉRO DÉBORDEMENT
+   ============================================================================== */
+.client-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 10000;
+    box-shadow: var(--shadow-sm);
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.client-brand {
+    font-size: var(--font-size-lg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+}
+
+/* Desktop Navigation (>= 768px) */
+.client-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    max-width: calc(100% - 120px);
+    width: auto;
+}
+
+.client-nav a {
+    white-space: nowrap;
+    font-size: clamp(0.78rem, 1.5vw, 0.9rem);
+    padding: 0.45rem 0.85rem;
+    border-radius: var(--radius-full);
+    color: var(--ink);
+    transition: background 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.client-nav a:hover {
+    color: var(--primary);
+    background: var(--primary-soft);
+}
+
+.client-nav a.active {
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-soft);
+}
+
+.client-logout {
+    margin-left: auto;
+}
+
+/* ========== TABLETTE (768-1023px) : nav inline ========== */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .client-nav {
+        max-width: calc(100% - 150px);
+    }
+
+    .client-nav a {
+        font-size: var(--font-size-sm);
+        padding: 0.45rem clamp(0.7rem, 1.5vw, 1rem);
+    }
+}
+
+/* ==============================================================================
+   3. SIDEBAR RESPONSIVE
+   ============================================================================== */
+.sidebar {
+    width: 270px;
+    transition: transform 0.3s ease, width 0.3s ease;
+}
+
+/* Sidebar sur tablette */
+@media (max-width: 1023px) {
+    .sidebar {
+        position: fixed;
+        left: -270px;
+        top: 0;
+        bottom: 0;
+        z-index: 999;
+    }
+
+    .sidebar.open {
+        left: 0;
+    }
+
+    .dashboard-wrapper {
+        flex-direction: column;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* Sidebar sur mobile */
+@media (max-width: 767px) {
+    .sidebar {
+        width: 100%;
+        max-width: 280px;
+    }
+}
+
+/* ==============================================================================
+   4. GRILLES RESPONSIVE - SANS DÉBORDEMENT
+   ============================================================================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(150px, 40vw, 220px), 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+@media (max-width: 1279px) {
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(clamp(140px, 45vw, 180px), 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 50vw, 280px), 1fr));
+    gap: var(--spacing-lg);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1023px) {
+    .content-grid {
+        grid-template-columns: repeat(auto-fit, minmax(clamp(150px, 45vw, 200px), 1fr));
+        gap: var(--spacing-md);
+    }
+}
+
+@media (max-width: 767px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.two-column-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1023px) {
+    .two-column-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+}
+
+@media (max-width: 767px) {
+    .two-column-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+}
+
+/* ==============================================================================
+   5. CONTENEURS & MAX-WIDTH - SANS DÉBORDEMENT
+   ============================================================================== */
+.container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 var(--container-padding);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+main {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.main-content {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* ==============================================================================
+   6. CARDS LAYOUT - SANS DÉBORDEMENT
+   ============================================================================== */
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(200px, 45vw, 280px), 1fr));
+    gap: var(--spacing-lg);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 1023px) {
+    .cards-container {
+        grid-template-columns: repeat(auto-fill, minmax(clamp(160px, 40vw, 200px), 1fr));
+        gap: var(--spacing-md);
+    }
+}
+
+@media (max-width: 767px) {
+    .cards-container {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+}
+
+.card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.card-image {
+    width: 100%;
+    height: clamp(150px, 30vw, 200px);
+    object-fit: cover;
+}
+
+@media (max-width: 767px) {
+    .card-image {
+        height: clamp(120px, 40vw, 150px);
+    }
+}
+
+.card-body {
+    padding: var(--spacing-md);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.card-title {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+    word-break: break-word;
+}
+
+.card-text {
+    font-size: var(--font-size-xs);
+    color: var(--muted);
+    flex: 1;
+    margin-bottom: var(--spacing-md);
+    word-break: break-word;
+}
+
+.card-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+/* ==============================================================================
+   7. FORMULAIRES - SANS DÉBORDEMENT
+   ============================================================================== */
+.form-group {
+    margin-bottom: var(--spacing-md);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(180px, 40vw, 250px), 1fr));
+    gap: var(--spacing-md);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 767px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: clamp(0.6rem, 1.5vw, 0.8rem) clamp(0.75rem, 2vw, 1rem);
+    font-size: var(--font-size-base);
+    box-sizing: border-box;
+    max-width: 100%;
+    display: block;
+}
+
+/* ==============================================================================
+   8. BOUTONS - SANS DÉBORDEMENT
+   ============================================================================== */
+.btn-submit,
+.btn-action {
+    width: 100%;
+    padding: clamp(0.65rem, 1.5vw, 0.85rem) clamp(0.75rem, 2vw, 1.5rem);
+    font-size: var(--font-size-sm);
+    box-sizing: border-box;
+    max-width: 100%;
+    display: inline-block;
+}
+
+@media (max-width: 767px) {
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        width: 100%;
+    }
+
+    .button-group .btn-submit,
+    .button-group .btn-action {
+        width: 100%;
+    }
+}
+
+/* ==============================================================================
+   9. SECTIONS - SANS DÉBORDEMENT
+   ============================================================================== */
+.content-section {
+    padding: clamp(0.75rem, 2vw, 1.25rem);
+    background: var(--paper);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    margin-bottom: var(--spacing-md);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.section-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    margin-bottom: var(--spacing-md);
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+@media (max-width: 767px) {
+    .content-section {
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .section-title {
+        font-size: var(--font-size-base);
+    }
+}
+
+/* ==============================================================================
+   10. TABLEAUX - SANS DÉBORDEMENT
+   ============================================================================== */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: var(--spacing-lg);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+table th,
+table td {
+    padding: clamp(0.5rem, 1.5vw, 0.8rem);
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    word-break: break-word;
+}
+
+table th {
+    background: var(--canvas);
+    font-weight: 700;
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+}
+
+@media (max-width: 767px) {
+    table {
+        font-size: var(--font-size-xs);
+    }
+
+    .table-mobile-stack table {
+        display: block;
+        width: 100%;
+    }
+
+    .table-mobile-stack thead {
+        display: none;
+    }
+
+    .table-mobile-stack tr {
+        display: block;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        margin-bottom: var(--spacing-md);
+        overflow: hidden;
+    }
+
+    .table-mobile-stack td {
+        display: block;
+        text-align: right;
+        padding: clamp(0.5rem, 1.5vw, 0.75rem);
+        border-bottom: 1px solid var(--line-light);
+    }
+
+    .table-mobile-stack td::before {
+        content: attr(data-label);
+        float: left;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.65rem;
+        color: var(--muted);
+    }
+}
+
+/* ==============================================================================
+   11. FLEXBOX - SANS DÉBORDEMENT
+   ============================================================================== */
+.flex-responsive {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.flex-column-mobile {
+    display: flex;
+    flex-direction: row;
+    gap: var(--spacing-md);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 767px) {
+    .flex-column-mobile {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+}
+
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ==============================================================================
+   12. TYPOGRAPHIE COMPLÈTE
+   ============================================================================== */
+h1 {
+    font-size: var(--font-size-3xl);
+    line-height: 1.2;
+    margin-bottom: var(--spacing-md);
+    word-break: break-word;
+}
+
+h2 {
+    font-size: var(--font-size-2xl);
+    line-height: 1.3;
+    margin-bottom: var(--spacing-md);
+    word-break: break-word;
+}
+
+h3 {
+    font-size: var(--font-size-xl);
+    line-height: 1.4;
+    margin-bottom: var(--spacing-sm);
+    word-break: break-word;
+}
+
+h4 {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-sm);
+    word-break: break-word;
+}
+
+p {
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-md);
+    word-break: break-word;
+}
+
+small {
+    font-size: var(--font-size-xs);
+    word-break: break-word;
+}
+
+/* ==============================================================================
+   13. ESPACEMENTS COMPLETS
+   ============================================================================== */
+.p-responsive {
+    padding: var(--spacing-md);
+    box-sizing: border-box;
+}
+
+.px-responsive {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+    box-sizing: border-box;
+}
+
+.py-responsive {
+    padding-top: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+}
+
+.m-responsive {
+    margin: var(--spacing-md);
+}
+
+.gap-responsive {
+    gap: var(--spacing-md);
+}
+
+@media (max-width: 767px) {
+    .p-responsive {
+        padding: var(--spacing-sm);
+    }
+
+    .px-responsive {
+        padding-left: var(--spacing-sm);
+        padding-right: var(--spacing-sm);
+    }
+
+    .m-responsive {
+        margin: var(--spacing-sm);
+    }
+}
+
+/* ==============================================================================
+   14. MODALES & OVERLAYS
+   ============================================================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+}
+
+.modal {
+    width: min(100% - var(--spacing-md), 600px);
+    margin: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+@media (max-width: 767px) {
+    .modal {
+        width: 100%;
+        margin: 0;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        max-height: 95vh;
+    }
+}
+
+/* ==============================================================================
+   15. IMAGES
+   ============================================================================== */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.img-responsive {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* ==============================================================================
+   16. AFFICHAGE CONDITIONNEL
+   ============================================================================== */
+.show-mobile {
+    display: none;
+}
+
+.hide-mobile {
+    display: block;
+}
+
+@media (max-width: 767px) {
+    .show-mobile {
+        display: block;
+    }
+
+    .hide-mobile {
+        display: none;
+    }
+}
+
+.show-tablet {
+    display: none;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .show-tablet {
+        display: block;
+    }
+}
+
+/* ==============================================================================
+   17. UTILITAIRES
+   ============================================================================== */
+.w-full {
+    width: 100%;
+}
+
+.w-auto {
+    width: auto;
+}
+
+.max-w-sm {
+    max-width: 384px;
+}
+
+.max-w-md {
+    max-width: 448px;
+}
+
+.max-w-lg {
+    max-width: 512px;
+}
+
+.max-w-xl {
+    max-width: 576px;
+}
+
+.max-w-2xl {
+    max-width: 672px;
+}
+
+/* ==============================================================================
+   18. CARDS LAYOUT FINAL
+   ============================================================================== */
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(200px, 45vw, 280px), 1fr));
+    gap: var(--spacing-lg);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 1023px) {
+    .cards-container {
+        grid-template-columns: repeat(auto-fill, minmax(clamp(160px, 40vw, 220px), 1fr));
+        gap: var(--spacing-md);
+    }
+}
+
+@media (max-width: 767px) {
+    .cards-container {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+}
+
+.card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-light);
+}
+
+.card-image {
+    width: 100%;
+    height: clamp(140px, 30vw, 200px);
+    object-fit: cover;
+    display: block;
+}
+
+.card-body {
+    padding: var(--spacing-md);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.card-title {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    margin-bottom: var(--spacing-sm);
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.card-text {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    flex: 1;
+    margin-bottom: var(--spacing-md);
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.card-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+@media (max-width: 767px) {
+    .card-body {
+        padding: var(--spacing-sm);
+    }
+
+    .card-title {
+        font-size: var(--font-size-base);
+    }
+
+    .card-text {
+        font-size: var(--font-size-xs);
+    }
+}
+
+/* ==============================================================================
+   19. ANIMATIONS RESPONSIVES
+   ============================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ==============================================================================
+   20. DARK MODE
+   ============================================================================== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --paper: #1e293b;
+        --canvas: #0f172a;
+        --line: #334155;
+        --navy: #ffffff;
+    }
+
+    body {
+        background-color: var(--canvas);
+        color: var(--navy);
+    }
+
+    .content-section {
+        background: var(--paper);
+    }
+
+    table th {
+        background: var(--canvas);
+    }
+}
+
+/* ==============================================================================
+   21. SAFE AREA & ORIENTATION
+   ============================================================================== */
+@supports (padding: max(0px)) {
+    .client-header {
+        padding-left: max(var(--spacing-md), env(safe-area-inset-left));
+        padding-right: max(var(--spacing-md), env(safe-area-inset-right));
+    }
+
+    .sidebar {
+        padding-top: max(var(--spacing-md), env(safe-area-inset-top));
+    }
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+    .client-header {
+        padding: 0.75rem var(--spacing-md);
+    }
+
+    h1 {
+        font-size: var(--font-size-2xl);
+    }
+}
+
+/* ==============================================================================
+   22. PRINT STYLES
+   ============================================================================== */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+
+    .content-section {
+        page-break-inside: avoid;
+    }
+}
+
+/* ==============================================================================
+   22. DASHBOARD PROMOTEUR — TABLES EN CARTES SUR MOBILE (mes-ventes.php)
+   Sections "Disponibilité & Quotas des Billets" et
+   "Traçabilité & Historique des Billets Achetés"
+   ============================================================================== */
+@media (max-width: 767px) {
+    .mv-stack {
+        min-width: 0 !important;
+        display: block;
+        width: 100%;
+    }
+
+    .mv-stack thead {
+        display: none;
+    }
+
+    .mv-stack tr {
+        display: block;
+        border: 1px solid var(--dash-border);
+        border-radius: 12px;
+        margin-bottom: 0.85rem;
+        background: var(--dash-surface, #ffffff);
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+
+    .mv-stack td {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        text-align: right;
+        padding: 0.65rem 0.9rem !important;
+        border-bottom: 1px dashed var(--dash-border-light, #e2e8f0);
+        white-space: normal !important;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    /* Le label occupe l'espace restant : la valeur reste alignée à droite,
+       sur la MÊME ligne que le label (pas d'empilement en bloc) */
+    .mv-stack td::before {
+        content: attr(data-label);
+        float: none;
+        flex: 1 1 auto;
+        text-align: left;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--dash-muted, #94a3b8);
+    }
+
+    /* Les valeurs internes peuvent rétrécir et passer à la ligne si besoin */
+    .mv-stack td > * {
+        min-width: 0;
+    }
+
+    /* Cellules sans label (états vides colspan) : centrées, sans pseudo-label */
+    .mv-stack td:not([data-label]) {
+        display: block;
+        text-align: center;
+    }
+
+    .mv-stack td:not([data-label])::before {
+        content: none;
+    }
+
+    .mv-stack tr td:last-child {
+        border-bottom: none;
+    }
+
+    /* Neutralise les white-space:nowrap en inline qui forcent le débordement */
+    .mv-stack a,
+    .mv-stack strong,
+    .mv-stack small,
+    .mv-stack span,
+    .mv-stack div {
+        white-space: normal !important;
+    }
+
+    /* Les blocs flex internes (contacts, jauges) peuvent passer à la ligne */
+    .mv-stack td > div,
+    .mv-stack td > a {
+        flex-wrap: wrap !important;
+        max-width: 100%;
+    }
+}

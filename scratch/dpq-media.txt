@@ -1,0 +1,12 @@
+﻿40: @media (max-width: 991px) {
+144: @media (max-width: 1600px) {
+149: @media (max-width: 900px) {
+154: @media (max-width: 600px) {
+307: @media (max-width: 900px) {
+322: @media (max-width: 1400px) {
+330: @media (max-width: 800px) {
+345: @media (max-width: 1400px) {
+353: @media (max-width: 850px) {
+368: @media (max-width: 1200px) {
+708: @media (max-width: 1200px) {
+713: @media (max-width: 600px) {

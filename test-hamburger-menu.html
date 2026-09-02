@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Menu Hamburger - Ticket Flow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="css/responsive-pro.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .test-info {
+            padding: 1rem;
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            margin-bottom: 1rem;
+        }
+
+        .test-info h3 {
+            margin-bottom: 0.5rem;
+            color: #f57f17;
+        }
+
+        .breakpoint-indicator {
+            position: fixed;
+            bottom-right: 10px;
+            padding: 0.5rem 1rem;
+            background: #1976d2;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            z-index: 10001;
+        }
+
+        .content {
+            padding: 2rem;
+            background: white;
+            margin: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .content h2 {
+            color: #0f172a;
+            margin-bottom: 1rem;
+        }
+
+        .content p {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .test-section {
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #0d9488;
+        }
+
+        .test-section h4 {
+            color: #0d9488;
+            margin-bottom: 0.5rem;
+        }
+
+        .test-section ul {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .test-section li {
+            margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .test-section li:before {
+            content: "✓";
+            color: #0d9488;
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .test-section li.fail:before {
+            content: "✗";
+            color: #d32f2f;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .debug-info {
+            position: fixed;
+            bottom-left: 10px;
+            padding: 1rem;
+            background: rgba(0,0,0,0.8);
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            max-width: 300px;
+            z-index: 10000;
+        }
+
+        @media (max-width: 767px) {
+            .debug-info {
+                bottom: 70px;
+            }
+        }
+    </style>
+</head>
+<body class="client-page">
+
+<header class="client-header shared-client-header">
+    <a href="#" class="client-brand">
+        <i class="fa-solid fa-ticket"></i> TEST HAMBURGER
+    </a>
+
+    <button type="button" class="client-nav-toggle" onclick="toggleClientNav(event)" aria-label="Ouvrir le menu" aria-controls="clientNav" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <nav class="client-nav" id="clientNav">
+        <a href="#accueil"><i class="fa-solid fa-house"></i> Accueil</a>
+        <a href="#commandes"><i class="fa-solid fa-shopping-cart"></i> Mes Commandes</a>
+        <a href="#tickets"><i class="fa-solid fa-ticket"></i> Mes Tickets</a>
+        <a href="#promoteur"><i class="fa-solid fa-bullhorn"></i> Devenir Promoteur</a>
+        <a href="#profile"><i class="fa-solid fa-user"></i> Mon Profil</a>
+        <a href="#logout" class="client-logout"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+    </nav>
+</header>
+
+<div class="test-info">
+    <h3>📋 Instructions de Test</h3>
+    <ul style="list-style: none; padding-left: 0;">
+        <li>✓ Ouvrez cette page sur desktop (1200px+) → Le hamburger menu doit être CACHÉ</li>
+        <li>✓ Ouvrez cette page sur mobile (320px) → Le hamburger menu doit être VISIBLE</li>
+        <li>✓ Cliquez sur le hamburger → Le menu doit s'ouvrir avec animation</li>
+        <li>✓ Cliquez en dehors du menu → Le menu doit se fermer</li>
+        <li>✓ Cliquez sur un lien → Navigation + fermeture du menu</li>
+        <li>✓ Redimensionnez 767px→768px → Menu ferme automatiquement</li>
+    </ul>
+</div>
+
+<div class="content">
+    <h2>🔧 Corrections Apportées</h2>
+    
+    <div class="test-section">
+        <h4>1. CSS - Double Display Fix</h4>
+        <p><strong>Problème:</strong> <code>.client-nav-toggle</code> avait deux déclarations <code>display</code></p>
+        <div style="background: #ffebee; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-family: monospace; font-size: 0.85rem;">
+            ❌ AVANT:<br>
+            display: none; <span style="color: #d32f2f;">← Première déclaration</span><br>
+            ...<br>
+            display: flex; <span style="color: #d32f2f;">← Écrase la première!</span>
+        </div>
+        <div style="background: #e8f5e9; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-family: monospace; font-size: 0.85rem;">
+            ✓ APRÈS:<br>
+            display: none; <span style="color: #2e7d32;">← Pas dupliquée</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h4>2. HTML - Event Parameter Fix</h4>
+        <p><strong>Problème:</strong> <code>onclick="toggleClientNav()"</code> ne passait pas l'event</p>
+        <div style="background: #ffebee; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-family: monospace; font-size: 0.85rem;">
+            ❌ AVANT:<br>
+            onclick="toggleClientNav()" <span style="color: #d32f2f;">← Event non passé</span>
+        </div>
+        <div style="background: #e8f5e9; padding: 0.5rem; border-radius: 4px; margin: 0.5rem 0; font-family: monospace; font-size: 0.85rem;">
+            ✓ APRÈS:<br>
+            onclick="toggleClientNav(event)" <span style="color: #2e7d32;">← Event passé</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h4>3. Comportement Attendu</h4>
+        <ul>
+            <li><strong>Desktop (768px+):</strong> Navigation horizontale, hamburger caché</li>
+            <li><strong>Mobile (≤767px):</strong> Hamburger visible, menu dropdown au clic</li>
+            <li><strong>Menu Ouvert:</strong> Animation smooth, scrollable, ferme automatiquement</li>
+            <li><strong>Stoppage Propagation:</strong> event.stopPropagation() empêche fermeture immédiate</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h4>4. Fichiers Modifiés</h4>
+        <ul>
+            <li><code>css/responsive-pro.css</code> → Enlevé double display</li>
+            <li><code>agent/header.php</code> → Ajouté event parameter</li>
+            <li><code>client/header.php</code> → Ajouté event parameter</li>
+        </ul>
+    </div>
+</div>
+
+<div class="content">
+    <h2>📱 Responsive Breakpoints</h2>
+    <p>Le menu hamburger suit ces règles:</p>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+        <thead style="background: #f5f5f5;">
+            <tr>
+                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd;">Breakpoint</th>
+                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd;">Hamburger</th>
+                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd;">Navigation</th>
+                <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #ddd;">Menu Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 0.75rem;"><strong>320px - 767px</strong> (Mobile)</td>
+                <td style="padding: 0.75rem;">✓ Visible</td>
+                <td style="padding: 0.75rem;">Masquée</td>
+                <td style="padding: 0.75rem;">Dropdown (fixed, top: 0)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 0.75rem;"><strong>768px - 1023px</strong> (Tablet)</td>
+                <td style="padding: 0.75rem;">✗ Caché</td>
+                <td style="padding: 0.75rem;">✓ Horizontale</td>
+                <td style="padding: 0.75rem;">Ligne (flex)</td>
+            </tr>
+            <tr>
+                <td style="padding: 0.75rem;"><strong>1024px+</strong> (Desktop)</td>
+                <td style="padding: 0.75rem;">✗ Caché</td>
+                <td style="padding: 0.75rem;">✓ Horizontale</td>
+                <td style="padding: 0.75rem;">Ligne complète</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="content">
+    <h2>🧪 Checklist de Test</h2>
+    
+    <h4>Desktop (≥768px):</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+            <input type="checkbox"> Hamburger bouton caché
+        </div>
+        <div>
+            <input type="checkbox"> Navigation horizontale visible
+        </div>
+        <div>
+            <input type="checkbox"> Tous les liens visibles
+        </div>
+        <div>
+            <input type="checkbox"> Aucun overflow
+        </div>
+    </div>
+
+    <h4 style="margin-top: 1rem;">Mobile (≤767px):</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+            <input type="checkbox"> Hamburger bouton visible
+        </div>
+        <div>
+            <input type="checkbox"> Navigation masquée initialement
+        </div>
+        <div>
+            <input type="checkbox"> Clic hamburger = menu ouvre
+        </div>
+        <div>
+            <input type="checkbox"> Animation smooth (0.35s)
+        </div>
+        <div>
+            <input type="checkbox"> Menu scrollable si long
+        </div>
+        <div>
+            <input type="checkbox"> Clic lien = navigation + fermeture
+        </div>
+        <div>
+            <input type="checkbox"> Clic en dehors = fermeture
+        </div>
+        <div>
+            <input type="checkbox"> Body scroll bloqué quand ouvert
+        </div>
+    </div>
+
+    <h4 style="margin-top: 1rem;">Resize (767px → 768px):</h4>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+            <input type="checkbox"> Menu se ferme automatiquement
+        </div>
+        <div>
+            <input type="checkbox"> Navigation revient horizontale
+        </div>
+    </div>
+</div>
+
+<div class="breakpoint-indicator">
+    <span id="breakpoint-display">Loading...</span>
+</div>
+
+<div class="debug-info">
+    <div>🔍 Debug Info:</div>
+    <div>Menu State: <span id="menu-state">closed</span></div>
+    <div>Window Width: <span id="window-width">-</span>px</div>
+    <div>Hamburger Display: <span id="hamburger-display">-</span></div>
+    <div>event passed: <span id="event-debug">-</span></div>
+</div>
+
+<script>
+    // ========== HAMBURGER MENU - SIMPLIFIÉ ET FIABLE ==========
+    
+    // État du menu
+    let menuOpen = false;
+    
+    // Toggle du menu
+    function toggleClientNav(event) {
+        console.log("toggleClientNav called with event:", event);
+        
+        if (event) {
+            event.stopPropagation();
+            console.log("✓ Event passed and stopPropagation called");
+        } else {
+            console.warn("✗ Event NOT passed to toggleClientNav");
+        }
+        
+        const nav = document.getElementById('clientNav');
+        const btn = document.querySelector('.client-nav-toggle');
+        
+        if (!nav || !btn) {
+            console.error("NAV or BTN not found!");
+            return;
+        }
+        
+        menuOpen = !menuOpen;
+        console.log("Menu toggled. New state:", menuOpen ? "OPEN" : "CLOSED");
+        
+        if (menuOpen) {
+            // Ouvrir le menu
+            nav.classList.add('nav-open');
+            btn.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+            console.log("✓ Menu opened, body scroll hidden");
+        } else {
+            // Fermer le menu
+            closeMenu();
+        }
+        
+        updateDebugInfo();
+    }
+    
+    // Fonction pour fermer le menu
+    function closeMenu() {
+        const nav = document.getElementById('clientNav');
+        const btn = document.querySelector('.client-nav-toggle');
+        
+        if (!nav) return;
+        
+        menuOpen = false;
+        nav.classList.remove('nav-open');
+        
+        if (btn) {
+            btn.setAttribute('aria-expanded', 'false');
+        }
+        
+        document.body.style.overflow = '';
+        console.log("✓ Menu closed");
+        updateDebugInfo();
+    }
+    
+    // Au chargement complet du DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        const nav = document.getElementById('clientNav');
+        const btn = document.querySelector('.client-nav-toggle');
+        const navLinks = document.querySelectorAll('.client-nav a');
+        
+        if (!nav || !btn) {
+            console.error("DOMContentLoaded: NAV or BTN not found!");
+            return;
+        }
+        
+        console.log("✓ DOMContentLoaded: Setup complete");
+        
+        // Fermer au clic sur un lien du menu
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                console.log("Link clicked:", this.href);
+                setTimeout(() => {
+                    closeMenu();
+                }, 100);
+            });
+        });
+        
+        // Fermer le menu au clic en dehors
+        document.addEventListener('click', function(event) {
+            if (menuOpen) {
+                const header = document.querySelector('.client-header');
+                if (header && !header.contains(event.target) && !nav.contains(event.target)) {
+                    console.log("Outside click detected, closing menu");
+                    closeMenu();
+                }
+            }
+        });
+        
+        // Fermer au redimensionnement
+        window.addEventListener('resize', function() {
+            const width = window.innerWidth;
+            if (width > 767 && menuOpen) {
+                console.log("Resize to", width, "px > 767px, closing menu");
+                closeMenu();
+            }
+            updateBreakpoint();
+            updateDebugInfo();
+        });
+        
+        updateBreakpoint();
+        updateDebugInfo();
+    });
+    
+    function updateBreakpoint() {
+        const width = window.innerWidth;
+        let bp = '';
+        
+        if (width < 480) bp = 'XS (320px)';
+        else if (width < 768) bp = 'SM/MD (480px-767px)';
+        else if (width < 1024) bp = 'MD/LG (768px-1023px)';
+        else if (width < 1280) bp = 'LG (1024px-1279px)';
+        else if (width < 1536) bp = 'XL (1280px-1535px)';
+        else bp = '2XL (1536px+)';
+        
+        document.getElementById('breakpoint-display').textContent = bp;
+    }
+    
+    function updateDebugInfo() {
+        const hamburger = document.querySelector('.client-nav-toggle');
+        const hamburgerDisplay = window.getComputedStyle(hamburger).display;
+        
+        document.getElementById('menu-state').textContent = menuOpen ? '🔴 OPEN' : '🟢 CLOSED';
+        document.getElementById('window-width').textContent = window.innerWidth;
+        document.getElementById('hamburger-display').textContent = hamburgerDisplay;
+        document.getElementById('event-debug').textContent = 'Check console';
+    }
+    
+    // Initial setup
+    window.addEventListener('load', function() {
+        updateBreakpoint();
+        updateDebugInfo();
+    });
+    
+    window.addEventListener('resize', function() {
+        updateBreakpoint();
+        updateDebugInfo();
+    });
+</script>
+
+</body>
+</html>

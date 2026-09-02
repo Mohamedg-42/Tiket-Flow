@@ -41,7 +41,7 @@ $sql = "
            (SELECT COUNT(*) FROM event_votes v WHERE v.event_id = e.id) as total_votes,
            (SELECT COUNT(*) FROM event_likes l WHERE l.event_id = e.id) as total_likes,
            (SELECT COALESCE(SUM(vp.montant), 0) FROM vote_paiements vp WHERE vp.event_id = e.id AND vp.statut = 'paye') as total_recette_votes,
-           (SELECT COUNT(*) FROM event_participants ep WHERE ep.event_id = e.id) as nb_candidats
+           (SELECT COUNT(*) FROM event_candidats c WHERE c.event_id = e.id) as nb_candidats
     FROM events e
     LEFT JOIN users u ON e.user_id = u.id
     LEFT JOIN promoters p ON u.id = p.user_id
@@ -196,7 +196,7 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
     <!-- ==============================================================================
          3. CARTES KPIS DE SUPERVISION (AU-DESSOUS DES FILTRES)
          ============================================================================== -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: clamp(0.75rem, 2vw, 1rem); margin-bottom: 1.75rem;">
         <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7; text-transform: uppercase;">Suffrages Exprimés</span>

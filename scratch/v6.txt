@@ -1,0 +1,23 @@
+No syntax errors detected in c:\wamp64\www\ticket-platform\client\header.php
+
+---
+git : warning: in the working copy of 
+'client/header.php', LF will be replaced by 
+CRLF the next time Git touches it
+Au caractère Ligne:1 : 86
++ ... ring; $d = (git -C 
+c:\wamp64\www\ticket-platform diff --stat -- 
+clien ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (wa 
+   rning: in the... Git touches it:String) [],  
+   RemoteException
+    + FullyQualifiedErrorId : NativeCommandErro 
+   r
+ 
+ client/header.php | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+---
+accueil HTTP 200; burger js present: True

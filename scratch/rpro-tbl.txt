@@ -1,0 +1,18 @@
+﻿3: Optimisation PARFAITE pour mobile, tablette et desktop - SANS DÉPASSEMENTS
+313: /* ========== TABLET LAYOUT ========== */
+337: /* Sidebar sur tablette */
+648: 10. TABLEAUX - SANS DÉBORDEMENT
+650: .table-responsive {
+659: table {
+665: table th,
+666: table td {
+673: table th {
+681: table {
+685: .table-mobile-stack table {
+690: .table-mobile-stack thead {
+694: .table-mobile-stack tr {
+702: .table-mobile-stack td {
+709: .table-mobile-stack td::before {
+904: .show-tablet {
+909: .show-tablet {
+1076: table th {

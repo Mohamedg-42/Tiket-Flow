@@ -28,6 +28,6 @@ if (ini_get("session.use_cookies")) {
 // 3. On détruit la session
 session_destroy();
 
-// 4. On redirige vers la page de connexion avec message
-header("Location: connexion.php?logout=1");
+// 4. On redirige vers la page d'accueil du site avec message de déconnexion
+header("Location: client/accueil.php?logout=1");
 exit();

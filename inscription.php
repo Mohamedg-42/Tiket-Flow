@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inscription - Ticket Flow</title>
+    <title>Inscription - Eventia</title>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Style CSS -->
@@ -167,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="auth-container" style="width: min(100%, 520px);">
         <h2><i class="fa-solid fa-ticket"></i> Créer un compte</h2>
         <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.92rem;">
-            Rejoignez Ticket Flow pour réserver ou organiser des événements
+            Rejoignez Eventia pour réserver ou organiser des événements
         </p>
 
         <?php if (!empty($message)): ?>

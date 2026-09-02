@@ -7,16 +7,33 @@
 require_once '../config/database.php';
 session_start();
 
-$page_title = "Ticket Flow - Billetterie en ligne & Événements";
+$page_title = "Eventia - Billetterie en ligne & Événements";
 $body_class = "client-page client-home-page";
 include 'header.php';
 
 $is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 
+// Message de confirmation après déconnexion (redirection depuis deconnexion.php)
+$logout_msg = isset($_GET['logout']);
+
+
 // Rôle du visiteur : les promoteurs et administrateurs ne peuvent pas effectuer
 // d'actions client (achat de billets, cotisation, vote, like) — consultation seule
 $user_role = $_SESSION['user_role'] ?? '';
 $peut_agir = !$is_logged_in || $user_role === 'client';
+?>
+
+<?php if (!empty($logout_msg)): ?>
+    <div style="max-width: 1200px; margin: 1rem auto 0; padding: 0 1rem;">
+        <div
+            style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 0.85rem 1.25rem; color: #166534; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600;">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Vous avez été déconnecté avec succès. À bientôt sur Eventia !</span>
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php // Le contenu de la page continue ci-dessous
 
 // Téléphone du client connecté (pré-rempli automatiquement, sans ressaisie)
 $user_telephone = '';
@@ -890,7 +907,8 @@ try {
     }
 </style>
 
-<main class="client-main" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
+<main class="client-main"
+    style="max-width: 1200px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2rem) clamp(0.75rem, 2vw, 1.5rem);">
     <!-- ===== Onglets principaux (tout en haut) ===== -->
     <div class="main-tabs">
         <a href="accueil.php?onglet=evenements"
@@ -904,7 +922,7 @@ try {
             <span class="main-tab-badge"><?php echo $nb_campagnes_total; ?></span>
         </a>
         <a href="accueil.php?onglet=voter" class="main-tab <?php echo ($onglet === 'voter') ? 'active' : ''; ?>">
-            <i class="fa-solid fa-vote-yea"></i> Voter
+            <i class="fa-solid fa-vote-yea"></i> Vote
             <span class="main-tab-badge"><?php echo $nb_votes_total; ?></span>
         </a>
     </div>
@@ -933,7 +951,8 @@ try {
 
             <?php if (!empty($campagnes)): ?>
                 <!-- Grille des campagnes de cotisation (présentées comme des événements) -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.75rem;">
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: clamp(1rem, 2.5vw, 1.75rem);">
                     <?php foreach ($campagnes as $campagne): ?>
                         <?php
                         $collecte = (float) $campagne['montant_collecte'];
@@ -1123,7 +1142,7 @@ try {
                             </button>
                             <p style="color: var(--muted); font-size: 0.78rem; margin-top: 0.75rem; text-align: center;">
                                 <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Paiement sécurisé par
-                                Mobile Money (Wave, Orange, MTN, Moov)
+                                Mobile Money
                             </p>
                         </form>
                     <?php else: ?>
@@ -1192,7 +1211,8 @@ try {
             ?>
 
             <?php if (!empty($classement)): ?>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.75rem;">
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: clamp(1rem, 2.5vw, 1.75rem);">
                     <?php foreach ($classement as $rang => $ev): ?>
                         <?php
                         $deja_vote = !empty($voted_events[$ev['id']]);
@@ -1337,12 +1357,13 @@ try {
                                     style="margin-top: auto; border-top: 1px solid var(--line-light); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
                                     <span class="vote-counter" style="color: var(--navy); font-weight: 800; font-size: 1rem;">
                                         <i class="fa-solid fa-star" style="color: #f59e0b;"></i>
-                                        <?php echo (int) $ev['nb_votes']; ?> vote<?php echo ((int) $ev['nb_votes'] > 1) ? 's' : ''; ?>
+                                        <?php echo (int) $ev['nb_votes']; ?>
+                                        vote<?php echo ((int) $ev['nb_votes'] > 1) ? 's' : ''; ?>
                                     </span>
                                     <button type="button" class="vote-btn <?php echo $deja_vote ? 'voted' : ''; ?>"
                                         data-event-id="<?php echo (int) $ev['id']; ?>" <?php if ($peut_agir): ?>onclick="toggleVote(event, this)" <?php else: ?>disabled title="Réservé aux clients" <?php endif; ?>>
                                         <i class="fa-solid <?php echo $peut_agir ? 'fa-thumbs-up' : 'fa-lock'; ?>"></i>
-                                        <?php echo $peut_agir ? ($deja_vote ? 'Voté' : ($est_payant ? 'Voter (Choix)' : 'Voter')) : 'Réservé aux clients'; ?>
+                                        <?php echo $peut_agir ? ($deja_vote ? 'Voté' : ($est_payant ? 'Vote (Choix)' : 'Vote')) : 'Réservé aux clients'; ?>
                                     </button>
                                 </div>
                             </div>
@@ -1461,7 +1482,8 @@ try {
             </div>
 
             <?php if (count($events) > 0): ?>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.75rem;">
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: clamp(1rem, 2.5vw, 1.75rem);">
                     <?php foreach ($events as $event): ?>
                         <?php
                         $ticket_stmt = $pdo->prepare('SELECT * FROM ticket_types WHERE event_id = ? ORDER BY prix ASC');
@@ -1869,11 +1891,12 @@ try {
         </button>
 
         <h2 id="voteModalTitle" style="margin: 0.2rem 0 0.3rem; font-size: 1.4rem;">
-            <i class="fa-solid fa-up-long" style="color: var(--primary);"></i> Voter
+            <i class="fa-solid fa-up-long" style="color: var(--primary);"></i> Vote
         </h2>
         <p id="voteModalEventName"
             style="font-weight: 700; color: var(--primary); font-size: 0.98rem; margin: 0 0 0.6rem;"></p>
 
+        <!-- L'opérateur Mobile Money et le numéro sont demandés sur la page de paiement (comme pour les événements) -->
         <div
             style="color: var(--navy); font-size: 0.88rem; margin: 0 0 1rem; background: var(--primary-soft, #f0fdfa); border-left: 3px solid var(--primary); border-radius: 6px; padding: 0.75rem 0.9rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <div>
@@ -1919,41 +1942,14 @@ try {
                 <strong id="voteModalTotalAmount" style="color: #38bdf8; font-size: 1.35rem;">0 FCFA</strong>
             </div>
 
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label style="font-size: 0.85rem; font-weight: 700;"><i class="fa-solid fa-mobile-screen-button"></i>
-                    Opérateur Mobile Money *</label>
-                <label
-                    style="display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.9rem; border: 2px solid #bfdbfe; border-radius: 8px; background: #eff6ff; cursor: pointer; margin-bottom: 0.5rem;">
-                    <input type="radio" name="vote_methode" value="wave" checked
-                        style="accent-color: #0284c7; transform: scale(1.15);">
-                    <i class="fa-solid fa-water" style="color: #0284c7;"></i> <strong
-                        style="color: var(--navy);">Wave</strong>
-                </label>
-                <label
-                    style="display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.9rem; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; margin-bottom: 0.5rem;">
-                    <input type="radio" name="vote_methode" value="orange_money"
-                        style="accent-color: #ea580c; transform: scale(1.15);">
-                    <i class="fa-solid fa-wallet" style="color: #ea580c;"></i> <strong
-                        style="color: var(--navy);">Orange Money</strong>
-                </label>
-                <label
-                    style="display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.9rem; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; margin-bottom: 0.5rem;">
-                    <input type="radio" name="vote_methode" value="mtn_money"
-                        style="accent-color: #ca8a04; transform: scale(1.15);">
-                    <i class="fa-solid fa-money-bill-transfer" style="color: #ca8a04;"></i> <strong
-                        style="color: var(--navy);">MTN MoMo</strong>
-                </label>
-                <label
-                    style="display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 0.9rem; border: 1px solid var(--line); border-radius: 8px; cursor: pointer;">
-                    <input type="radio" name="vote_methode" value="moov_money"
-                        style="accent-color: #16a34a; transform: scale(1.15);">
-                    <i class="fa-solid fa-building-columns" style="color: #16a34a;"></i> <strong
-                        style="color: var(--navy);">Moov Money</strong>
-                </label>
-            </div>
+            <!-- L'opérateur Mobile Money sera choisi sur la page de paiement sécurisée (comme pour l'achat de billets) -->
+            <p style="color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem; text-align: center;">
+                Après confirmation, vous choisirez votre opérateur Mobile Money (Wave, Orange Money, MTN MoMo ou Moov
+                Money) sur la page de paiement sécurisée.
+            </p>
 
             <button type="submit" id="votePaySubmit" class="btn-submit" style="margin-top: 0.5rem;">
-                <i class="fa-solid fa-credit-card"></i> Payer et voter
+                <i class="fa-solid fa-credit-card"></i> Continuer vers le paiement
             </button>
             <p style="color: var(--muted); font-size: 0.78rem; margin-top: 0.75rem; text-align: center;">
                 <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Paiement sécurisé par Mobile
@@ -2238,7 +2234,7 @@ try {
             btn.classList.toggle('voted', data.voted);
             btn.innerHTML = data.voted
                 ? '<i class="fa-solid fa-thumbs-up"></i> Voté'
-                : '<i class="fa-solid fa-thumbs-up"></i> Voter';
+                : '<i class="fa-solid fa-thumbs-up"></i> Vote';
             // Met à jour le compteur de votes affiché dans la carte (sans recharger la page)
             const card = btn.closest('.event-card-item, .vote-item');
             if (card) {
@@ -2348,7 +2344,7 @@ try {
             } else {
                 submitBtn.disabled = false;
                 submitBtn.style.opacity = '1';
-                submitBtn.innerHTML = '<i class="fa-solid fa-credit-card"></i> Payer et valider ' + count + ' vote' + (count > 1 ? 's' : '');
+                submitBtn.innerHTML = '<i class="fa-solid fa-credit-card"></i> Continuer vers le paiement (' + count + ' vote' + (count > 1 ? 's' : '') + ')';
             }
         } else {
             document.getElementById('voteModalTotalDetail').textContent = '1 vote pour l\'événement';
@@ -2356,7 +2352,7 @@ try {
             const submitBtn = document.getElementById('votePaySubmit');
             submitBtn.disabled = false;
             submitBtn.style.opacity = '1';
-            submitBtn.innerHTML = '<i class="fa-solid fa-credit-card"></i> Payer et voter';
+            submitBtn.innerHTML = '<i class="fa-solid fa-credit-card"></i> Continuer vers le paiement';
         }
     }
 
@@ -2376,7 +2372,6 @@ try {
         submitBtn.style.opacity = '0.6';
 
         try {
-            const methode = document.querySelector('input[name="vote_methode"]:checked').value;
             const selectedCbs = Array.from(document.querySelectorAll('.vote-candidat-cb:checked')).map(cb => cb.value);
 
             if (currentVoteCandidats.length > 0 && selectedCbs.length === 0) {
@@ -2386,7 +2381,7 @@ try {
                 return false;
             }
 
-            let bodyParams = 'event_id=' + encodeURIComponent(voteModalEventId) + '&methode=' + encodeURIComponent(methode);
+            let bodyParams = 'event_id=' + encodeURIComponent(voteModalEventId) + '&phase=2';
             if (selectedCbs.length > 0) {
                 bodyParams += '&candidat_ids=' + encodeURIComponent(selectedCbs.join(','));
             }

@@ -32,12 +32,12 @@ if (!$cotisation || $cotisation['statut'] !== 'en_attente') {
     exit();
 }
 
-$page_title = "Paiement de votre Contribution - Ticket Flow";
+$page_title = "Paiement de votre Contribution - Eventia";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>
 
-<div class="payment-container" style="max-width: 580px; margin: 2rem auto; padding: 0 1rem;">
+<div class="payment-container" style="max-width: 580px; margin: 2rem auto; padding: 0 clamp(0.75rem, 2vw, 1rem);">
     <a href="accueil.php?onglet=cotisations" class="back-link" style="margin-bottom: 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; color: var(--muted); text-decoration: none; font-weight: 600;">
         <i class="fa-solid fa-arrow-left"></i> Annuler et retourner aux cotisations
     </a>

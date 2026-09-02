@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - Ticket Flow</title>
+    <title>Connexion - Eventia</title>
     <!-- Icônes FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Style CSS -->
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="auth-container">
         <h2><i class="fa-solid fa-lock"></i> Connexion</h2>
         <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
-            Accédez à votre espace Ticket Flow
+            Accédez à votre espace Eventia
         </p>
 
         <!-- Message d'erreur -->

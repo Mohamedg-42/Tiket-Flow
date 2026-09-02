@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once '../config/database.php';
 session_start();
 
@@ -51,8 +51,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Devenir Promoteur - Ticket Flow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devenir Promoteur - Eventia</title>
     <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 560px) {
+            body { padding: 1.25rem !important; }
+            .form-grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body style="display: block; padding: 2rem;">
 
@@ -67,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST" enctype="multipart/form-data">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-grid-2">
                 <div class="form-group">
                     <label>Nom complet</label>
                     <input type="text" name="nom" required>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0d9488">
+    <title>Test Responsive - Page Agent</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="Css/style.css">
+    <link rel="stylesheet" href="Css/responsive-pro.css">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .breakpoint-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #38bdf8;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 9999;
+        }
+        .test-section {
+            background: #f8fafc;
+            border: 2px solid #38bdf8;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        .test-column {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .test-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<header class="client-header" style="background: #0f172a; color: white;">
+    <a href="#" class="client-brand" style="color: #38bdf8;">
+        <i class="fa-solid fa-qrcode"></i> TEST AGENT
+    </a>
+    <nav class="client-nav">
+        <a href="#" style="color: white;">
+            <i class="fa-solid fa-camera"></i> Scanner
+        </a>
+        <a href="#" style="color: white;">
+            <i class="fa-solid fa-history"></i> Historique
+        </a>
+    </nav>
+</header>
+
+<main class="container" style="margin: clamp(1rem, 3vw, 2rem) auto;">
+    <div class="breakpoint-indicator">
+        <span class="breakpoint-xs">320px</span>
+        <span class="breakpoint-sm" style="display: none;">480px</span>
+        <span class="breakpoint-md" style="display: none;">768px</span>
+        <span class="breakpoint-lg" style="display: none;">1024px</span>
+        <span class="breakpoint-xl" style="display: none;">1280px</span>
+    </div>
+
+    <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--spacing-lg);">
+        Test Responsive - Page Agent
+    </h1>
+
+    <!-- Test Grille Responsive -->
+    <div class="test-section">
+        <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--spacing-md);">
+            Grille Responsive (auto-fit minmax)
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(200px, 45vw, 300px), 1fr)); gap: var(--spacing-lg);">
+            <div class="test-box">
+                <h3>Box 1</h3>
+                <p style="font-size: var(--font-size-sm);">Responsive</p>
+            </div>
+            <div class="test-box">
+                <h3>Box 2</h3>
+                <p style="font-size: var(--font-size-sm);">Responsive</p>
+            </div>
+            <div class="test-box">
+                <h3>Box 3</h3>
+                <p style="font-size: var(--font-size-sm);">Responsive</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Formulaire -->
+    <div class="test-section">
+        <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--spacing-md);">
+            Formulaire Responsive
+        </h2>
+        <form style="width: 100%; box-sizing: border-box;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label style="font-size: var(--font-size-sm); font-weight: 600;">Code Ticket</label>
+                    <input type="text" placeholder="TK-..." style="width: 100%; padding: clamp(0.65rem, 1.5vw, 0.85rem); font-size: var(--font-size-base); box-sizing: border-box;">
+                </div>
+                <div class="form-group">
+                    <label style="font-size: var(--font-size-sm); font-weight: 600;">Catégorie</label>
+                    <input type="text" placeholder="Standard" style="width: 100%; padding: clamp(0.65rem, 1.5vw, 0.85rem); font-size: var(--font-size-base); box-sizing: border-box;">
+                </div>
+            </div>
+            <button type="button" class="btn-submit" style="font-size: var(--font-size-sm); padding: clamp(0.65rem, 1.5vw, 0.85rem); width: 100%;">
+                Vérifier
+            </button>
+        </form>
+    </div>
+
+    <!-- Test Typographie -->
+    <div class="test-section">
+        <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--spacing-md);">
+            Typographie Responsive
+        </h2>
+        <h1 style="font-size: var(--font-size-3xl); word-break: break-word;">
+            Titre très long qui ne doit pas déborder du conteneur et doit bien se casser sur mobile
+        </h1>
+        <h2 style="font-size: var(--font-size-2xl); margin-top: var(--spacing-md); word-break: break-word;">
+            Sous-titre responsive avec beaucoup de contenu textuel
+        </h2>
+        <p style="font-size: var(--font-size-base); line-height: 1.6; word-break: break-word;">
+            Ceci est un paragraphe de test avec du contenu textuel long qui devrait se casser correctement sur tous les écrans, sans déborder du conteneur. Le contenu doit être lisible et bien formaté sur tous les appareils.
+        </p>
+    </div>
+
+    <!-- Test Espacements -->
+    <div class="test-section">
+        <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--spacing-md);">
+            Espacements Adaptatifs avec clamp()
+        </h2>
+        <div style="background: #dcfce7; padding: var(--spacing-xs); margin-bottom: var(--spacing-md); border-radius: 4px;">
+            <small>--spacing-xs: clamp(0.25rem, 1vw, 0.5rem)</small>
+        </div>
+        <div style="background: #dbeafe; padding: var(--spacing-sm); margin-bottom: var(--spacing-md); border-radius: 4px;">
+            <small>--spacing-sm: clamp(0.5rem, 1.5vw, 0.75rem)</small>
+        </div>
+        <div style="background: #fce7f3; padding: var(--spacing-md); margin-bottom: var(--spacing-md); border-radius: 4px;">
+            <small>--spacing-md: clamp(0.75rem, 2vw, 1rem)</small>
+        </div>
+        <div style="background: #fef3c7; padding: var(--spacing-lg); margin-bottom: var(--spacing-md); border-radius: 4px;">
+            <small>--spacing-lg: clamp(1rem, 2.5vw, 1.5rem)</small>
+        </div>
+    </div>
+
+    <!-- Test Table -->
+    <div class="test-section">
+        <h2 style="font-size: var(--font-size-2xl); margin-bottom: var(--spacing-md);">
+            Table Responsive
+        </h2>
+        <div class="table-responsive">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: clamp(0.5rem, 1.5vw, 0.8rem); text-align: left; border-bottom: 1px solid #e2e8f0; font-size: var(--font-size-xs);">Code</th>
+                        <th style="padding: clamp(0.5rem, 1.5vw, 0.8rem); text-align: left; border-bottom: 1px solid #e2e8f0; font-size: var(--font-size-xs);">Événement</th>
+                        <th style="padding: clamp(0.5rem, 1.5vw, 0.8rem); text-align: left; border-bottom: 1px solid #e2e8f0; font-size: var(--font-size-xs);">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: clamp(0.5rem, 1.5vw, 0.8rem); border-bottom: 1px solid #e2e8f0; font-size: var(--font-size-xs); word-break: break-word;">TK-ABC123</td>
+                        <td style="padding: clamp(0.5rem, 1.5vw, 0.8rem); border-bottom: 1px solid #e2e8f0; font-size: var(--font-size-xs); word-break: break-word;">Concert 2024</td>
+                        <td style="padding: clamp(0.5rem, 1.5vw, 0.8rem); border-bottom: 1px solid #e2e8f0; font-size: var(--font-size-xs);"><span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 3px;">✓ Valide</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // Indicateur de breakpoint
+    function updateBreakpoint() {
+        const width = window.innerWidth;
+        document.querySelectorAll('.breakpoint-indicator span').forEach(el => el.style.display = 'none');
+        
+        if (width < 480) document.querySelector('.breakpoint-xs').style.display = 'inline';
+        else if (width < 768) document.querySelector('.breakpoint-sm').style.display = 'inline';
+        else if (width < 1024) document.querySelector('.breakpoint-md').style.display = 'inline';
+        else if (width < 1280) document.querySelector('.breakpoint-lg').style.display = 'inline';
+        else document.querySelector('.breakpoint-xl').style.display = 'inline';
+    }
+    window.addEventListener('resize', updateBreakpoint);
+    updateBreakpoint();
+</script>
+</body>
+</html>

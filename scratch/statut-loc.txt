@@ -1,0 +1,2 @@
+﻿C:\wamp64\www\ticket-platform\admin\dashboard.php
+C:\wamp64\www\ticket-platform\promoteur\dashboard.php

@@ -1,0 +1,81 @@
+﻿95:         $tickets_data = [];
+96:         for ($i = 0; $i < count($ticket_noms); $i++) {
+97:             $t_nom  = trim($ticket_noms[$i]);
+98:             $t_prix = (float)($ticket_prix[$i] ?? 0);
+99:             $t_qty  = (int)($ticket_qtys[$i] ?? 0);
+100: 
+101:             if (!empty($t_nom) && $t_prix > 0 && $t_qty > 0) {
+102:                 $tickets_data[] = [
+103:                     'nom'         => $t_nom,
+104:                     'prix'        => $t_prix,
+105:                     'quantite'    => $t_qty,
+106:                     'frais_place' => max(0, (float)($ticket_frais[$i] ?? 0))
+107:                 ];
+108:             }
+109:         }
+110: 
+111:         if (empty($tickets_data)) {
+112:             $message = "Veuillez configurer au moins un type de ticket valide (nom, prix sup├⌐rieur ├á 0 et quantit├⌐ positive).";
+113:             $msg_type = "error";
+114:         } else {
+115:             try {
+116:                 $sql = "INSERT INTO event_requests (
+117:                             user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote,
+118:                             infos_supplementaires, type_personne, nom_structure, numero_rccm,
+119:                             document_justificatif, document_autorisation, ticket_types_data, statut
+120:                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente')";
+121: 
+122:                 $stmt = $pdo->prepare($sql);
+123:                 $stmt->execute([
+124:                     $_SESSION['user_id'],
+125:                     $nom,
+126:                     $description,
+127:                     $image_name,
+128:                     $categorie,
+129:                     $date_evenement,
+130:                     $heure,
+131:                     $lieu,
+132:                     $prix_vote,
+133:                     $infos_supp,
+134:                     $type_personne,
+135:                     $nom_structure,
+136:                     $numero_rccm,
+137:                     $doc_justificatif,
+138:                     $doc_autorisation,
+139:                     json_encode($tickets_data, JSON_UNESCAPED_UNICODE)
+140:                 ]);
+141: 
+142:                 $message = "Votre proposition d'├⌐v├⌐nement a ├⌐t├⌐ transmise ├á l'administrateur avec succ├¿s ! Vous pouvez suivre son approbation dans ┬½ Mes ├ëv├⌐nements ┬╗.";
+143:                 $msg_type = "success";
+144: 
+145:             } catch (PDOException $e) {
+146:                 $message = "Erreur lors de l'envoi de la demande : " . $e->getMessage();
+147:                 $msg_type = "error";
+148:             }
+149:         }
+150:     }
+151: }
+152: 
+153: // ===== Traitement : Cr├⌐er une campagne de cotisation (depuis l'onglet Cotisation) =====
+154: if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creer_campagne') {
+155:     $titre_c           = trim($_POST['titre'] ?? '');
+156:     $description_c      = trim($_POST['description'] ?? '');
+157:     $objectif_c         = filter_input(INPUT_POST, 'montant_objectif', FILTER_VALIDATE_FLOAT);
+158:     $date_limite_c      = trim($_POST['date_limite'] ?? '');
+159: 
+160:     if ($titre_c === '' || !$objectif_c || $objectif_c < 1000) {
+161:         $message = "Veuillez renseigner un titre et un montant ├á atteindre valide (minimum 1 000 FCFA).)";
+162:         $msg_type = "error";
+163:     } else {
+164:         $image_c = null;
+165:         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+166:             $ext_c = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+167:             $allowed_c = ['jpg', 'jpeg', 'png', 'webp'];
+168:             if (in_array($ext_c, $allowed_c, true)) {
+169:                 $upload_c = '../uploads/events/';
+170:                 if (!is_dir($upload_c)) mkdir($upload_c, 0777, true);
+171:                 $image_c = 'campagne_' . uniqid() . '.' . $ext_c;
+172:                 move_uploaded_file($_FILES['image']['tmp_name'], $upload_c . $image_c);
+173:             }
+174:         }
+175:         try {

@@ -37,7 +37,10 @@ $badge_demandes_all = $badge_event_reqs + $badge_campagnes_pending;
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0d9488">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($admin_page_title); ?></title>
 
     <!-- Google Fonts: Plus Jakarta Sans -->
@@ -51,6 +54,8 @@ $badge_demandes_all = $badge_event_reqs + $badge_campagnes_pending;
     <!-- CSS Platform & Dashboard Pro -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../Css/dashboard-pro.css">
+    <!-- Responsive Professional CSS -->
+    <link rel="stylesheet" href="../Css/responsive-pro.css">
 
     <style>
         /* ==============================================================================
@@ -367,6 +372,13 @@ $badge_demandes_all = $badge_event_reqs + $badge_campagnes_pending;
             }
             .ctrl-slide-overlay.active {
                 display: block;
+            }
+            .ctrl-close-slide-btn {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 30px;
+                height: 30px;
             }
         }
     </style>

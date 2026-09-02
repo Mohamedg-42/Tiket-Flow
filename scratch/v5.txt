@@ -1,0 +1,2 @@
+﻿accolades: 186 / 186
+No syntax errors detected in c:\wamp64\www\ticket-platform\client\accueil.php

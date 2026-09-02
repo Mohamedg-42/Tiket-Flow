@@ -208,12 +208,12 @@ try {
     exit();
 }
 
-$page_title = "Billets & Paiement Confirmé - Ticket Flow";
+$page_title = "Billets & Paiement Confirmé - Eventia";
 $body_class = "client-page payment-result-page";
 include 'header.php';
 ?>
 
-<main style="max-width: 960px; margin: 2rem auto; padding: 0 1rem;">
+<main style="max-width: 960px; margin: 2rem auto; padding: 0 clamp(0.75rem, 2vw, 1rem);">
     <!-- En-tête de confirmation -->
     <div style="background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius-xl); padding: 2.5rem; text-align: center; box-shadow: var(--shadow-lg); margin-bottom: 2rem;">
         <div style="width: 70px; height: 70px; background: #dcfce7; color: #16a34a; border-radius: 50%; display: grid; place-items: center; font-size: 2rem; margin: 0 auto 1.25rem;">
@@ -251,7 +251,7 @@ include 'header.php';
     <!-- Affichage direct de chaque billet avec QR Code et téléchargement individuel -->
     <div class="section-title"><i class="fa-solid fa-qrcode"></i> Vos Billets d'Entrée (<?php echo count($generated_tickets_list); ?>)</div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: clamp(0.75rem, 2vw, 1.5rem); margin-bottom: 3rem;">
         <?php foreach ($generated_tickets_list as $index => $tk): ?>
             <div style="background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); display: flex; flex-direction: column;">
                 <div style="background: var(--navy); color: #ffffff; padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center;">
@@ -295,7 +295,7 @@ include 'header.php';
                         <?php
                         // Lien de partage WhatsApp du billet
                         $ticket_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/') . '/telecharger-ticket.php?code=' . urlencode($tk['code_unique']);
-                        $wa_text = "🎟️ Mon billet Ticket Flow\nÉvénement : " . $tk['event_name']
+                        $wa_text = "🎟️ Mon billet Eventia\nÉvénement : " . $tk['event_name']
                             . "\nType : " . $tk['type_ticket']
                             . (!empty($tk['place']) ? "\nPlace : " . $tk['place'] : '')
                             . "\nCode : " . $tk['code_unique']

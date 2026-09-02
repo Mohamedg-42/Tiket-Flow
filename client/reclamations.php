@@ -9,7 +9,7 @@ require_once '../includes/auth.php';
 
 requireLogin('../connexion.php');
 
-$page_title = "Support & Réclamations - Ticket Flow";
+$page_title = "Support & Réclamations - Eventia";
 include 'header.php';
 
 $user_id = (int)$_SESSION['user_id'];
@@ -54,7 +54,7 @@ $stmt_claims->execute([$user_id]);
 $claims_list = $stmt_claims->fetchAll();
 ?>
 
-<main class="client-main" style="max-width: 1000px; margin: 2rem auto; padding: 0 1rem;">
+<main class="client-main" style="max-width: 1000px; margin: 2rem auto; padding: 0 clamp(0.75rem, 2vw, 1.5rem);">
     <div class="page-header" style="margin-bottom: 2rem;">
         <div class="page-heading">
             <span class="page-kicker">Service Client</span>
@@ -70,7 +70,7 @@ $claims_list = $stmt_claims->fetchAll();
         </div>
     <?php endif; ?>
 
-    <div style="display: grid; grid-template-columns: 360px 1fr; gap: 2rem; align-items: start;">
+    <div class="responsive-side-grid" style="display: grid; grid-template-columns: 360px 1fr; gap: 2rem; align-items: start;">
         <!-- 1. Formulaire de nouvelle réclamation -->
         <div class="content-section">
             <div class="section-title"><i class="fa-solid fa-pen"></i> Nouvelle Réclamation</div>
