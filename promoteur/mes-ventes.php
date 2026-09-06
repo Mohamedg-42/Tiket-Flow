@@ -108,16 +108,16 @@ if (!empty($filter_status)) {
 if (!empty($filter_period)) {
     switch ($filter_period) {
         case 'today':
-            $sql_sales .= " AND DATE(t.date_achat) = CURDATE()";
+            $sql_sales .= " AND DATE(t.date_achat) = CURRENT_DATE";
             break;
         case '7d':
-            $sql_sales .= " AND t.date_achat >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            $sql_sales .= " AND t.date_achat >= NOW() - INTERVAL '7 days'";
             break;
         case '30d':
-            $sql_sales .= " AND t.date_achat >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            $sql_sales .= " AND t.date_achat >= NOW() - INTERVAL '30 days'";
             break;
         case 'this_month':
-            $sql_sales .= " AND MONTH(t.date_achat) = MONTH(CURDATE()) AND YEAR(t.date_achat) = YEAR(CURDATE())";
+            $sql_sales .= " AND EXTRACT(MONTH FROM t.date_achat) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM t.date_achat) = EXTRACT(YEAR FROM CURRENT_DATE)";
             break;
     }
 }
@@ -154,16 +154,16 @@ if (!empty($filter_type)) {
 if (!empty($filter_period)) {
     switch ($filter_period) {
         case 'today':
-            $sql_kpi .= " AND DATE(t.date_achat) = CURDATE()";
+            $sql_kpi .= " AND DATE(t.date_achat) = CURRENT_DATE";
             break;
         case '7d':
-            $sql_kpi .= " AND t.date_achat >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            $sql_kpi .= " AND t.date_achat >= NOW() - INTERVAL '7 days'";
             break;
         case '30d':
-            $sql_kpi .= " AND t.date_achat >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            $sql_kpi .= " AND t.date_achat >= NOW() - INTERVAL '30 days'";
             break;
         case 'this_month':
-            $sql_kpi .= " AND MONTH(t.date_achat) = MONTH(CURDATE()) AND YEAR(t.date_achat) = YEAR(CURDATE())";
+            $sql_kpi .= " AND EXTRACT(MONTH FROM t.date_achat) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM t.date_achat) = EXTRACT(YEAR FROM CURRENT_DATE)";
             break;
     }
 }
@@ -182,7 +182,7 @@ $sql_trend = "
     FROM tickets t
     JOIN events e ON t.event_id = e.id
     WHERE e.user_id = ? AND t.statut IN ('vendu','utilise')
-      AND t.date_achat >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+      AND t.date_achat >= CURRENT_DATE - INTERVAL '14 days'
 ";
 $params_trend = [$user_id];
 if ($filter_event) {
@@ -218,7 +218,7 @@ foreach ($stocks_summary as $stk) {
 }
 $donut_labels = array_keys($donut_data);
 $donut_pcts   = array_map(fn($d) => $d['total'] > 0 ? min(100, round(($d['vendus'] / $d['total']) * 100)) : 0, array_values($donut_data));
-$donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#64748b'];
+$donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b', '#FF8A50', '#737373'];
 ?>
 
 <link rel="stylesheet" href="../Css/dashboard-pro.css">
@@ -232,22 +232,42 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
 }
 .dash-kpi-card:hover {
     transform: translateY(-4px) !important;
-    box-shadow: 0 14px 28px -6px rgba(91, 80, 230, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04) !important;
-    border-color: #cbd5e1 !important;
+    box-shadow: 0 14px 28px -6px rgba(255, 74, 13, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04) !important;
+    border-color: #E5E5E5 !important;
 }
 .dash-pro-table tbody tr {
     transition: background-color 0.15s ease;
 }
 .dash-pro-table tbody tr:hover {
-    background-color: #f8fafc;
+    background-color: #F5F5F5;
+}
+.dash-filter-bar-bottom {
+    background: #F5F5F5;
+    border-top: 1px solid var(--dash-border);
+    border-bottom: 1px solid var(--dash-border);
+    padding: 0.85rem 1.25rem;
+}
+@media (max-width: 900px) {
+    .dash-filter-bar-bottom form {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .dash-filter-bar-bottom form > div,
+    .dash-filter-bar-bottom form input,
+    .dash-filter-bar-bottom form select,
+    .dash-filter-bar-bottom form button {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
 }
 </style>
 
 <div class="dash-container">
     <!-- ==============================================================================
-         1. BARRE D'EN-TÊTE DU DASHBOARD : TITRE À GAUCHE & FILTRES DIRECTS À DROITE
+         1. EN-TÊTE DU DASHBOARD : TITRE, EXPORT & ACTIONS
          ============================================================================== -->
-    <div class="dash-header-section">
+    <div class="dash-header-section" style="margin-bottom: 1.5rem;">
         <div class="dash-title-box">
             <h1>
                 <i class="fa-solid fa-ticket" style="color: var(--dash-primary); font-size: 1.55rem;"></i>
@@ -256,68 +276,23 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
             <p>Traçabilité en temps réel des ventes, disponibilité des places et historique des acheteurs.</p>
         </div>
 
-        <div class="dash-filter-bar">
-            <!-- Formulaire de filtrage dynamique sur la même ligne tout en haut -->
-            <form method="GET" action="mes-ventes.php" id="ventesFilterForm" style="display: flex; align-items: center; gap: 0.5rem; margin: 0; flex-wrap: wrap;">
-                
-                <!-- Filtre Catégorie / Type de Billet (VIP, etc.) -->
-                <div class="dash-control-select" style="padding: 0.4rem 0.75rem;">
-                    <i class="fa-solid fa-tag" style="color: #0ea5e9; font-size: 0.8rem;"></i>
-                    <select name="type" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem; max-width: 165px;">
-                        <option value="">Tous les types (VIP, Standard...)</option>
-                        <?php foreach ($available_types as $t_item): ?>
-                            <option value="<?php echo htmlspecialchars($t_item); ?>" <?php echo $filter_type === $t_item ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($t_item); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+        <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
+            <!-- Bouton d'accès direct au filtre en bas -->
+            <a href="#filtres-billets" class="dash-btn-action" style="padding: 0.55rem 0.95rem; text-decoration: none;" title="Aller aux filtres de recherche en bas">
+                <i class="fa-solid fa-filter" style="color: var(--dash-primary);"></i>
+                <span>Filtrer les billets ↓</span>
+            </a>
 
-                <!-- Filtre Événement -->
-                <div class="dash-control-select" style="padding: 0.4rem 0.75rem;">
-                    <i class="fa-solid fa-calendar-days" style="color: var(--dash-primary); font-size: 0.8rem;"></i>
-                    <select name="event_id" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; max-width: 170px; font-size: 0.82rem;">
-                        <option value="">Tous mes événements</option>
-                        <?php foreach ($my_events_list as $ev_item): ?>
-                            <option value="<?php echo $ev_item['id']; ?>" <?php echo $filter_event === (int)$ev_item['id'] ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars(mb_strimwidth($ev_item['nom'], 0, 24, '...')); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+            <!-- Export Excel -->
+            <a href="export.php?type=ventes&event_id=<?php echo (int)$filter_event; ?>&type_nom=<?php echo urlencode($filter_type); ?>&statut=<?php echo urlencode($filter_status); ?>&period=<?php echo urlencode($filter_period); ?>&q=<?php echo urlencode($q); ?>" class="dash-btn-action" style="padding: 0.55rem 1.05rem; font-size: 0.82rem; text-decoration: none;" title="Télécharger la liste des ventes au format Excel (CSV)">
+                <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
+                <span>Exporter Excel</span>
+            </a>
 
-                <!-- Filtre Statut d'accès -->
-                <div class="dash-control-select" style="padding: 0.4rem 0.75rem;">
-                    <i class="fa-solid fa-qrcode" style="color: #10b981; font-size: 0.8rem;"></i>
-                    <select name="statut" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem;">
-                        <option value="">Tous statuts</option>
-                        <option value="vendu" <?php echo $filter_status === 'vendu' ? 'selected' : ''; ?>>Valide (Non scanné)</option>
-                        <option value="utilise" <?php echo $filter_status === 'utilise' ? 'selected' : ''; ?>>Entré (Scanné)</option>
-                    </select>
-                </div>
-
-                <!-- Filtre Période -->
-                <div class="dash-control-select" style="padding: 0.4rem 0.75rem;">
-                    <i class="fa-regular fa-calendar" style="color: var(--dash-secondary); font-size: 0.8rem;"></i>
-                    <select name="period" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem;">
-                        <option value="" <?php echo empty($filter_period) ? 'selected' : ''; ?>>Toutes dates</option>
-                        <option value="today" <?php echo $filter_period === 'today' ? 'selected' : ''; ?>>Aujourd'hui</option>
-                        <option value="7d" <?php echo $filter_period === '7d' ? 'selected' : ''; ?>>7 derniers jours</option>
-                        <option value="30d" <?php echo $filter_period === '30d' ? 'selected' : ''; ?>>30 derniers jours</option>
-                        <option value="this_month" <?php echo $filter_period === 'this_month' ? 'selected' : ''; ?>>Ce mois-ci</option>
-                    </select>
-                </div>
-
-                <?php if (!empty($filter_type) || $filter_event || !empty($filter_status) || !empty($filter_period)): ?>
-                    <a href="mes-ventes.php" class="dash-btn-action" style="padding: 0.4rem 0.65rem; color: #ef4444;" title="Effacer les filtres">
-                        <i class="fa-solid fa-rotate-left"></i>
-                    </a>
-                <?php endif; ?>
-            </form>
-
-            <button type="button" class="dash-btn-action" onclick="window.print()" title="Imprimer le bilan">
-                <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i>
-                <span>Imprimer Bilan</span>
+            <!-- Imprimer -->
+            <button type="button" class="dash-btn-action" onclick="window.print()" title="Imprimer le bilan des ventes" style="padding: 0.55rem 1.05rem; font-size: 0.82rem;">
+                <i class="fa-solid fa-print" style="color: #000000;"></i>
+                <span>Imprimer</span>
             </button>
         </div>
     </div>
@@ -367,7 +342,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                 </span>
             </div>
             <div class="dash-kpi-title">Commissions Frais</div>
-            <div class="dash-kpi-amount" style="color: #f59e0b;"><?php echo number_format($kpi['total_commission'], 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
+            <div class="dash-kpi-amount" style="color: #d97706;"><?php echo number_format($kpi['total_commission'], 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
             <div class="dash-kpi-sub">Détail des commissions <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
         </a>
 
@@ -412,7 +387,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                 </span>
             </div>
             <div class="dash-kpi-title">Prix Moyen Billet</div>
-            <div class="dash-kpi-amount" style="color: #ec4899;"><?php echo number_format($prix_moyen, 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
+            <div class="dash-kpi-amount" style="color: #FF4A0D;"><?php echo number_format($prix_moyen, 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
             <div class="dash-kpi-sub">Voir la grille des tarifs <i class="fa-solid fa-arrow-down" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
         </a>
     </div>
@@ -446,7 +421,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
             <div class="dash-card-head">
                 <div>
                     <h3 class="dash-card-title">
-                        <i class="fa-solid fa-pie-chart" style="color: #10b981;"></i>
+                        <i class="fa-solid fa-pie-chart" style="color: #FF4A0D;"></i>
                         Remplissage Événements
                     </h3>
                     <div class="dash-card-subtitle">Taux d'occupation des jauges (cliquable)</div>
@@ -470,7 +445,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                         if ($ev_check['nom'] === $en) { $matched_ev_id = $ev_check['id']; break; }
                     }
                     ?>
-                    <a href="mes-ventes.php?event_id=<?php echo $matched_ev_id; ?>" class="dash-legend-entry" style="text-decoration: none; color: inherit; cursor: pointer; border-radius: 6px; padding: 3px 6px; transition: background 0.15s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'" title="Filtrer cet événement">
+                    <a href="mes-ventes.php?event_id=<?php echo $matched_ev_id; ?>" class="dash-legend-entry" style="text-decoration: none; color: inherit; cursor: pointer; border-radius: 6px; padding: 3px 6px; transition: background 0.15s;" onmouseover="this.style.background='#F5F5F5'" onmouseout="this.style.background='transparent'" title="Filtrer cet événement">
                         <div class="dash-legend-name" style="min-width: 0;">
                             <span class="dash-legend-bullet" style="background: <?php echo $color; ?>;"></span>
                             <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; font-size: 0.8rem; font-weight: 600;"><?php echo htmlspecialchars($en); ?></span>
@@ -533,7 +508,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                 </td>
                                 <td data-label="Catégorie">
                                     <a href="mes-ventes.php?type=<?php echo urlencode($stk['category_name']); ?>" style="text-decoration: none;" title="Filtrer toutes les ventes de catégorie <?php echo htmlspecialchars($stk['category_name']); ?>">
-                                        <span style="background: #eeedfd; color: #5b50e6; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; display: inline-block; transition: background 0.15s;" onmouseover="this.style.background='#ddd6fe'" onmouseout="this.style.background='#eeedfd'">
+                                        <span style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D); padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; display: inline-block; transition: background 0.15s;" onmouseover="this.style.background='rgba(255, 74, 13, 0.22)'" onmouseout="this.style.background='rgba(255, 74, 13, 0.12)'">
                                             <i class="fa-solid fa-tag" style="font-size: 0.7rem; margin-right: 4px;"></i><?php echo htmlspecialchars($stk['category_name']); ?>
                                         </span>
                                     </a>
@@ -542,7 +517,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                     <strong style="color: var(--dash-text);"><?php echo number_format($stk['prix'], 0, ',', ' '); ?> F</strong>
                                 </td>
                                 <td data-label="Billets Vendus">
-                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs" style="text-decoration: none; color: #0ea5e9;" title="Voir les acheteurs de cette catégorie">
+                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs" style="text-decoration: none; color: #10b981;" title="Voir les acheteurs de cette catégorie">
                                         <strong style="font-size: 0.92rem; display: inline-flex; align-items: center; gap: 4px;">
                                             <i class="fa-solid fa-circle-check"></i> <?php echo number_format($v, 0, ',', ' '); ?>
                                             <i class="fa-solid fa-arrow-down" style="font-size: 0.65rem;"></i>
@@ -551,7 +526,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                 </td>
                                 <td data-label="Billets Restants">
                                     <?php if ($r === 0 && $tot > 0): ?>
-                                        <span style="background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; border-radius: 6px; padding: 3px 8px; font-weight: 800; font-size: 0.78rem;">
+                                        <span style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; padding: 3px 8px; font-weight: 800; font-size: 0.78rem;">
                                             <i class="fa-solid fa-ban"></i> Épuisé
                                         </span>
                                     <?php else: ?>
@@ -587,22 +562,91 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
          5. TRAÇABILITÉ & HISTORIQUE DÉTAILLÉ DES ACHETEURS (SECTIONS CLIQUABLES)
          ============================================================================== -->
     <div class="dash-card" id="table-acheteurs">
-        <div class="dash-card-head">
+        <div class="dash-card-head" id="filtres-billets">
             <div>
                 <h3 class="dash-card-title">
-                    <i class="fa-solid fa-receipt" style="color: #10b981;"></i>
+                    <i class="fa-solid fa-receipt" style="color: #FF4A0D;"></i>
                     Traçabilité & Historique des Billets Achetés
                 </h3>
                 <div class="dash-card-subtitle">Liste nominative de chaque billet vendu avec coordonnées et statut d'accès</div>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                 <span style="font-size: 0.85rem; font-weight: 700; color: var(--dash-muted);">
                     <?php echo count($sales); ?> billet(s)
                 </span>
-                <span style="background: #ecfdf5; color: #10b981; border: 1px solid #d1fae5; border-radius: 8px; padding: 4px 10px; font-weight: 800; font-size: 0.82rem;">
+                <span style="background: #FFF2ED; color: #FF4A0D; border: 1px solid #E5E5E5; border-radius: 8px; padding: 4px 10px; font-weight: 800; font-size: 0.82rem;">
                     Recettes : <?php echo number_format($total_filtre, 0, ',', ' '); ?> F
                 </span>
             </div>
+        </div>
+
+        <!-- BARRE DE FILTRAGE DYNAMIQUE PLACÉE EN BAS (AU NIVEAU DU TABLEAU DES BILLETS) -->
+        <div class="dash-filter-bar-bottom">
+            <form method="GET" action="mes-ventes.php#table-acheteurs" id="ventesFilterForm" style="display: flex; align-items: center; gap: 0.55rem; margin: 0; flex-wrap: wrap;">
+                <!-- Recherche libre (Nom, Email, Téléphone, Code billet) -->
+                <div style="position: relative; flex: 1; min-width: 200px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--dash-muted); font-size: 0.8rem;"></i>
+                    <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>" placeholder="Code billet, acheteur, email, tel..." style="width: 100%; padding: 0.45rem 0.75rem 0.45rem 2rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.82rem; background: #ffffff; box-sizing: border-box;">
+                </div>
+
+                <!-- Filtre Événement -->
+                <div class="dash-control-select" style="padding: 0.45rem 0.75rem; background: #ffffff;">
+                    <i class="fa-solid fa-calendar-days" style="color: var(--dash-primary); font-size: 0.8rem;"></i>
+                    <select name="event_id" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; max-width: 175px; font-size: 0.82rem;">
+                        <option value="">Tous mes événements</option>
+                        <?php foreach ($my_events_list as $ev_item): ?>
+                            <option value="<?php echo $ev_item['id']; ?>" <?php echo $filter_event === (int)$ev_item['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars(mb_strimwidth($ev_item['nom'], 0, 24, '...')); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Filtre Catégorie / Formule (VIP, Standard...) -->
+                <div class="dash-control-select" style="padding: 0.45rem 0.75rem; background: #ffffff;">
+                    <i class="fa-solid fa-tag" style="color: #FF4A0D; font-size: 0.8rem;"></i>
+                    <select name="type" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem; max-width: 165px;">
+                        <option value="">Toutes catégories</option>
+                        <?php foreach ($available_types as $t_item): ?>
+                            <option value="<?php echo htmlspecialchars($t_item); ?>" <?php echo $filter_type === $t_item ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($t_item); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Filtre Statut d'accès -->
+                <div class="dash-control-select" style="padding: 0.45rem 0.75rem; background: #ffffff;">
+                    <i class="fa-solid fa-qrcode" style="color: #FF4A0D; font-size: 0.8rem;"></i>
+                    <select name="statut" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem;">
+                        <option value="">Tous statuts</option>
+                        <option value="vendu" <?php echo $filter_status === 'vendu' ? 'selected' : ''; ?>>Valide (Non scanné)</option>
+                        <option value="utilise" <?php echo $filter_status === 'utilise' ? 'selected' : ''; ?>>Entré (Scanné)</option>
+                    </select>
+                </div>
+
+                <!-- Filtre Période -->
+                <div class="dash-control-select" style="padding: 0.45rem 0.75rem; background: #ffffff;">
+                    <i class="fa-regular fa-calendar" style="color: var(--dash-secondary); font-size: 0.8rem;"></i>
+                    <select name="period" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem;">
+                        <option value="" <?php echo empty($filter_period) ? 'selected' : ''; ?>>Toutes dates</option>
+                        <option value="today" <?php echo $filter_period === 'today' ? 'selected' : ''; ?>>Aujourd'hui</option>
+                        <option value="7d" <?php echo $filter_period === '7d' ? 'selected' : ''; ?>>7 derniers jours</option>
+                        <option value="30d" <?php echo $filter_period === '30d' ? 'selected' : ''; ?>>30 derniers jours</option>
+                        <option value="this_month" <?php echo $filter_period === 'this_month' ? 'selected' : ''; ?>>Ce mois-ci</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="dash-btn-action" style="padding: 0.45rem 0.95rem; font-size: 0.82rem; background: var(--dash-primary); color: #ffffff; border-radius: 8px;">
+                    <i class="fa-solid fa-filter"></i> Filtrer
+                </button>
+
+                <?php if (!empty($filter_type) || $filter_event || !empty($filter_status) || !empty($filter_period) || !empty($q)): ?>
+                    <a href="mes-ventes.php#table-acheteurs" class="dash-btn-action" style="padding: 0.45rem 0.75rem; color: #000000; text-decoration: none;" title="Réinitialiser tous les filtres">
+                        <i class="fa-solid fa-rotate-left"></i> Effacer
+                    </a>
+                <?php endif; ?>
+            </form>
         </div>
 
         <!-- Tableau des billets vendus -->
@@ -625,7 +669,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                             <tr>
                                 <td data-label="Code Unique">
                                     <div style="display: flex; align-items: center; gap: 6px;">
-                                        <strong style="font-family: monospace; font-size: 0.88rem; color: var(--dash-primary); background: #f5f3ff; border: 1px solid #ddd6fe; padding: 3px 7px; border-radius: 6px; letter-spacing: 0.5px;">
+                                        <strong style="font-family: monospace; font-size: 0.88rem; color: var(--dash-primary); background: #FFF2ED; border: 1px solid #FFF2ED; padding: 3px 7px; border-radius: 6px; letter-spacing: 0.5px;">
                                             <?php echo htmlspecialchars($s['code_unique']); ?>
                                         </strong>
                                         <button type="button" onclick="navigator.clipboard.writeText('<?php echo $s['code_unique']; ?>'); alert('Code copié : <?php echo $s['code_unique']; ?>');" style="background: none; border: none; color: var(--dash-muted); cursor: pointer; padding: 3px; font-size: 0.8rem; border-radius: 4px;" title="Copier le code billet">
@@ -645,7 +689,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                 </td>
                                 <td data-label="Catégorie">
                                     <a href="mes-ventes.php?type=<?php echo urlencode($s['type_ticket']); ?>" style="text-decoration: none;" title="Filtrer par catégorie <?php echo htmlspecialchars($s['type_ticket']); ?>">
-                                        <span style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 2px 8px; border-radius: 5px; font-weight: 700; font-size: 0.78rem; display: inline-block;">
+                                        <span style="background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5; padding: 2px 8px; border-radius: 5px; font-weight: 700; font-size: 0.78rem; display: inline-block;">
                                             <?php echo htmlspecialchars($s['type_ticket']); ?>
                                         </span>
                                     </a>
@@ -655,7 +699,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                 </td>
                                 <td data-label="Acheteur & Contact">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="width: 28px; height: 28px; border-radius: 50%; background: #eeedfd; color: var(--dash-primary); display: grid; place-items: center; font-size: 0.72rem; font-weight: 800; flex-shrink: 0;">
+                                        <div style="width: 28px; height: 28px; border-radius: 50%; background: #FFF2ED; color: var(--dash-primary); display: grid; place-items: center; font-size: 0.72rem; font-weight: 800; flex-shrink: 0;">
                                             <?php echo strtoupper(mb_substr($s['buyer_name'], 0, 1)); ?>
                                         </div>
                                         <div style="line-height: 1.25;">
@@ -665,7 +709,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                                     <i class="fa-regular fa-envelope" style="font-size: 0.68rem;"></i> <?php echo htmlspecialchars($s['buyer_email']); ?>
                                                 </a>
                                                 <?php if (!empty($s['buyer_phone'])): ?>
-                                                    <a href="tel:<?php echo htmlspecialchars($s['buyer_phone']); ?>" style="color: #0284c7; text-decoration: none; font-weight: 600;" title="Appeler">
+                                                    <a href="tel:<?php echo htmlspecialchars($s['buyer_phone']); ?>" style="color: #FF4A0D; text-decoration: none; font-weight: 600;" title="Appeler">
                                                         <i class="fa-solid fa-phone" style="font-size: 0.68rem;"></i> <?php echo htmlspecialchars($s['buyer_phone']); ?>
                                                     </a>
                                                 <?php endif; ?>
@@ -679,13 +723,13 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                 <td data-label="Statut aux Portes">
                                     <?php if ($s['statut'] === 'vendu'): ?>
                                         <a href="mes-ventes.php?statut=vendu#table-acheteurs" style="text-decoration: none;" title="Filtrer tous les billets valides">
-                                            <span style="display: inline-flex; align-items: center; gap: 5px; background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+                                            <span style="display: inline-flex; align-items: center; gap: 5px; background: #FFF2ED; color: #FF4A0D; border: 1px solid #FFF2ED; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
                                                 <i class="fa-solid fa-circle-check" style="font-size: 0.7rem;"></i> Valide
                                             </span>
                                         </a>
                                     <?php elseif ($s['statut'] === 'utilise'): ?>
                                         <a href="mes-ventes.php?statut=utilise#table-acheteurs" style="text-decoration: none;" title="Filtrer tous les billets scannés">
-                                            <span style="display: inline-flex; align-items: center; gap: 5px; background: #ecfdf5; color: #16a34a; border: 1px solid #bbf7d0; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+                                            <span style="display: inline-flex; align-items: center; gap: 5px; background: #FFF2ED; color: #FF4A0D; border: 1px solid #FFF2ED; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
                                                 <i class="fa-solid fa-check-double" style="font-size: 0.7rem;"></i> Entré
                                             </span>
                                         </a>
@@ -696,7 +740,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                                             </small>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <span style="display: inline-flex; align-items: center; gap: 5px; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+                                        <span style="display: inline-flex; align-items: center; gap: 5px; background: #F5F5F5; color: #000000; border: 1px solid #E5E5E5; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
                                             <?php echo ucfirst($s['statut']); ?>
                                         </span>
                                     <?php endif; ?>
@@ -706,7 +750,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
                     <?php else: ?>
                         <tr>
                             <td colspan="7" style="text-align: center; color: var(--dash-muted); padding: 3rem 1rem;">
-                                <i class="fa-solid fa-inbox" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display: block;"></i>
+                                <i class="fa-solid fa-inbox" style="font-size: 2rem; color: #E5E5E5; margin-bottom: 0.5rem; display: block;"></i>
                                 Aucun billet trouvé pour ces critères de recherche.
                             </td>
                         </tr>
@@ -721,7 +765,7 @@ $donut_colors = ['#5b50e6', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6
          ============================================================================== -->
     <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid var(--dash-border); font-size: 0.82rem; color: var(--dash-muted); flex-wrap: wrap; gap: 0.75rem;">
         <div>
-            <span><i class="fa-solid fa-shield-check" style="color: #10b981;"></i> Données de billetterie synchronisées en temps réel</span>
+            <span><i class="fa-solid fa-shield-check" style="color: #FF4A0D;"></i> Données de billetterie synchronisées en temps réel</span>
             <span style="margin: 0 8px;">•</span>
             <span>Dernière mise à jour : <strong><?php echo date('d/m/Y à H:i:s'); ?></strong></span>
         </div>
@@ -745,8 +789,8 @@ let trendChartInstance = null;
 if (ctxTrend) {
     const tCtx = ctxTrend.getContext('2d');
     const gradRev = tCtx.createLinearGradient(0, 0, 0, 250);
-    gradRev.addColorStop(0, 'rgba(91, 80, 230, 0.32)');
-    gradRev.addColorStop(1, 'rgba(91, 80, 230, 0.01)');
+    gradRev.addColorStop(0, 'rgba(255, 74, 13, 0.32)');
+    gradRev.addColorStop(1, 'rgba(255, 74, 13, 0.01)');
 
     trendChartInstance = new Chart(ctxTrend, {
         type: 'line',
@@ -755,13 +799,13 @@ if (ctxTrend) {
             datasets: [{
                 label: 'Recettes (FCFA)',
                 data: trendRevenue,
-                borderColor: '#5b50e6',
+                borderColor: '#FF4A0D',
                 borderWidth: 3,
                 fill: true,
                 backgroundColor: gradRev,
                 tension: 0.38,
                 pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#5b50e6',
+                pointBorderColor: '#FF4A0D',
                 pointBorderWidth: 2,
                 pointRadius: 4,
                 pointHoverRadius: 6
@@ -774,7 +818,7 @@ if (ctxTrend) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#0f172a',
+                    backgroundColor: '#000000',
                     padding: 10,
                     cornerRadius: 8,
                     callbacks: {
@@ -785,11 +829,11 @@ if (ctxTrend) {
                 }
             },
             scales: {
-                x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } } },
+                x: { grid: { display: false }, ticks: { color: '#737373', font: { size: 10, weight: '600' } } },
                 y: {
-                    grid: { color: '#f1f5f9', borderDash: [4, 4] },
+                    grid: { color: '#F5F5F5', borderDash: [4, 4] },
                     ticks: {
-                        color: '#94a3b8',
+                        color: '#737373',
                         font: { size: 10 },
                         callback: function(v) {
                             if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
@@ -812,7 +856,7 @@ function switchTrendMode(mode, btn) {
     if (mode === 'revenue') {
         trendChartInstance.data.datasets[0].label = 'Recettes (FCFA)';
         trendChartInstance.data.datasets[0].data = trendRevenue;
-        trendChartInstance.data.datasets[0].borderColor = '#5b50e6';
+        trendChartInstance.data.datasets[0].borderColor = '#FF4A0D';
         trendChartInstance.options.scales.y.ticks.callback = function(v) {
             if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
             if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
@@ -824,7 +868,7 @@ function switchTrendMode(mode, btn) {
     } else {
         trendChartInstance.data.datasets[0].label = 'Billets vendus';
         trendChartInstance.data.datasets[0].data = trendTickets;
-        trendChartInstance.data.datasets[0].borderColor = '#0ea5e9';
+        trendChartInstance.data.datasets[0].borderColor = '#FF4A0D';
         trendChartInstance.options.scales.y.ticks.callback = function(v) { return v; };
         trendChartInstance.options.plugins.tooltip.callbacks.label = function(ctx) {
             return ctx.parsed.y + ' billet(s)';
@@ -856,7 +900,7 @@ if (ctxDonut) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#0f172a',
+                    backgroundColor: '#000000',
                     padding: 10,
                     cornerRadius: 8,
                     callbacks: {

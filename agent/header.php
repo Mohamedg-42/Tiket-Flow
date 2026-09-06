@@ -11,129 +11,143 @@ require_once '../includes/auth.php';
 checkRole(['agent', 'admin'], '../connexion.php');
 
 $current_page = basename($_SERVER['PHP_SELF']);
-$page_title = $page_title ?? 'Espace Agent - Ticket Flow';
+$page_title = $page_title ?? 'Espace Agent - Eventia';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#0d9488">
+    <meta name="theme-color" content="#FF4A0D">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($page_title); ?></title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- QR Code Scanner Library -->
     <link rel="stylesheet" href="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.css">
     <!-- Style CSS -->
     <link rel="stylesheet" href="../css/style.css">
+    <!-- Eventia Brand Design System -->
+    <link rel="stylesheet" href="../css/eventia-brand.css">
     <!-- Responsive Professional CSS -->
     <link rel="stylesheet" href="../css/responsive-pro.css">
 </head>
-<body class="client-page">
 
-<header class="client-header shared-client-header" style="background: #0f172a; color: #ffffff;">
-    <a href="verification.php" class="client-brand" style="color: #38bdf8;">
-        <i class="fa-solid fa-qrcode"></i> AGENT DE CONTRÔLE
-    </a>
+<body class="client-page" style="background-color: var(--tikeli-gray, #F5F5F5); min-height: 100vh; display: flex; flex-direction: column;">
 
-    <button type="button" class="client-nav-toggle" onclick="toggleClientNav(event)" aria-label="Ouvrir le menu" aria-controls="clientNav" aria-expanded="false" style="border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: #ffffff;">
-        <i class="fa-solid fa-bars"></i>
-    </button>
-
-    <nav class="client-nav" id="clientNav">
-        <a href="verification.php" class="<?php echo $current_page === 'verification.php' ? 'active' : ''; ?>" style="color: #ffffff;">
-            <i class="fa-solid fa-camera"></i> Scanner / Vérifier
+    <header class="client-header shared-client-header"
+        style="background: var(--tikeli-black, #000000); color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0.85rem clamp(1rem, 4vw, 2.5rem); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.12);">
+        <a href="verification.php" class="client-brand" style="text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
+            <img src="../images/logo.png" alt="Tikéli" style="height: 34px; width: auto; max-width: 120px; object-fit: contain;">
+            <span style="font-size: 0.72rem; font-weight: 800; background: rgba(255, 74, 13, 0.18); color: var(--tikeli-orange, #FF4A0D); border: 1px solid rgba(255, 74, 13, 0.35); padding: 2px 7px; border-radius: 6px; letter-spacing: 0.5px;">AGENT</span>
         </a>
-        <a href="historique.php" class="<?php echo $current_page === 'historique.php' ? 'active' : ''; ?>" style="color: #ffffff;">
-            <i class="fa-solid fa-clock-rotate-left"></i> Historique des scans
-        </a>
-        <a href="../deconnexion.php" class="client-logout">
-            <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
-        </a>
-    </nav>
-</header>
 
-<script>
-    // ========== HAMBURGER MENU - SIMPLIFIÉ ET FIABLE ==========
-    
-    // État du menu
-    let menuOpen = false;
-    
-    // Toggle du menu
-    function toggleClientNav(event) {
-        if (event) event.stopPropagation();
-        
-        const nav = document.getElementById('clientNav');
-        const btn = document.querySelector('.client-nav-toggle');
-        
-        if (!nav || !btn) return;
-        
-        menuOpen = !menuOpen;
-        
-        if (menuOpen) {
-            // Ouvrir le menu
-            nav.classList.add('nav-open');
-            btn.setAttribute('aria-expanded', 'true');
-            document.body.style.overflow = 'hidden';
-        } else {
-            // Fermer le menu
-            closeMenu();
-        }
-    }
-    
-    // Fonction pour fermer le menu
-    function closeMenu() {
-        const nav = document.getElementById('clientNav');
-        const btn = document.querySelector('.client-nav-toggle');
-        
-        if (!nav) return;
-        
-        menuOpen = false;
-        nav.classList.remove('nav-open');
-        
-        if (btn) {
-            btn.setAttribute('aria-expanded', 'false');
-        }
-        
-        document.body.style.overflow = '';
-    }
-    
-    // Au chargement complet du DOM
-    document.addEventListener('DOMContentLoaded', function() {
-        const nav = document.getElementById('clientNav');
-        const btn = document.querySelector('.client-nav-toggle');
-        const navLinks = document.querySelectorAll('.client-nav a');
-        
-        if (!nav || !btn) return;
-        
-        // Fermer au clic sur un lien du menu
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                // Autoriser la navigation
-                setTimeout(() => {
-                    closeMenu();
-                }, 100);
-            });
-        });
-        
-        // Fermer le menu au clic en dehors
-        document.addEventListener('click', function(event) {
+        <button type="button" class="client-nav-toggle" onclick="toggleClientNav(event)" aria-label="Ouvrir le menu"
+            aria-controls="clientNav" aria-expanded="false"
+            style="border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: #ffffff;">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <nav class="client-nav" id="clientNav" style="display: flex; align-items: center; gap: 8px;">
+            <a href="verification.php" class="<?php echo $current_page === 'verification.php' ? 'active' : ''; ?>"
+                style="display: inline-flex; align-items: center; gap: 7px; padding: 0.5rem 0.9rem; border-radius: 8px; font-size: 0.86rem; font-weight: 600; text-decoration: none; color: <?php echo $current_page === 'verification.php' ? '#ffffff' : '#737373'; ?>; background: <?php echo $current_page === 'verification.php' ? 'rgba(255,255,255,0.1)' : 'transparent'; ?>; border-bottom: <?php echo $current_page === 'verification.php' ? '2px solid var(--tikeli-orange, #FF4A0D)' : '2px solid transparent'; ?>;">
+                <i class="fa-solid fa-camera" style="<?php echo $current_page === 'verification.php' ? 'color: var(--tikeli-orange, #FF4A0D);' : ''; ?>"></i> Scanner / Vérifier
+            </a>
+            <a href="historique.php" class="<?php echo $current_page === 'historique.php' ? 'active' : ''; ?>"
+                style="display: inline-flex; align-items: center; gap: 7px; padding: 0.5rem 0.9rem; border-radius: 8px; font-size: 0.86rem; font-weight: 600; text-decoration: none; color: <?php echo $current_page === 'historique.php' ? '#ffffff' : '#737373'; ?>; background: <?php echo $current_page === 'historique.php' ? 'rgba(255,255,255,0.1)' : 'transparent'; ?>; border-bottom: <?php echo $current_page === 'historique.php' ? '2px solid var(--tikeli-orange, #FF4A0D)' : '2px solid transparent'; ?>;">
+                <i class="fa-solid fa-clock-rotate-left" style="<?php echo $current_page === 'historique.php' ? 'color: var(--tikeli-orange, #FF4A0D);' : ''; ?>"></i> Historique des scans
+            </a>
+            <a href="../deconnexion.php" class="client-logout" style="color: #E5E5E5; background: rgba(239, 68, 68, 0.12); padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
+            </a>
+        </nav>
+    </header>
+
+    <script>
+        // ========== HAMBURGER MENU - SIMPLIFIÉ ET FIABLE ==========
+
+        // État du menu
+        let menuOpen = false;
+
+        // Toggle du menu
+        function toggleClientNav(event) {
+            if (event) event.stopPropagation();
+
+            const nav = document.getElementById('clientNav');
+            const btn = document.querySelector('.client-nav-toggle');
+
+            if (!nav || !btn) return;
+
+            menuOpen = !menuOpen;
+
             if (menuOpen) {
-                // Si le clic n'est pas sur le header/nav/btn
-                const header = document.querySelector('.client-header');
-                if (header && !header.contains(event.target) && !nav.contains(event.target)) {
-                    closeMenu();
-                }
-            }
-        });
-        
-        // Fermer au redimensionnement
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 767 && menuOpen) {
+                // Ouvrir le menu
+                nav.classList.add('nav-open');
+                btn.setAttribute('aria-expanded', 'true');
+                document.body.style.overflow = 'hidden';
+            } else {
+                // Fermer le menu
                 closeMenu();
             }
+        }
+
+        // Fonction pour fermer le menu
+        function closeMenu() {
+            const nav = document.getElementById('clientNav');
+            const btn = document.querySelector('.client-nav-toggle');
+
+            if (!nav) return;
+
+            menuOpen = false;
+            nav.classList.remove('nav-open');
+
+            if (btn) {
+                btn.setAttribute('aria-expanded', 'false');
+            }
+
+            document.body.style.overflow = '';
+        }
+
+        // Au chargement complet du DOM
+        document.addEventListener('DOMContentLoaded', function () {
+            const nav = document.getElementById('clientNav');
+            const btn = document.querySelector('.client-nav-toggle');
+            const navLinks = document.querySelectorAll('.client-nav a');
+
+            if (!nav || !btn) return;
+
+            // Fermer au clic sur un lien du menu
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    // Autoriser la navigation
+                    setTimeout(() => {
+                        closeMenu();
+                    }, 100);
+                });
+            });
+
+            // Fermer le menu au clic en dehors
+            document.addEventListener('click', function (event) {
+                if (menuOpen) {
+                    // Si le clic n'est pas sur le header/nav/btn
+                    const header = document.querySelector('.client-header');
+                    if (header && !header.contains(event.target) && !nav.contains(event.target)) {
+                        closeMenu();
+                    }
+                }
+            });
+
+            // Fermer au redimensionnement
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 767 && menuOpen) {
+                    closeMenu();
+                }
+            });
         });
-    });
-</script>
+    </script>

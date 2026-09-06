@@ -115,7 +115,7 @@ $ev_vendus   = array_column($events_data, 'tickets_vendus');
 
 $mm_labels = array_map(fn($r) => strtoupper(str_replace('_', ' ', $r['methode'])), $mm_data);
 $mm_totals = array_column($mm_data, 'total');
-$mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
+$mm_colors = ['#FF4A0D','#FF4A0D','#FF4A0D','#FF4A0D'];
 ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -140,21 +140,21 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
     .ev-row:last-child { border-bottom:none; }
     .ev-header { display:grid; grid-template-columns:3fr 1fr 1fr 1fr 1fr 80px; gap:.5rem;
                  align-items:center; padding:.9rem 1rem; cursor:pointer; transition:.15s; }
-    .ev-header:hover { background:#f8fafc; border-radius:8px; }
-    .ev-detail  { display:none; background:#f8fafc; border-radius:0 0 8px 8px; overflow:hidden; }
+    .ev-header:hover { background:#F5F5F5; border-radius:8px; }
+    .ev-detail  { display:none; background:#F5F5F5; border-radius:0 0 8px 8px; overflow:hidden; }
     .ev-detail.open { display:block; }
     .ev-detail table { width:100%; border-collapse:collapse; font-size:.85rem; }
-    .ev-detail th { background:#f1f5f9; font-size:.75rem; color:var(--muted); font-weight:700;
+    .ev-detail th { background:#F5F5F5; font-size:.75rem; color:var(--muted); font-weight:700;
                     padding:.5rem .9rem; text-align:left; text-transform:uppercase; }
-    .ev-detail td { padding:.6rem .9rem; border-bottom:1px solid #e2e8f0; vertical-align:middle; }
+    .ev-detail td { padding:.6rem .9rem; border-bottom:1px solid #E5E5E5; vertical-align:middle; }
     .ev-detail tr:last-child td { border-bottom:none; }
 
     .statut-badge { font-size:.7rem; font-weight:800; padding:2px 8px; border-radius:6px; }
-    .statut-actif   { background:#dcfce7; color:#15803d; }
-    .statut-termine { background:#f1f5f9; color:#475569; }
-    .statut-annule  { background:#fee2e2; color:#b91c1c; }
+    .statut-actif   { background:#FFF2ED; color:#FF4A0D; }
+    .statut-termine { background:#F5F5F5; color:#737373; }
+    .statut-annule  { background:#F5F5F5; color:#000000; }
 
-    .progress-sm { height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; }
+    .progress-sm { height:6px; background:#E5E5E5; border-radius:3px; overflow:hidden; }
     .progress-sm div { height:100%; border-radius:3px; }
 
     .mm-row { display:flex; align-items:center; gap:.75rem; padding:.55rem 0; border-bottom:1px solid var(--line-light); }
@@ -162,50 +162,55 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
 </style>
 
 <!-- En-tête -->
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
     <div class="page-heading">
         <span class="page-kicker"><i class="fa-solid fa-chart-pie"></i> Analytiques</span>
         <h1>Tableau de Bord des Ventes</h1>
         <p>Vue complète de vos ventes par événement, par type de ticket et par moyen de paiement.</p>
     </div>
+    <div>
+        <a href="export.php?type=ventes" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les données analytiques de vente sur Excel (CSV)">
+            <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
+        </a>
+    </div>
 </div>
 
 <!-- ── KPIs ─────────────────────────────────────────────────────────────────── -->
 <div class="kpi-grid">
-    <div class="kpi-card" style="border-top:3px solid #0f766e;">
-        <div class="kpi-icon">💰</div>
+    <div class="kpi-card" style="border-top:3px solid #FF4A0D;">
+        <div class="kpi-icon"><i class="fa-solid fa-coins" style="color: #FF4A0D;"></i></div>
         <div class="kpi-label">Ventes Brutes</div>
         <div class="kpi-value"><?php echo number_format($kpi['ventes_brutes'], 0, ',', ' '); ?> <small style="font-size:.9rem;">F</small></div>
         <div class="kpi-sub">Chiffre d'affaires total</div>
     </div>
-    <div class="kpi-card" style="border-top:3px solid #16a34a;">
-        <div class="kpi-icon">✅</div>
+    <div class="kpi-card" style="border-top:3px solid #FF4A0D;">
+        <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-up" style="color: #FF4A0D;"></i></div>
         <div class="kpi-label">Gains Nets</div>
-        <div class="kpi-value" style="color:#16a34a;"><?php echo number_format($kpi['gains_nets'], 0, ',', ' '); ?> <small style="font-size:.9rem;">F</small></div>
+        <div class="kpi-value" style="color:#FF4A0D;"><?php echo number_format($kpi['gains_nets'], 0, ',', ' '); ?> <small style="font-size:.9rem;">F</small></div>
         <div class="kpi-sub">Après commission plateforme</div>
     </div>
-    <div class="kpi-card" style="border-top:3px solid #f59e0b;">
-        <div class="kpi-icon">📊</div>
+    <div class="kpi-card" style="border-top:3px solid #FF4A0D;">
+        <div class="kpi-icon"><i class="fa-solid fa-chart-pie" style="color: #FF4A0D;"></i></div>
         <div class="kpi-label">Commission Plateforme</div>
-        <div class="kpi-value" style="color:#d97706;"><?php echo number_format($kpi['total_commission'], 0, ',', ' '); ?> <small style="font-size:.9rem;">F</small></div>
+        <div class="kpi-value" style="color:#FF4A0D;"><?php echo number_format($kpi['total_commission'], 0, ',', ' '); ?> <small style="font-size:.9rem;">F</small></div>
         <div class="kpi-sub">Frais de service prélevés</div>
     </div>
-    <div class="kpi-card" style="border-top:3px solid #0284c7;">
-        <div class="kpi-icon">🎟️</div>
+    <div class="kpi-card" style="border-top:3px solid #FF4A0D;">
+        <div class="kpi-icon"><i class="fa-solid fa-ticket" style="color: #FF4A0D;"></i></div>
         <div class="kpi-label">Tickets Vendus</div>
         <div class="kpi-value"><?php echo number_format($kpi['nb_tickets_vendus'], 0, ',', ' '); ?></div>
         <div class="kpi-sub"><?php echo $kpi['tickets_utilises']; ?> déjà utilisés</div>
     </div>
-    <div class="kpi-card" style="border-top:3px solid #8b5cf6;">
-        <div class="kpi-icon">📅</div>
+    <div class="kpi-card" style="border-top:3px solid #FF4A0D;">
+        <div class="kpi-icon"><i class="fa-regular fa-calendar-days" style="color: #FF4A0D;"></i></div>
         <div class="kpi-label">Événements</div>
         <div class="kpi-value"><?php echo (int)$kpi['nb_events']; ?></div>
         <div class="kpi-sub">Publiés sur la plateforme</div>
     </div>
-    <div class="kpi-card" style="border-top:3px solid #10b981;">
-        <div class="kpi-icon">💼</div>
+    <div class="kpi-card" style="border-top:3px solid #FF4A0D;">
+        <div class="kpi-icon"><i class="fa-solid fa-wallet" style="color: #FF4A0D;"></i></div>
         <div class="kpi-label">Solde Disponible</div>
-        <div class="kpi-value" style="color:#10b981;"><?php echo number_format($solde_actuel, 0, ',', ' '); ?> <small style="font-size:.9rem;">F</small></div>
+        <div class="kpi-value" style="color:#FF4A0D;"><?php echo number_format($solde_actuel, 0, ',', ' '); ?> <small style="font-size:.9rem;">F</small></div>
         <div class="kpi-sub"><a href="solde.php" style="color:var(--primary); font-weight:700;">Retirer →</a></div>
     </div>
 </div>
@@ -221,7 +226,7 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
     </div>
     <!-- Barres recettes par événement -->
     <div class="chart-box">
-        <div class="chart-title"><i class="fa-solid fa-chart-column" style="color:#0284c7;"></i> Recettes par Événement (FCFA)</div>
+        <div class="chart-title"><i class="fa-solid fa-chart-column" style="color:#FF4A0D;"></i> Recettes par Événement (FCFA)</div>
         <div style="height:200px; position:relative;">
             <?php if (count($ev_recettes) > 0 && max($ev_recettes) > 0): ?>
                 <canvas id="chartEvents"></canvas>
@@ -235,7 +240,7 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
 <div class="charts-row">
     <!-- Tickets vendus par événement -->
     <div class="chart-box">
-        <div class="chart-title"><i class="fa-solid fa-ticket" style="color:#f59e0b;"></i> Tickets Vendus par Événement</div>
+        <div class="chart-title"><i class="fa-solid fa-ticket" style="color:#FF4A0D;"></i> Tickets Vendus par Événement</div>
         <div style="height:200px; position:relative;">
             <?php if (count($ev_vendus) > 0 && max($ev_vendus) > 0): ?>
                 <canvas id="chartTickets"></canvas>
@@ -246,7 +251,7 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
     </div>
     <!-- Donut Mobile Money -->
     <div class="chart-box">
-        <div class="chart-title"><i class="fa-solid fa-mobile-screen-button" style="color:#16a34a;"></i> Répartition par Opérateur Mobile Money</div>
+        <div class="chart-title"><i class="fa-solid fa-mobile-screen-button" style="color:#FF4A0D;"></i> Répartition par Opérateur Mobile Money</div>
         <?php if (count($mm_data) > 0): ?>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:center;">
             <div style="height:180px; position:relative;">
@@ -283,7 +288,7 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
 
     <!-- En-tête du tableau -->
     <div style="display:grid; grid-template-columns:3fr 1fr 1fr 1fr 1fr 80px; gap:.5rem;
-                padding:.6rem 1rem; background:#f1f5f9; border-radius:8px 8px 0 0;
+                padding:.6rem 1rem; background:#F5F5F5; border-radius:8px 8px 0 0;
                 font-size:.75rem; font-weight:800; color:var(--muted); text-transform:uppercase;">
         <div>Événement</div>
         <div style="text-align:center;">Vendus</div>
@@ -300,7 +305,7 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
         $utilises = (int)$ev['tickets_utilises'];
         $pct      = ($cap > 0) ? min(100, round(($vendus / $cap) * 100)) : 0;
         $gain_net = (float)$ev['recette_brute'] * (1 - (float)$ev['commission_rate'] / 100);
-        $pct_color = $pct >= 80 ? '#ef4444' : ($pct >= 50 ? '#f59e0b' : 'var(--primary)');
+        $pct_color = $pct >= 80 ? '#000000' : ($pct >= 50 ? '#FF4A0D' : 'var(--primary)');
 
         // Types de tickets de cet événement
         $ev_types = array_filter($types_data, fn($t) => (int)$t['event_id'] === (int)$ev['id']);
@@ -319,14 +324,14 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
                 </span>
             </div>
             <div style="text-align:center;">
-                <strong style="color:#0284c7; font-size:1.1rem;"><?php echo $vendus; ?></strong><br>
+                <strong style="color:#FF4A0D; font-size:1.1rem;"><?php echo $vendus; ?></strong><br>
                 <small style="color:var(--muted);"><?php echo $utilises; ?> utilisés</small>
             </div>
             <div style="text-align:center;">
                 <strong style="color:var(--primary);"><?php echo number_format($ev['recette_brute'], 0, ',', ' '); ?> F</strong>
             </div>
             <div style="text-align:center;">
-                <strong style="color:#16a34a;"><?php echo number_format($gain_net, 0, ',', ' '); ?> F</strong>
+                <strong style="color:#FF4A0D;"><?php echo number_format($gain_net, 0, ',', ' '); ?> F</strong>
                 <small style="color:var(--muted); display:block;"><?php echo (float)$ev['commission_rate']; ?>% comm.</small>
             </div>
             <div>
@@ -368,7 +373,7 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
                     ?>
                     <tr>
                         <td>
-                            <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:5px; font-weight:800; font-size:.8rem;">
+                            <span style="background:#FFF2ED; color:#FF4A0D; padding:2px 8px; border-radius:5px; font-weight:800; font-size:.8rem;">
                                 <?php echo htmlspecialchars($tt['type_nom']); ?>
                             </span>
                         </td>
@@ -383,16 +388,16 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
                         </td>
                         <td>
                             <?php if ($tt_restant === 0): ?>
-                                <span style="background:#fee2e2; color:#b91c1c; font-size:.75rem; font-weight:800; padding:2px 7px; border-radius:5px;">Épuisé</span>
+                                <span style="background:#F5F5F5; color:#000000; font-size:.75rem; font-weight:800; padding:2px 7px; border-radius:5px;">Épuisé</span>
                             <?php else: ?>
-                                <span style="background:#dcfce7; color:#15803d; font-size:.75rem; font-weight:800; padding:2px 7px; border-radius:5px;"><?php echo $tt_restant; ?> dispo.</span>
+                                <span style="background:#FFF2ED; color:#FF4A0D; font-size:.75rem; font-weight:800; padding:2px 7px; border-radius:5px;"><?php echo $tt_restant; ?> dispo.</span>
                             <?php endif; ?>
                         </td>
                         <td><strong style="color:var(--primary);"><?php echo number_format($tt['recette_type'], 0, ',', ' '); ?> F</strong></td>
-                        <td><strong style="color:#16a34a;"><?php echo number_format($tt_gain, 0, ',', ' '); ?> F</strong></td>
+                        <td><strong style="color:#FF4A0D;"><?php echo number_format($tt_gain, 0, ',', ' '); ?> F</strong></td>
                         <td>
                             <?php if ($tt_vendus > 0): ?>
-                                <span style="font-weight:700; color:#0284c7;"><?php echo (int)$tt['utilises']; ?></span>
+                                <span style="font-weight:700; color:#FF4A0D;"><?php echo (int)$tt['utilises']; ?></span>
                                 <small style="color:var(--muted);"> / <?php echo $tt_vendus; ?> vendus (<?php echo round(($tt['utilises']/$tt_vendus)*100); ?>%)</small>
                             <?php else: ?>
                                 <span style="color:var(--muted);">—</span>
@@ -445,21 +450,21 @@ $mm_colors = ['#0284c7','#ea580c','#ca8a04','#16a34a'];
                 <tr>
                     <td><small style="color:var(--muted);"><?php echo htmlspecialchars(mb_strimwidth($tt['event_nom'], 0, 25, '…')); ?></small></td>
                     <td>
-                        <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:5px; font-weight:800; font-size:.8rem;">
+                        <span style="background:#FFF2ED; color:#FF4A0D; padding:2px 8px; border-radius:5px; font-weight:800; font-size:.8rem;">
                             <?php echo htmlspecialchars($tt['type_nom']); ?>
                         </span>
                     </td>
                     <td><strong><?php echo number_format($tt['prix'], 0, ',', ' '); ?> F</strong></td>
                     <td>
-                        <strong style="color:#0284c7;"><?php echo (int)$tt['quantite_vendue']; ?></strong>
+                        <strong style="color:#FF4A0D;"><?php echo (int)$tt['quantite_vendue']; ?></strong>
                         <span style="color:var(--muted);"> / <?php echo (int)$tt['quantite']; ?></span>
                     </td>
                     <td><strong style="color:var(--primary);"><?php echo number_format($tt['recette_type'], 0, ',', ' '); ?> F</strong></td>
-                    <td><strong style="color:#16a34a;"><?php echo number_format((float)$tt['recette_type'] * $gain_tt_rate, 0, ',', ' '); ?> F</strong></td>
+                    <td><strong style="color:#FF4A0D;"><?php echo number_format((float)$tt['recette_type'] * $gain_tt_rate, 0, ',', ' '); ?> F</strong></td>
                     <td>
                         <div style="display:flex; align-items:center; gap:.4rem;">
                             <div class="progress-sm" style="width:55px;">
-                                <div style="width:<?php echo $pct_tt; ?>%; background:<?php echo $pct_tt >= 80 ? '#ef4444' : 'var(--primary)'; ?>;"></div>
+                                <div style="width:<?php echo $pct_tt; ?>%; background:<?php echo $pct_tt >= 80 ? '#000000' : 'var(--primary)'; ?>;"></div>
                             </div>
                             <strong style="font-size:.8rem;"><?php echo $pct_tt; ?>%</strong>
                         </div>
@@ -488,12 +493,12 @@ new Chart(document.getElementById('chartTrend'), {
         datasets: [{
             label: 'Tickets vendus',
             data: <?php echo json_encode($trend_tickets); ?>,
-            borderColor: '#0f766e',
+            borderColor: '#FF4A0D',
             backgroundColor: 'rgba(15,118,110,.1)',
             fill: true,
             tension: .4,
             pointRadius: 4,
-            pointBackgroundColor: '#0f766e'
+            pointBackgroundColor: '#FF4A0D'
         }]
     },
     options: { ...chartDefaults,
@@ -517,7 +522,7 @@ new Chart(document.getElementById('chartEvents'), {
             label: 'Recette (FCFA)',
             data: <?php echo json_encode(array_map('floatval', $ev_recettes)); ?>,
             backgroundColor: 'rgba(2,132,199,.75)',
-            borderColor: '#0284c7',
+            borderColor: '#FF4A0D',
             borderWidth: 1,
             borderRadius: 6
         }]
@@ -538,7 +543,7 @@ new Chart(document.getElementById('chartTickets'), {
             label: 'Tickets vendus',
             data: <?php echo json_encode(array_map('intval', $ev_vendus)); ?>,
             backgroundColor: 'rgba(245,158,11,.75)',
-            borderColor: '#f59e0b',
+            borderColor: '#FF4A0D',
             borderWidth: 1,
             borderRadius: 6
         }]

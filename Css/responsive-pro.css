@@ -32,26 +32,38 @@
     --container-padding: clamp(0.75rem, 2vw, 1.5rem);
     --container-max-width: 100%;
 
-    /* Couleurs */
-    --paper: #ffffff;
-    --canvas: #f8fafc;
-    --line: #e2e8f0;
-    --line-light: #cbd5e1;
-    --navy: #0f172a;
-    --muted: #64748b;
-    --primary: #0d9488;
-    --primary-light: #14b8a6;
+    /* Palette Officielle Tikéli */
+    --tikeli-orange: #FF4A0D;
+    --tikeli-black: #000000;
+    --tikeli-white: #FFFFFF;
+    --tikeli-gray: #F5F5F5;
+
+    /* Couleurs & Surfaces Tikéli */
+    --paper: var(--tikeli-white);
+    --canvas: var(--tikeli-gray);
+    --line: #E5E5E5;
+    --line-light: #E5E5E5;
+    --navy: #121212;
+    --navy-dark: var(--tikeli-black);
+    --muted: #737373;
+    --primary: #121212;
+    --primary-light: #262626;
+    --accent: var(--tikeli-orange);
+    --accent-dark: #E03E08;
+    --success: var(--tikeli-orange);
+    --warning: var(--tikeli-orange);
+    --danger: var(--tikeli-black);
 
     /* Design */
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
-    
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
-    
-    --transition: all 0.3s ease;
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+
+    --shadow-sm: 0 1px 2px 0 rgba(16, 24, 40, 0.04);
+    --shadow-md: 0 4px 6px -1px rgba(16, 24, 40, 0.08);
+    --shadow-lg: 0 10px 15px -3px rgba(16, 24, 40, 0.10);
+
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ==============================================================================
@@ -77,13 +89,16 @@ body {
     width: 100%;
     max-width: 100%;
     position: relative;
-    word-break: break-word;
-    word-wrap: break-word;
+    /* overflow-wrap only — évite les coupures sauvages de mots lisibles */
     overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 /* Empêcher tout débordement */
-html, body {
+html,
+body {
     width: 100%;
     height: 100%;
 }
@@ -106,7 +121,7 @@ html, body {
     box-shadow: var(--shadow-sm);
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible; /* Modifié de hidden pour autoriser le menu déroulant */
     box-sizing: border-box;
 }
 
@@ -154,6 +169,57 @@ html, body {
 
 .client-logout {
     margin-left: auto;
+}
+
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--navy);
+    cursor: pointer;
+}
+
+/* ========== MOBILE (< 768px) : Hamburger Nav ========== */
+@media (max-width: 767px) {
+    .client-header {
+        padding: var(--spacing-sm);
+        position: relative; /* Pour positionner le menu déroulant */
+        overflow: visible !important;
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+    }
+    
+    .client-nav {
+        display: none !important; /* Caché par défaut */
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        flex-direction: column;
+        padding: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-bottom: 1px solid var(--line, #E5E5E5);
+        z-index: 9999;
+    }
+    
+    .client-nav.active {
+        display: flex !important;
+    }
+    
+    .client-nav a {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border-radius: 6px;
+    }
+    
+    .client-logout {
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
 }
 
 /* ========== TABLETTE (768-1023px) : nav inline ========== */
@@ -371,7 +437,8 @@ main {
     font-size: var(--font-size-base);
     font-weight: 700;
     margin-bottom: var(--spacing-sm);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 .card-text {
@@ -379,7 +446,8 @@ main {
     color: var(--muted);
     flex: 1;
     margin-bottom: var(--spacing-md);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 .card-actions {
@@ -471,7 +539,8 @@ main {
     font-size: var(--font-size-lg);
     font-weight: 700;
     margin-bottom: var(--spacing-md);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
     line-height: 1.3;
 }
 
@@ -509,7 +578,10 @@ table td {
     padding: clamp(0.5rem, 1.5vw, 0.8rem);
     text-align: left;
     border-bottom: 1px solid var(--line);
-    word-break: break-word;
+    word-break: normal;
+    overflow-wrap: break-word;
+    hyphens: none;
+    -webkit-hyphens: none;
 }
 
 table th {
@@ -517,6 +589,7 @@ table th {
     font-weight: 700;
     font-size: var(--font-size-xs);
     text-transform: uppercase;
+    white-space: nowrap !important;
 }
 
 @media (max-width: 767px) {
@@ -601,39 +674,45 @@ h1 {
     font-size: var(--font-size-3xl);
     line-height: 1.2;
     margin-bottom: var(--spacing-md);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 h2 {
     font-size: var(--font-size-2xl);
     line-height: 1.3;
     margin-bottom: var(--spacing-md);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 h3 {
     font-size: var(--font-size-xl);
     line-height: 1.4;
     margin-bottom: var(--spacing-sm);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 h4 {
     font-size: var(--font-size-lg);
     margin-bottom: var(--spacing-sm);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 p {
     font-size: var(--font-size-base);
     line-height: 1.6;
     margin-bottom: var(--spacing-md);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 small {
     font-size: var(--font-size-xs);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 /* ==============================================================================
@@ -851,7 +930,8 @@ img {
     font-size: var(--font-size-lg);
     font-weight: 700;
     margin-bottom: var(--spacing-sm);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
     line-height: 1.3;
 }
 
@@ -860,7 +940,8 @@ img {
     color: var(--muted);
     flex: 1;
     margin-bottom: var(--spacing-md);
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
     line-height: 1.4;
 }
 
@@ -900,9 +981,9 @@ img {
    ============================================================================== */
 @media (prefers-color-scheme: dark) {
     :root {
-        --paper: #1e293b;
-        --canvas: #0f172a;
-        --line: #334155;
+        --paper: #000000;
+        --canvas: #000000;
+        --line: #000000;
         --navy: #ffffff;
     }
 
@@ -993,7 +1074,7 @@ img {
         gap: 0.6rem;
         text-align: right;
         padding: 0.65rem 0.9rem !important;
-        border-bottom: 1px dashed var(--dash-border-light, #e2e8f0);
+        border-bottom: 1px dashed var(--dash-border-light, #E5E5E5);
         white-space: normal !important;
         word-break: break-word;
         overflow-wrap: anywhere;
@@ -1010,11 +1091,11 @@ img {
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: var(--dash-muted, #94a3b8);
+        color: var(--dash-muted, #737373);
     }
 
     /* Les valeurs internes peuvent rétrécir et passer à la ligne si besoin */
-    .mv-stack td > * {
+    .mv-stack td>* {
         min-width: 0;
     }
 
@@ -1042,9 +1123,143 @@ img {
     }
 
     /* Les blocs flex internes (contacts, jauges) peuvent passer à la ligne */
-    .mv-stack td > div,
-    .mv-stack td > a {
+    .mv-stack td>div,
+    .mv-stack td>a {
         flex-wrap: wrap !important;
         max-width: 100%;
+    }
+}
+
+/* ==============================================================================
+   23. PROTECTION ANTI-COUPURE GLOBALE — BADGES, STATUTS, BOUTONS, MONTANTS
+   Règle prioritaire qui s'applique à tous les thèmes et breakpoints.
+   Empêche toute coupure de mots au milieu de libellés lisibles.
+   ============================================================================== */
+
+/* A. Éléments qui ne doivent JAMAIS couper — sur une seule ligne */
+th,
+table th,
+.badge,
+.dash-badge,
+.dash-kpi-badge-pill,
+.badge-status,
+.status-pill,
+.tag,
+.filter-pill,
+.code-badge,
+[class*="badge"],
+[class*="status-"],
+[class*="-pill"],
+[class*="tag-"],
+.dash-btn-action,
+.btn-action,
+.event-action-btn,
+td[data-label="Actions"],
+td[data-label="Statut"],
+td[data-label="Date"],
+td[data-label="Date & Heure"],
+td[data-label="Téléphone"],
+td[data-label="Code"] {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    hyphens: none !important;
+    -webkit-hyphens: none !important;
+}
+
+/* B. Colonnes de texte libre : retour à la ligne AUTORISÉ mais sûr (jamais break-all) */
+td[data-label="Description"],
+td[data-label="Nom"],
+td[data-label="Adresse"],
+td[data-label="Commentaire"],
+.td-text-free,
+.description-cell {
+    overflow-wrap: break-word !important;
+    word-break: normal !important;
+    hyphens: none !important;
+}
+
+/* C. Montants & Chiffres : tabular, sur une seule ligne, alignement droit */
+.dash-amount,
+.amount,
+.price,
+.cell-amount,
+.cell-tarif,
+td[data-label*="Montant"],
+td[data-label*="Recette"],
+td[data-label*="Prix"],
+td[data-label*="Tarif"],
+td[data-label*="Solde"],
+td[data-label*="Total"],
+td[data-label*="Revenu"],
+td:has(> strong[style*="color: #FF4A0D"]),
+td:has(> strong[style*="color: #FF4A0D"]) {
+    white-space: nowrap !important;
+    word-break: normal !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+/* D. Dans le mode mobile .mv-stack, les badges enfants gardent leur nowrap */
+.mv-stack .badge,
+.mv-stack .dash-badge,
+.mv-stack .badge-status,
+.mv-stack .status-pill,
+.mv-stack .dash-btn-action,
+.mv-stack .code-badge,
+.mv-stack .filter-pill {
+    white-space: nowrap !important;
+    word-break: normal !important;
+}
+
+/* ==============================================================================
+   24. RESPONSIVE SELECTS & FILTER BARS (Tous les événements, périodes, etc.)
+   ============================================================================== */
+.dash-control-select {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.dash-control-select select {
+    max-width: 100%;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .dash-filter-bar {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        width: 100% !important;
+        gap: 0.65rem !important;
+    }
+
+    .dash-filter-bar form {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        width: 100% !important;
+        gap: 0.5rem !important;
+    }
+
+    .dash-control-select {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: flex-start !important;
+        padding: 0.55rem 0.85rem !important;
+        border-radius: 10px !important;
+    }
+
+    .dash-control-select select {
+        flex: 1 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        font-size: 0.88rem !important;
+    }
+
+    .dash-filter-bar .dash-btn-action {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 0.65rem 1rem !important;
     }
 }

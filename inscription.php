@@ -1,10 +1,8 @@
 <?php
 // ==============================================================================
 // PAGE D'INSCRIPTION PUBLIQUE (inscription.php)
-// Inscription ouverte pour :
-// - Client (Acheteur de billets)
-// - Promoteur (Organisateur avec dossier d'éligibilité)
-// NOTE : Les agents de contrôle sont créés par les promoteurs et les administrateurs.
+// Inscription ouverte exclusivement aux Acheteurs / Clients.
+// Les demandes d'éligibilité Promoteurs sont gérées sur : client/devenir-promoteur.php
 // ==============================================================================
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -12,33 +10,26 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once 'config/database.php';
+require_once 'includes/mailer.php';
+require_once 'includes/auth.php';
+
+$is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+$user_role = $_SESSION['user_role'] ?? 'client';
 
 $message = "";
 $msg_type = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Informations de base communes
-    $nom       = trim($_POST['nom'] ?? '');
-    $email     = trim($_POST['email'] ?? '');
+    $nom = trim($_POST['nom'] ?? '');
+    $prenom = trim($_POST['prenom'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $telephone = trim($_POST['telephone'] ?? '');
-    $password  = $_POST['password'] ?? '';
-    $role      = $_POST['role'] ?? 'client';
-
-    // Seuls les rôles 'client' et 'promoteur' sont autorisés à l'inscription publique
-    if (!in_array($role, ['client', 'promoteur'], true)) {
-        $role = 'client';
-    }
-
-    // Informations supplémentaires pour le Promoteur
-    $activite        = trim($_POST['activite'] ?? '');
-    $experience      = trim($_POST['experience'] ?? '');
-    $description     = trim($_POST['description'] ?? '');
-    $reseaux_sociaux = trim($_POST['reseaux_sociaux'] ?? '');
-    $autres_infos    = trim($_POST['autres_infos'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $role = 'client'; // Rôle unique pour l'inscription générale
 
     // Validation des champs obligatoires
-    if (empty($nom) || empty($email) || empty($telephone) || empty($password)) {
-        $message = "Veuillez remplir tous les champs obligatoires.";
+    if (empty($nom) || empty($prenom) || empty($email) || empty($telephone) || empty($password)) {
+        $message = "Veuillez remplir tous les champs obligatoires (Nom, Prénom, Email, Téléphone, Mot de passe).";
         $msg_type = "error";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = "L'adresse email n'a pas un format valide.";
@@ -46,246 +37,295 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($password) < 6) {
         $message = "Le mot de passe doit contenir au moins 6 caractères.";
         $msg_type = "error";
-    } elseif ($role === 'promoteur' && (empty($activite) || empty($experience) || empty($description))) {
-        $message = "Pour un compte promoteur, veuillez préciser votre activité, votre expérience et décrire vos projets.";
-        $msg_type = "error";
     } else {
-        // Upload de la pièce d'identité du promoteur
-        $piece_id_filename = 'default.jpg';
+        try {
+            $password_hache = password_hash($password, PASSWORD_DEFAULT);
 
-        if ($role === 'promoteur') {
-            if (isset($_FILES['piece_identite']) && $_FILES['piece_identite']['error'] === UPLOAD_ERR_OK) {
-                $fileTmp  = $_FILES['piece_identite']['tmp_name'];
-                $fileName = $_FILES['piece_identite']['name'];
-                $ext      = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-                $allowed  = ['jpg', 'jpeg', 'png', 'pdf'];
+            $sql = "INSERT INTO users (nom, prenom, email, telephone, password, role, statut, est_verifie) VALUES (?, ?, ?, ?, ?, 'client', 'actif', 1)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$nom, $prenom, $email, $telephone, $password_hache]);
 
-                if (!in_array($ext, $allowed, true)) {
-                    $message = "Format de la pièce d'identité invalide (formats acceptés : JPG, PNG, PDF).";
-                    $msg_type = "error";
-                } else {
-                    $uploadDir = __DIR__ . '/uploads/ids/';
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0777, true);
-                    }
-                    $piece_id_filename = 'id_' . uniqid() . '.' . $ext;
-                    if (!move_uploaded_file($fileTmp, $uploadDir . $piece_id_filename)) {
-                        $message = "Erreur lors du téléchargement de votre pièce d'identité.";
-                        $msg_type = "error";
-                    }
-                }
+            $new_user_id = (int) $pdo->lastInsertId();
+            $full_name = trim("$prenom $nom");
+
+            // Envoi de l'e-mail de bienvenue au client
+            sendWelcomeClientEmail($email, $full_name);
+            logActivity('inscription_client', 'user', $new_user_id, "Nouveau compte client créé par $full_name ($email)", $new_user_id);
+
+            $message = "Votre compte client a été créé avec succès ! Un e-mail de bienvenue vous a été envoyé. Vous pouvez maintenant vous connecter.";
+            $msg_type = "success";
+
+        } catch (PDOException $e) {
+            if ($e->getCode() == 23000 || str_contains($e->getMessage(), 'Duplicate entry') || str_contains($e->getMessage(), 'UNIQUE')) {
+                $message = "Cette adresse email est déjà associée à un compte.";
             } else {
-                $message = "Veuillez joindre une pièce d'identité (format JPG, PNG ou PDF).";
-                $msg_type = "error";
+                $message = "Erreur lors de l'enregistrement : " . $e->getMessage();
             }
-        }
-
-        if (empty($message)) {
-            try {
-                $password_hache = password_hash($password, PASSWORD_DEFAULT);
-                $est_verifie = ($role === 'promoteur') ? 0 : 1;
-
-                $sql = "INSERT INTO users (nom, email, telephone, password, role, est_verifie) VALUES (?, ?, ?, ?, ?, ?)";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$nom, $email, $telephone, $password_hache, $role, $est_verifie]);
-
-                $new_user_id = (int)$pdo->lastInsertId();
-
-                if ($role === 'promoteur') {
-                    // Enregistrement de la demande promoteur
-                    $sql_req = "INSERT INTO promoter_requests (user_id, nom_complet, telephone, email, activite, experience, piece_identite, description, reseaux_sociaux, autres_infos, statut) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente')";
-                    $stmt_req = $pdo->prepare($sql_req);
-                    $stmt_req->execute([$new_user_id, $nom, $telephone, $email, $activite, $experience, $piece_id_filename, $description, $reseaux_sociaux, $autres_infos]);
-
-                    // Profil promoteur
-                    $sql_promoter = "INSERT INTO promoters (user_id, nom_commercial, telephone_contact, email_contact, statut, solde) 
-                                     VALUES (?, ?, ?, ?, 'en_attente', 0.00)";
-                    $stmt_p = $pdo->prepare($sql_promoter);
-                    $stmt_p->execute([$new_user_id, $nom, $telephone, $email]);
-
-                    $message = "Votre dossier de promoteur a été soumis avec succès ! L'administrateur va examiner vos informations pour validation.";
-                } else {
-                    $message = "Votre compte client a été créé avec succès ! Vous pouvez maintenant vous connecter.";
-                }
-
-                $msg_type = "success";
-
-            } catch (PDOException $e) {
-                if ($e->getCode() == 23000 || str_contains($e->getMessage(), 'Duplicate entry') || str_contains($e->getMessage(), 'UNIQUE')) {
-                    $message = "Cette adresse email est déjà associée à un compte.";
-                } else {
-                    $message = "Erreur lors de l'enregistrement : " . $e->getMessage();
-                }
-                $msg_type = "error";
-            }
+            $msg_type = "error";
         }
     }
 }
 ?>
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inscription - Eventia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Créer un compte - Eventia</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- Style CSS -->
+    <!-- Style CSS & Eventia Brand -->
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/eventia-brand.css">
+    <link rel="stylesheet" href="css/responsive-pro.css">
     <style>
-        .promoter-box {
-            display: none;
-            background: #f8fafc;
-            border: 1px solid var(--line);
-            border-radius: var(--radius-md);
-            padding: 1.25rem;
-            margin-top: 1rem;
-            margin-bottom: 1.25rem;
-            text-align: left;
+        body {
+            background: var(--eventia-background, #F5F5F5) !important;
+            min-height: 100vh;
+            margin: 0 !important;
+            padding: 2.5rem 1rem 3.5rem !important;
+            box-sizing: border-box !important;
+            display: block !important;
+            font-family: var(--font-body, 'Inter', sans-serif);
         }
-        .promoter-box.active {
-            display: block;
-            animation: fadeIn 0.25s ease;
+
+        .auth-container {
+            width: 100%;
+            max-width: 520px;
+            margin: 0 auto !important;
+            padding: 2.25rem 2rem;
+            background: #ffffff;
+            border: 1px solid var(--eventia-border, #E5E5E5);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(11, 29, 58, 0.06);
+            box-sizing: border-box;
+            position: relative;
         }
-        .promoter-box-title {
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 0.85rem;
+
+        .auth-container::before {
+            display: none !important;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.85rem;
+        }
+
+        .promoteur-invite-box {
+            margin-top: 1.25rem;
+            background: #F5F5F5;
+            border: 1px dashed #E5E5E5;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 0.95rem;
+            justify-content: space-between;
+            gap: 0.75rem;
+            font-size: 0.82rem;
+            color: var(--eventia-text, #000000);
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        .promoteur-invite-btn {
+            background: #ffffff;
+            border: 1px solid var(--eventia-navy, #000000);
+            color: var(--eventia-navy, #000000);
+            padding: 0.45rem 0.85rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .promoteur-invite-btn:hover {
+            background: var(--eventia-navy, #000000);
+            color: #ffffff;
+        }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 1.25rem 0.75rem 2rem !important;
+            }
+            .auth-container {
+                padding: 1.5rem 1.25rem;
+                border-radius: 14px;
+            }
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            .promoteur-invite-box {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            .promoteur-invite-btn {
+                width: 100%;
+                text-align: center;
+                box-sizing: border-box;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="auth-container" style="width: min(100%, 520px);">
-        <h2><i class="fa-solid fa-ticket"></i> Créer un compte</h2>
-        <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.92rem;">
-            Rejoignez Eventia pour réserver ou organiser des événements
-        </p>
 
+<body>
+
+    <!-- Bouton Retour hors de la section -->
+    <div style="width: 100%; max-width: 520px; margin: 0 auto 0.85rem; box-sizing: border-box;">
+        <a href="client/accueil.php"
+            style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000); text-decoration: none; padding: 7px 14px; border-radius: 10px; background: #ffffff; border: 1px solid var(--eventia-border, #E5E5E5); box-shadow: 0 2px 5px rgba(11, 29, 58, 0.04); transition: all 0.2s;"
+            onmouseover="this.style.background='#F5F5F5'; this.style.color='var(--eventia-amber-dark, #FF4A0D)'; this.style.transform='translateX(-2px)';"
+            onmouseout="this.style.background='#ffffff'; this.style.color='var(--eventia-navy, #000000)'; this.style.transform='none';">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Retour à l'accueil</span>
+        </a>
+    </div>
+
+    <div class="auth-container eventia-card">
+        
+        <!-- Logo & Titre Identique -->
+        <div style="text-align: center; margin-bottom: 1.75rem;">
+            <a href="client/accueil.php"
+                style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; text-decoration: none;">
+                <img src="images/logo.png" alt="Tikéli" style="height: 52px; width: auto; max-width: 190px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
+            </a>
+            <h1 style="font-size: 1.35rem; font-weight: 800; color: var(--eventia-navy, #000000); margin: 0.35rem 0 0.25rem; font-family: var(--font-heading, 'Outfit', sans-serif);">
+                Créer un compte
+            </h1>
+            <p style="color: var(--eventia-muted, #737373); margin: 0; font-size: 0.88rem;">
+                Rejoignez Eventia et réservez vos places en quelques clics
+            </p>
+        </div>
+
+        <!-- Message d'alerte (succès ou erreur) -->
         <?php if (!empty($message)): ?>
-            <div class="alert alert-<?php echo $msg_type; ?>">
-                <i class="fa-solid <?php echo ($msg_type === 'success') ? 'fa-circle-check' : 'fa-circle-exclamation'; ?>"></i>
-                <div>
-                    <?php echo htmlspecialchars($message); ?>
-                    <?php if ($msg_type === 'success'): ?>
-                        <div style="margin-top: 0.4rem;">
-                            <a href="connexion.php" style="font-weight: bold; color: inherit; text-decoration: underline;">Se connecter maintenant →</a>
-                        </div>
-                    <?php endif; ?>
-                </div>
+            <div class="eventia-alert eventia-alert-<?php echo $msg_type === 'success' ? 'success' : 'error'; ?>"
+                style="background: <?php echo $msg_type === 'success' ? '#FFF2ED' : '#F5F5F5'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#FFF2ED' : '#E5E5E5'; ?>; color: <?php echo $msg_type === 'success' ? '#FF4A0D' : '#000000'; ?>; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem;">
+                <i class="fa-solid <?php echo $msg_type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>" style="flex-shrink: 0;"></i>
+                <span><?php echo htmlspecialchars($message); ?></span>
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="inscription.php" enctype="multipart/form-data">
-            <!-- 1. Informations générales -->
-            <div class="form-group">
-                <label for="nom"><i class="fa-solid fa-user"></i> Nom complet *</label>
-                <input type="text" id="nom" name="nom" required placeholder="Ex: Jean Koffi" value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>">
-            </div>
-
-            <div class="form-group">
-                <label for="email"><i class="fa-solid fa-envelope"></i> Adresse Email *</label>
-                <input type="email" id="email" name="email" required placeholder="exemple@mail.com" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
-            </div>
-
-            <div class="form-group">
-                <label for="telephone"><i class="fa-solid fa-phone"></i> Numéro de Téléphone *</label>
-                <input type="tel" id="telephone" name="telephone" required placeholder="Ex: +225 07 00 00 00 00" value="<?php echo htmlspecialchars($_POST['telephone'] ?? ''); ?>">
-            </div>
-
-            <!-- Choix du rôle : Client ou Promoteur uniquement -->
-            <div class="form-group">
-                <label for="role"><i class="fa-solid fa-user-tag"></i> Je m'inscris en tant que : *</label>
-                <select name="role" id="role" onchange="togglePromoterFields()" required>
-                    <option value="client" <?php echo (!isset($_POST['role']) || $_POST['role'] === 'client') ? 'selected' : ''; ?>>👤 Client (Acheter des billets)</option>
-                    <option value="promoteur" <?php echo (isset($_POST['role']) && $_POST['role'] === 'promoteur') ? 'selected' : ''; ?>>🎪 Promoteur (Organiser et vendre des événements)</option>
-                </select>
-            </div>
-
-            <!-- 2. Bloc dossier d'éligibilité pour le Promoteur -->
-            <div id="promoter-fields" class="promoter-box <?php echo (isset($_POST['role']) && $_POST['role'] === 'promoteur') ? 'active' : ''; ?>">
-                <div class="promoter-box-title">
-                    <i class="fa-solid fa-id-card"></i> Dossier d'éligibilité Promoteur
-                </div>
-                
-                <div class="form-group">
-                    <label for="activite">Activité principale / Structure *</label>
-                    <input type="text" id="activite" name="activite" placeholder="Ex: Production de concerts, Festivalier, Agence" value="<?php echo htmlspecialchars($_POST['activite'] ?? ''); ?>">
+        <!-- Formulaire d'inscription -->
+        <form method="POST" action="inscription.php" style="display: flex; flex-direction: column; gap: 1rem;">
+            
+            <div class="form-grid-2">
+                <!-- Nom -->
+                <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
+                    <label for="nom" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                        <i class="fa-solid fa-user" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                        <span>Nom *</span>
+                    </label>
+                    <input type="text" id="nom" name="nom" required placeholder="Ex: Koffi"
+                        value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>"
+                        style="width: 100%; box-sizing: border-box; padding: 0.75rem 0.95rem; border-radius: 10px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.92rem; font-family: inherit; color: var(--eventia-navy, #000000); background: #ffffff;">
                 </div>
 
-                <div class="form-group">
-                    <label for="experience">Expérience dans l'événementiel *</label>
-                    <input type="text" id="experience" name="experience" placeholder="Ex: 5 ans dans l'organisation de spectacles" value="<?php echo htmlspecialchars($_POST['experience'] ?? ''); ?>">
-                </div>
-
-                <div class="form-group">
-                    <label for="piece_identite">Pièce d'identité (CNI / Passeport) *</label>
-                    <input type="file" id="piece_identite" name="piece_identite" accept=".jpg,.jpeg,.png,.pdf">
-                    <small style="color: var(--muted); display: block; margin-top: 0.25rem;">Formats acceptés : JPG, PNG, PDF</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="description">Description de vos projets d'événements *</label>
-                    <textarea id="description" name="description" rows="3" placeholder="Présentez les événements que vous souhaitez organiser..."><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="reseaux_sociaux">Réseaux sociaux / Site web (Optionnel)</label>
-                    <input type="text" id="reseaux_sociaux" name="reseaux_sociaux" placeholder="Ex: https://facebook.com/monagence" value="<?php echo htmlspecialchars($_POST['reseaux_sociaux'] ?? ''); ?>">
-                </div>
-
-                <div class="form-group">
-                    <label for="autres_infos">Informations supplémentaires (Optionnel)</label>
-                    <textarea id="autres_infos" name="autres_infos" rows="2" placeholder="Tout autre détail utile pour l'examen de votre dossier..."><?php echo htmlspecialchars($_POST['autres_infos'] ?? ''); ?></textarea>
+                <!-- Prénom -->
+                <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
+                    <label for="prenom" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                        <i class="fa-regular fa-user" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                        <span>Prénom *</span>
+                    </label>
+                    <input type="text" id="prenom" name="prenom" required placeholder="Ex: Jean"
+                        value="<?php echo htmlspecialchars($_POST['prenom'] ?? ''); ?>"
+                        style="width: 100%; box-sizing: border-box; padding: 0.75rem 0.95rem; border-radius: 10px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.92rem; font-family: inherit; color: var(--eventia-navy, #000000); background: #ffffff;">
                 </div>
             </div>
 
-            <!-- 3. Mot de passe -->
-            <div class="form-group">
-                <label for="password"><i class="fa-solid fa-lock"></i> Mot de passe *</label>
-                <input type="password" id="password" name="password" required placeholder="Minimum 6 caractères">
+            <!-- Email -->
+            <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
+                <label for="email" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                    <i class="fa-solid fa-envelope" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                    <span>Adresse Email *</span>
+                </label>
+                <input type="email" id="email" name="email" required placeholder="nom@exemple.com"
+                    value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+                    autocomplete="email"
+                    style="width: 100%; box-sizing: border-box; padding: 0.75rem 0.95rem; border-radius: 10px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.92rem; font-family: inherit; color: var(--eventia-navy, #000000); background: #ffffff;">
             </div>
 
-            <button type="submit" class="btn-submit" style="margin-top: 0.5rem;">
-                <i class="fa-solid fa-user-plus"></i> Créer mon compte
+            <!-- Téléphone -->
+            <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
+                <label for="telephone" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                    <i class="fa-solid fa-phone" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                    <span>Numéro de Téléphone (Mobile Money) *</span>
+                </label>
+                <input type="tel" id="telephone" name="telephone" required placeholder="Ex: +225 07 00 00 00 00"
+                    value="<?php echo htmlspecialchars($_POST['telephone'] ?? ''); ?>"
+                    autocomplete="tel"
+                    style="width: 100%; box-sizing: border-box; padding: 0.75rem 0.95rem; border-radius: 10px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.92rem; font-family: inherit; color: var(--eventia-navy, #000000); background: #ffffff;">
+            </div>
+
+            <!-- Mot de passe -->
+            <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
+                <label for="password" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                    <i class="fa-solid fa-key" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                    <span>Mot de passe (min. 6 caractères) *</span>
+                </label>
+                <div style="position: relative; width: 100%;">
+                    <input type="password" id="password" name="password" required
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                        style="width: 100%; box-sizing: border-box; padding: 0.75rem 2.5rem 0.75rem 0.95rem; border-radius: 10px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.92rem; font-family: inherit; color: var(--eventia-navy, #000000); background: #ffffff;">
+                    <button type="button" onclick="togglePasswordVisibility()" aria-label="Afficher le mot de passe"
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--eventia-muted, #737373); cursor: pointer; padding: 6px; display: grid; place-items: center; font-size: 0.9rem;">
+                        <i class="fa-solid fa-eye" id="togglePwdBtn"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bouton Inscription -->
+            <button type="submit" class="eventia-btn-primary"
+                style="width: 100%; padding: 0.85rem; margin-top: 0.35rem; font-size: 0.98rem; font-weight: 800; border-radius: 12px; justify-content: center; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.3); border: none; cursor: pointer;">
+                <i class="fa-solid fa-user-plus"></i> Créer mon compte Client
             </button>
         </form>
 
-        <div class="auth-footer">
-            Vous avez déjà un compte ? <a href="connexion.php">Se connecter</a>
+        <!-- Passerelle Promoteur -->
+        <div class="promoteur-invite-box">
+            <div>
+                <strong>Vous êtes organisateur ?</strong><br>
+                <span style="color: var(--eventia-muted, #737373);">Créez et vendez vos événements officiels.</span>
+            </div>
+            <a href="client/devenir-promoteur.php" class="promoteur-invite-btn">
+                <i class="fa-solid fa-bullhorn"></i> Devenir Promoteur
+            </a>
+        </div>
+
+        <!-- Footer Connexion -->
+        <div class="auth-footer"
+            style="margin-top: 1.5rem; padding-top: 1.15rem; border-top: 1px solid var(--eventia-border, #E5E5E5); text-align: center; font-size: 0.86rem; color: var(--eventia-muted, #737373);">
+            Vous avez déjà un compte ? <a href="connexion.php"
+                style="color: var(--eventia-navy, #000000); font-weight: 800; text-decoration: none;">Se connecter</a>
         </div>
     </div>
 
+    <!-- Script Bascule Visibilité Mot de Passe -->
     <script>
-        function togglePromoterFields() {
-            const roleSelect = document.getElementById('role');
-            const promoterBox = document.getElementById('promoter-fields');
-            const isPromoter = (roleSelect.value === 'promoteur');
-
-            if (isPromoter) {
-                promoterBox.classList.add('active');
-                document.getElementById('activite').required = true;
-                document.getElementById('experience').required = true;
-                document.getElementById('piece_identite').required = true;
-                document.getElementById('description').required = true;
+        function togglePasswordVisibility() {
+            const pwdInput = document.getElementById('password');
+            const icon = document.getElementById('togglePwdBtn');
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
             } else {
-                promoterBox.classList.remove('active');
-                document.getElementById('activite').required = false;
-                document.getElementById('experience').required = false;
-                document.getElementById('piece_identite').required = false;
-                document.getElementById('description').required = false;
+                pwdInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
             }
         }
-
-        document.addEventListener('DOMContentLoaded', togglePromoterFields);
     </script>
 </body>
+
 </html>

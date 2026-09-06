@@ -305,10 +305,10 @@ CREATE INDEX `idx_payments_order` ON `payments` (`order_id`);
 
 -- 1. Utilisateurs de test
 INSERT INTO `users` (`id`, `nom`, `email`, `telephone`, `password`, `role`, `est_verifie`) VALUES
-(1, 'Super Administrateur', 'admin@ticketflow.com', '+2250700000001', '$2y$12$Vam2CnarHwDuI1XjUaKzC.OkGGTthEWjhVR/AvA5Ej0ihIcJdFUiC', 'admin', 1),
-(2, 'Promoteur Ivoire Events', 'promoteur@ticketflow.com', '+2250700000002', '$2y$12$1l4ozAo1pi6LnWX/UQcwuOtKIGZaP/lRcQTRnSATGPEO/niOGpxCi', 'promoteur', 1),
-(3, 'Agent Contrôleur', 'agent@ticketflow.com', '+2250700000003', '$2y$12$yzR3m9rnNvTl2kG9JKN5UuLkp0RJEAQjjuF9Kv0WCNGfZ8kfLpUhi', 'agent', 1),
-(4, 'Client Démo', 'client@ticketflow.com', '+2250700000004', '$2y$12$yhdr2xr7qrcY8e8BooJ45e58H.8Ys62LmB7xj2iPWjulNlmBVsMhi', 'client', 1);
+(1, 'Super Administrateur', 'admin@eventia.com', '+2250700000001', '$2y$12$Vam2CnarHwDuI1XjUaKzC.OkGGTthEWjhVR/AvA5Ej0ihIcJdFUiC', 'admin', 1),
+(2, 'Promoteur Ivoire Events', 'promoteur@eventia.com', '+2250700000002', '$2y$12$1l4ozAo1pi6LnWX/UQcwuOtKIGZaP/lRcQTRnSATGPEO/niOGpxCi', 'promoteur', 1),
+(3, 'Agent Contrôleur', 'agent@eventia.com', '+2250700000003', '$2y$12$yzR3m9rnNvTl2kG9JKN5UuLkp0RJEAQjjuF9Kv0WCNGfZ8kfLpUhi', 'agent', 1),
+(4, 'Client Démo', 'client@eventia.com', '+2250700000004', '$2y$12$yhdr2xr7qrcY8e8BooJ45e58H.8Ys62LmB7xj2iPWjulNlmBVsMhi', 'client', 1);
 
 -- 2. Profil promoteur
 INSERT INTO `promoters` (`id`, `user_id`, `nom_commercial`, `description`, `telephone_contact`, `email_contact`, `adresse`, `site_web`, `reseaux_sociaux`, `statut`, `solde`) VALUES
@@ -335,3 +335,58 @@ INSERT INTO `payments` (`id`, `order_id`, `user_id`, `montant`, `methode`, `refe
 
 INSERT INTO `tickets` (`id`, `order_id`, `ticket_type_id`, `event_id`, `user_id`, `type_ticket`, `prix`, `code_unique`, `qr_code`, `statut`) VALUES
 (1, 1, 2, 1, 4, 'VIP', 15000.00, 'TK-8F92A7K3', 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=TK-8F92A7K3', 'vendu');
+
+-- ==============================================================================
+-- TABLE 12 : salles (Salles de spectacle, stades, auditoriums & complexes)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS `salles` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `nom` VARCHAR(255) NOT NULL,
+    `ville` VARCHAR(100) NOT NULL DEFAULT 'Abidjan',
+    `commune` VARCHAR(100) NULL,
+    `adresse` VARCHAR(255) NULL,
+    `capacite` INT NOT NULL DEFAULT 0,
+    `type_salle` ENUM('salle_spectacle', 'stade', 'auditorium', 'palais_congres', 'plein_air', 'complexe_hotelier', 'autre') NOT NULL DEFAULT 'salle_spectacle',
+    `configuration` ENUM('placement_libre', 'places_numerotees', 'mixte') NOT NULL DEFAULT 'placement_libre',
+    `modele_3d` VARCHAR(50) NOT NULL DEFAULT 'theatre_italien',
+    `config_3d_json` LONGTEXT NULL,
+    `description` TEXT NULL,
+    `contact_responsable` VARCHAR(150) NULL,
+    `telephone_responsable` VARCHAR(50) NULL,
+    `prix_location_indicatif` DECIMAL(12, 2) NULL DEFAULT 0.00,
+    `equipements` TEXT NULL,
+    `statut` ENUM('active', 'inaccessible', 'maintenance', 'fermee') NOT NULL DEFAULT 'active',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==============================================================================
+-- TABLE 13 : salle_zones (Zones, tribunes, fosses & balcons d'une salle avec coordonnées 3D)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS `salle_zones` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `salle_id` INT NOT NULL,
+    `nom_zone` VARCHAR(100) NOT NULL,
+    `capacite` INT NOT NULL DEFAULT 0,
+    `couleur` VARCHAR(30) DEFAULT '#0d9488',
+    `elevation_3d` INT DEFAULT 0,
+    `position_3d` VARCHAR(50) DEFAULT 'centre',
+    `tarif_indicatif` DECIMAL(10, 2) DEFAULT 0.00,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_salle_zones_salle` FOREIGN KEY (`salle_id`) REFERENCES `salles`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ==============================================================================
+-- TABLE 14 : password_resets (Jetons sécurisés de réinitialisation de mot de passe)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS `password_resets` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `email` VARCHAR(150) NOT NULL,
+    `token` VARCHAR(255) NOT NULL UNIQUE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `expires_at` DATETIME NOT NULL,
+    `used` TINYINT(1) NOT NULL DEFAULT 0,
+    INDEX `idx_email` (`email`),
+    INDEX `idx_token` (`token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

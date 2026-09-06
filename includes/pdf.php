@@ -49,7 +49,7 @@ if (!function_exists('pdf_fetch_qr_jpeg')) {
      */
     function pdf_fetch_qr_jpeg(string $url): ?array
     {
-        $ctx = stream_context_create(['http' => ['timeout' => 8, 'user_agent' => 'TicketFlow/1.0']]);
+        $ctx = stream_context_create(['http' => ['timeout' => 8, 'user_agent' => 'Eventia/1.0']]);
         $raw = @file_get_contents($url, false, $ctx);
         if ($raw === false || strlen($raw) < 100) {
             return null;
@@ -87,8 +87,9 @@ if (!function_exists('pdf_fetch_qr_jpeg')) {
 if (!function_exists('generateTicketsPdf')) {
     /**
      * Génère le PDF contenant tous les billets de la commande
+     * Format carte e-Ticket horizontale exacte (Partie principale blanche + Ligne pointillée + Talon QR Code).
      *
-     * @param array  $tickets      Billets : code_unique, qr_code, event_name, type_ticket, place, prix, date_ev, heure, lieu
+     * @param array  $tickets      Billets : code_unique, qr_code, event_name, type_ticket, place/place_numero, prix, date_ev/date_evenement, heure, lieu, date_achat
      * @param string $orderNumber  Numéro de commande
      * @param string $clientName   Nom du client
      * @return string              Binaire PDF (chaîne vide si aucun billet)
@@ -99,68 +100,166 @@ if (!function_exists('generateTicketsPdf')) {
             return '';
         }
 
-        $W = 595.28;  // A4 en points
-        $H = 841.89;
+        $W = 595.28;  // A4 Largeur en points
+        $H = 841.89;  // A4 Hauteur en points
 
         $ops_per_page = [];
-        $images = [];    // [['data'=>..,'w'=>..,'h'=>..], ...]
+        $images = [];
         $img_names = [];
 
         $rect = function (float $x, float $y, float $w, float $h, string $rgb) {
             return sprintf("%s rg %.2f %.2f %.2f %.2f re f", $rgb, $x, $y, $w, $h);
         };
-        $text = function (string $str, float $x, float $y, float $size, string $font = 'F1', string $rgb = '0.06 0.09 0.16') {
+        $text = function (string $str, float $x, float $y, float $size, string $font = 'F1', string $rgb = '0 0 0') {
             return sprintf("BT %s rg /%s %.1f Tf %.2f %.2f Td (%s) Tj ET", $rgb, $font, $size, $x, $y, pdf_escape_text($str));
         };
 
-        // ---- Page de garde ----
-        $p = [];
-        $p[] = $rect(0, $H - 90, $W, 90, '0.06 0.09 0.16');
-        $p[] = $text('TICKET FLOW', 45, $H - 45, 24, 'F2', '1 1 1');
-        $p[] = $text('Billetterie 100% Securisee - e-Billets officiels', 45, $H - 68, 10, 'F1', '0.22 0.74 0.97');
-        $p[] = $text('Commande #' . $orderNumber, 45, $H - 125, 16, 'F2');
-        $p[] = $text('Titulaire : ' . $clientName, 45, $H - 148, 11, 'F1', '0.39 0.45 0.55');
-        $p[] = $text("Date d'emission : " . date('d/m/Y H:i'), 45, $H - 165, 10, 'F1', '0.39 0.45 0.55');
-        $p[] = $text(count($tickets) . " billet(s) - presente chaque QR Code a l'entree. Valide une seule fois.", 45, $H - 190, 9.5, 'F1', '0.55 0.6 0.68');
-        $ops_per_page[] = $p;
+        $roundedRect = function (float $x, float $y, float $w, float $h, float $r, string $strokeRgb = '0 0 0', string $fillRgb = '1 1 1', float $lineWidth = 1.5) {
+            $k = 0.5522847498 * $r;
+            return sprintf(
+                "%s rg %s RG %.2f w %.2f %.2f m " .
+                "%.2f %.2f l %.2f %.2f %.2f %.2f %.2f %.2f c " .
+                "%.2f %.2f l %.2f %.2f %.2f %.2f %.2f %.2f c " .
+                "%.2f %.2f l %.2f %.2f %.2f %.2f %.2f %.2f c " .
+                "%.2f %.2f l %.2f %.2f %.2f %.2f %.2f %.2f c " .
+                "h B",
+                $fillRgb, $strokeRgb, $lineWidth,
+                $x + $r, $y + $h,
+                $x + $w - $r, $y + $h,
+                $x + $w - $r + $k, $y + $h, $x + $w, $y + $h - $r + $k, $x + $w, $y + $h - $r,
+                $x + $w, $y + $r,
+                $x + $w, $y + $r - $k, $x + $w - $r + $k, $y, $x + $w - $r, $y,
+                $x + $r, $y,
+                $x + $r - $k, $y, $x, $y + $r - $k, $x, $y + $r,
+                $x, $y + $h - $r,
+                $x, $y + $h - $r + $k, $x + $r - $k, $y + $h, $x + $r, $y + $h
+            );
+        };
 
-        // ---- Une page par billet ----
-        foreach ($tickets as $t) {
+        // Si la commande comporte plus d'un billet, page de garde récapitulative
+        if (count($tickets) > 1) {
             $p = [];
-            $p[] = $rect(45, $H - 330, $W - 90, 45, '0.06 0.09 0.16');
-            $p[] = $text('BILLET - ' . strtoupper((string)$t['type_ticket']), 60, $H - 313, 13, 'F2', '1 1 1');
-            $p[] = $rect($W - 175, $H - 322, 80, 22, '0.06 0.73 0.51');
-            $p[] = $text('VALIDE', $W - 158, $H - 316, 10, 'F2', '1 1 1');
+            $p[] = $rect(0, $H - 75, $W, 75, '0.05 0.58 0.53'); // Teal Eventia
+            $p[] = $text('EVENTIA', 45, $H - 45, 24, 'F2', '1 1 1');
+            $p[] = $text('Billetterie 100% Securisee - e-Billets officiels', 45, $H - 65, 10, 'F1', '1 1 1');
+            $p[] = $text('Commande #' . $orderNumber, 45, $H - 115, 16, 'F2', '0 0 0');
+            $p[] = $text('Titulaire : ' . $clientName, 45, $H - 138, 11, 'F1', '0.39 0.45 0.55');
+            $p[] = $text("Date d'emission : " . date('d/m/Y H:i'), 45, $H - 155, 10, 'F1', '0.39 0.45 0.55');
+            $p[] = $text(count($tickets) . " billet(s) dans ce document. Chaque page ci-apres contient un billet officiel avec QR Code.", 45, $H - 185, 9.5, 'F1', '0.55 0.6 0.68');
+            $ops_per_page[] = $p;
+        }
 
-            $p[] = $text((string)$t['event_name'], 45, $H - 370, 17, 'F2');
-            $p[] = $text('Date : ' . date('d/m/Y', strtotime((string)$t['date_ev'])) . ' a ' . substr((string)$t['heure'], 0, 5), 60, $H - 402, 11);
-            $p[] = $text('Lieu : ' . (string)$t['lieu'], 60, $H - 422, 11);
-            $p[] = $text('Categorie : ' . (string)$t['type_ticket'], 60, $H - 442, 11);
-            $y_prix = 462;
-            if (!empty($t['place'])) {
-                $p[] = $text('Place : ' . (string)$t['place'], 60, $H - 462, 11);
-                $y_prix = 482;
+        // ---- Une page par billet au format exact de la capture ----
+        foreach ($tickets as $idx => $t) {
+            $p = [];
+            $eventName  = (string)($t['event_name'] ?? $t['nom'] ?? 'Evenement');
+            $dateRaw    = $t['date_ev'] ?? $t['date_evenement'] ?? '';
+            $dateStr    = !empty($dateRaw) ? date('d/m/Y', strtotime((string)$dateRaw)) : '';
+            $heureStr   = !empty($t['heure']) ? substr((string)$t['heure'], 0, 5) : '';
+            $lieuStr    = (string)($t['lieu'] ?? $t['event_lieu'] ?? '');
+            $typeStr    = (string)($t['type_ticket'] ?? 'Standard');
+            $placeStr   = (string)(!empty($t['place_numero']) ? $t['place_numero'] : (!empty($t['place']) ? $t['place'] : ''));
+            $prixNum    = (float)($t['prix'] ?? 0);
+            $codeUnique = (string)($t['code_unique'] ?? '');
+            $tClient    = (string)(!empty($t['client_nom']) ? $t['client_nom'] : $clientName);
+            $dateAchat  = !empty($t['date_achat']) ? date('d/m/Y H:i', strtotime((string)$t['date_achat'])) : date('d/m/Y H:i');
+
+            // En-tête discret de page
+            $p[] = $text(date('d/m/Y H:i'), 38, $H - 40, 8.5, 'F1', '0.2 0.2 0.2');
+            $p[] = $text('e-Ticket Officiel - Eventia', $W / 2 - 50, $H - 40, 8.5, 'F1', '0.2 0.2 0.2');
+
+            // 1. Dimensions de la Carte Billet
+            $cardX = 38.0;
+            $cardY = $H - 365.0;
+            $cardW = 520.0;
+            $cardH = 300.0;
+            $splitX = $cardX + 345.0; // 383.0
+
+            // Carte avec BORDS ARRONDIS et contour noir
+            $p[] = $roundedRect($cardX, $cardY, $cardW, $cardH, 18.0, '0 0 0', '1 1 1', 1.8);
+
+            // Logo TIKÉLI (Orange #ff5500)
+            $p[] = $text('TIKÉLI', $cardX + 22, $cardY + $cardH - 38, 15, 'F2', '1.0 0.33 0.0'); // Tikéli Orange
+            
+            // Badge VENDU / VALIDE avec bords arrondis parfaitement centré
+            $badgeW = 66.0;
+            $badgeH = 20.0;
+            $badgeX = $splitX - $badgeW - 20;
+            $badgeY = $cardY + $cardH - 42.0;
+            $p[] = $roundedRect($badgeX, $badgeY, $badgeW, $badgeH, 10.0, '0.4 0.8 0.6', '0.93 0.99 0.96', 1.0);
+            $p[] = $text('VENDU', $badgeX + 17, $badgeY + 6.0, 8.5, 'F2', '0.02 0.37 0.27');
+
+            // Grand Titre de l'événement (LA PONA)
+            $p[] = $text(strtoupper($eventName), $cardX + 22, $cardY + $cardH - 78, 18, 'F2', '0 0 0');
+
+            // Grille 2 Colonnes
+            $col1X = $cardX + 22;
+            $col2X = $cardX + 185;
+
+            // Date & Heure
+            $p[] = $text('DATE & HEURE', $col1X, $cardY + $cardH - 110, 7.5, 'F2', '0.35 0.4 0.5');
+            $p[] = $text($dateStr . ($heureStr ? ' a ' . $heureStr : ''), $col1X, $cardY + $cardH - 126, 11, 'F2', '0 0 0');
+
+            // Salle & Lieu
+            $p[] = $text('SALLE & LIEU', $col2X, $cardY + $cardH - 110, 7.5, 'F2', '0.35 0.4 0.5');
+            $p[] = $text($lieuStr, $col2X, $cardY + $cardH - 126, 11, 'F2', '0 0 0');
+
+            // Catégorie
+            $p[] = $text('CATEGORIE DE BILLET', $col1X, $cardY + $cardH - 155, 7.5, 'F2', '0.35 0.4 0.5');
+            $p[] = $text(strtoupper($typeStr), $col1X, $cardY + $cardH - 171, 11, 'F2', '0 0 0');
+
+            // Place (si présente)
+            if (!empty($placeStr)) {
+                $p[] = $text('PLACE', $col2X, $cardY + $cardH - 155, 7.5, 'F2', '0.35 0.4 0.5');
+                $p[] = $text($placeStr, $col2X, $cardY + $cardH - 171, 11, 'F2', '0 0 0');
             }
-            $p[] = $text('Prix paye : ' . number_format((float)$t['prix'], 0, ',', ' ') . ' FCFA', 60, $H - $y_prix, 11, 'F2', '0.05 0.58 0.53');
 
-            $p[] = $rect(45, $H - 505, $W - 90, 1.2, '0.89 0.91 0.95');
-            $p[] = $text("Controle d'acces - presente ce code a l'agent", 45, $H - 530, 9, 'F1', '0.55 0.6 0.68');
+            // Prix Payé
+            $p[] = $text('PRIX PAYE', $col1X, $cardY + $cardH - 200, 7.5, 'F2', '0.35 0.4 0.5');
+            $p[] = $text(number_format($prixNum, 0, ',', ' ') . ' FCFA', $col1X, $cardY + $cardH - 216, 12, 'F2', '0 0 0');
 
-            $qr = pdf_fetch_qr_jpeg((string)$t['qr_code']);
+            // Barre Titulaire & Date d'achat (Bas de la partie gauche)
+            $p[] = $text('Titulaire : ' . $tClient, $col1X, $cardY + 28, 9, 'F2', '0 0 0');
+            $p[] = $text("Date d'achat : " . $dateAchat, $col2X, $cardY + 28, 9, 'F1', '0.2 0.2 0.2');
+
+            // 3. LIGNE VERTICALE POINTILLÉE / TIRETS (PERFORATION)
+            $p[] = sprintf("q [3 3] 0 d 1.5 w 0.1 0.1 0.1 RG %.2f %.2f m %.2f %.2f l S Q", $splitX, $cardY, $splitX, $cardY + $cardH);
+
+            // 4. PARTIE DROITE DU BILLET (TALON AVEC QR CODE)
+            $stubW = $cardW - 345.0; // 175.0
+            $stubCenterX = $splitX + ($stubW / 2);
+
+            // Image QR Code
+            $qr = pdf_fetch_qr_jpeg((string)($t['qr_code'] ?? ''));
             if ($qr !== null) {
                 $img_names[] = '/Im' . (count($images) + 1);
                 $images[] = $qr;
-                $qsize = 150.0;
-                $qx = $W / 2 - $qsize / 2;
-                $qy = $H - 545 - $qsize;
-                $p[] = sprintf("q %.2f 0 0 %.2f %.2f %.2f cm %s Do Q", $qsize, $qsize, $qx, $qy, end($img_names));
+                $qrSize = 130.0;
+                $qrX = $stubCenterX - ($qrSize / 2);
+                $qrY = $cardY + $cardH - 148.0;
+                $p[] = sprintf("q %.2f 0 0 %.2f %.2f %.2f cm %s Do Q", $qrSize, $qrSize, $qrX, $qrY, end($img_names));
             }
 
-            $p[] = $rect($W / 2 - 90, $H - 735, 180, 28, '0.95 0.96 0.98');
-            $p[] = $text((string)$t['code_unique'], $W / 2 - 62, $H - 726, 12, 'F2');
-            $p[] = $text('Billetterie Ticket Flow - ticketflow.com', 45, 60, 8.5, 'F1', '0.55 0.6 0.68');
+            // Code Unique en gras centré
+            $textCodeX = $stubCenterX - (strlen($codeUnique) * 3.8);
+            $p[] = $text($codeUnique, max($splitX + 10, $textCodeX), $cardY + 125, 11.5, 'F2', '0 0 0');
+
+            // Catégorie en gras centré
+            $textTierX = $stubCenterX - (strlen($typeStr) * 4.0);
+            $p[] = $text(strtoupper($typeStr), max($splitX + 10, $textTierX), $cardY + 102, 12, 'F2', '0 0 0');
+
+            // Prix
+            $prixF = number_format($prixNum, 0, ',', ' ') . ' F';
+            $textPrixX = $stubCenterX - (strlen($prixF) * 3.4);
+            $p[] = $text($prixF, max($splitX + 10, $textPrixX), $cardY + 84, 10, 'F1', '0.2 0.2 0.2');
+
+            // Consigne QR Code
+            $p[] = $text("Presentez ce QR Code a l'agent de", $splitX + 16, $cardY + 42, 6.8, 'F1', '0.39 0.45 0.55');
+            $p[] = $text("controle", $stubCenterX - 14, $cardY + 30, 6.8, 'F1', '0.39 0.45 0.55');
+
             $ops_per_page[] = $p;
         }
+
         // ---- Assemblage du document PDF (objets + table xref) ----
         $nb_pages = count($ops_per_page);
         $img_base = 5;                       // 1=Catalog, 2=Pages, 3=F1, 4=F2

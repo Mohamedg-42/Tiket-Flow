@@ -173,9 +173,9 @@ try {
 $stmt_stats = $pdo->prepare("
     SELECT 
         COUNT(*) AS total,
-        SUM(statut = 'en_attente') AS en_attente,
-        SUM(statut = 'approuve') AS approuves,
-        SUM(statut = 'refuse') AS refuses
+        COUNT(CASE WHEN statut = 'en_attente' THEN 1 END) AS en_attente,
+        COUNT(CASE WHEN statut = 'approuve' THEN 1 END) AS approuves,
+        COUNT(CASE WHEN statut = 'refuse' THEN 1 END) AS refuses
     FROM event_requests WHERE user_id = ?
 ");
 $stmt_stats->execute([$user_id]);
@@ -190,18 +190,18 @@ function get_dem_badge($statut)
 {
     switch ($statut) {
         case 'en_attente':
-            return ['En attente de validation', '#fef3c7', '#92400e', 'fa-hourglass-half'];
+            return ['En attente de validation', '#fef3c7', '#b45309', 'fa-hourglass-half'];
         case 'approuve':
         case 'active':
-            return ['Validée & Active', '#dcfce7', '#166534', 'fa-circle-check'];
+            return ['Validée & Active', '#ecfdf5', '#166534', 'fa-circle-check'];
         case 'refuse':
-            return ['Refusée', '#fee2e2', '#b91c1c', 'fa-circle-xmark'];
+            return ['Refusée', '#fee2e2', '#991b1b', 'fa-circle-xmark'];
         case 'annulee':
-            return ['Annulée', '#fee2e2', '#b91c1c', 'fa-ban'];
+            return ['Annulée', '#f1f5f9', '#64748b', 'fa-ban'];
         case 'terminee':
-            return ['Terminée', '#e2e8f0', '#475569', 'fa-flag-checkered'];
+            return ['Terminée', '#E5E5E5', '#737373', 'fa-flag-checkered'];
     }
-    return [$statut, '#e2e8f0', '#475569', 'fa-info-circle'];
+    return [$statut, '#E5E5E5', '#737373', 'fa-info-circle'];
 }
 ?>
 
@@ -220,11 +220,16 @@ function get_dem_badge($statut)
             <p>Pilotez toutes vos demandes : événements, concours avec candidats, votes de réalisation et campagnes de
                 cotisation.</p>
         </div>
+        <div>
+            <a href="export.php?type=demandes&tab=<?php echo urlencode($tab); ?>&statut=<?php echo urlencode($filter_statut); ?>&periode=<?php echo urlencode($periode); ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les demandes sur Excel (CSV)">
+                <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
+            </a>
+        </div>
     </div>
 
     <?php if (!empty($message)): ?>
         <div
-            style="background: <?php echo $msg_type === 'success' ? '#f0fdf4' : '#fef2f2'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#bbf7d0' : '#fecaca'; ?>; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: <?php echo $msg_type === 'success' ? '#166534' : '#991b1b'; ?>; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+            style="background: <?php echo $msg_type === 'success' ? '#FFF2ED' : '#F5F5F5'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#FFF2ED' : '#E5E5E5'; ?>; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: <?php echo $msg_type === 'success' ? '#000000' : '#000000'; ?>; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
             <i class="fa-solid <?php echo $msg_type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>"></i>
             <span><?php echo htmlspecialchars($message); ?></span>
         </div>
@@ -246,14 +251,14 @@ function get_dem_badge($statut)
             <a href="?tab=concours_votes&periode=<?php echo $periode; ?>"
                 class="dash-chart-tab <?php echo $tab === 'concours_votes' ? 'active' : ''; ?>"
                 style="text-decoration: none; border-radius: 8px; padding: 0.45rem 0.95rem; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-trophy" style="color: #f59e0b;"></i> Concours & Votes
+                <i class="fa-solid fa-trophy" style="color: #FF4A0D;"></i> Concours & Votes
                 (<?php echo count($demandes_concours_votes); ?>)
             </a>
 
             <a href="?tab=cotisations&periode=<?php echo $periode; ?>"
                 class="dash-chart-tab <?php echo $tab === 'cotisations' ? 'active' : ''; ?>"
                 style="text-decoration: none; border-radius: 8px; padding: 0.45rem 0.95rem; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-hand-holding-heart" style="color: #ec4899;"></i> Cotisations
+                <i class="fa-solid fa-hand-holding-heart" style="color: #FF4A0D;"></i> Cotisations
                 (<?php echo count($mes_campagnes); ?>)
             </a>
 
@@ -269,7 +274,7 @@ function get_dem_badge($statut)
             <input type="hidden" name="tab" value="<?php echo htmlspecialchars($tab); ?>">
 
             <div
-                style="display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; padding: 3px 10px;">
+                style="display: inline-flex; align-items: center; gap: 6px; background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 8px; padding: 3px 10px;">
                 <i class="fa-regular fa-calendar-days" style="color: var(--dash-primary); font-size: 0.85rem;"></i>
                 <select name="periode" onchange="this.form.submit()"
                     style="border: 0; background: transparent; font-size: 0.82rem; font-weight: 700; color: var(--dash-text); cursor: pointer; padding: 0.3rem 0.2rem; outline: none;">
@@ -287,7 +292,7 @@ function get_dem_badge($statut)
 
             <?php if ($periode !== 'toutes'): ?>
                 <a href="?tab=<?php echo $tab; ?>"
-                    style="color: #ef4444; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Réinitialiser</a>
+                    style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Réinitialiser</a>
             <?php endif; ?>
         </form>
     </div>
@@ -306,7 +311,7 @@ function get_dem_badge($statut)
                         style="font-size: 0.8rem; font-weight: 700; color: var(--dash-muted); text-transform: uppercase;">Total
                         Demandes</span>
                     <span
-                        style="background: #f1f5f9; color: var(--dash-text); width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
+                        style="background: #F5F5F5; color: var(--dash-text); width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
                             class="fa-solid fa-layer-group"></i></span>
                 </div>
                 <div style="font-size: 1.6rem; font-weight: 800; color: var(--dash-text);">
@@ -318,16 +323,16 @@ function get_dem_badge($statut)
         <a href="?tab=<?php echo $tab; ?>&statut=en_attente&periode=<?php echo $periode; ?>"
             style="text-decoration: none; color: inherit;">
             <div class="dash-kpi-card"
-                style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid <?php echo $filter_statut === 'en_attente' ? '#f59e0b' : 'var(--dash-border)'; ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid <?php echo $filter_statut === 'en_attente' ? '#FF4A0D' : 'var(--dash-border)'; ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <span style="font-size: 0.8rem; font-weight: 700; color: #b45309; text-transform: uppercase;">En
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">En
                         Attente</span>
                     <span
-                        style="background: #fef3c7; color: #b45309; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
+                        style="background: #FFF2ED; color: #FF4A0D; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
                             class="fa-solid fa-hourglass-half"></i></span>
                 </div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #b45309;"><?php echo $nb_en_attente; ?></div>
-                <small style="color: #b45309; font-size: 0.75rem;">En cours d'examen admin</small>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #FF4A0D;"><?php echo $nb_en_attente; ?></div>
+                <small style="color: #FF4A0D; font-size: 0.75rem;">En cours d'examen admin</small>
             </div>
         </a>
 
@@ -337,14 +342,14 @@ function get_dem_badge($statut)
                 style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid <?php echo $filter_statut === 'approuve' ? '#10b981' : 'var(--dash-border)'; ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <span
-                        style="font-size: 0.8rem; font-weight: 700; color: #047857; text-transform: uppercase;">Validées
+                        style="font-size: 0.8rem; font-weight: 700; color: #10b981; text-transform: uppercase;">Validées
                         & Publiées</span>
                     <span
-                        style="background: #dcfce7; color: #047857; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
+                        style="background: #ecfdf5; color: #10b981; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
                             class="fa-solid fa-check"></i></span>
                 </div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #047857;"><?php echo $nb_approuves; ?></div>
-                <small style="color: #047857; font-size: 0.75rem;">Actives sur le site</small>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #10b981;"><?php echo $nb_approuves; ?></div>
+                <small style="color: #10b981; font-size: 0.75rem;">Actives sur le site</small>
             </div>
         </a>
 
@@ -353,14 +358,14 @@ function get_dem_badge($statut)
             <div class="dash-kpi-card"
                 style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid <?php echo $filter_statut === 'refuse' ? '#ef4444' : 'var(--dash-border)'; ?>; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <span style="font-size: 0.8rem; font-weight: 700; color: #b91c1c; text-transform: uppercase;">À
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #dc2626; text-transform: uppercase;">À
                         Réviser / Refusées</span>
                     <span
-                        style="background: #fee2e2; color: #b91c1c; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
+                        style="background: #fee2e2; color: #dc2626; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
                             class="fa-solid fa-triangle-exclamation"></i></span>
                 </div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #b91c1c;"><?php echo $nb_refuses; ?></div>
-                <small style="color: #b91c1c; font-size: 0.75rem;">Commentaires à corriger</small>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #dc2626;"><?php echo $nb_refuses; ?></div>
+                <small style="color: #dc2626; font-size: 0.75rem;">Commentaires à corriger</small>
             </div>
         </a>
     </div>
@@ -372,7 +377,7 @@ function get_dem_badge($statut)
         <?php if (empty($demandes_evenements)): ?>
             <div class="dash-card" style="text-align: center; padding: 3.5rem 1rem; color: var(--dash-muted);">
                 <i class="fa-solid fa-calendar-xmark"
-                    style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+                    style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                 <strong style="display: block; font-size: 1.05rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucune
                     demande d'événement trouvée</strong>
                 <p style="font-size: 0.85rem; margin: 0 0 1.25rem;">Proposez votre événement avec ses tarifs et quotas de
@@ -391,53 +396,49 @@ function get_dem_badge($statut)
                         ? '../uploads/events/' . htmlspecialchars($d['image'])
                         : 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=400&q=80';
                     ?>
-                    <div class="dash-card"
-                        style="padding: 1.35rem 1.5rem; border-left: 4px solid <?php echo $d['statut'] === 'en_attente' ? '#f59e0b' : ($d['statut'] === 'approuve' ? '#10b981' : '#ef4444'); ?>;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap;">
+                    <div class="dash-card eventia-demand-card"
+                        style="border-left: 4px solid <?php echo $d['statut'] === 'en_attente' ? '#f59e0b' : ($d['statut'] === 'approuve' ? '#10b981' : '#ef4444'); ?>;">
+                        <div class="eventia-demand-body">
                             <!-- Visuel miniature + Infos principales -->
-                            <div style="display: flex; gap: 1rem; min-width: 0; flex: 1;">
+                            <div class="eventia-demand-main">
                                 <img src="<?php echo $img_src; ?>" alt="<?php echo htmlspecialchars($d['nom']); ?>"
-                                    style="width: 75px; height: 75px; border-radius: 10px; object-fit: cover; border: 1px solid var(--dash-border); flex-shrink: 0;">
+                                    class="eventia-demand-img">
 
-                                <div style="min-width: 0; flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
-                                        <strong style="color: var(--dash-text); font-size: 1.1rem;">
+                                <div class="eventia-demand-content">
+                                    <div class="eventia-demand-title-row">
+                                        <strong class="eventia-demand-title">
                                             <?php echo htmlspecialchars($d['nom']); ?>
                                         </strong>
-                                        <span
-                                            style="background: #eeedfd; color: #5b50e6; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">
+                                        <span class="eventia-demand-badge-cat">
                                             <?php echo htmlspecialchars($d['categorie']); ?>
                                         </span>
                                     </div>
 
-                                    <div
-                                        style="display: flex; flex-wrap: wrap; gap: 12px; color: var(--dash-muted); font-size: 0.82rem; align-items: center;">
-                                        <span><i class="fa-regular fa-calendar"></i> Le
+                                    <div class="eventia-demand-meta">
+                                        <span class="eventia-meta-item"><i class="fa-regular fa-calendar"></i> Le
                                             <?php echo date('d/m/Y', strtotime($d['date_evenement'])); ?> à
                                             <?php echo date('H\hi', strtotime($d['heure'])); ?></span>
-                                        <span>•</span>
-                                        <span><i class="fa-solid fa-location-dot"></i>
+                                        <span class="eventia-meta-dot">•</span>
+                                        <span class="eventia-meta-item"><i class="fa-solid fa-location-dot"></i>
                                             <?php echo htmlspecialchars($d['lieu']); ?></span>
-                                        <span>•</span>
-                                        <span><i class="fa-solid fa-ticket"></i> <?php echo count($tickets); ?> catégorie(s) de
-                                            billet</span>
+                                        <span class="eventia-meta-dot">•</span>
+                                        <span class="eventia-meta-item"><i class="fa-solid fa-ticket"></i> <?php echo count($tickets); ?> catégorie(s) de billet</span>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Statut & Actions -->
-                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.65rem;">
-                                <span
-                                    style="background: <?php echo $s_bg; ?>; color: <?php echo $s_fg; ?>; padding: 5px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">
+                            <div class="eventia-demand-side">
+                                <span class="eventia-status-badge"
+                                    style="background: <?php echo $s_bg; ?>; color: <?php echo $s_fg; ?>;">
                                     <i class="fa-solid <?php echo $s_icon; ?>"></i> <?php echo $s_label; ?>
                                 </span>
 
-                                <div style="display: flex; gap: 6px;">
+                                <div class="eventia-demand-actions">
                                     <button type="button"
                                         onclick="openDetailsModal(<?php echo htmlspecialchars(json_encode($d), ENT_QUOTES, 'UTF-8'); ?>)"
                                         class="dash-btn-action"
-                                        style="padding: 4px 10px; font-size: 0.78rem; background: #f8fafc; border: 1px solid var(--dash-border); color: var(--dash-text);"
+                                        style="padding: 4px 10px; font-size: 0.78rem; background: #F5F5F5; border: 1px solid var(--dash-border); color: var(--dash-text);"
                                         title="Voir les détails complets">
                                         <i class="fa-solid fa-eye"></i> Détails
                                     </button>
@@ -449,14 +450,14 @@ function get_dem_badge($statut)
                                             <input type="hidden" name="action" value="annuler_demande_event">
                                             <input type="hidden" name="request_id" value="<?php echo (int) $d['id']; ?>">
                                             <button type="submit" class="dash-btn-action"
-                                                style="padding: 4px 8px; font-size: 0.78rem; background: #fee2e2; border: 1px solid #fecaca; color: #dc2626;"
+                                                style="padding: 4px 8px; font-size: 0.78rem; background: #F5F5F5; border: 1px solid #E5E5E5; color: #000000;"
                                                 title="Annuler la demande">
                                                 <i class="fa-solid fa-trash-can"></i> Annuler
                                             </button>
                                         </form>
                                     <?php elseif ($d['statut'] === 'approuve'): ?>
                                         <a href="mes-evenements.php" class="dash-btn-action"
-                                            style="padding: 4px 10px; font-size: 0.78rem; background: #dcfce7; border: 1px solid #bbf7d0; color: #166534;">
+                                            style="padding: 4px 10px; font-size: 0.78rem; background: #FFF2ED; border: 1px solid #FFF2ED; color: #000000;">
                                             <i class="fa-solid fa-arrow-up-right-from-square"></i> Gérer
                                         </a>
                                     <?php endif; ?>
@@ -467,14 +468,14 @@ function get_dem_badge($statut)
                         <!-- Remarques admin ou bandeau attente -->
                         <?php if ($d['statut'] === 'en_attente'): ?>
                             <div
-                                style="margin-top: 1rem; padding: 0.65rem 1rem; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; color: #92400e; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-hourglass-half" style="color: #f59e0b;"></i>
+                                style="margin-top: 1rem; padding: 0.65rem 1rem; background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: 8px; color: #000000; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-hourglass-half" style="color: #FF4A0D;"></i>
                                 <span>Demande en cours d'examen par la modération. La billetterie sera activée dès validation.</span>
                             </div>
                         <?php elseif (!empty($d['commentaire_admin'])): ?>
                             <div
-                                style="margin-top: 1rem; padding: 0.65rem 1rem; background: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; color: #991b1b; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i>
+                                style="margin-top: 1rem; padding: 0.65rem 1rem; background: #F5F5F5; border: 1px solid #F5F5F5; border-radius: 8px; color: #000000; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-triangle-exclamation" style="color: #000000;"></i>
                                 <span>Remarque de l'administration : <?php echo htmlspecialchars($d['commentaire_admin']); ?></span>
                             </div>
                         <?php endif; ?>
@@ -490,7 +491,7 @@ function get_dem_badge($statut)
         <?php if (empty($demandes_concours_votes)): ?>
             <div class="dash-card" style="text-align: center; padding: 3.5rem 1rem; color: var(--dash-muted);">
                 <i class="fa-solid fa-trophy"
-                    style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+                    style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                 <strong style="display: block; font-size: 1.05rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucun
                     concours ou vote de réalisation demandé</strong>
                 <p style="font-size: 0.85rem; margin: 0 0 1.25rem;">Lancez une compétition avec candidats ou un plébiscite de
@@ -510,21 +511,20 @@ function get_dem_badge($statut)
                         ? '../uploads/events/' . htmlspecialchars($cv['image'])
                         : 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80';
                     ?>
-                    <div class="dash-card"
-                        style="padding: 1.35rem 1.5rem; border-left: 4px solid <?php echo $is_realisation ? '#0284c7' : '#f59e0b'; ?>;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap;">
-                            <div style="display: flex; gap: 1rem; min-width: 0; flex: 1;">
+                    <div class="dash-card eventia-demand-card"
+                        style="border-left: 4px solid <?php echo $is_realisation ? '#FF4A0D' : '#FF4A0D'; ?>;">
+                        <div class="eventia-demand-body">
+                            <div class="eventia-demand-main">
                                 <img src="<?php echo $img_src; ?>" alt="<?php echo htmlspecialchars($cv['nom']); ?>"
-                                    style="width: 75px; height: 75px; border-radius: 10px; object-fit: cover; border: 1px solid var(--dash-border); flex-shrink: 0;">
+                                    class="eventia-demand-img">
 
-                                <div style="min-width: 0; flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
-                                        <strong style="color: var(--dash-text); font-size: 1.1rem;">
+                                <div class="eventia-demand-content">
+                                    <div class="eventia-demand-title-row">
+                                        <strong class="eventia-demand-title">
                                             <?php echo htmlspecialchars($cv['nom']); ?>
                                         </strong>
-                                        <span
-                                            style="background: <?php echo $is_realisation ? '#eff6ff' : '#fffbeb'; ?>; color: <?php echo $is_realisation ? '#1d4ed8' : '#b45309'; ?>; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">
+                                        <span class="eventia-demand-badge-cat"
+                                            style="background: <?php echo $is_realisation ? '#FFF2ED' : '#FFF2ED'; ?>; color: <?php echo $is_realisation ? '#FF4A0D' : '#FF4A0D'; ?>;">
                                             <i
                                                 class="fa-solid <?php echo $is_realisation ? 'fa-square-poll-vertical' : 'fa-trophy'; ?>"></i>
                                             <?php echo $is_realisation ? 'Vote de Réalisation' : 'Concours & Compétition'; ?>
@@ -532,21 +532,20 @@ function get_dem_badge($statut)
                                     </div>
 
                                     <?php if ($is_realisation && !empty($cv['vote_question'])): ?>
-                                        <p style="margin: 0 0 6px; font-size: 0.85rem; color: #1e40af; font-weight: 700;">
+                                        <p style="margin: 0 0 6px; font-size: 0.85rem; color: #FF4A0D; font-weight: 700;">
                                             « <?php echo htmlspecialchars($cv['vote_question']); ?> »
                                         </p>
                                     <?php endif; ?>
 
-                                    <div
-                                        style="display: flex; flex-wrap: wrap; gap: 12px; color: var(--dash-muted); font-size: 0.82rem; align-items: center;">
-                                        <span><i class="fa-regular fa-calendar"></i> Clôture :
+                                    <div class="eventia-demand-meta">
+                                        <span class="eventia-meta-item"><i class="fa-regular fa-calendar"></i> Clôture :
                                             <?php echo date('d/m/Y', strtotime($cv['date_evenement'])); ?></span>
-                                        <span>•</span>
-                                        <span><i class="fa-solid fa-coins" style="color: #f59e0b;"></i> Tarif vote :
+                                        <span class="eventia-meta-dot">•</span>
+                                        <span class="eventia-meta-item"><i class="fa-solid fa-coins" style="color: #FF4A0D;"></i> Tarif vote :
                                             <?php echo (float) $cv['prix_vote'] > 0 ? number_format((float) $cv['prix_vote'], 0, ',', ' ') . ' FCFA' : 'Gratuit'; ?></span>
                                         <?php if (!$is_realisation): ?>
-                                            <span>•</span>
-                                            <span style="color: var(--dash-primary); font-weight: 700;"><i
+                                            <span class="eventia-meta-dot">•</span>
+                                            <span class="eventia-meta-item" style="color: var(--dash-primary); font-weight: 700;"><i
                                                     class="fa-solid fa-users"></i> <?php echo count($candidats); ?> candidat(s)
                                                 enregistré(s)</span>
                                         <?php endif; ?>
@@ -554,19 +553,19 @@ function get_dem_badge($statut)
                                 </div>
                             </div>
 
-                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.65rem;">
-                                <span
-                                    style="background: <?php echo $s_bg; ?>; color: <?php echo $s_fg; ?>; padding: 5px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">
+                            <div class="eventia-demand-side">
+                                <span class="eventia-status-badge"
+                                    style="background: <?php echo $s_bg; ?>; color: <?php echo $s_fg; ?>;">
                                     <i class="fa-solid <?php echo $s_icon; ?>"></i> <?php echo $s_label; ?>
                                 </span>
 
-                                <div style="display: flex; gap: 6px;">
+                                <div class="eventia-demand-actions">
                                     <button type="button"
                                         onclick="openDetailsModal(<?php echo htmlspecialchars(json_encode($cv), ENT_QUOTES, 'UTF-8'); ?>)"
                                         class="dash-btn-action"
-                                        style="padding: 4px 10px; font-size: 0.78rem; background: #f8fafc; border: 1px solid var(--dash-border); color: var(--dash-text);"
+                                        style="padding: 4px 10px; font-size: 0.78rem; background: #F5F5F5; border: 1px solid var(--dash-border); color: var(--dash-text);"
                                         title="Voir les détails et participants">
-                                        <i class="fa-solid fa-eye"></i> Voir Détails
+                                        <i class="fa-solid fa-eye"></i> Détails
                                     </button>
 
                                     <?php if ($cv['statut'] === 'en_attente' || $cv['statut'] === 'refuse'): ?>
@@ -576,7 +575,8 @@ function get_dem_badge($statut)
                                             <input type="hidden" name="action" value="annuler_demande_event">
                                             <input type="hidden" name="request_id" value="<?php echo (int) $cv['id']; ?>">
                                             <button type="submit" class="dash-btn-action"
-                                                style="padding: 4px 8px; font-size: 0.78rem; background: #fee2e2; border: 1px solid #fecaca; color: #dc2626;">
+                                                style="padding: 4px 8px; font-size: 0.78rem; background: #F5F5F5; border: 1px solid #E5E5E5; color: #000000;"
+                                                title="Annuler la demande">
                                                 <i class="fa-solid fa-trash-can"></i> Annuler
                                             </button>
                                         </form>
@@ -587,7 +587,7 @@ function get_dem_badge($statut)
 
                         <!-- Vignettes des candidats pour les concours -->
                         <?php if (!$is_realisation && !empty($candidats)): ?>
-                            <div style="margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem;">
+                            <div style="margin-top: 1rem; border-top: 1px solid #F5F5F5; padding-top: 0.75rem;">
                                 <small
                                     style="display: block; color: var(--dash-muted); font-size: 0.75rem; margin-bottom: 6px; font-weight: 700;">Aperçu
                                     des candidats enregistrés :</small>
@@ -599,7 +599,7 @@ function get_dem_badge($statut)
                                             : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
                                         ?>
                                         <div
-                                            style="display: flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 20px; padding: 3px 10px 3px 4px;">
+                                            style="display: flex; align-items: center; gap: 6px; background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 20px; padding: 3px 10px 3px 4px;">
                                             <img src="<?php echo $cd_photo; ?>" alt="<?php echo htmlspecialchars($cd['nom']); ?>"
                                                 style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover;">
                                             <span
@@ -627,7 +627,7 @@ function get_dem_badge($statut)
             <div class="dash-card"
                 style="text-align: center; padding: 3.5rem 1rem; color: var(--dash-muted); max-width: 1000px;">
                 <i class="fa-solid fa-hand-holding-heart"
-                    style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+                    style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                 <strong style="display: block; font-size: 1.05rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucune
                     campagne de cotisation proposée</strong>
                 <p style="font-size: 0.85rem; margin: 0 0 1.25rem;">Lancez une collecte de fonds participative pour financer la
@@ -648,53 +648,54 @@ function get_dem_badge($statut)
                         ? '../uploads/cotisations/' . htmlspecialchars($c['image'])
                         : 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=400&q=80';
                     ?>
-                    <div class="dash-card" style="padding: 1.35rem 1.5rem; border-left: 4px solid #ec4899;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap;">
-                            <div style="display: flex; gap: 1rem; min-width: 0; flex: 1;">
+                    <div class="dash-card eventia-demand-card" style="border-left: 4px solid #FF4A0D;">
+                        <div class="eventia-demand-body">
+                            <div class="eventia-demand-main">
                                 <img src="<?php echo $c_img; ?>" alt="<?php echo htmlspecialchars($c['titre']); ?>"
-                                    style="width: 75px; height: 75px; border-radius: 10px; object-fit: cover; border: 1px solid var(--dash-border); flex-shrink: 0;">
+                                    class="eventia-demand-img">
 
-                                <div style="min-width: 0; flex: 1;">
-                                    <strong style="color: var(--dash-text); font-size: 1.1rem; display: block; margin-bottom: 4px;">
+                                <div class="eventia-demand-content">
+                                    <strong class="eventia-demand-title" style="display: block; margin-bottom: 4px;">
                                         <?php echo htmlspecialchars($c['titre']); ?>
                                     </strong>
-                                    <div
-                                        style="display: flex; flex-wrap: wrap; gap: 12px; color: var(--dash-muted); font-size: 0.82rem; align-items: center;">
-                                        <span><strong>Objectif :</strong> <?php echo number_format($objectif, 0, ',', ' '); ?>
+                                    <div class="eventia-demand-meta">
+                                        <span class="eventia-meta-item"><strong>Objectif :</strong> <?php echo number_format($objectif, 0, ',', ' '); ?>
                                             FCFA</span>
-                                        <span>•</span>
-                                        <span style="color: #10b981; font-weight: 800;"><strong>Collecté :</strong>
+                                        <span class="eventia-meta-dot">•</span>
+                                        <span class="eventia-meta-item" style="color: #FF4A0D; font-weight: 800;"><strong>Collecté :</strong>
                                             <?php echo number_format($collecte, 0, ',', ' '); ?> FCFA</span>
-                                        <span>•</span>
-                                        <span><i class="fa-solid fa-users"></i> <?php echo (int) $c['nb_contributeurs']; ?>
+                                        <span class="eventia-meta-dot">•</span>
+                                        <span class="eventia-meta-item"><i class="fa-solid fa-users"></i> <?php echo (int) $c['nb_contributeurs']; ?>
                                             donateur(s)</span>
                                         <?php if (!empty($c['date_limite'])): ?>
-                                            <span>•</span>
-                                            <span><i class="fa-regular fa-clock"></i> Limite :
+                                            <span class="eventia-meta-dot">•</span>
+                                            <span class="eventia-meta-item"><i class="fa-regular fa-clock"></i> Limite :
                                                 <?php echo date('d/m/Y', strtotime($c['date_limite'])); ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
 
-                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.65rem;">
-                                <span
-                                    style="background: <?php echo $s_bg; ?>; color: <?php echo $s_fg; ?>; padding: 5px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 800; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">
+                            <div class="eventia-demand-side">
+                                <span class="eventia-status-badge"
+                                    style="background: <?php echo $s_bg; ?>; color: <?php echo $s_fg; ?>;">
                                     <i class="fa-solid <?php echo $s_icon; ?>"></i> <?php echo $s_label; ?>
                                 </span>
 
                                 <?php if ($c['statut'] === 'en_attente' || $c['statut'] === 'refuse'): ?>
-                                    <form method="POST"
-                                        onsubmit="return confirm('Confirmez-vous l\'annulation de cette campagne de cotisation ?');"
-                                        style="margin: 0;">
-                                        <input type="hidden" name="action" value="annuler_demande_cotisation">
-                                        <input type="hidden" name="campagne_id" value="<?php echo (int) $c['id']; ?>">
-                                        <button type="submit" class="dash-btn-action"
-                                            style="padding: 4px 8px; font-size: 0.78rem; background: #fee2e2; border: 1px solid #fecaca; color: #dc2626;">
-                                            <i class="fa-solid fa-trash-can"></i> Annuler
-                                        </button>
-                                    </form>
+                                    <div class="eventia-demand-actions">
+                                        <form method="POST"
+                                            onsubmit="return confirm('Confirmez-vous l\'annulation de cette campagne de cotisation ?');"
+                                            style="margin: 0;">
+                                            <input type="hidden" name="action" value="annuler_demande_cotisation">
+                                            <input type="hidden" name="campagne_id" value="<?php echo (int) $c['id']; ?>">
+                                            <button type="submit" class="dash-btn-action"
+                                                style="padding: 4px 8px; font-size: 0.78rem; background: #F5F5F5; border: 1px solid #E5E5E5; color: #000000;"
+                                                title="Annuler la demande">
+                                                <i class="fa-solid fa-trash-can"></i> Annuler
+                                            </button>
+                                        </form>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -707,9 +708,9 @@ function get_dem_badge($statut)
                                 <span style="color: var(--dash-muted);"><?php echo number_format($collecte, 0, ',', ' '); ?> /
                                     <?php echo number_format($objectif, 0, ',', ' '); ?> FCFA</span>
                             </div>
-                            <div style="height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                            <div style="height: 8px; background: #E5E5E5; border-radius: 999px; overflow: hidden;">
                                 <div
-                                    style="height: 100%; width: <?php echo $pct; ?>%; background: linear-gradient(90deg, #ec4899 0%, #10b981 100%); border-radius: 999px;">
+                                    style="height: 100%; width: <?php echo $pct; ?>%; background: linear-gradient(90deg, #FF4A0D 0%, #FF4A0D 100%); border-radius: 999px;">
                                 </div>
                             </div>
                         </div>
@@ -737,14 +738,14 @@ function get_dem_badge($statut)
             <?php if (empty($mon_classement)): ?>
                 <div style="text-align: center; color: var(--dash-muted); padding: 3rem 1rem;">
                     <i class="fa-solid fa-heart-crack"
-                        style="font-size: 2.2rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+                        style="font-size: 2.2rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                     Aucun événement actif répertorié pour le moment.
                 </div>
             <?php else: ?>
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                     <?php foreach ($mon_classement as $ev): ?>
                         <div
-                            style="background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 10px; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                            style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
                             <div>
                                 <strong style="color: var(--dash-text); font-size: 0.98rem; display: block; margin-bottom: 2px;">
                                     <?php echo htmlspecialchars($ev['nom']); ?>
@@ -759,12 +760,12 @@ function get_dem_badge($statut)
                             </div>
                             <div style="display: flex; gap: 0.75rem; align-items: center;">
                                 <span
-                                    style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 8px; padding: 4px 12px; font-size: 0.82rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
+                                    style="background: #FFF2ED; color: #FF4A0D; border: 1px solid #E5E5E5; border-radius: 8px; padding: 4px 12px; font-size: 0.82rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
                                     <i class="fa-solid fa-vote-yea"></i> <?php echo (int) $ev['nb_votes']; ?>
                                     vote<?php echo (int) $ev['nb_votes'] > 1 ? 's' : ''; ?>
                                 </span>
                                 <span
-                                    style="background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 8px; padding: 4px 12px; font-size: 0.82rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
+                                    style="background: #F5F5F5; color: #000000; border: 1px solid #E5E5E5; border-radius: 8px; padding: 4px 12px; font-size: 0.82rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
                                     <i class="fa-solid fa-heart"></i> <?php echo (int) $ev['nb_likes']; ?>
                                     like<?php echo (int) $ev['nb_likes'] > 1 ? 's' : ''; ?>
                                 </span>
@@ -796,7 +797,7 @@ function get_dem_badge($statut)
                     Détails de la Demande</h3>
             </div>
             <button type="button" onclick="closeDetailsModal()"
-                style="background: #f1f5f9; border: 0; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; color: var(--dash-muted);"
+                style="background: #F5F5F5; border: 0; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; color: var(--dash-muted);"
                 title="Fermer">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -809,7 +810,7 @@ function get_dem_badge($statut)
 
         <!-- Footer modale -->
         <div
-            style="padding: 1rem 1.5rem; border-top: 1px solid var(--dash-border); display: flex; justify-content: flex-end; background: #f8fafc;">
+            style="padding: 1rem 1.5rem; border-top: 1px solid var(--dash-border); display: flex; justify-content: flex-end; background: #F5F5F5;">
             <button type="button" onclick="closeDetailsModal()" class="dash-btn-action"
                 style="padding: 0.55rem 1.25rem; background: var(--dash-border); color: var(--dash-text);">
                 Fermer
@@ -827,12 +828,12 @@ function get_dem_badge($statut)
 
         titleEl.textContent = data.nom || 'Détails de la demande';
 
-        let badgeBg = '#fef3c7', badgeFg = '#92400e', badgeText = 'En attente';
-        if (data.statut === 'approuve' || data.statut === 'active') { badgeBg = '#dcfce7'; badgeFg = '#166534'; badgeText = 'Approuvée & Active'; }
-        else if (data.statut === 'refuse') { badgeBg = '#fee2e2'; badgeFg = '#b91c1c'; badgeText = 'Refusée'; }
+        let badgeBg = '#FFF2ED', badgeFg = '#000000', badgeText = 'En attente';
+        if (data.statut === 'approuve' || data.statut === 'active') { badgeBg = '#FFF2ED'; badgeFg = '#000000'; badgeText = 'Approuvée & Active'; }
+        else if (data.statut === 'refuse') { badgeBg = '#F5F5F5'; badgeFg = '#000000'; badgeText = 'Refusée'; }
 
         let html = `
-            <div style="display: flex; gap: 1rem; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">
+            <div style="display: flex; gap: 1rem; align-items: center; border-bottom: 1px solid #F5F5F5; padding-bottom: 1rem;">
                 <img src="${data.image ? '../uploads/events/' + data.image : 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=400&q=80'}" 
                      onerror="this.src='https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=400&q=80'" 
                      style="width: 80px; height: 80px; border-radius: 10px; object-fit: cover; border: 1px solid var(--dash-border);">
@@ -845,7 +846,7 @@ function get_dem_badge($statut)
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; background: #f8fafc; border-radius: 10px; padding: 1rem; border: 1px solid var(--dash-border);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; background: #F5F5F5; border-radius: 10px; padding: 1rem; border: 1px solid var(--dash-border);">
                 <div>
                     <span style="color: var(--dash-muted); font-size: 0.75rem; display: block;">Date de l'événement</span>
                     <strong style="color: var(--dash-text);">${data.date_evenement || 'Non définie'} à ${data.heure ? data.heure.substring(0, 5) : '20:00'}</strong>
@@ -860,7 +861,7 @@ function get_dem_badge($statut)
                 </div>
                 <div>
                     <span style="color: var(--dash-muted); font-size: 0.75rem; display: block;">Tarif Vote</span>
-                    <strong style="color: #f59e0b;">${data.prix_vote > 0 ? Number(data.prix_vote).toLocaleString('fr-FR') + ' FCFA' : 'Gratuit'}</strong>
+                    <strong style="color: #FF4A0D;">${data.prix_vote > 0 ? Number(data.prix_vote).toLocaleString('fr-FR') + ' FCFA' : 'Gratuit'}</strong>
                 </div>
             </div>
         `;
@@ -876,9 +877,9 @@ function get_dem_badge($statut)
 
         if (data.type_vote === 'realisation_evenement' && data.vote_question) {
             html += `
-                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 1rem;">
-                    <strong style="color: #1e40af; font-size: 0.85rem; display: block; margin-bottom: 4px;"><i class="fa-solid fa-circle-question"></i> Question soumise au vote du public :</strong>
-                    <div style="font-size: 0.95rem; font-weight: 800; color: #1e3a8a;">« ${data.vote_question} »</div>
+                <div style="background: #FFF2ED; border: 1px solid #E5E5E5; border-radius: 10px; padding: 1rem;">
+                    <strong style="color: #FF4A0D; font-size: 0.85rem; display: block; margin-bottom: 4px;"><i class="fa-solid fa-circle-question"></i> Question soumise au vote du public :</strong>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: #000000;">« ${data.vote_question} »</div>
                 </div>
             `;
         }
@@ -898,7 +899,7 @@ function get_dem_badge($statut)
                     cands.forEach((c, idx) => {
                         const photo = c.photo ? '../uploads/candidats/' + c.photo : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80';
                         html += `
-                            <div style="display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; padding: 6px 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px; background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 8px; padding: 6px 10px;">
                                 <img src="${photo}" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover;">
                                 <div>
                                     <strong style="font-size: 0.85rem; color: var(--dash-text); display: block;">${c.nom}</strong>
@@ -926,7 +927,7 @@ function get_dem_badge($statut)
                     `;
                     tks.forEach(tk => {
                         html += `
-                            <div style="background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; padding: 8px 10px;">
+                            <div style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 8px; padding: 8px 10px;">
                                 <strong style="font-size: 0.82rem; color: var(--dash-text); display: block;">${tk.nom}</strong>
                                 <span style="font-size: 0.95rem; font-weight: 800; color: var(--dash-primary);">${Number(tk.prix).toLocaleString('fr-FR')} F</span>
                                 <small style="color: var(--dash-muted); display: block; font-size: 0.72rem;">${tk.quantite} places</small>
@@ -940,7 +941,7 @@ function get_dem_badge($statut)
 
         if (data.commentaire_admin) {
             html += `
-                <div style="background: #fef2f2; border: 1px solid #fee2e2; border-radius: 10px; padding: 1rem; color: #991b1b;">
+                <div style="background: #F5F5F5; border: 1px solid #F5F5F5; border-radius: 10px; padding: 1rem; color: #000000;">
                     <strong style="display: block; font-size: 0.82rem; margin-bottom: 3px;"><i class="fa-solid fa-comment-dots"></i> Remarque de l'administration :</strong>
                     <div style="font-size: 0.88rem;">${data.commentaire_admin}</div>
                 </div>

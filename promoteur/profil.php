@@ -43,12 +43,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 // 2. Récupération des données du promoteur & Statistiques de notoriété
 // ------------------------------------------------------------------------------
 $stmt_prom = $pdo->prepare("
-    SELECT p.*, u.nom AS user_nom, u.email AS user_email, u.telephone AS user_tel,
-           (SELECT COUNT(*) FROM events e WHERE e.user_id = p.user_id) AS total_events,
-           (SELECT COALESCE(SUM(tt.quantite_vendue), 0) FROM ticket_types tt JOIN events e ON tt.event_id = e.id WHERE e.user_id = p.user_id) AS total_billets_vendus
-    FROM promoters p
-    JOIN users u ON p.user_id = u.id
-    WHERE p.user_id = ?
+    SELECT u.nom AS user_nom, u.prenom AS user_prenom, u.email AS user_email, u.telephone AS user_tel,
+           p.*,
+           (SELECT COUNT(*) FROM events e WHERE e.user_id = u.id) AS total_events,
+           (SELECT COALESCE(SUM(tt.quantite_vendue), 0) FROM ticket_types tt JOIN events e ON tt.event_id = e.id WHERE e.user_id = u.id) AS total_billets_vendus
+    FROM users u
+    LEFT JOIN promoters p ON p.user_id = u.id
+    WHERE u.id = ?
 ");
 $stmt_prom->execute([$user_id]);
 $prom = $stmt_prom->fetch(PDO::FETCH_ASSOC);
@@ -64,9 +65,29 @@ $stmt_reqs = $pdo->prepare("
 $stmt_reqs->execute([$user_id]);
 $info_requests = $stmt_reqs->fetchAll(PDO::FETCH_ASSOC);
 
-$nom_affiche = !empty($prom['nom_commercial']) ? $prom['nom_commercial'] : ($prom['user_nom'] ?? 'Promoteur');
-$words = explode(' ', trim($nom_affiche));
-$initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 0, 1));
+$user_prenom = trim($prom['user_prenom'] ?? ($_SESSION['user_prenom'] ?? ($_SESSION['prenom'] ?? '')));
+$user_nom    = trim($prom['user_nom'] ?? ($_SESSION['user_nom'] ?? ($_SESSION['nom'] ?? '')));
+$user_full_name = trim($user_prenom . ' ' . $user_nom);
+if (empty($user_full_name)) {
+    $user_full_name = 'Promoteur';
+}
+$nom_commercial = trim($prom['nom_commercial'] ?? '');
+$nom_affiche = $user_full_name;
+
+$initials = '';
+if (!empty($user_prenom)) {
+    $initials .= mb_strtoupper(mb_substr($user_prenom, 0, 1, 'UTF-8'), 'UTF-8');
+}
+if (!empty($user_nom)) {
+    $initials .= mb_strtoupper(mb_substr($user_nom, 0, 1, 'UTF-8'), 'UTF-8');
+}
+if (empty($initials)) {
+    $words = explode(' ', trim($user_full_name));
+    $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 0, 1));
+}
+if (empty($initials)) {
+    $initials = 'PR';
+}
 ?>
 
 <link rel="stylesheet" href="../Css/dashboard-pro.css">
@@ -76,7 +97,7 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
     width: 68px;
     height: 68px;
     border-radius: 18px;
-    background: linear-gradient(135deg, var(--dash-primary), #0284c7);
+    background: linear-gradient(135deg, var(--dash-primary), #FF4A0D);
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -96,6 +117,33 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
 .inquiry-card:hover {
     border-color: var(--dash-primary);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.promoter-profile-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+.promoter-hero-stats {
+    display: flex;
+    gap: 1.25rem;
+    border-left: 1px solid var(--dash-border);
+    padding-left: 1.25rem;
+}
+@media (max-width: 960px) {
+    .promoter-profile-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 640px) {
+    .promoter-hero-stats {
+        border-left: none;
+        border-top: 1px solid var(--dash-border);
+        padding-left: 0;
+        padding-top: 1rem;
+        width: 100%;
+        justify-content: space-around;
+    }
 }
 </style>
 
@@ -120,7 +168,7 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
     </div>
 
     <?php if (!empty($message)): ?>
-        <div style="background: <?php echo $msg_type === 'success' ? '#f0fdf4' : '#fef2f2'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#bbf7d0' : '#fecaca'; ?>; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: <?php echo $msg_type === 'success' ? '#166534' : '#991b1b'; ?>; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+        <div style="background: <?php echo $msg_type === 'success' ? '#FFF2ED' : '#F5F5F5'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#FFF2ED' : '#E5E5E5'; ?>; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: <?php echo $msg_type === 'success' ? '#000000' : '#000000'; ?>; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
             <i class="fa-solid <?php echo $msg_type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>"></i>
             <span><?php echo htmlspecialchars($message); ?></span>
         </div>
@@ -129,16 +177,21 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
     <!-- ==============================================================================
          2. CARTE D'IDENTITÉ PROMOTEUR & NOTORIÉTÉ (HERO CARD PRO)
          ============================================================================== -->
-    <div class="dash-card" style="margin-bottom: 1.75rem; padding: 1.5rem; background: linear-gradient(135deg, #ffffff 60%, #f8fafc); border: 1px solid var(--dash-border);">
+    <div class="dash-card" style="margin-bottom: 1.75rem; padding: 1.5rem; background: linear-gradient(135deg, #ffffff 60%, #F5F5F5); border: 1px solid var(--dash-border);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
             <div style="display: flex; align-items: center; gap: 1.25rem;">
                 <div class="profile-avatar-large"><?php echo htmlspecialchars($initials); ?></div>
                 <div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <h2 style="margin: 0; font-size: 1.35rem; color: var(--dash-text); font-weight: 800;">
-                            <?php echo htmlspecialchars($nom_affiche); ?>
+                            <?php echo htmlspecialchars($user_full_name); ?>
                         </h2>
-                        <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #bbf7d0;">
+                        <?php if (!empty($nom_commercial)): ?>
+                            <span style="background: #F5F5F5; color: #737373; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; border: 1px solid #E5E5E5;">
+                                <i class="fa-solid fa-briefcase"></i> <?php echo htmlspecialchars($nom_commercial); ?>
+                            </span>
+                        <?php endif; ?>
+                        <span style="background: #FFF2ED; color: #000000; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #FFF2ED;">
                             <i class="fa-solid fa-circle-check"></i> Promoteur Certifié
                         </span>
                     </div>
@@ -164,7 +217,7 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
             </div>
 
             <!-- Mini statistiques d'impact public -->
-            <div style="display: flex; gap: 1.25rem; border-left: 1px solid var(--dash-border); padding-left: 1.25rem;">
+            <div class="promoter-hero-stats">
                 <div style="text-align: center;">
                     <strong style="font-size: 1.45rem; color: var(--dash-text); font-weight: 800; display: block;">
                         <?php echo (int)($prom['total_events'] ?? 0); ?>
@@ -172,13 +225,13 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
                     <small style="color: var(--dash-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Événements</small>
                 </div>
                 <div style="text-align: center;">
-                    <strong style="font-size: 1.45rem; color: #059669; font-weight: 800; display: block;">
+                    <strong style="font-size: 1.45rem; color: #FF4A0D; font-weight: 800; display: block;">
                         <?php echo number_format((int)($prom['total_billets_vendus'] ?? 0), 0, ',', ' '); ?>
                     </strong>
                     <small style="color: var(--dash-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Billets Émis</small>
                 </div>
                 <div style="text-align: center;">
-                    <strong style="font-size: 1.45rem; color: #0284c7; font-weight: 800; display: block;">
+                    <strong style="font-size: 1.45rem; color: #FF4A0D; font-weight: 800; display: block;">
                         <?php echo count($info_requests); ?>
                     </strong>
                     <small style="color: var(--dash-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Messages</small>
@@ -190,7 +243,7 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
     <!-- ==============================================================================
          3. GRILLE DEUX COLONNES : FORMULAIRE PRO & BOÎTE DE RÉCEPTION
          ============================================================================== -->
-    <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 1.5rem; align-items: start;">
+    <div class="promoter-profile-grid">
         <!-- COLONNE GAUCHE : FORMULAIRE D'ÉDITION -->
         <div class="dash-card" style="padding: 0; overflow: hidden;">
             <div style="padding: 1.15rem 1.35rem; border-bottom: 1px solid var(--dash-border);">
@@ -249,7 +302,7 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
                     </div>
                     <div>
                         <label for="reseaux_sociaux" style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--dash-text);">
-                            <i class="fa-brands fa-instagram" style="color: #ec4899;"></i> Réseaux Sociaux
+                            <i class="fa-brands fa-instagram" style="color: #FF4A0D;"></i> Réseaux Sociaux
                         </label>
                         <input type="text" id="reseaux_sociaux" name="reseaux_sociaux" value="<?php echo htmlspecialchars($prom['reseaux_sociaux'] ?? ''); ?>" placeholder="@ivoire_events (IG, FB...)" style="width: 100%; padding: 0.55rem 0.75rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.85rem;">
                     </div>
@@ -267,7 +320,7 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
         <div class="dash-card" style="padding: 0; overflow: hidden;">
             <div style="padding: 1.15rem 1.35rem; border-bottom: 1px solid var(--dash-border); display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="margin: 0; font-size: 1rem; color: var(--dash-text); font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-inbox" style="color: #0284c7;"></i>
+                    <i class="fa-solid fa-inbox" style="color: #FF4A0D;"></i>
                     Messages & Demandes d'Infos (<?php echo count($info_requests); ?>)
                 </h3>
             </div>
@@ -297,7 +350,7 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
                                     <?php endif; ?>
                                 </div>
 
-                                <div style="background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.82rem; color: var(--dash-text); line-height: 1.4;">
+                                <div style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 0.82rem; color: var(--dash-text); line-height: 1.4;">
                                     <?php echo nl2br(htmlspecialchars($req['message'])); ?>
                                 </div>
 
@@ -311,7 +364,7 @@ $initials = strtoupper(substr($words[0] ?? 'P', 0, 1) . substr($words[1] ?? '', 
                     </div>
                 <?php else: ?>
                     <div style="text-align: center; color: var(--dash-muted); padding: 3.5rem 1rem;">
-                        <i class="fa-solid fa-envelope-open" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+                        <i class="fa-solid fa-envelope-open" style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                         <strong style="display: block; font-size: 0.95rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucune demande reçue</strong>
                         <p style="font-size: 0.8rem; margin: 0;">Les questions posées par vos clients sur votre profil public s'afficheront ici en direct.</p>
                     </div>

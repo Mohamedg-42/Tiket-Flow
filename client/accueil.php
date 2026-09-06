@@ -26,7 +26,7 @@ $peut_agir = !$is_logged_in || $user_role === 'client';
 <?php if (!empty($logout_msg)): ?>
     <div style="max-width: 1200px; margin: 1rem auto 0; padding: 0 1rem;">
         <div
-            style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 0.85rem 1.25rem; color: #166534; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600;">
+            style="background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: 10px; padding: 0.85rem 1.25rem; color: #000000; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600;">
             <i class="fa-solid fa-circle-check"></i>
             <span>Vous avez été déconnecté avec succès. À bientôt sur Eventia !</span>
         </div>
@@ -172,80 +172,85 @@ try {
 ?>
 
 <style>
+    /* ---- Hero Banner & Recherche — Charte Tikéli Officielle ---- */
     .hero-banner {
-        background: radial-gradient(circle at 10% 20%, #1e3a5f 0%, #0f172a 100%);
+        background: radial-gradient(circle at 10% 15%, rgba(255, 74, 13, 0.22) 0%, transparent 45%),
+                    radial-gradient(circle at 90% 85%, rgba(255, 74, 13, 0.12) 0%, transparent 50%),
+                    linear-gradient(145deg, #000000 0%, #0e0e0e 60%, #1a1a1a 100%);
         color: #ffffff;
-        padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 4vw, 3rem);
-        border-radius: var(--radius-xl);
-        margin-bottom: 3rem;
-        box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.3);
+        padding: clamp(2rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 2.5rem);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        margin-bottom: 2rem;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
         text-align: center;
         position: relative;
         overflow: hidden;
     }
 
-    .hero-banner::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle at 50% 50%, rgba(15, 118, 110, 0.25) 0%, transparent 60%);
-        pointer-events: none;
-    }
-
-    .hero-badge {
+    .hero-banner .hero-badge {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        background: rgba(255, 255, 255, 0.12);
-        backdrop-filter: blur(8px);
-        color: #38bdf8;
+        font-family: var(--font-heading, 'Outfit', sans-serif);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--tikeli-orange, #FF4A0D);
+        background: rgba(255, 74, 13, 0.12);
+        border: 1px solid rgba(255, 74, 13, 0.35);
         padding: 6px 16px;
-        border-radius: 30px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        margin-bottom: 1.25rem;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 9999px;
+        margin: 0 auto 1.25rem;
+        box-shadow: 0 2px 10px rgba(255, 74, 13, 0.15);
     }
 
     .hero-banner h1 {
         color: #ffffff;
-        font-size: clamp(2rem, 4.5vw, 3.2rem);
-        font-weight: 800;
-        margin: 0 0 1rem;
+        font-family: var(--font-heading, 'Outfit', sans-serif);
+        font-size: clamp(1.65rem, 4.8vw, 3rem);
+        font-weight: 900;
+        margin: 0 auto 0.75rem;
         letter-spacing: -0.03em;
-        line-height: 1.15;
+        line-height: 1.18;
+        text-align: center;
+        max-width: 800px;
+        overflow-wrap: break-word;
     }
 
     .hero-banner p {
-        color: #94a3b8;
-        font-size: clamp(1rem, 2vw, 1.15rem);
-        max-width: 650px;
-        margin: 0 auto 2.25rem;
-        line-height: 1.6;
+        color: #737373;
+        font-size: clamp(0.88rem, 1.8vw, 1.05rem);
+        max-width: 640px;
+        margin: 0 auto 1.75rem;
+        line-height: 1.55;
+        text-align: center;
+        overflow-wrap: break-word;
     }
 
     .search-box-wrapper {
         background: #ffffff;
-        border-radius: var(--radius-lg);
-        padding: 0.6rem;
+        border: 1px solid var(--eventia-border, #E5E5E5);
+        border-radius: 16px;
+        padding: 0.5rem;
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
-        max-width: 860px;
+        max-width: 880px;
         margin: 0 auto;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 14px 35px rgba(6, 19, 41, 0.28);
+        align-items: center;
     }
 
     .search-input-field {
         flex: 1;
-        min-width: 200px;
+        min-width: 180px;
         display: flex;
         align-items: center;
-        padding: 0.4rem 0.85rem;
-        border-right: 1px solid var(--line);
+        padding: 0.5rem 0.85rem;
+        border-right: 1px solid #F5F5F5;
+        gap: 0.5rem;
     }
 
     .search-input-field:last-of-type {
@@ -253,9 +258,9 @@ try {
     }
 
     .search-input-field i {
-        color: var(--primary);
-        margin-right: 0.75rem;
-        font-size: 1.1rem;
+        color: var(--eventia-amber-dark, #FF4A0D);
+        font-size: 0.95rem;
+        flex-shrink: 0;
     }
 
     .search-input-field input,
@@ -263,35 +268,105 @@ try {
         width: 100%;
         border: none;
         outline: none;
-        padding: 0.5rem 0;
-        font-size: 0.95rem;
-        font-family: inherit;
-        color: var(--ink);
+        padding: 0.35rem 0;
+        font-size: 0.92rem;
+        font-family: var(--font-body, 'Inter', sans-serif);
+        color: var(--eventia-navy, #000000);
         background: transparent;
+        font-weight: 500;
     }
 
+    .search-box-wrapper .btn-submit-hero {
+        background: linear-gradient(135deg, var(--tikeli-orange, #FF4A0D), #E03E08);
+        color: #ffffff;
+        font-family: var(--font-heading, 'Outfit', sans-serif);
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 0.75rem 1.65rem;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
+    }
+
+    .search-box-wrapper .btn-submit-hero:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(224, 62, 8, 0.45);
+    }
+
+    .search-box-wrapper .btn-submit-hero:active {
+        transform: scale(0.98);
+    }
+
+    @media (max-width: 768px) {
+        .search-box-wrapper {
+            flex-direction: column;
+            gap: 0.35rem;
+            padding: 0.75rem;
+        }
+
+        .search-input-field {
+            width: 100%;
+            border-right: none;
+            border-bottom: 1px solid #F5F5F5;
+            padding: 0.65rem 0.5rem;
+        }
+
+        .search-input-field:last-of-type {
+            border-bottom: none;
+            margin-bottom: 0.35rem;
+        }
+
+        .search-box-wrapper .btn-submit-hero {
+            width: 100%;
+            padding: 0.85rem;
+        }
+    }
+
+    /* ---- Cartes Événements Eventia ---- */
     .event-card-item {
         background: #ffffff;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-lg);
+        border: 1px solid var(--eventia-border, #E5E5E5);
+        border-radius: var(--eventia-radius-lg, 14px);
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        transition: var(--transition);
-        box-shadow: var(--shadow-sm);
+        transition: var(--eventia-transition);
+        box-shadow: var(--eventia-shadow-sm, 0 2px 4px rgba(16, 24, 40, 0.06));
+        text-align: left;
     }
 
     .event-card-item:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-xl);
-        border-color: var(--primary-light);
+        transform: translateY(-3px);
+        box-shadow: var(--eventia-shadow-lg, 0 12px 24px -4px rgba(16, 24, 40, 0.12));
+        border-color: #E5E5E5;
+    }
+
+    .event-card-item h3 {
+        font-family: var(--font-heading, 'Outfit', sans-serif);
+        font-weight: 700;
+        color: var(--eventia-navy, #000000);
+        overflow-wrap: break-word;
+        word-break: normal;
+        line-height: 1.25;
+    }
+
+    .event-card-item p {
+        overflow-wrap: break-word;
+        word-break: normal;
     }
 
     .event-poster {
-        height: 200px;
+        height: 216px;
         width: 100%;
         object-fit: cover;
-        background: #e2e8f0;
+        background: #E5E5E5;
         display: block;
     }
 
@@ -299,14 +374,21 @@ try {
         position: absolute;
         top: 12px;
         left: 12px;
-        background: rgba(15, 23, 42, 0.85);
-        color: #ffffff;
-        font-size: 0.75rem;
-        font-weight: 800;
-        padding: 4px 12px;
-        border-radius: 20px;
-        backdrop-filter: blur(4px);
+        background: var(--tikeli-black, #000000);
+        color: var(--tikeli-orange, #FF4A0D);
+        font-family: var(--font-heading, 'Outfit', sans-serif);
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: var(--eventia-radius-pill, 9999px);
+        border: 1px solid rgba(255, 74, 13, 0.35);
         letter-spacing: 0.04em;
+        text-transform: uppercase;
+        max-width: calc(100% - 96px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        z-index: 2;
     }
 
     .event-date-chip {
@@ -314,24 +396,33 @@ try {
         bottom: 12px;
         right: 12px;
         background: #ffffff;
-        color: var(--navy);
-        padding: 4px 10px;
-        border-radius: 8px;
-        font-size: 0.8rem;
-        font-weight: 800;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        color: var(--eventia-navy, #000000);
+        font-family: var(--font-body, 'Inter', sans-serif);
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: var(--eventia-radius-sm, 8px);
+        border: 1px solid var(--eventia-border, #E5E5E5);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        max-width: calc(100% - 24px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        z-index: 2;
     }
 
     .ticket-tier-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: #f8fafc;
+        gap: 0.75rem;
+        background: #F5F5F5;
         border: 1px solid var(--line);
         border-radius: var(--radius-md);
         padding: 0.85rem 1.1rem;
         margin-bottom: 0.65rem;
         transition: var(--transition);
+        overflow: hidden;
     }
 
     .ticket-tier-row:hover {
@@ -339,21 +430,31 @@ try {
         background: #ffffff;
     }
 
+    .ticket-tier-info {
+        flex: 1 1 190px;
+        min-width: 0;
+        overflow-wrap: break-word;
+    }
+
     .ticket-tier-info strong {
         display: block;
         color: var(--navy);
         font-size: 0.95rem;
+        overflow-wrap: break-word;
+        word-break: normal;
+        line-height: 1.35;
     }
 
-    .ticket-tier-info small {
-        color: var(--muted);
-        font-size: 0.78rem;
+    .ticket-tier-info small,
+    .ticket-tier-info span {
+        overflow-wrap: break-word;
     }
 
     .ticket-qty-control {
         display: flex;
         align-items: center;
         gap: 0.4rem;
+        flex-shrink: 0;
     }
 
     .ticket-qty-btn {
@@ -387,45 +488,60 @@ try {
         font-size: 0.95rem;
     }
 
-    /* Bulles de catégories (tout en haut) */
+    /* Bulles de catégories (Carousel fluide & moderne) */
     .category-chips {
         display: flex;
-        gap: 0.6rem;
-        flex-wrap: wrap;
-        margin-bottom: 1.5rem;
+        gap: 0.5rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 4px 2px 14px;
+        margin-top: 1.25rem;
+        margin-bottom: 1.75rem;
+        scroll-snap-type: x mandatory;
+    }
+
+    .category-chips::-webkit-scrollbar {
+        display: none;
     }
 
     .category-chip {
         display: inline-flex;
         align-items: center;
         gap: 0.45rem;
-        padding: 0.5rem 1.1rem;
+        padding: 0.5rem 1rem;
         background: #ffffff;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-full);
-        color: var(--ink);
-        font-size: 0.85rem;
+        border: 1px solid var(--eventia-border, #E5E5E5);
+        border-radius: 9999px;
+        color: var(--eventia-navy, #000000);
+        font-family: var(--font-heading, 'Outfit', sans-serif);
+        font-size: 0.82rem;
         font-weight: 700;
         text-decoration: none;
-        box-shadow: var(--shadow-sm);
-        transition: var(--transition);
+        white-space: nowrap;
+        scroll-snap-align: start;
+        box-shadow: 0 1px 3px rgba(11, 29, 58, 0.04);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        flex-shrink: 0;
     }
 
     .category-chip i {
-        color: var(--primary);
-        font-size: 0.9rem;
+        color: var(--eventia-navy-light, #000000);
+        font-size: 0.85rem;
     }
 
     .category-chip:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-        transform: translateY(-2px);
+        background: #F5F5F5;
+        border-color: #E5E5E5;
+        transform: translateY(-1px);
+        color: var(--eventia-navy, #000000);
     }
 
     .category-chip.active {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-        border-color: transparent;
+        background: var(--tikeli-orange, #FF4A0D);
         color: #ffffff;
+        border-color: var(--tikeli-orange, #FF4A0D);
+        box-shadow: 0 4px 12px rgba(255, 74, 13, 0.28);
     }
 
     .category-chip.active i {
@@ -455,7 +571,7 @@ try {
     }
 
     .event-like-btn i {
-        color: #94a3b8;
+        color: #737373;
         transition: var(--transition);
     }
 
@@ -464,15 +580,15 @@ try {
     }
 
     .event-like-btn:hover i {
-        color: #ef4444;
+        color: #000000;
     }
 
     .event-like-btn.liked i {
-        color: #ef4444;
+        color: #000000;
     }
 
     .event-like-btn.liked {
-        color: #ef4444;
+        color: #000000;
     }
 
     /* ===== Choix de place : plan interactif ===== */
@@ -519,12 +635,21 @@ try {
     .seat-choice-label {
         display: flex;
         align-items: flex-start;
-        gap: 0.5rem;
+        gap: 0.6rem;
         font-size: 0.82rem;
         color: var(--ink);
         cursor: pointer;
         font-weight: 600;
         width: 100%;
+        min-width: 0;
+    }
+
+    .seat-choice-label span {
+        flex: 1;
+        min-width: 0;
+        overflow-wrap: break-word;
+        word-break: normal;
+        line-height: 1.45;
     }
 
     .seat-choice-label input {
@@ -538,69 +663,101 @@ try {
 
     .seat-choice-label strong {
         color: var(--primary);
+        overflow-wrap: break-word;
     }
 
     .seat-choice-label small {
         color: var(--muted);
         font-weight: 500;
+        display: block;
+        overflow-wrap: break-word;
     }
 
-    .seat-map {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-        gap: 6px;
-        width: 100%;
+    /* ==========================================================================
+       VUE DE SCÈNE INTERACTIVE & CHOIX DE PLACE RESPONSIVE
+       ========================================================================== */
+    .scene-view-card {
         margin-top: 0.75rem;
-        max-height: 180px;
-        overflow-y: auto;
-        padding: 10px;
-        background: #ffffff;
-        border: 1px solid var(--line);
+        background: #000000;
+        border: 1px solid #000000;
+        border-radius: 10px;
+        padding: clamp(0.65rem, 2vw, 0.85rem);
+        color: #F5F5F5;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .scene-view-card[hidden] {
+        display: none !important;
+    }
+
+    .scene-stage-banner {
+        background: linear-gradient(180deg, #000000 0%, #000000 100%);
+        border: 1px solid rgba(56, 189, 248, 0.35);
         border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
     }
 
-    /* Le plan reste caché tant que la case n'est pas cochée */
-    .seat-map[hidden] {
-        display: none;
-    }
-
-    .seat {
-        aspect-ratio: 1;
-        display: grid;
-        place-items: center;
-        font-size: 0.62rem;
+    .scene-stage-podium {
+        font-size: clamp(0.72rem, 2vw, 0.8rem);
         font-weight: 800;
-        border-radius: 6px;
-        border: 1px solid var(--line);
-        background: #f8fafc;
-        color: var(--muted);
-        cursor: pointer;
-        transition: var(--transition);
-        user-select: none;
+        letter-spacing: 1px;
+        color: #FF4A0D;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: wrap;
     }
 
-    .seat:hover {
-        border-color: var(--primary);
-        color: var(--primary);
-        transform: scale(1.08);
-    }
-
-    .seat.selected {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    .btn-scene-interactive {
+        width: 100%;
+        min-height: 44px;
+        padding: 0.65rem 0.9rem;
+        background: linear-gradient(135deg, #000000 0%, #000000 100%);
         color: #ffffff;
-        border-color: transparent;
-        box-shadow: 0 3px 8px rgba(13, 148, 136, 0.4);
+        border: 1.5px solid #FF4A0D;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: clamp(0.78rem, 2.2vw, 0.86rem);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25);
+        transition: all 0.2s ease;
+        flex-wrap: wrap;
+        box-sizing: border-box;
     }
 
-    /* Place déjà réservée/vendue : inactive, non cliquable */
-    .seat.taken {
-        background: #e2e8f0;
-        color: #94a3b8;
-        border-color: var(--line);
-        cursor: not-allowed;
-        opacity: 0.55;
-        text-decoration: line-through;
-        transform: none;
+    .btn-scene-interactive:hover {
+        background: linear-gradient(135deg, #000000 0%, #FF4A0D 100%);
+        border-color: #FF4A0D;
+        transform: translateY(-1px);
+    }
+
+    .scene-tag-badge {
+        background: rgba(56, 189, 248, 0.2);
+        color: #FF4A0D;
+        font-size: 0.72rem;
+        padding: 3px 8px;
+        border-radius: 12px;
+        white-space: nowrap;
+    }
+
+    .scene-selected-summary {
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid #000000;
+        border-radius: 8px;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.8rem;
     }
 
     .seat-hint {
@@ -616,44 +773,614 @@ try {
         color: var(--primary);
     }
 
-    /* ===== Onglets principaux (Événements / Cotisations / Voter) ===== */
+    /* ===== MODALE VUE DE SCÈNE 3D RESPONSIVE (MÜLLER-BROCKMANN) ===== */
+    .s3d-modal-overlay {
+        z-index: 100000;
+        background: rgba(3, 7, 18, 0.94);
+        backdrop-filter: blur(8px);
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .s3d-modal-window {
+        background: #000000;
+        border: 1px solid #000000;
+        border-radius: 18px;
+        width: 100%;
+        max-width: 1200px;
+        height: 92vh;
+        height: 92dvh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+        position: relative;
+    }
+
+    /* Header */
+    .s3d-header {
+        padding: 0.75rem 1.25rem;
+        background: #000000;
+        border-bottom: 1px solid #000000;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .s3d-header-main {
+        min-width: 0;
+        flex: 1 1 240px;
+    }
+
+    .s3d-header-title-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .s3d-badge-3d {
+        background: rgba(56, 189, 248, 0.18);
+        color: #FF4A0D;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .s3d-event-title {
+        margin: 0;
+        font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+        color: #F5F5F5;
+        font-weight: 800;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .s3d-venue-subtitle {
+        font-size: 0.76rem;
+        color: #737373;
+        margin-top: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .s3d-header-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .s3d-tabs {
+        display: flex;
+        gap: 4px;
+        background: #000000;
+        padding: 3px;
+        border-radius: 8px;
+        border: 1px solid #000000;
+    }
+
+    .studio-tab-btn {
+        background: transparent;
+        border: 1px solid transparent;
+        color: #737373;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+
+    .studio-tab-btn:hover {
+        color: #ffffff;
+    }
+
+    .studio-tab-btn.active {
+        background: rgba(56, 189, 248, 0.16);
+        border-color: rgba(56, 189, 248, 0.4);
+        color: #FF4A0D;
+    }
+
+    .s3d-cameras-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .s3d-cameras {
+        display: flex;
+        gap: 4px;
+    }
+
+    .s3d-cam-btn {
+        background: #000000;
+        color: #F5F5F5;
+        border: 1px solid #000000;
+        font-size: 0.76rem;
+        padding: 0.35rem 0.6rem;
+        border-radius: 6px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: background 0.15s ease;
+    }
+
+    .s3d-cam-btn:hover {
+        background: #000000;
+    }
+
+    .s3d-cam-reset {
+        color: #FF4A0D;
+    }
+
+    .s3d-close-btn {
+        background: rgba(239, 68, 68, 0.18);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        color: #000000;
+        border-radius: 8px;
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: all 0.15s ease;
+    }
+
+    .s3d-close-btn:hover {
+        background: #000000;
+        color: #ffffff;
+    }
+
+    /* Body */
+    .s3d-body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .s3d-canvas-panel {
+        flex: 1;
+        min-width: 0;
+        position: relative;
+        background: #000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .s3d-canvas-panel canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+    }
+
+    .s3d-tariff-bar {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        z-index: 10;
+        scrollbar-width: none;
+    }
+
+    .s3d-tariff-bar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .studio-filter-btn {
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(6px);
+        border: 1px solid #000000;
+        color: #E5E5E5;
+        padding: 0.35rem 0.7rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.15s ease;
+    }
+
+    .studio-filter-btn.active {
+        background: #FF4A0D;
+        color: #000000;
+        border-color: #FF4A0D;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+
+    .s3d-touch-hint {
+        position: absolute;
+        top: 48px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 23, 42, 0.85);
+        color: #737373;
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        pointer-events: none;
+        white-space: nowrap;
+        opacity: 0.85;
+        z-index: 5;
+    }
+
+    .s3d-legend {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(8px);
+        border: 1px solid #000000;
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        font-size: 0.72rem;
+        color: #F5F5F5;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .s3d-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .s3d-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .dot-libre { background: #FF4A0D; }
+    .dot-selected { background: #FF4A0D; box-shadow: 0 0 6px #FF4A0D; }
+    .dot-occupe { background: #737373; }
+
+    /* Other panels */
+    .s3d-plan-panel,
+    .s3d-photos-panel {
+        flex: 1;
+        display: none;
+        background: #000000;
+        padding: 1.25rem;
+        overflow-y: auto;
+    }
+
+    .s3d-plan-panel {
+        text-align: center;
+    }
+
+    .s3d-photos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    /* Sidebar / Drawer */
+    .s3d-sidebar {
+        width: 320px;
+        flex-shrink: 0;
+        background: #000000;
+        border-left: 1px solid #000000;
+        padding: 1.15rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+    .s3d-sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .s3d-sidebar-title {
+        font-weight: 800;
+        color: #F5F5F5;
+        font-size: 0.88rem;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .s3d-seats-badge {
+        background: rgba(56, 189, 248, 0.2);
+        color: #FF4A0D;
+        font-size: 0.72rem;
+        padding: 2px 7px;
+        border-radius: 10px;
+        font-weight: 800;
+    }
+
+    .s3d-mobile-toggle-btn {
+        display: none;
+        background: rgba(56, 189, 248, 0.15);
+        color: #FF4A0D;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        border-radius: 6px;
+        padding: 3px 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .s3d-selected-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 220px;
+        overflow-y: auto;
+        margin-bottom: 0.85rem;
+        padding-right: 2px;
+    }
+
+    .s3d-empty-msg {
+        color: #737373;
+        font-size: 0.78rem;
+        font-style: italic;
+        text-align: center;
+        padding: 1.25rem 0;
+    }
+
+    .s3d-sightline-box {
+        background: #000000;
+        border: 1px solid #000000;
+        border-radius: 8px;
+        padding: 0.65rem 0.75rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .s3d-sightline-title {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #FF4A0D;
+        text-transform: uppercase;
+        margin-bottom: 3px;
+    }
+
+    .s3d-sightline-desc {
+        font-size: 0.76rem;
+        color: #E5E5E5;
+        line-height: 1.35;
+    }
+
+    .s3d-sidebar-footer {
+        flex-shrink: 0;
+    }
+
+    .s3d-total-card {
+        background: #000000;
+        border: 1px solid #000000;
+        border-radius: 10px;
+        padding: 0.75rem 0.9rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .s3d-total-label {
+        font-size: 0.72rem;
+        color: #737373;
+        text-transform: uppercase;
+        display: block;
+        font-weight: 700;
+    }
+
+    .s3d-sub-count {
+        color: #FF4A0D;
+        font-weight: 700;
+        font-size: 0.75rem;
+    }
+
+    .s3d-total-amount {
+        color: #FF4A0D;
+        font-size: 1.15rem;
+        font-weight: 800;
+    }
+
+    .s3d-btn-validate {
+        width: 100%;
+        margin: 0;
+        background: #FF4A0D;
+        font-size: 0.88rem;
+        padding: 0.75rem 1rem;
+        min-height: 44px;
+        border-radius: 8px;
+    }
+
+    .s3d-btn-cancel {
+        width: 100%;
+        margin-top: 6px;
+        background: transparent;
+        border: none;
+        color: #737373;
+        font-size: 0.78rem;
+        cursor: pointer;
+        text-decoration: underline;
+        padding: 4px;
+    }
+
+    /* ===== ADAPTATIONS MOBILES (< 992px & < 640px) ===== */
+    @media (max-width: 991px) {
+        .s3d-modal-overlay {
+            padding: 0 !important;
+        }
+
+        .s3d-modal-window {
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            border-radius: 0 !important;
+            border: none !important;
+        }
+
+        .s3d-body {
+            flex-direction: column !important;
+        }
+
+        .s3d-canvas-panel {
+            flex: 1 1 auto !important;
+            min-height: 250px !important;
+            height: auto !important;
+        }
+
+        .s3d-sidebar {
+            width: 100% !important;
+            border-left: none !important;
+            border-top: 1px solid #000000 !important;
+            padding: 0.75rem 1rem !important;
+            max-height: 48vh !important;
+            background: #000000 !important;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .s3d-mobile-toggle-btn {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Mode rétracté sur mobile pour voir le canvas */
+        .s3d-sidebar.is-collapsed .s3d-sidebar-content {
+            display: none !important;
+        }
+
+        .s3d-selected-list {
+            max-height: 110px !important;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .s3d-header {
+            padding: 0.5rem 0.75rem !important;
+            gap: 0.4rem !important;
+        }
+
+        .s3d-header-controls {
+            width: 100% !important;
+            justify-content: space-between !important;
+        }
+
+        .s3d-venue-subtitle {
+            display: none !important;
+        }
+
+        .s3d-touch-hint {
+            display: none !important;
+        }
+
+        .s3d-legend {
+            bottom: 6px !important;
+            left: 6px !important;
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.65rem !important;
+            gap: 0.4rem !important;
+        }
+
+        .s3d-cam-btn span {
+            display: none !important;
+        }
+
+        .s3d-cam-btn {
+            padding: 0.35rem 0.5rem !important;
+        }
+
+        .s3d-total-card {
+            padding: 0.5rem 0.75rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .s3d-total-amount {
+            font-size: 1.05rem !important;
+        }
+
+        .s3d-photos-grid {
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+            gap: 0.5rem !important;
+        }
+    }
+
+    /* ===== Onglets principaux (Segmented Control Pro) ===== */
     .main-tabs {
         display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
+        gap: 0.35rem;
         margin: 0 auto 1.75rem;
         background: #ffffff;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-full);
-        padding: 0.4rem;
-        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--eventia-border, #E5E5E5);
+        border-radius: 9999px;
+        padding: 5px;
+        box-shadow: 0 4px 15px rgba(11, 29, 58, 0.06);
         width: fit-content;
         max-width: 100%;
         justify-content: center;
+        box-sizing: border-box;
     }
 
     .main-tab {
         display: inline-flex;
         align-items: center;
-        gap: 0.45rem;
-        padding: 0.6rem 1.4rem;
-        border-radius: var(--radius-full);
-        color: var(--muted);
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1.25rem;
+        border-radius: 9999px;
+        color: var(--eventia-muted, #737373);
         font-size: 0.88rem;
         font-weight: 700;
         text-decoration: none;
-        transition: var(--transition);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: var(--font-heading, 'Outfit', sans-serif);
+        white-space: nowrap;
     }
 
     .main-tab:hover {
-        color: var(--primary);
-        background: var(--primary-soft);
+        color: var(--eventia-navy, #000000);
+        background: #F5F5F5;
     }
 
     .main-tab.active {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        background: var(--eventia-navy, #000000);
         color: #ffffff;
-        box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+        box-shadow: 0 4px 12px rgba(11, 29, 58, 0.25);
     }
 
     .main-tab-badge {
@@ -662,19 +1389,47 @@ try {
         justify-content: center;
         font-size: 0.72rem;
         font-weight: 800;
-        min-width: 20px;
-        height: 20px;
+        min-width: 22px;
+        height: 22px;
         padding: 0 6px;
         border-radius: 999px;
-        background: #f1f5f9;
-        color: var(--navy);
-        margin-left: 0.25rem;
+        background: #F5F5F5;
+        color: var(--eventia-navy, #000000);
+        margin-left: 0.35rem;
         transition: all 0.2s ease;
     }
 
     .main-tab.active .main-tab-badge {
-        background: rgba(255, 255, 255, 0.25);
-        color: #ffffff;
+        background: var(--eventia-amber, #FF4A0D);
+        color: var(--eventia-navy-dark, #000000);
+    }
+
+    @media (max-width: 640px) {
+        .main-tabs {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            padding: 4px;
+            border-radius: 14px;
+        }
+
+        .main-tab {
+            padding: 0.55rem 0.35rem;
+            font-size: 0.78rem;
+            border-radius: 10px;
+            flex-direction: column;
+            gap: 3px;
+            text-align: center;
+        }
+
+        .main-tab-badge {
+            font-size: 0.68rem;
+            min-width: 18px;
+            height: 18px;
+            margin-left: 0;
+            padding: 0 4px;
+        }
     }
 
     /* ===== Section Cotisations ===== */
@@ -733,7 +1488,7 @@ try {
         display: grid;
         place-items: center;
         border-radius: 50%;
-        background: #f1f5f9;
+        background: #F5F5F5;
         color: var(--muted);
         font-family: 'Outfit', sans-serif;
         font-weight: 800;
@@ -741,18 +1496,18 @@ try {
     }
 
     .vote-rank.top1 {
-        background: #fef3c7;
-        color: #b45309;
+        background: #FFF2ED;
+        color: #FF4A0D;
     }
 
     .vote-rank.top2 {
-        background: #e2e8f0;
-        color: #475569;
+        background: #E5E5E5;
+        color: #737373;
     }
 
     .vote-rank.top3 {
-        background: #ffedd5;
-        color: #ea580c;
+        background: #FFF2ED;
+        color: #FF4A0D;
     }
 
     .vote-btn {
@@ -773,7 +1528,7 @@ try {
     }
 
     .vote-btn i {
-        color: #94a3b8;
+        color: #737373;
     }
 
     .vote-btn:hover {
@@ -808,7 +1563,7 @@ try {
     }
 
     .candidats-vote-list::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
+        background: #E5E5E5;
         border-radius: 999px;
     }
 
@@ -827,14 +1582,14 @@ try {
     }
 
     .candidat-choice-card:hover {
-        border-color: #93c5fd;
-        background: #f8fafc;
+        border-color: #FFF2ED;
+        background: #F5F5F5;
         transform: translateY(-1px);
     }
 
     .candidat-choice-card.selected {
         border-color: var(--primary);
-        background: linear-gradient(135deg, #f0fdfa 0%, #eff6ff 100%);
+        background: linear-gradient(135deg, #FFF2ED 0%, #FFF2ED 100%);
         box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
     }
 
@@ -876,6 +1631,8 @@ try {
         align-items: center;
         justify-content: space-between;
         gap: 0.5rem;
+        overflow-wrap: break-word;
+        word-break: normal;
     }
 
     .candidat-choice-desc {
@@ -884,15 +1641,17 @@ try {
         line-height: 1.45;
         margin: 0;
         transition: color 0.2s ease;
+        overflow-wrap: break-word;
+        word-break: normal;
     }
 
     .candidat-choice-card.selected .candidat-choice-desc {
-        color: #1e293b;
+        color: #000000;
     }
 
     .candidat-badge-selected {
         font-size: 0.72rem;
-        background: #16a34a;
+        background: #FF4A0D;
         color: #ffffff;
         padding: 2px 7px;
         border-radius: 999px;
@@ -1031,19 +1790,19 @@ try {
                                             <i class="fa-solid fa-coins" style="color: var(--primary); font-size: 0.7rem;"></i>
                                             Collecté : <?php echo number_format($collecte, 0, ',', ' '); ?> FCFA
                                         </span>
-                                        <span style="color: <?php echo $objectif_atteint ? '#16a34a' : 'var(--primary-dark)'; ?>;">
+                                        <span style="color: <?php echo $objectif_atteint ? '#FF4A0D' : 'var(--primary-dark)'; ?>;">
                                             <?php echo $pct_collecte; ?>%
                                         </span>
                                     </div>
-                                    <div style="height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                                    <div style="height: 10px; background: #E5E5E5; border-radius: 999px; overflow: hidden;">
                                         <div
-                                            style="height: 100%; width: <?php echo $pct_collecte; ?>%; background: <?php echo $objectif_atteint ? '#16a34a' : 'linear-gradient(90deg, var(--primary), var(--primary-light))'; ?>; border-radius: 999px; transition: width 0.4s ease;">
+                                            style="height: 100%; width: <?php echo $pct_collecte; ?>%; background: <?php echo $objectif_atteint ? '#FF4A0D' : 'linear-gradient(90deg, var(--primary), var(--primary-light))'; ?>; border-radius: 999px; transition: width 0.4s ease;">
                                         </div>
                                     </div>
                                     <small style="color: var(--muted); display: block; margin-top: 6px; font-weight: 600;">
                                         Objectif : <?php echo number_format($objectif, 0, ',', ' '); ?> FCFA
                                         <?php if ($objectif_atteint): ?>
-                                            <span style="color: #16a34a;"><i class="fa-solid fa-circle-check"></i> Objectif atteint, les
+                                            <span style="color: #FF4A0D;"><i class="fa-solid fa-circle-check"></i> Objectif atteint, les
                                                 contributions restent ouvertes !</span>
                                         <?php endif; ?>
                                     </small>
@@ -1061,12 +1820,12 @@ try {
                                         </button>
                                     <?php elseif (!$peut_agir): ?>
                                         <span
-                                            style="background: #fff7ed; color: #c2410c; border: 1px solid #fdba74; padding: 0.55rem 1rem; border-radius: 6px; font-weight: 800; font-size: 0.82rem; text-transform: uppercase; display: block; text-align: center;">
+                                            style="background: #fff7ed; color: #FF4A0D; border: 1px solid #FF4A0D; padding: 0.55rem 1rem; border-radius: 6px; font-weight: 800; font-size: 0.82rem; text-transform: uppercase; display: block; text-align: center;">
                                             <i class="fa-solid fa-lock"></i> Réservé aux clients
                                         </span>
                                     <?php else: ?>
                                         <span
-                                            style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 0.55rem 1rem; border-radius: 6px; font-weight: 800; font-size: 0.82rem; text-transform: uppercase; display: block; text-align: center;">
+                                            style="background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5; padding: 0.55rem 1rem; border-radius: 6px; font-weight: 800; font-size: 0.82rem; text-transform: uppercase; display: block; text-align: center;">
                                             <i class="fa-solid fa-flag-checkered"></i>
                                             <?php echo $est_terminee ? 'Campagne terminée' : 'Objectif atteint'; ?>
                                         </span>
@@ -1093,7 +1852,7 @@ try {
                                     value="<?php echo htmlspecialchars($user_telephone, ENT_QUOTES, 'UTF-8'); ?>">
 
                                 <div
-                                    style="background: #f0fdfa; border: 1px solid var(--line); border-left: 3px solid var(--primary); border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--ink);">
+                                    style="background: #FFF2ED; border: 1px solid var(--line); border-left: 3px solid var(--primary); border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--ink);">
                                     <i class="fa-solid fa-circle-user" style="color: var(--primary);"></i>
                                     Contribution au nom de <strong><?php echo htmlspecialchars($_SESSION['user_nom'] ?? ''); ?></strong>
                                     <span style="color: var(--muted);">·
@@ -1234,7 +1993,7 @@ try {
                                 <img src="<?php echo $ev_img; ?>" alt="<?php echo htmlspecialchars($ev['nom']); ?>"
                                     class="event-poster">
                                 <span class="event-category-badge">
-                                    <i class="fa-solid fa-trophy" style="margin-right: 4px; color: #f59e0b;"></i>
+                                    <i class="fa-solid fa-trophy" style="margin-right: 4px; color: #FF4A0D;"></i>
                                     <?php echo $rang === 0 ? '1er au classement' : ($rang + 1) . 'e au classement'; ?>
                                 </span>
                                 <span class="event-date-chip">
@@ -1254,20 +2013,20 @@ try {
                                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
                                     <?php if ($est_payant): ?>
                                         <span
-                                            style="font-size: 0.76rem; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 999px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                            style="font-size: 0.76rem; background: #FFF2ED; color: #000000; padding: 2px 8px; border-radius: 999px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                                             <i class="fa-solid fa-coins"></i> Vote payant :
                                             <?php echo number_format((float) $ev['prix_vote'], 0, ',', ' '); ?> F / choix
                                         </span>
                                     <?php else: ?>
                                         <span
-                                            style="font-size: 0.76rem; background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 999px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                            style="font-size: 0.76rem; background: #FFF2ED; color: #000000; padding: 2px 8px; border-radius: 999px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                                             <i class="fa-solid fa-gift"></i> Vote gratuit
                                         </span>
                                     <?php endif; ?>
 
                                     <?php if (!empty($ev_candidats)): ?>
                                         <span
-                                            style="font-size: 0.76rem; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 999px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                            style="font-size: 0.76rem; background: #FFF2ED; color: #FF4A0D; padding: 2px 8px; border-radius: 999px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                                             <i class="fa-solid fa-users"></i> <?php echo count($ev_candidats); ?> candidat(s) au choix
                                         </span>
                                     <?php endif; ?>
@@ -1277,7 +2036,7 @@ try {
                                     style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.85rem; display: flex; flex-direction: column; gap: 0.3rem;">
                                     <span><i class="fa-solid fa-tag" style="color: var(--primary);"></i>
                                         <?php echo htmlspecialchars($ev['categorie']); ?></span>
-                                    <span><i class="fa-solid fa-location-dot" style="color: #ef4444;"></i>
+                                    <span><i class="fa-solid fa-location-dot" style="color: #000000;"></i>
                                         <?php echo htmlspecialchars($ev['lieu']); ?></span>
                                 </div>
 
@@ -1308,7 +2067,7 @@ try {
                                 <?php if (!empty($ev_candidats)): ?>
                                     <!-- Aperçu des candidats en lice avec photos et descriptions -->
                                     <div
-                                        style="background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.9rem;">
+                                        style="background: #F5F5F5; border: 1px solid var(--line); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.9rem;">
                                         <small
                                             style="color: var(--navy); font-weight: 700; text-transform: uppercase; font-size: 0.72rem; display: block; margin-bottom: 0.5rem;">
                                             <i class="fa-solid fa-user-group" style="color: var(--primary);"></i> Candidats en lice
@@ -1337,7 +2096,7 @@ try {
                                                             <?php echo htmlspecialchars($cand['nom']); ?>
                                                         </span>
                                                     </div>
-                                                    <span style="font-size: 0.75rem; color: #f59e0b; font-weight: 700;">
+                                                    <span style="font-size: 0.75rem; color: #FF4A0D; font-weight: 700;">
                                                         <i class="fa-solid fa-star"></i> <?php echo (int) $cand['nb_votes_cand']; ?>
                                                     </span>
                                                 </div>
@@ -1356,7 +2115,7 @@ try {
                                 <div
                                     style="margin-top: auto; border-top: 1px solid var(--line-light); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
                                     <span class="vote-counter" style="color: var(--navy); font-weight: 800; font-size: 1rem;">
-                                        <i class="fa-solid fa-star" style="color: #f59e0b;"></i>
+                                        <i class="fa-solid fa-star" style="color: #FF4A0D;"></i>
                                         <?php echo (int) $ev['nb_votes']; ?>
                                         vote<?php echo ((int) $ev['nb_votes'] > 1) ? 's' : ''; ?>
                                     </span>
@@ -1398,9 +2157,6 @@ try {
 
         <!-- 1. Hero Banner moderne -->
         <section class="hero-banner">
-            <div class="hero-badge">
-                <i class="fa-solid fa-bolt"></i> Billetterie Officielle 100% Sécurisée
-            </div>
             <h1>Vivez des Événements Inoubliables</h1>
             <p>Réservez vos places de concert, festival et spectacle en quelques secondes par Mobile Money.</p>
 
@@ -1435,9 +2191,8 @@ try {
                     </select>
                 </div>
 
-                <button type="submit" class="btn-submit"
-                    style="width: auto; margin: 0; padding: 0.75rem 1.75rem; border-radius: 8px;">
-                    Rechercher
+                <button type="submit" class="btn-submit-hero">
+                    <i class="fa-solid fa-magnifying-glass"></i> Rechercher
                 </button>
             </form>
         </section>
@@ -1600,13 +2355,13 @@ try {
                                                             style="color: var(--primary); font-size: 0.68rem;"></i>
                                                         <?php echo htmlspecialchars($tk['nom']); ?>
                                                     </span>
-                                                    <span style="color: <?php echo $epuise ? '#b91c1c' : 'var(--primary-dark)'; ?>;">
+                                                    <span style="color: <?php echo $epuise ? '#000000' : 'var(--primary-dark)'; ?>;">
                                                         <?php echo $epuise ? 'Épuisé' : $restant . ' restant(s)'; ?>
                                                     </span>
                                                 </div>
-                                                <div style="height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                                                <div style="height: 6px; background: #E5E5E5; border-radius: 999px; overflow: hidden;">
                                                     <div
-                                                        style="height: 100%; width: <?php echo $pct_vendu; ?>%; background: <?php echo $epuise ? '#ef4444' : 'linear-gradient(90deg, var(--primary), var(--primary-light))'; ?>; border-radius: 999px; transition: width 0.4s ease;">
+                                                        style="height: 100%; width: <?php echo $pct_vendu; ?>%; background: <?php echo $epuise ? '#000000' : 'linear-gradient(90deg, var(--primary), var(--primary-light))'; ?>; border-radius: 999px; transition: width 0.4s ease;">
                                                     </div>
                                                 </div>
                                             </div>
@@ -1616,7 +2371,7 @@ try {
 
                                 <div
                                     style="font-size: 0.88rem; color: var(--ink); margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
-                                    <i class="fa-solid fa-location-dot" style="color: #ef4444;"></i>
+                                    <i class="fa-solid fa-location-dot" style="color: #000000;"></i>
                                     <span style="font-weight: 600;"><?php echo htmlspecialchars($event['lieu']); ?></span>
                                 </div>
 
@@ -1624,16 +2379,17 @@ try {
                                     style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line-light); padding-top: 1rem;">
                                     <div>
                                         <small
-                                            style="color: var(--muted); display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">À
+                                            style="color: var(--muted); display: block; font-family: 'Space Mono', monospace; font-size: 0.68rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">À
                                             partir de</small>
-                                        <strong
-                                            style="color: var(--primary); font-size: 1.15rem;"><?php echo number_format($prix_min, 0, ',', ' '); ?>
-                                            FCFA</strong>
+                                        <strong class="swiss-numeral"
+                                            style="color: var(--navy); font-size: 1.25rem;"><?php echo number_format($prix_min, 0, ',', ' '); ?>
+                                            <span
+                                                style="font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: 700; color: var(--muted);">FCFA</span></strong>
                                     </div>
 
                                     <?php if ($event['statut'] === 'termine'): ?>
                                         <span
-                                            style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 0.55rem 1rem; border-radius: 6px; font-weight: 800; font-size: 0.82rem; text-transform: uppercase;">
+                                            style="background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5; padding: 0.55rem 1rem; border-radius: 6px; font-weight: 800; font-size: 0.82rem; text-transform: uppercase;">
                                             <i class="fa-solid fa-flag-checkered"></i> Terminé
                                         </span>
                                     <?php else: ?>
@@ -1677,6 +2433,45 @@ try {
             <?php endif; ?>
         </section>
     <?php endif; ?>
+
+    <!-- =========================================================================
+         SECTION PROMOTIONNELLE : DEVENIR PROMOTEUR OFFICIEL EVENTIA
+         ========================================================================= -->
+    <section class="band" style="margin-top: 3.5rem; margin-bottom: 2rem;">
+        <div
+            style="background: linear-gradient(135deg, #000000 0%, #000000 100%); border-radius: var(--radius-xl, 12px); padding: clamp(2rem, 5vw, 3.25rem) clamp(1.5rem, 4vw, 3rem); color: #ffffff; position: relative; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: var(--shadow-lg);">
+            <div
+                style="position: absolute; top: -30px; right: -30px; width: 220px; height: 220px; background: rgba(217, 119, 6, 0.14); border-radius: 50%; pointer-events: none; filter: blur(40px);">
+            </div>
+
+            <div style="max-width: 780px; position: relative; z-index: 1;">
+                <span class="page-kicker"
+                    style="color: var(--accent, #FF4A0D); margin-bottom: 0.5rem; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-bullhorn"></i> Espace Organisateurs & Producteurs
+                </span>
+                <h2
+                    style="color: #ffffff; font-size: clamp(1.6rem, 3.5vw, 2.3rem); font-weight: 900; margin: 0.25rem 0 0.85rem; letter-spacing: -0.03em; line-height: 1.2;">
+                    Vous organisez des événements ? Devenez Promoteur Officiel sur Eventia.
+                </h2>
+                <p style="color: #E5E5E5; font-size: 1rem; line-height: 1.6; margin-bottom: 1.75rem; max-width: 680px;">
+                    Que vous soyez une personne physique (organisateur indépendant) ou une personne morale (agence,
+                    société ou association), créez et vendez vos billets, configurez vos plans de salle interactifs et
+                    encaissez vos recettes en toute transparence par Mobile Money.
+                </p>
+
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                    <a href="devenir-promoteur.php" class="btn-submit"
+                        style="width: auto; margin: 0; padding: 0.85rem 1.75rem; font-size: 0.95rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-paper-plane"></i> Déposer mon Dossier d'Éligibilité
+                    </a>
+                    <span style="color: #737373; font-size: 0.85rem; font-weight: 600;">
+                        <i class="fa-solid fa-shield-check" style="color: #FF4A0D;"></i> Examen & Activation officielle
+                        par l'administration sous 24h
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
 </main>
 
 <!-- =========================================================================
@@ -1690,21 +2485,25 @@ try {
         </button>
 
         <span class="page-kicker"><i class="fa-solid fa-bolt"></i> Billetterie Multi-Tarifs</span>
-        <h2 id="clientModalTitle" style="margin: 0.2rem 0 0.4rem; font-size: 1.4rem;">Sélectionnez vos Billets</h2>
+        <h2 id="clientModalTitle" style="margin: 0.2rem 0 0.4rem; font-size: 1.4rem; overflow-wrap: break-word;">
+            Sélectionnez vos Billets</h2>
         <p class="client-modal-event-name" id="clientModalEventName"
-            style="font-weight: 700; color: var(--primary); font-size: 1.05rem; margin-bottom: 0.4rem;"></p>
+            style="font-weight: 700; color: var(--primary); font-size: 1.05rem; margin-bottom: 0.4rem; overflow-wrap: break-word;">
+        </p>
 
         <!-- Description complète -->
         <p id="clientModalDesc"
-            style="color: var(--muted); font-size: 0.88rem; line-height: 1.55; margin-bottom: 1rem; display: none;"></p>
+            style="color: var(--muted); font-size: 0.88rem; line-height: 1.55; margin-bottom: 1rem; display: none; overflow-wrap: break-word;">
+        </p>
 
         <div
-            style="background: #f8fafc; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--muted); display: grid; gap: 0.35rem;">
+            style="background: #F5F5F5; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: var(--muted); display: grid; gap: 0.35rem;">
             <div><i class="fa-regular fa-calendar" style="color: var(--primary);"></i> Date : <strong
                     id="clientModalDate" style="color: var(--navy);"></strong> à <strong id="clientModalTime"
                     style="color: var(--navy);"></strong></div>
-            <div><i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> Salle / Lieu : <strong
-                    id="clientModalPlace" style="color: var(--navy);"></strong></div>
+            <div style="overflow-wrap: break-word;"><i class="fa-solid fa-location-dot" style="color: #000000;"></i>
+                Salle / Lieu : <strong id="clientModalPlace"
+                    style="color: var(--navy); overflow-wrap: break-word;"></strong></div>
             <div><i class="fa-solid fa-chair" style="color: var(--primary);"></i> Places disponibles : <strong
                     id="clientModalCapacity" style="color: var(--navy);"></strong></div>
         </div>
@@ -1730,13 +2529,13 @@ try {
                 <input type="hidden" name="client_email"
                     value="<?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?>">
                 <div
-                    style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.65rem;">
+                    style="background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.65rem;">
                     <div
-                        style="width: 32px; height: 32px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: grid; place-items: center; flex-shrink: 0;">
+                        style="width: 32px; height: 32px; border-radius: 50%; background: #FFF2ED; color: #FF4A0D; display: grid; place-items: center; flex-shrink: 0;">
                         <i class="fa-solid fa-user-check"></i>
                     </div>
                     <div>
-                        <span style="color: #166534; font-weight: bold; display: block;">Compte connecté :
+                        <span style="color: #000000; font-weight: bold; display: block;">Compte connecté :
                             <?php echo htmlspecialchars($_SESSION['user_nom'] ?? 'Client'); ?></span>
                         <small style="color: var(--muted);"><?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?> ·
                             Vos billets seront directement liés à votre compte</small>
@@ -1745,7 +2544,7 @@ try {
             <?php else: ?>
                 <!-- Formulaire demandé UNIQUEMENT pour les visiteurs non connectés -->
                 <div
-                    style="background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+                    style="background: #F5F5F5; border: 1px solid var(--line); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
                     <div style="font-weight: 700; color: var(--navy); font-size: 0.85rem; margin-bottom: 0.75rem;">
                         <i class="fa-solid fa-address-card" style="color: var(--primary);"></i> Coordonnées de réception des
                         billets
@@ -1777,12 +2576,12 @@ try {
                 style="background: var(--navy); color: #ffffff; padding: 1rem 1.25rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
                 <div>
                     <span
-                        style="font-weight: 600; font-size: 0.82rem; color: #94a3b8; display: block; text-transform: uppercase;">Total
+                        style="font-weight: 600; font-size: 0.82rem; color: #737373; display: block; text-transform: uppercase;">Total
                         Commande</span>
-                    <small id="clientModalTicketsCount" style="color: #38bdf8; font-weight: bold;">0 place(s)
+                    <small id="clientModalTicketsCount" style="color: #FF4A0D; font-weight: bold;">0 place(s)
                         sélectionnée(s)</small>
                 </div>
-                <strong id="clientModalTotal" style="color: #38bdf8; font-size: 1.4rem;">0 FCFA</strong>
+                <strong id="clientModalTotal" style="color: #FF4A0D; font-size: 1.4rem;">0 FCFA</strong>
             </div>
 
             <div style="display: flex; gap: 0.75rem;">
@@ -1808,15 +2607,16 @@ try {
             <i class="fa-solid fa-xmark"></i>
         </button>
 
-        <h2 id="cotisationModalTitle" style="margin: 0.2rem 0 0.4rem; font-size: 1.4rem;">Je contribue</h2>
+        <h2 id="cotisationModalTitle" style="margin: 0.2rem 0 0.4rem; font-size: 1.4rem; overflow-wrap: break-word;">Je
+            contribue</h2>
         <p id="cotisationModalCampagneName"
-            style="font-weight: 700; color: var(--primary); font-size: 0.95rem; margin: 0 0 0.75rem;">
+            style="font-weight: 700; color: var(--primary); font-size: 0.95rem; margin: 0 0 0.75rem; overflow-wrap: break-word;">
             Contribution générale
         </p>
 
         <!-- Motivation complète du créateur de la campagne -->
         <p id="cotisationModalMotivation"
-            style="display: none; color: var(--muted); font-size: 0.88rem; line-height: 1.55; background: var(--primary-soft, #f0fdfa); border-left: 3px solid var(--primary); border-radius: 6px; padding: 0.75rem 0.9rem; margin: 0 0 1rem;">
+            style="display: none; color: var(--muted); font-size: 0.88rem; line-height: 1.55; background: var(--primary-soft, #FFF2ED); border-left: 3px solid var(--primary); border-radius: 6px; padding: 0.75rem 0.9rem; margin: 0 0 1rem; overflow-wrap: break-word;">
         </p>
 
         <form method="POST" action="cotisation.php">
@@ -1832,7 +2632,7 @@ try {
                     value="<?php echo htmlspecialchars($user_telephone, ENT_QUOTES, 'UTF-8'); ?>">
 
                 <div
-                    style="background: #f0fdfa; border: 1px solid var(--line); border-left: 3px solid var(--primary); border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--ink);">
+                    style="background: #FFF2ED; border: 1px solid var(--line); border-left: 3px solid var(--primary); border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--ink);">
                     <i class="fa-solid fa-circle-user" style="color: var(--primary);"></i>
                     Contribution au nom de <strong><?php echo htmlspecialchars($_SESSION['user_nom'] ?? ''); ?></strong>
                     <span style="color: var(--muted);">·
@@ -1890,15 +2690,16 @@ try {
             <i class="fa-solid fa-xmark"></i>
         </button>
 
-        <h2 id="voteModalTitle" style="margin: 0.2rem 0 0.3rem; font-size: 1.4rem;">
+        <h2 id="voteModalTitle" style="margin: 0.2rem 0 0.3rem; font-size: 1.4rem; overflow-wrap: break-word;">
             <i class="fa-solid fa-up-long" style="color: var(--primary);"></i> Vote
         </h2>
         <p id="voteModalEventName"
-            style="font-weight: 700; color: var(--primary); font-size: 0.98rem; margin: 0 0 0.6rem;"></p>
+            style="font-weight: 700; color: var(--primary); font-size: 0.98rem; margin: 0 0 0.6rem; overflow-wrap: break-word;">
+        </p>
 
         <!-- L'opérateur Mobile Money et le numéro sont demandés sur la page de paiement (comme pour les événements) -->
         <div
-            style="color: var(--navy); font-size: 0.88rem; margin: 0 0 1rem; background: var(--primary-soft, #f0fdfa); border-left: 3px solid var(--primary); border-radius: 6px; padding: 0.75rem 0.9rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            style="color: var(--navy); font-size: 0.88rem; margin: 0 0 1rem; background: var(--primary-soft, #FFF2ED); border-left: 3px solid var(--primary); border-radius: 6px; padding: 0.75rem 0.9rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <div>
                 <i class="fa-solid fa-circle-info" style="color: var(--primary); margin-right: 4px;"></i>
                 Tarif du vote : <strong id="voteModalPrix" style="color: var(--navy); font-size: 0.98rem;"></strong> /
@@ -1931,15 +2732,15 @@ try {
 
             <!-- Total calculé en direct -->
             <div id="voteModalTotalBox"
-                style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: #ffffff; padding: 0.9rem 1.2rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+                style="background: linear-gradient(135deg, #000000 0%, #000000 100%); color: #ffffff; padding: 0.9rem 1.2rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
                 <div>
                     <span
-                        style="font-weight: 600; font-size: 0.78rem; color: #94a3b8; display: block; text-transform: uppercase;">Total
+                        style="font-weight: 600; font-size: 0.78rem; color: #737373; display: block; text-transform: uppercase;">Total
                         du vote</span>
-                    <small id="voteModalTotalDetail" style="color: #38bdf8; font-weight: bold;">1 vote
+                    <small id="voteModalTotalDetail" style="color: #FF4A0D; font-weight: bold;">1 vote
                         sélectionné</small>
                 </div>
-                <strong id="voteModalTotalAmount" style="color: #38bdf8; font-size: 1.35rem;">0 FCFA</strong>
+                <strong id="voteModalTotalAmount" style="color: #FF4A0D; font-size: 1.35rem;">0 FCFA</strong>
             </div>
 
             <!-- L'opérateur Mobile Money sera choisi sur la page de paiement sécurisée (comme pour l'achat de billets) -->
@@ -2008,7 +2809,7 @@ try {
         options.forEach(function (ticket, index) {
             const stock = Math.max(0, Number(ticket.quantite) - Number(ticket.quantite_vendue || 0));
             const isSoldOut = (stock <= 0);
-            const fraisPlace = Number(ticket.frais_place) || 0;
+            const fraisPlace = Number(ticket.frais_place) > 0 ? Number(ticket.frais_place) : 1000;
             const placesLibres = Array.isArray(ticket.places) ? ticket.places : [];
 
             const row = document.createElement('div');
@@ -2016,9 +2817,9 @@ try {
             row.innerHTML = `
                 <div class="ticket-tier-info">
                     <strong>${ticket.nom}</strong>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 2px;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem 0.65rem; flex-wrap: wrap; margin-top: 3px;">
                         <span style="color: var(--primary); font-weight: 800; font-size: 0.95rem;">${Number(ticket.prix).toLocaleString('fr-FR')} FCFA</span>
-                        <small style="color: ${isSoldOut ? 'var(--danger)' : '#16a34a'}; font-weight: 600;">
+                        <small style="color: ${isSoldOut ? 'var(--danger)' : '#FF4A0D'}; font-weight: 600;">
                             ${isSoldOut ? '• Épuisé' : `• ${stock} restante(s)`}
                         </small>
                     </div>
@@ -2033,27 +2834,45 @@ try {
                     <button type="button" class="ticket-qty-btn" onclick="changeQty(${ticket.id}, 1)" ${isSoldOut ? 'disabled' : ''}>+</button>
                 </div>
 
-                ${fraisPlace > 0 && placesLibres.length > 0 && !isSoldOut ? `
+                ${!isSoldOut ? `
                 <div class="seat-choice-block" id="seat_block_${ticket.id}">
                     <label class="seat-choice-label">
                         <input type="checkbox" id="seat_toggle_${ticket.id}" onchange="toggleSeatMap(${ticket.id})">
                         <span>
-                            <i class="fa-solid fa-chair" style="color: var(--primary);"></i>
-                            <strong>Oui, je veux choisir ma place</strong> sur le plan
-                            <strong>(+${Number(fraisPlace).toLocaleString('fr-FR')} FCFA / place)</strong><br>
-                            <small>Non cochée : votre place sera attribuée automatiquement, sans supplément.</small>
+                            <i class="fa-solid fa-masks-theater" style="color: var(--primary);"></i>
+                            <strong>Oui, je veux choisir ma place sur la Vue de Scène</strong>
+                            <span style="display: inline-block; background: #FFF2ED; color: #FF4A0D; border: 1px solid #E5E5E5; padding: 1px 7px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; margin-left: 4px;">
+                                +${Number(fraisPlace).toLocaleString('fr-FR')} FCFA / place
+                            </span><br>
+                            <small style="color: var(--muted); font-size: 0.74rem;">
+                                Option payante : choisissez votre angle et votre siège face au podium (+${Number(fraisPlace).toLocaleString('fr-FR')} FCFA). Sans cette option, la place est attribuée automatiquement sans supplément.
+                            </small>
                         </span>
                     </label>
-                    <div class="seat-map" id="seat_map_${ticket.id}" hidden>
-                        ${placesLibres.map(p => {
-                const libre = (p.statut === 'libre');
-                const numero = String(p.numero).replace(/'/g, "\\'");
-                return libre
-                    ? `<div class="seat" data-seat-id="${p.id}" onclick="toggleSeat(${ticket.id}, ${p.id}, '${numero}')" title="Place ${p.numero} — disponible">${p.numero}</div>`
-                    : `<div class="seat taken" title="Place ${p.numero} — déjà réservée">${p.numero}</div>`;
-            }).join('')}
+
+                    <!-- VUE DE SCÈNE INTERACTIVE (Remplace les places numérotées) -->
+                    <div class="scene-view-card" id="scene_view_${ticket.id}" hidden>
+                        <div class="scene-stage-banner">
+                            <div class="scene-stage-podium">
+                                <i class="fa-solid fa-masks-theater"></i> ★ SCÈNE PRINCIPALE / PODIUM ★
+                            </div>
+                            <div style="font-size: 0.68rem; color: #737373; margin-top: 3px;">
+                                <i class="fa-solid fa-arrow-up"></i> Orientation face à la scène
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-scene-interactive" onclick="openClient3DSeating(${ticket.id})">
+                            <i class="fa-solid fa-cube" style="color: #FF4A0D;"></i>
+                            <span>Ouvrir la Vue de Scène (Rendu Immersif)</span>
+                            <span class="scene-tag-badge">Vue Scène</span>
+                        </button>
+
+                        <div class="scene-selected-summary" id="scene_summary_${ticket.id}">
+                            <div style="color: #737373; font-size: 0.75rem; text-align: center; font-style: italic;">
+                                Cliquez sur le bouton ci-dessus pour sélectionner vos places directement face à la scène.
+                            </div>
+                        </div>
                     </div>
-                    <small class="seat-hint" id="seat_hint_${ticket.id}" style="display: none;"></small>
                 </div>` : ''}
             `;
             tiersContainer.appendChild(row);
@@ -2077,26 +2896,27 @@ try {
         updateMultiTicketTotal();
     }
 
-    /* ===== Plan de choix de place ===== */
+    /* ===== Vue de Scène & Choix de place ===== */
     function toggleSeatMap(ticketId) {
-        const map = document.getElementById('seat_map_' + ticketId);
-        const toggleBtn = document.getElementById('seat_toggle_' + ticketId);
+        const sceneView = document.getElementById('scene_view_' + ticketId);
+        const toggleCb = document.getElementById('seat_toggle_' + ticketId);
         const qtyInput = document.getElementById('qty_input_' + ticketId);
-        if (!map || !toggleBtn) return;
+        if (!sceneView || !toggleCb) return;
 
-        const opening = map.hidden;
-        map.hidden = !opening;
-        toggleBtn.classList.toggle('active', opening);
+        const opening = toggleCb.checked;
+        sceneView.hidden = !opening;
 
         if (opening) {
-            // Mode "place au choix" : la quantité est pilotée par les places cliquées
+            // Mode "place au choix sur la vue de scène"
             if (qtyInput) {
                 qtyInput.dataset.seatMode = '1';
                 qtyInput.disabled = true;
-                qtyInput.value = 0;
+                if (Number(qtyInput.value) <= 0) qtyInput.value = 1;
             }
+            // Ouvre directement la vue de scène immersive
+            openClient3DSeating(ticketId);
         } else {
-            // Fermeture du plan : on efface la sélection
+            // Fermeture de la vue de scène : on efface la sélection pour ce tarif
             clearSeatSelection(ticketId);
             if (qtyInput) {
                 qtyInput.dataset.seatMode = '0';
@@ -2108,38 +2928,14 @@ try {
         updateMultiTicketTotal();
     }
 
-    function toggleSeat(ticketId, seatId, numero) {
-        const qtyInput = document.getElementById('qty_input_' + ticketId);
-        const maxSeats = qtyInput ? (Number(qtyInput.max) || 10) : 10;
-        selectedSeats[ticketId] = selectedSeats[ticketId] || [];
-
-        const idx = selectedSeats[ticketId].findIndex(s => s.id === seatId);
-        const seatEl = document.querySelector('.seat[data-seat-id="' + seatId + '"]');
-
-        if (idx >= 0) {
-            selectedSeats[ticketId].splice(idx, 1);
-            if (seatEl) seatEl.classList.remove('selected');
-        } else {
-            if (selectedSeats[ticketId].length >= maxSeats) return; // limite atteinte
-            selectedSeats[ticketId].push({ id: seatId, numero: numero });
-            if (seatEl) seatEl.classList.add('selected');
-        }
-        syncTierSeats(ticketId);
-        updateMultiTicketTotal();
-    }
-
     function clearSeatSelection(ticketId) {
-        (selectedSeats[ticketId] || []).forEach(function (s) {
-            const el = document.querySelector('.seat[data-seat-id="' + s.id + '"]');
-            if (el) el.classList.remove('selected');
-        });
         selectedSeats[ticketId] = [];
     }
 
     function syncTierSeats(ticketId) {
         const seats = selectedSeats[ticketId] || [];
         const qtyInput = document.getElementById('qty_input_' + ticketId);
-        const hint = document.getElementById('seat_hint_' + ticketId);
+        const summary = document.getElementById('scene_summary_' + ticketId);
         const container = document.getElementById('seat-hidden-inputs');
 
         // Champs cachés envoyés au serveur (places[ticketId][] = id)
@@ -2158,12 +2954,29 @@ try {
         if (qtyInput && qtyInput.dataset.seatMode === '1') {
             qtyInput.value = seats.length;
         }
-        if (hint) {
+        if (summary) {
             if (seats.length > 0) {
-                hint.innerHTML = '<strong>' + seats.length + '</strong> place(s) sélectionnée(s) : ' + seats.map(s => s.numero).join(', ');
-                hint.style.display = 'block';
+                summary.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 800; color: #FF4A0D; font-size: 0.8rem;">
+                            <i class="fa-solid fa-masks-theater"></i> ${seats.length} place(s) Vue Scène :
+                        </span>
+                        <button type="button" onclick="openClient3DSeating(${ticketId})" style="background: none; border: none; color: #FF4A0D; font-size: 0.74rem; text-decoration: underline; cursor: pointer; padding: 0;">
+                            Modifier sur la scène
+                        </button>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        ${seats.map(s => `<span style="background: #000000; border: 1px solid #000000; color: #F5F5F5; font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; font-weight: 700;"><i class="fa-solid fa-chair" style="color: #FF4A0D; font-size: 0.65rem;"></i> Place ${s.numero}</span>`).join('')}
+                    </div>
+                `;
+                summary.style.display = 'block';
             } else {
-                hint.style.display = 'none';
+                summary.innerHTML = `
+                    <div style="color: #737373; font-size: 0.75rem; text-align: center; font-style: italic;">
+                        Cliquez ci-dessus pour sélectionner vos places directement sur la vue de scène.
+                    </div>
+                `;
+                summary.style.display = 'block';
             }
         }
     }
@@ -2187,7 +3000,7 @@ try {
             if (!qtyInput || qtyInput.dataset.seatMode !== '1') return;
             const seats = selectedSeats[ticketId] || [];
             const prix = Number(qtyInput.dataset.prix) || 0;
-            const frais = Number(qtyInput.dataset.fraisPlace) || 0;
+            const frais = Number(qtyInput.dataset.fraisPlace) > 0 ? Number(qtyInput.dataset.fraisPlace) : 1000;
             totalCount += seats.length;
             totalPrice += seats.length * (prix + frais);
         });
@@ -2240,7 +3053,7 @@ try {
             if (card) {
                 const counter = card.querySelector('.vote-counter');
                 if (counter) {
-                    counter.innerHTML = '<i class="fa-solid fa-star" style="color:#f59e0b;"></i> '
+                    counter.innerHTML = '<i class="fa-solid fa-star" style="color:#FF4A0D;"></i> '
                         + data.votes + (data.votes > 1 ? ' votes' : ' vote');
                 }
             }
@@ -2506,6 +3319,498 @@ try {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !clientEventModal.hidden) closeEventModal();
     });
-</script>
 
-<?php include 'footer.php'; ?>
+    /* ==============================================================================
+       RENDU 3D CLIENT & SÉLECTION DE PLACES SELON LE TARIF
+       ============================================================================== */
+    let client3DEngine = null;
+    let currentEvent3DData = null;
+
+    async function openClient3DSeating(targetTicketId = null) {
+        const eventId = document.getElementById('clientModalEventId').value;
+        const eventName = document.getElementById('clientModalEventName').textContent;
+        const eventPlace = document.getElementById('clientModalPlace').textContent;
+
+        if (!eventId) return;
+
+        document.getElementById('client3DEventTitle').textContent = eventName;
+        document.getElementById('client3DVenueSubtitle').textContent = 'Lieu : ' + eventPlace + ' • Orientation interactive & choix de places';
+        
+        const modal3D = document.getElementById('client3DSeatingModal');
+        modal3D.hidden = false;
+        document.body.classList.add('modal-open');
+
+        const canvas = document.getElementById('client3DCanvas');
+        if (!client3DEngine) {
+            client3DEngine = new EventiaVenue3D(canvas, {
+                readOnly: false,
+                maxSeats: 10,
+                onSeatSelect: (seat, all) => {
+                    updateClient3DSidebar(all);
+                },
+                onSeatDeselect: (seat, all) => {
+                    updateClient3DSidebar(all);
+                },
+                onHoverSeat: (seat) => {
+                    if (seat) {
+                        const sightBox = document.getElementById('client3DSightlineBox');
+                        const sightDesc = document.getElementById('client3DSightlineDesc');
+                        if (sightBox && sightDesc) {
+                            sightBox.style.display = 'block';
+                            const p = Number(seat.prix) || 0;
+                            const f = Number(seat.frais_place) > 0 ? Number(seat.frais_place) : 1000;
+                            sightDesc.innerHTML = `<strong>Place ${seat.code}</strong> (${seat.zone_name})<br>
+                            Distance estimée : <strong>${Math.max(6, Math.round(seat.z / 10))} m</strong><br>
+                            <span style="color: #FF4A0D; font-weight: 700;">Billet : ${p.toLocaleString('fr-FR')} F + Choix place : ${f.toLocaleString('fr-FR')} F = ${(p + f).toLocaleString('fr-FR')} FCFA</span>`;
+                        }
+                    }
+                }
+            });
+        }
+
+        // Chargement des données 3D pour cet événement
+        const data = await client3DEngine.loadFromEndpoint('../ajax/salle_3d_data.php?event_id=' + eventId);
+            if (data) {
+                currentEvent3DData = data;
+
+                // Remplissage du Plan Architectural
+                const planContainer = document.getElementById('clientPlanContent');
+                if (planContainer) {
+                    if (data.salle && data.salle.plan_image) {
+                        planContainer.innerHTML = `
+                            <div style="max-width: 800px; margin: 0 auto;">
+                                <div style="color: #FF4A0D; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.75rem; text-transform: uppercase;">
+                                    <i class="fa-solid fa-map-location-dot"></i> Plan Architectural / Schéma de la salle
+                                </div>
+                                <img src="../uploads/salles/${data.salle.plan_image}" alt="Plan de la salle" style="max-width: 100%; max-height: 60vh; border-radius: 12px; border: 1px solid #000000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain;">
+                            </div>
+                        `;
+                    } else {
+                        planContainer.innerHTML = `
+                            <div style="color: #737373; padding: 3rem 1rem;">
+                                <i class="fa-solid fa-map" style="font-size: 3rem; color: #000000; margin-bottom: 1rem; display: block;"></i>
+                                <h4 style="color: #F5F5F5; margin-bottom: 0.5rem;">Plan Architectural schématique</h4>
+                                <p style="font-size: 0.85rem; max-width: 450px; margin: 0 auto 1rem;">La disposition des rangées et des zones est directement générée et navigable dans l'onglet <strong>Rendu 3D</strong>.</p>
+                                <button type="button" class="btn-submit" onclick="switchClient3DTab('3d')" style="display: inline-block; width: auto; padding: 0.6rem 1.2rem; background: #FF4A0D; font-size: 0.85rem;">
+                                    <i class="fa-solid fa-cube"></i> Ouvrir le Rendu 3D
+                                </button>
+                            </div>
+                        `;
+                    }
+                }
+
+                // Remplissage de la Galerie Photos Réelles
+                const photosContainer = document.getElementById('clientPhotosGrid');
+                if (photosContainer) {
+                    photosContainer.innerHTML = '';
+                    let photosList = [];
+                    if (data.salle && data.salle.image_principale) {
+                        photosList.push({ src: data.salle.image_principale, title: 'Façade / Vue Principale' });
+                    }
+                    if (data.salle && Array.isArray(data.salle.galerie_photos)) {
+                        data.salle.galerie_photos.forEach((ph, idx) => {
+                            photosList.push({ src: ph, title: `Vue de Salle #${idx + 1}` });
+                        });
+                    }
+
+                    if (photosList.length > 0) {
+                        photosList.forEach(item => {
+                            const card = document.createElement('div');
+                            card.style.cssText = 'background: #000000; border: 1px solid #000000; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.3);';
+                            card.innerHTML = `
+                                <img src="../uploads/salles/${item.src}" alt="${item.title}" style="width: 100%; height: 160px; object-fit: cover; display: block;">
+                                <div style="padding: 0.6rem 0.8rem; font-size: 0.78rem; font-weight: 700; color: #F5F5F5;">
+                                    <i class="fa-solid fa-camera" style="color: #FF4A0D; margin-right: 4px;"></i> ${item.title}
+                                </div>
+                            `;
+                            photosContainer.appendChild(card);
+                        });
+                    } else {
+                        photosContainer.innerHTML = `
+                            <div style="grid-column: 1 / -1; text-align: center; color: #737373; padding: 3rem 1rem;">
+                                <i class="fa-solid fa-images" style="font-size: 3rem; color: #000000; margin-bottom: 1rem; display: block;"></i>
+                                <h4 style="color: #F5F5F5; margin-bottom: 0.5rem;">Visualisation interactive disponible en 3D</h4>
+                                <p style="font-size: 0.85rem; max-width: 450px; margin: 0 auto;">Les angles de vue réels sont simulés en temps réel avec le moteur 3D d'Eventia.</p>
+                            </div>
+                        `;
+                    }
+                }
+
+                // Barre de boutons de filtrage par Tarif
+                const tariffBar = document.getElementById('client3DTariffBar');
+                tariffBar.innerHTML = '<button type="button" class="studio-filter-btn active" onclick="filterClient3D(this, \'all\')">Tous les Tarifs</button>';
+
+                if (data.ticket_types && data.ticket_types.length > 0) {
+                    let targetBtn = null;
+                    data.ticket_types.forEach(tt => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'studio-filter-btn';
+                        btn.dataset.tierId = tt.id;
+                        btn.innerHTML = `<span style="font-weight: 800;">${tt.nom}</span> · <span style="color: #FF4A0D;">${Number(tt.prix).toLocaleString('fr-FR')} F</span>`;
+                        btn.onclick = () => filterClient3D(btn, tt.id);
+                        tariffBar.appendChild(btn);
+                        if (targetTicketId && Number(tt.id) === Number(targetTicketId)) {
+                            targetBtn = btn;
+                        }
+                    });
+                    if (targetBtn) {
+                        filterClient3D(targetBtn, targetTicketId);
+                    }
+                } else if (data.zones) {
+                    data.zones.forEach(z => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'studio-filter-btn';
+                        btn.innerHTML = `<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ${z.couleur || '#FF4A0D'}; margin-right: 4px;"></span> ${z.nom_zone} (${Number(z.tarif_indicatif || 10000).toLocaleString('fr-FR')} F)`;
+                        btn.onclick = () => filterClient3D(btn, z.id);
+                        tariffBar.appendChild(btn);
+                    });
+                }
+
+                updateClient3DSidebar([]);
+                switchClient3DTab('3d');
+                setTimeout(() => {
+                    if (client3DEngine) {
+                        client3DEngine.resize();
+                        client3DEngine.render();
+                    }
+                }, 80);
+            }
+        }
+
+        function switchClient3DTab(tab) {
+            const p3D = document.getElementById('panelClient3D');
+            const pPlan = document.getElementById('panelClientPlan');
+            const pPhotos = document.getElementById('panelClientPhotos');
+            const camCtrls = document.getElementById('client3DCameraControls');
+
+            document.querySelectorAll('#client3DSeatingModal .studio-tab-btn').forEach(b => b.classList.remove('active'));
+
+            if (tab === '3d') {
+                if (p3D) p3D.style.display = 'flex';
+                if (pPlan) pPlan.style.display = 'none';
+                if (pPhotos) pPhotos.style.display = 'none';
+                if (camCtrls) camCtrls.style.display = 'flex';
+                const btn = document.getElementById('tabBtnClient3D');
+                if (btn) btn.classList.add('active');
+                if (client3DEngine) {
+                    client3DEngine.resize();
+                    client3DEngine.render();
+                }
+            } else if (tab === 'plan') {
+                if (p3D) p3D.style.display = 'none';
+                if (pPlan) pPlan.style.display = 'block';
+                if (pPhotos) pPhotos.style.display = 'none';
+                if (camCtrls) camCtrls.style.display = 'none';
+                const btn = document.getElementById('tabBtnClientPlan');
+                if (btn) btn.classList.add('active');
+            } else if (tab === 'photos') {
+                if (p3D) p3D.style.display = 'none';
+                if (pPlan) pPlan.style.display = 'none';
+                if (pPhotos) pPhotos.style.display = 'block';
+                if (camCtrls) camCtrls.style.display = 'none';
+                const btn = document.getElementById('tabBtnClientPhotos');
+                if (btn) btn.classList.add('active');
+            }
+        }
+
+        function filterClient3D(btn, filterId) {
+            document.querySelectorAll('#client3DTariffBar .studio-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (client3DEngine) {
+                client3DEngine.filterByTariff(filterId);
+            }
+        }
+
+        function setClient3DView(view) {
+            if (client3DEngine) {
+                client3DEngine.setViewPreset(view);
+            }
+        }
+
+        function updateClient3DSidebar(seats) {
+            const listEl = document.getElementById('client3DSelectedList');
+            const badgeEl = document.getElementById('client3DSeatsBadge');
+            const subCountEl = document.getElementById('client3DSubCount');
+            const totalEl = document.getElementById('client3DTotalAmount');
+
+            if (!listEl) return;
+
+            badgeEl.textContent = seats.length + (seats.length > 1 ? ' places' : ' place');
+            subCountEl.textContent = seats.length + (seats.length > 1 ? ' places choisies' : ' place choisie');
+
+            let total = 0;
+            seats.forEach(s => {
+                const p = Number(s.prix) || 0;
+                const f = Number(s.frais_place) > 0 ? Number(s.frais_place) : 1000;
+                total += (p + f);
+            });
+            totalEl.textContent = total.toLocaleString('fr-FR') + ' FCFA';
+
+            if (seats.length === 0) {
+                listEl.innerHTML = '<div style="color: #737373; font-size: 0.8rem; font-style: italic; text-align: center; padding: 1.5rem 0;">Cliquez sur les sièges disponibles dans la vue 3D pour les ajouter à votre sélection.</div>';
+                return;
+            }
+
+            listEl.innerHTML = '';
+            seats.forEach(s => {
+                const p = Number(s.prix) || 0;
+                const f = Number(s.frais_place) > 0 ? Number(s.frais_place) : 1000;
+                const item = document.createElement('div');
+                item.style.cssText = 'background: #000000; border: 1px solid #000000; border-radius: 8px; padding: 0.55rem 0.75rem; display: flex; justify-content: space-between; align-items: center;';
+                item.innerHTML = `
+                    <div>
+                        <strong style="color: #F5F5F5; font-size: 0.82rem;"><i class="fa-solid fa-chair" style="color: #FF4A0D;"></i> Place ${s.code}</strong>
+                        <div style="font-size: 0.72rem; color: #737373;">${s.zone_name} • Rang ${s.row}</div>
+                        <div style="font-size: 0.68rem; color: #FF4A0D; font-weight: 700;">Choix de place : +${f.toLocaleString('fr-FR')} F</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: #FF4A0D; font-weight: 800; font-size: 0.85rem;">${(p + f).toLocaleString('fr-FR')} F</div>
+                        <button type="button" onclick="removeClient3DSeat(${s.id})" style="background: none; border: none; color: #000000; font-size: 0.72rem; cursor: pointer; padding: 0;">Retirer</button>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function removeClient3DSeat(seatId) {
+            if (client3DEngine) {
+                const seat = client3DEngine.seats.find(s => s.id === seatId);
+                if (seat) {
+                    client3DEngine.toggleSeatSelection(seat);
+                }
+            }
+        }
+
+        function applyClient3DSelection() {
+            if (!client3DEngine) return;
+            const chosenSeats = Array.from(client3DEngine.selectedSeats.values());
+
+            if (chosenSeats.length === 0) {
+                alert('Veuillez sélectionner au moins un siège 3D sur le plan.');
+                return;
+            }
+
+            // Grouper les places par type de billet (ticket_type_id)
+            const seatsByTier = {};
+            chosenSeats.forEach(s => {
+                const tId = s.ticket_type_id;
+                seatsByTier[tId] = seatsByTier[tId] || [];
+                seatsByTier[tId].push(s);
+            });
+
+            // Appliquer dans le formulaire de commande principal
+            Object.keys(seatsByTier).forEach(tId => {
+                const seats = seatsByTier[tId];
+                const qtyInput = document.getElementById('qty_input_' + tId);
+                const toggleCb = document.getElementById('seat_toggle_' + tId);
+                const sceneView = document.getElementById('scene_view_' + tId);
+
+                if (toggleCb) toggleCb.checked = true;
+                if (sceneView) sceneView.hidden = false;
+
+                if (qtyInput) {
+                    qtyInput.dataset.seatMode = '1';
+                    qtyInput.disabled = true;
+                    qtyInput.value = seats.length;
+                }
+
+                // Enregistrer dans selectedSeats
+                selectedSeats[tId] = seats.map(s => ({ id: s.id, numero: s.code }));
+                syncTierSeats(tId);
+            });
+
+            updateMultiTicketTotal();
+            closeClient3DSeating();
+        }
+
+        function closeClient3DSeating() {
+            const modal3D = document.getElementById('client3DSeatingModal');
+            if (modal3D) modal3D.hidden = true;
+            document.body.classList.remove('modal-open');
+        }
+
+        function toggleMobileSeatList() {
+            const sidebar = document.getElementById('client3DSidebar');
+            const text = document.getElementById('s3dToggleText');
+            const icon = document.getElementById('s3dToggleIcon');
+            if (!sidebar) return;
+            sidebar.classList.toggle('is-collapsed');
+            const isCollapsed = sidebar.classList.contains('is-collapsed');
+            if (text) text.textContent = isCollapsed ? 'Voir détails' : 'Masquer';
+            if (icon) icon.className = isCollapsed ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+            if (client3DEngine) {
+                setTimeout(() => {
+                    client3DEngine.resize();
+                    client3DEngine.render();
+                }, 50);
+            }
+        }
+
+        // Réactivité immédiate au redimensionnement d'écran & rotation mobile
+        window.addEventListener('resize', () => {
+            const modal3D = document.getElementById('client3DSeatingModal');
+            if (client3DEngine && modal3D && !modal3D.hidden) {
+                client3DEngine.resize();
+                client3DEngine.render();
+            }
+        });
+        window.addEventListener('orientationchange', () => {
+            const modal3D = document.getElementById('client3DSeatingModal');
+            if (client3DEngine && modal3D && !modal3D.hidden) {
+                setTimeout(() => {
+                    client3DEngine.resize();
+                    client3DEngine.render();
+                }, 150);
+            }
+        });
+    </script>
+
+    <!-- ============================================================
+         MODALE DE CHOIX DE PLACE IMMERSIF EN 3D (RESPONSIVE)
+         ============================================================ -->
+    <div id="client3DSeatingModal" class="client-modal s3d-modal-overlay" role="dialog" aria-modal="true" hidden>
+        <div class="s3d-modal-window">
+            
+            <!-- Header 3D Client -->
+            <div class="s3d-header">
+                <div class="s3d-header-main">
+                    <div class="s3d-header-title-row">
+                        <span class="s3d-badge-3d">
+                            <i class="fa-solid fa-cube"></i> Plan & 3D
+                        </span>
+                        <h3 id="client3DEventTitle" class="s3d-event-title"></h3>
+                    </div>
+                    <div class="s3d-venue-subtitle" id="client3DVenueSubtitle">
+                        Cliquez sur vos sièges pour réserver selon votre tarif · Vue dynamique vers la scène
+                    </div>
+                </div>
+
+                <!-- Onglets & Contrôles Caméras -->
+                <div class="s3d-header-controls">
+                    <!-- Onglets de Visualisation (3D / Plan 2D / Photos) -->
+                    <div class="s3d-tabs">
+                        <button type="button" id="tabBtnClient3D" class="studio-tab-btn active" onclick="switchClient3DTab('3d')">
+                            <i class="fa-solid fa-cube"></i> <span>Rendu 3D</span>
+                        </button>
+                        <button type="button" id="tabBtnClientPlan" class="studio-tab-btn" onclick="switchClient3DTab('plan')">
+                            <i class="fa-solid fa-map"></i> <span>Plan</span>
+                        </button>
+                        <button type="button" id="tabBtnClientPhotos" class="studio-tab-btn" onclick="switchClient3DTab('photos')">
+                            <i class="fa-solid fa-images"></i> <span>Photos</span>
+                        </button>
+                    </div>
+
+                    <!-- Caméras & Commandes -->
+                    <div class="s3d-cameras-group">
+                        <div id="client3DCameraControls" class="s3d-cameras">
+                            <button type="button" class="s3d-cam-btn" onclick="setClient3DView('isometric')" title="Vue 3D Isométrique">
+                                <i class="fa-solid fa-cubes"></i> <span>3D</span>
+                            </button>
+                            <button type="button" class="s3d-cam-btn" onclick="setClient3DView('top')" title="Vue du Haut">
+                                <i class="fa-solid fa-eye"></i> <span>Haut</span>
+                            </button>
+                            <button type="button" class="s3d-cam-btn" onclick="setClient3DView('stage')" title="Vue Scène">
+                                <i class="fa-solid fa-masks-theater"></i> <span>Scène</span>
+                            </button>
+                            <button type="button" class="s3d-cam-btn s3d-cam-reset" onclick="setClient3DView('reset')" title="Recentrer la vue">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                            </button>
+                        </div>
+                        <button type="button" class="s3d-close-btn" onclick="closeClient3DSeating()" title="Fermer la vue de scène">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Corps : Canvas 3D + Sidebar Panier 3D -->
+            <div class="s3d-body">
+                
+                <!-- Zone Canvas 3D -->
+                <div id="panelClient3D" class="s3d-canvas-panel">
+                    <canvas id="client3DCanvas"></canvas>
+
+                    <!-- Barre de Filtrage par Tarif / Catégorie -->
+                    <div id="client3DTariffBar" class="s3d-tariff-bar">
+                        <!-- Rempli en JS avec les boutons de tarifs -->
+                    </div>
+
+                    <!-- Indication d'interaction tactile mobile -->
+                    <div class="s3d-touch-hint">
+                        <i class="fa-solid fa-hand-pointer"></i> Touchez un siège · Glissez pour pivoter · Pincez pour zoomer
+                    </div>
+
+                    <!-- Légende Flottante -->
+                    <div class="s3d-legend">
+                        <span class="s3d-legend-item"><span class="s3d-dot dot-libre"></span> Libre</span>
+                        <span class="s3d-legend-item"><span class="s3d-dot dot-selected"></span> Choisi</span>
+                        <span class="s3d-legend-item"><span class="s3d-dot dot-occupe"></span> Occupé</span>
+                    </div>
+                </div>
+
+                <!-- Panel 2 : Plan Architectural (Blueprint) -->
+                <div id="panelClientPlan" class="s3d-plan-panel">
+                    <div id="clientPlanContent"></div>
+                </div>
+
+                <!-- Panel 3 : Galerie Photos & Vues Réelles -->
+                <div id="panelClientPhotos" class="s3d-photos-panel">
+                    <div id="clientPhotosGrid" class="s3d-photos-grid"></div>
+                </div>
+
+                <!-- Barre latérale / Drawer Inférieur : Sélection & Validation -->
+                <div class="s3d-sidebar" id="client3DSidebar">
+                    <div class="s3d-sidebar-header">
+                        <div class="s3d-sidebar-title">
+                            <span><i class="fa-solid fa-chair" style="color: #FF4A0D;"></i> Mes Places 3D</span>
+                            <span id="client3DSeatsBadge" class="s3d-seats-badge">0 place</span>
+                        </div>
+                        <button type="button" class="s3d-mobile-toggle-btn" onclick="toggleMobileSeatList()" id="s3dMobileToggleBtn">
+                            <span id="s3dToggleText">Voir détails</span> <i class="fa-solid fa-chevron-up" id="s3dToggleIcon"></i>
+                        </button>
+                    </div>
+
+                    <div class="s3d-sidebar-content" id="client3DSidebarContent">
+                        <!-- Liste des places sélectionnées en 3D -->
+                        <div id="client3DSelectedList" class="s3d-selected-list">
+                            <div class="s3d-empty-msg">
+                                Cliquez sur les sièges disponibles dans la vue 3D pour les ajouter à votre sélection.
+                            </div>
+                        </div>
+
+                        <!-- Vue simulée / Distance Scène -->
+                        <div id="client3DSightlineBox" class="s3d-sightline-box" style="display: none;">
+                            <div class="s3d-sightline-title">
+                                <i class="fa-solid fa-eye"></i> Visibilité Scène
+                            </div>
+                            <div id="client3DSightlineDesc" class="s3d-sightline-desc"></div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Total & Bouton de validation -->
+                    <div class="s3d-sidebar-footer">
+                        <div class="s3d-total-card">
+                            <div>
+                                <span class="s3d-total-label">Total 3D</span>
+                                <small id="client3DSubCount" class="s3d-sub-count">0 place choisie</small>
+                            </div>
+                            <strong id="client3DTotalAmount" class="s3d-total-amount">0 FCFA</strong>
+                        </div>
+
+                        <button type="button" onclick="applyClient3DSelection()" class="btn-submit s3d-btn-validate">
+                            <i class="fa-solid fa-check-circle"></i> Valider mes Places 3D
+                        </button>
+                        <button type="button" onclick="closeClient3DSeating()" class="s3d-btn-cancel">
+                            Retour sans modifier
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/venue-3d-engine.js"></script>
+
+    <?php include 'footer.php'; ?>

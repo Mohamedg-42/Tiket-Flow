@@ -12,8 +12,8 @@ $msg_type = "";
 
 // Traitement de l'action de l'administrateur
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
-    $request_id = (int)$_POST['request_id'];
-    $action     = $_POST['action_type'];
+    $request_id = (int) $_POST['request_id'];
+    $action = $_POST['action_type'];
 
     // On récupère la demande
     $stmt = $pdo->prepare("SELECT * FROM event_requests WHERE id = ?");
@@ -22,8 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
 
     if ($req && $req['statut'] === 'en_attente') {
         if ($action === 'approve') {
-            $commission_rate = (float)($_POST['commission_rate'] ?? 5.00);
-            if ($commission_rate < 0) $commission_rate = 5.00;
+            $commission_rate = (float) ($_POST['commission_rate'] ?? 5.00);
+            if ($commission_rate < 0)
+                $commission_rate = 5.00;
 
             try {
                 $pdo->beginTransaction();
@@ -41,13 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                     $req['date_evenement'],
                     $req['heure'],
                     $req['lieu'],
-                    (float)($req['prix_vote'] ?? 0),
+                    (float) ($req['prix_vote'] ?? 0),
                     $req['type_vote'] ?? 'concours',
                     $req['vote_question'] ?? null,
                     $commission_rate
                 ]);
 
-                $new_event_id = (int)$pdo->lastInsertId();
+                $new_event_id = (int) $pdo->lastInsertId();
 
                 // 2. Création automatique des types de tickets dans 'ticket_types'
                 $ticket_types = json_decode($req['ticket_types_data'] ?? '[]', true);
@@ -59,12 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                         $stmt_tt->execute([
                             $new_event_id,
                             $tt['nom'],
-                            (float)$tt['prix'],
-                            (float)($tt['frais_place'] ?? 0),
-                            (int)$tt['quantite']
+                            (float) $tt['prix'],
+                            (float) ($tt['frais_place'] ?? 0),
+                            (int) $tt['quantite']
                         ]);
                         // Génération automatique des places pour ce tarif
-                        generer_places_type($pdo, (int)$pdo->lastInsertId(), (int)$tt['quantite']);
+                        generer_places_type($pdo, (int) $pdo->lastInsertId(), (int) $tt['quantite']);
                     }
                 }
 
@@ -132,11 +133,17 @@ if ($tab !== 'tous') {
 $requests = $stmt->fetchAll();
 ?>
 
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
     <div class="page-heading">
         <span class="page-kicker">Contrôle & Validation Légale</span>
         <h1>Demandes de Création d'Événements</h1>
-        <p>Vérifiez le statut juridique du déclarant (personne physique ou morale), examinez ses justificatifs et fixez la commission.</p>
+        <p>Vérifiez le statut juridique du déclarant (personne physique ou morale), examinez ses justificatifs et fixez
+            la commission.</p>
+    </div>
+    <div>
+        <a href="export.php?type=demandes&tab=evenements" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les demandes d'événements sur Excel (CSV)">
+            <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
+        </a>
     </div>
 </div>
 
@@ -148,17 +155,22 @@ $requests = $stmt->fetchAll();
 <?php endif; ?>
 
 <!-- Onglets -->
-<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--line); padding-bottom: 0.5rem;">
-    <a href="?tab=en_attente" class="btn-submit" style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'en_attente') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
+<div
+    style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--line); padding-bottom: 0.5rem;">
+    <a href="?tab=en_attente" class="btn-submit"
+        style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'en_attente') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
         <i class="fa-solid fa-clock"></i> En Attente
     </a>
-    <a href="?tab=approuve" class="btn-submit" style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'approuve') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
+    <a href="?tab=approuve" class="btn-submit"
+        style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'approuve') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
         <i class="fa-solid fa-check"></i> Approuvées
     </a>
-    <a href="?tab=refuse" class="btn-submit" style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'refuse') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
+    <a href="?tab=refuse" class="btn-submit"
+        style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'refuse') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
         <i class="fa-solid fa-xmark"></i> Refusées
     </a>
-    <a href="?tab=tous" class="btn-submit" style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'tous') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
+    <a href="?tab=tous" class="btn-submit"
+        style="width: auto; padding: 0.5rem 1rem; text-decoration: none; font-size: 0.9rem; <?php echo ($tab === 'tous') ? '' : 'background: transparent; color: var(--ink); border: 1px solid var(--line);'; ?>">
         Toutes les demandes
     </a>
 </div>
@@ -170,27 +182,36 @@ $requests = $stmt->fetchAll();
     <?php if (count($requests) > 0): ?>
         <div style="display: flex; flex-direction: column; gap: 1.75rem;">
             <?php foreach ($requests as $r): ?>
-                <?php 
-                $tickets = json_decode($r['ticket_types_data'] ?? '[]', true); 
+                <?php
+                $tickets = json_decode($r['ticket_types_data'] ?? '[]', true);
                 $is_morale = ($r['type_personne'] === 'morale');
                 ?>
-                <div style="background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                    
+                <div
+                    style="background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 1.75rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+
                     <!-- En-tête de la carte -->
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                         <div>
-                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
-                                <span style="font-size: 0.82rem; text-transform: uppercase; color: var(--primary); font-weight: bold;">
-                                    <i class="fa-solid fa-user-tie"></i> Promoteur : <?php echo htmlspecialchars($r['promoteur_nom']); ?> (<?php echo htmlspecialchars($r['promoteur_email']); ?> - <?php echo htmlspecialchars($r['promoteur_tel']); ?>)
+                            <div
+                                style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+                                <span
+                                    style="font-size: 0.82rem; text-transform: uppercase; color: var(--primary); font-weight: bold;">
+                                    <i class="fa-solid fa-user-tie"></i> Promoteur :
+                                    <?php echo htmlspecialchars($r['promoteur_nom']); ?>
+                                    (<?php echo htmlspecialchars($r['promoteur_email']); ?> -
+                                    <?php echo htmlspecialchars($r['promoteur_tel']); ?>)
                                 </span>
 
                                 <!-- Badge Personne Physique / Morale -->
                                 <?php if ($is_morale): ?>
-                                    <span style="background: #e0e7ff; color: #3730a3; padding: 3px 10px; border-radius: 12px; font-weight: bold; font-size: 0.78rem;">
+                                    <span
+                                        style="background: #FFF2ED; color: #000000; padding: 3px 10px; border-radius: 12px; font-weight: bold; font-size: 0.78rem;">
                                         <i class="fa-solid fa-building"></i> Personne Morale (Entreprise / Ass.)
                                     </span>
                                 <?php else: ?>
-                                    <span style="background: #f1f5f9; color: #334155; padding: 3px 10px; border-radius: 12px; font-weight: bold; font-size: 0.78rem;">
+                                    <span
+                                        style="background: #F5F5F5; color: #000000; padding: 3px 10px; border-radius: 12px; font-weight: bold; font-size: 0.78rem;">
                                         <i class="fa-solid fa-user"></i> Personne Physique (Particulier)
                                     </span>
                                 <?php endif; ?>
@@ -201,23 +222,29 @@ $requests = $stmt->fetchAll();
                             </h2>
 
                             <div style="color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem;">
-                                <span><i class="fa-solid fa-tag"></i> <?php echo htmlspecialchars($r['categorie']); ?></span> · 
-                                <span><i class="fa-regular fa-calendar"></i> <?php echo date('d/m/Y', strtotime($r['date_evenement'])); ?> à <?php echo substr($r['heure'], 0, 5); ?></span> · 
-                                <span><i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($r['lieu']); ?></span>
+                                <span><i class="fa-solid fa-tag"></i> <?php echo htmlspecialchars($r['categorie']); ?></span> ·
+                                <span><i class="fa-regular fa-calendar"></i>
+                                    <?php echo date('d/m/Y', strtotime($r['date_evenement'])); ?> à
+                                    <?php echo substr($r['heure'], 0, 5); ?></span> ·
+                                <span><i class="fa-solid fa-location-dot"></i>
+                                    <?php echo htmlspecialchars($r['lieu']); ?></span>
                             </div>
                         </div>
 
                         <div>
                             <?php if ($r['statut'] === 'approuve'): ?>
-                                <span style="background: #dcfce7; color: #166534; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;">
+                                <span
+                                    style="background: #FFF2ED; color: #000000; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;">
                                     <i class="fa-solid fa-check"></i> Publié
                                 </span>
                             <?php elseif ($r['statut'] === 'refuse'): ?>
-                                <span style="background: #fee2e2; color: #991b1b; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;">
+                                <span
+                                    style="background: #F5F5F5; color: #000000; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;">
                                     <i class="fa-solid fa-xmark"></i> Refusé
                                 </span>
                             <?php else: ?>
-                                <span style="background: #fef3c7; color: #92400e; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;">
+                                <span
+                                    style="background: #FFF2ED; color: #000000; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;">
                                     <i class="fa-solid fa-clock"></i> En attente de validation
                                 </span>
                             <?php endif; ?>
@@ -225,14 +252,16 @@ $requests = $stmt->fetchAll();
                     </div>
 
                     <!-- Bloc d'informations légales de l'organisateur -->
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <div
+                        style="background: #F5F5F5; border: 1px solid #E5E5E5; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
                         <h4 style="margin: 0 0 0.5rem; color: var(--navy); font-size: 0.95rem;">
                             <i class="fa-solid fa-scale-balanced"></i> Statut & Pièces Justificatives Fournies :
                         </h4>
-                        
+
                         <?php if ($is_morale): ?>
                             <div style="margin-bottom: 0.6rem; font-size: 0.9rem;">
-                                <span>Structure : <strong><?php echo htmlspecialchars($r['nom_structure'] ?: 'Non précisé'); ?></strong></span>
+                                <span>Structure :
+                                    <strong><?php echo htmlspecialchars($r['nom_structure'] ?: 'Non précisé'); ?></strong></span>
                                 <?php if (!empty($r['numero_rccm'])): ?>
                                     · <span>N° RCCM / SIRET : <strong><?php echo htmlspecialchars($r['numero_rccm']); ?></strong></span>
                                 <?php endif; ?>
@@ -242,16 +271,22 @@ $requests = $stmt->fetchAll();
                         <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
                             <!-- Document Justificatif -->
                             <?php if (!empty($r['document_justificatif']) && file_exists('../uploads/event_docs/' . $r['document_justificatif'])): ?>
-                                <a href="../uploads/event_docs/<?php echo htmlspecialchars($r['document_justificatif']); ?>" target="_blank" class="btn-submit" style="width: auto; padding: 0.4rem 0.9rem; font-size: 0.82rem; text-decoration: none; background: #0284c7;">
-                                    <i class="fa-solid fa-file-pdf"></i> <?php echo $is_morale ? 'Voir RCCM / Statuts' : 'Voir Pièce d\'Identité'; ?>
+                                <a href="../uploads/event_docs/<?php echo htmlspecialchars($r['document_justificatif']); ?>"
+                                    target="_blank" class="btn-submit"
+                                    style="width: auto; padding: 0.4rem 0.9rem; font-size: 0.82rem; text-decoration: none; background: #FF4A0D;">
+                                    <i class="fa-solid fa-file-pdf"></i>
+                                    <?php echo $is_morale ? 'Voir RCCM / Statuts' : 'Voir Pièce d\'Identité'; ?>
                                 </a>
                             <?php else: ?>
-                                <span style="font-size: 0.82rem; color: var(--muted);"><i class="fa-solid fa-circle-exclamation"></i> Aucun justificatif téléversé</span>
+                                <span style="font-size: 0.82rem; color: var(--muted);"><i
+                                        class="fa-solid fa-circle-exclamation"></i> Aucun justificatif téléversé</span>
                             <?php endif; ?>
 
                             <!-- Document d'autorisation -->
                             <?php if (!empty($r['document_autorisation']) && file_exists('../uploads/event_docs/' . $r['document_autorisation'])): ?>
-                                <a href="../uploads/event_docs/<?php echo htmlspecialchars($r['document_autorisation']); ?>" target="_blank" class="btn-submit" style="width: auto; padding: 0.4rem 0.9rem; font-size: 0.82rem; text-decoration: none; background: #475569;">
+                                <a href="../uploads/event_docs/<?php echo htmlspecialchars($r['document_autorisation']); ?>"
+                                    target="_blank" class="btn-submit"
+                                    style="width: auto; padding: 0.4rem 0.9rem; font-size: 0.82rem; text-decoration: none; background: #737373;">
                                     <i class="fa-solid fa-file-lines"></i> Voir Autorisation / Contrat de salle
                                 </a>
                             <?php endif; ?>
@@ -259,7 +294,7 @@ $requests = $stmt->fetchAll();
                     </div>
 
                     <!-- Détails de l'événement et tarifs -->
-                    <div style="background: #f8faf9; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <div style="background: #F5F5F5; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
                         <strong style="font-size: 0.9rem; color: var(--navy);">Description :</strong>
                         <p style="margin: 0.4rem 0 0.8rem; font-size: 0.92rem; color: var(--ink); line-height: 1.5;">
                             <?php echo nl2br(htmlspecialchars($r['description'])); ?>
@@ -276,10 +311,14 @@ $requests = $stmt->fetchAll();
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
                             <?php if (!empty($tickets)): ?>
                                 <?php foreach ($tickets as $t): ?>
-                                    <div style="background: #ffffff; border: 1px solid var(--line); padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.88rem;">
-                                        <strong><?php echo htmlspecialchars($t['nom']); ?> :</strong> 
-                                        <span style="color: var(--primary); font-weight: bold;"><?php echo number_format($t['prix'], 0, ',', ' '); ?> FCFA</span>
-                                        <span style="color: var(--muted); font-size: 0.8rem;">(<?php echo $t['quantite']; ?> places)</span>
+                                    <div
+                                        style="background: #ffffff; border: 1px solid var(--line); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.88rem; white-space: nowrap;">
+                                        <strong><?php echo htmlspecialchars($t['nom']); ?> :</strong>
+                                        <span
+                                            style="color: #FF4A0D; font-weight: 800;"><?php echo number_format($t['prix'], 0, ',', ' '); ?>
+                                            FCFA</span>
+                                        <span style="color: var(--muted); font-size: 0.8rem;">(<?php echo $t['quantite']; ?>
+                                            places)</span>
                                     </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -288,30 +327,40 @@ $requests = $stmt->fetchAll();
 
                     <?php if ($r['statut'] === 'en_attente'): ?>
                         <!-- Formulaire de validation avec taux de commission ou refus -->
-                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; border-top: 1px solid var(--line); padding-top: 1rem;">
+                        <div
+                            style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; border-top: 1px solid var(--line); padding-top: 1rem;">
                             <form method="POST" style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
                                 <input type="hidden" name="request_id" value="<?php echo $r['id']; ?>">
                                 <input type="hidden" name="action_type" value="approve">
 
                                 <div>
-                                    <label style="font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 4px;">Taux de commission (%)</label>
-                                    <input type="number" step="0.5" name="commission_rate" value="5.0" min="0" max="50" style="width: 110px; padding: 0.6rem; border: 1px solid var(--line); border-radius: 6px;">
+                                    <label style="font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 4px;">Taux de
+                                        commission (%)</label>
+                                    <input type="number" step="0.5" name="commission_rate" value="5.0" min="0" max="50"
+                                        style="width: 110px; padding: 0.55rem 0.75rem; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.85rem;">
                                 </div>
 
-                                <button type="submit" class="btn-submit" style="width: auto; margin: 0; padding: 0.6rem 1.25rem; background: #10b981;" onclick="return confirm('Valider cet événement et le publier immédiatement sur le site ?')">
+                                <button type="submit" class="dash-btn-action btn-success"
+                                    style="padding: 0.55rem 1.25rem; font-size: 0.84rem; font-weight: 800;"
+                                    onclick="return confirm('Valider cet événement et le publier immédiatement sur le site ?')">
                                     <i class="fa-solid fa-check"></i> Valider & Publier l'Événement
                                 </button>
                             </form>
 
-                            <form method="POST" style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; margin-left: auto;">
+                            <form method="POST"
+                                style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; margin-left: auto;">
                                 <input type="hidden" name="request_id" value="<?php echo $r['id']; ?>">
                                 <input type="hidden" name="action_type" value="reject">
 
                                 <div>
-                                    <input type="text" name="commentaire_admin" placeholder="Motif du refus (ex: pièces non valides)..." style="padding: 0.6rem; border: 1px solid var(--line); border-radius: 6px; min-width: 260px;">
+                                    <input type="text" name="commentaire_admin"
+                                        placeholder="Motif du refus (ex: pièces non valides)..."
+                                        style="padding: 0.55rem 0.75rem; border: 1px solid var(--dash-border); border-radius: 8px; min-width: 260px; font-size: 0.85rem;">
                                 </div>
 
-                                <button type="submit" class="btn-submit" style="width: auto; margin: 0; padding: 0.6rem 1rem; background: #ef4444;" onclick="return confirm('Refuser cette proposition d\'événement ?')">
+                                <button type="submit" class="dash-btn-action btn-danger"
+                                    style="padding: 0.55rem 1rem; font-size: 0.84rem; font-weight: 800;"
+                                    onclick="return confirm('Refuser cette proposition d\'événement ?')">
                                     <i class="fa-solid fa-xmark"></i> Refuser
                                 </button>
                             </form>
@@ -322,7 +371,8 @@ $requests = $stmt->fetchAll();
         </div>
     <?php else: ?>
         <div style="text-align: center; color: var(--muted); padding: 3rem;">
-            <i class="fa-solid fa-calendar-xmark" style="font-size: 2.5rem; color: var(--line); margin-bottom: 1rem; display: block;"></i>
+            <i class="fa-solid fa-calendar-xmark"
+                style="font-size: 2.5rem; color: var(--line); margin-bottom: 1rem; display: block;"></i>
             Aucune demande d'événement dans cette section.
         </div>
     <?php endif; ?>

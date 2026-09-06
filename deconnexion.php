@@ -8,6 +8,13 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once 'config/database.php';
+require_once 'includes/auth.php';
+
+if (!empty($_SESSION['user_id'])) {
+    logActivity('deconnexion', 'user', (int)$_SESSION['user_id'], 'Déconnexion volontaire', (int)$_SESSION['user_id']);
+}
+
 // 1. On vide toutes les variables de session
 $_SESSION = [];
 

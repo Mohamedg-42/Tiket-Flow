@@ -7,18 +7,15 @@
 require_once '../config/database.php';
 session_start();
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: accueil.php');
-    exit();
-}
-
-$vote_paiement_id = filter_input(INPUT_POST, 'vote_paiement_id', FILTER_VALIDATE_INT);
-$methode          = $_POST['methode'] ?? '';
-$telephone        = trim($_POST['telephone'] ?? '');
-$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money'];
+// Feexpay JS SDK redirige via GET
+$vote_paiement_id = filter_input(INPUT_GET, 'vote_paiement_id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'vote_paiement_id', FILTER_VALIDATE_INT);
+$methode          = $_GET['methode'] ?? $_POST['methode'] ?? '';
+$telephone        = trim($_POST['telephone_paiement'] ?? '');
+$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'feexpay'];
 
 if (!$vote_paiement_id || !in_array($methode, $methodes_autorisees, true)) {
-    $_SESSION['vote_message'] = "Méthode de paiement non reconnue.";
+    $_SESSION['vote_message'] = "Paiement non validé ou méthode non reconnue.";
+    $_SESSION['vote_type']    = 'error';
     header('Location: accueil.php?onglet=voter');
     exit();
 }
@@ -99,13 +96,13 @@ include 'header.php';
 ?>
 <main class="client-main" style="max-width: 640px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2rem) clamp(0.75rem, 2vw, 1rem);">
     <div style="background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-xl);">
-        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: #ffffff; padding: 2.25rem 2rem; text-align: center;">
-            <div style="width: 60px; height: 60px; background: rgba(22, 163, 74, 0.25); border-radius: 50%; display: grid; place-items: center; font-size: 1.7rem; color: #4ade80; margin: 0 auto 1rem;">
+        <div style="background: linear-gradient(135deg, #000000 0%, #000000 100%); color: #ffffff; padding: 2.25rem 2rem; text-align: center;">
+            <div style="width: 60px; height: 60px; background: rgba(22, 163, 74, 0.25); border-radius: 50%; display: grid; place-items: center; font-size: 1.7rem; color: #FF4A0D; margin: 0 auto 1rem;">
                 <i class="fa-solid fa-circle-check"></i>
             </div>
             <h1 style="color: #ffffff; margin: 0 0 0.5rem; font-size: 1.7rem;">Vote Confirmé !</h1>
-            <p style="color: #94a3b8; font-size: 0.92rem; margin: 0;">
-                Votre vote pour <strong style="color: #e2e8f0;"><?php echo htmlspecialchars($vote_pay['event_nom']); ?></strong> a bien été comptabilisé.
+            <p style="color: #737373; font-size: 0.92rem; margin: 0;">
+                Votre vote pour <strong style="color: #E5E5E5;"><?php echo htmlspecialchars($vote_pay['event_nom']); ?></strong> a bien été comptabilisé.
             </p>
         </div>
 
@@ -113,7 +110,7 @@ include 'header.php';
             <?php if (!empty($candidats_confirmes)): ?>
                 <div style="margin-bottom: 1.5rem;">
                     <span style="color: var(--navy); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 0.75rem;">
-                        <i class="fa-solid fa-trophy" style="color: #f59e0b;"></i> Choix validé(s) pour cet événement :
+                        <i class="fa-solid fa-trophy" style="color: #FF4A0D;"></i> Choix validé(s) pour cet événement :
                     </span>
                     <div style="display: flex; flex-direction: column; gap: 0.65rem;">
                         <?php foreach ($candidats_confirmes as $cc): ?>
@@ -127,15 +124,15 @@ include 'header.php';
                                 }
                             }
                             ?>
-                            <div style="display: flex; align-items: center; gap: 0.9rem; padding: 0.7rem 1rem; border: 1px solid #bbf7d0; background: #f0fdf4; border-radius: 8px;">
-                                <img src="<?php echo $p_img; ?>" alt="<?php echo htmlspecialchars($cc['nom']); ?>" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #16a34a;">
+                            <div style="display: flex; align-items: center; gap: 0.9rem; padding: 0.7rem 1rem; border: 1px solid #FFF2ED; background: #FFF2ED; border-radius: 8px;">
+                                <img src="<?php echo $p_img; ?>" alt="<?php echo htmlspecialchars($cc['nom']); ?>" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #FF4A0D;">
                                 <div style="flex: 1;">
-                                    <strong style="color: #166534; font-size: 0.95rem; display: block;"><?php echo htmlspecialchars($cc['nom']); ?></strong>
+                                    <strong style="color: #000000; font-size: 0.95rem; display: block;"><?php echo htmlspecialchars($cc['nom']); ?></strong>
                                     <?php if (!empty($cc['description'])): ?>
                                         <small style="color: var(--muted); display: block; line-height: 1.3; font-size: 0.8rem;"><?php echo htmlspecialchars($cc['description']); ?></small>
                                     <?php endif; ?>
                                 </div>
-                                <span style="background: #16a34a; color: #ffffff; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;">
+                                <span style="background: #FF4A0D; color: #ffffff; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;">
                                     +1 Vote
                                 </span>
                             </div>
@@ -144,7 +141,7 @@ include 'header.php';
                 </div>
             <?php endif; ?>
 
-            <div style="background: #f8fafc; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+            <div style="background: #F5F5F5; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--line-light); font-size: 0.9rem;">
                     <span style="color: var(--muted);">Événement</span>
                     <strong style="color: var(--navy);"><?php echo htmlspecialchars($vote_pay['event_nom']); ?></strong>
@@ -159,9 +156,9 @@ include 'header.php';
                 </div>
             </div>
 
-            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: center;">
-                <small style="color: #166534; font-weight: 700; text-transform: uppercase; font-size: 0.72rem; display: block; margin-bottom: 4px;">Référence de transaction</small>
-                <strong style="font-family: monospace; font-size: 1.1rem; color: #166534; letter-spacing: 1px;"><?php echo htmlspecialchars($reference); ?></strong>
+            <div style="background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: center;">
+                <small style="color: #000000; font-weight: 700; text-transform: uppercase; font-size: 0.72rem; display: block; margin-bottom: 4px;">Référence de transaction</small>
+                <strong style="font-family: monospace; font-size: 1.1rem; color: #000000; letter-spacing: 1px;"><?php echo htmlspecialchars($reference); ?></strong>
                 <small style="color: var(--muted); display: block; margin-top: 4px; font-size: 0.75rem;">Conservez cette référence comme preuve de votre vote.</small>
             </div>
 

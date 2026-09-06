@@ -8,7 +8,7 @@
 //   2. Activez la validation en 2 étapes : https://myaccount.google.com/security
 //   3. Générez un "Mot de passe d'application" :
 //      https://myaccount.google.com/apppasswords
-//      → Sélectionnez "Autre (nom personnalisé)" → "TicketFlow" → Générer
+//      → Sélectionnez "Autre (nom personnalisé)" → "Eventia" → Générer
 //   4. Copiez le mot de passe de 16 caractères dans SMTP_PASS ci-dessous
 // ==============================================================================
 
@@ -23,4 +23,4 @@ define('SMTP_SECURE',    getenv('SMTP_SECURE')     ?: 'tls');  // Gmail utilise 
 
 // — Expéditeur affiché dans les emails reçus —
 define('SMTP_FROM',      getenv('SMTP_FROM')       ?: 'garbamohamed4220@gmail.com');
-define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME')  ?: 'Ticket Flow');
+define('SMTP_FROM_NAME', getenv('SMTP_FROM_NAME')  ?: 'Eventia');

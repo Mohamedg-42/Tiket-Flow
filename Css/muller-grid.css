@@ -1,0 +1,4 @@
+/* Grille modulaire désactivée */
+.guides, #gridToggleBtn, .grid-toggle-float {
+    display: none !important;
+}

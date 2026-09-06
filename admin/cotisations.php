@@ -133,28 +133,305 @@ try {
 }
 ?>
 
+<style>
+/* ==============================================================================
+   STYLES RESPONSIVE & SYSTÈME SUISSE - COTISATIONS & CAGNOTTES
+   ============================================================================== */
+.cotis-header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+.cotis-header-actions {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.cotis-tabs-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    background: #ffffff;
+    padding: 0.65rem 0.85rem;
+    border-radius: 12px;
+    border: 1px solid var(--eventia-border, #E5E5E5);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    flex-wrap: wrap;
+}
+.cotis-tabs-pills {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    max-width: 100%;
+}
+.cotis-tabs-pills::-webkit-scrollbar {
+    display: none;
+}
+.cotis-tab-link {
+    text-decoration: none;
+    border-radius: 9px;
+    padding: 0.45rem 0.95rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.cotis-kpis-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.cotis-desktop-table {
+    display: block;
+}
+.cotis-mobile-list {
+    display: none;
+}
+
+.cotis-contrib-desktop-table {
+    display: block;
+}
+.cotis-contrib-mobile-list {
+    display: none;
+}
+
+/* Breakpoints Responsives */
+@media (max-width: 960px) {
+    .cotis-kpis-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 860px) {
+    .cotis-header-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.85rem;
+    }
+    .cotis-header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    .cotis-header-actions a,
+    .cotis-header-actions button {
+        width: 100%;
+        justify-content: center;
+        box-sizing: border-box;
+        text-align: center;
+    }
+    .cotis-tabs-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    .cotis-tabs-pills {
+        width: 100%;
+    }
+
+    /* Masquer les tableaux débordants */
+    .cotis-desktop-table,
+    .cotis-contrib-desktop-table {
+        display: none !important;
+    }
+
+    /* Activer les cartes suisses mobiles */
+    .cotis-mobile-list,
+    .cotis-contrib-mobile-list {
+        display: flex !important;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+
+    /* Carte Campagne Mobile */
+    .cotis-mobile-card,
+    .contrib-mobile-card {
+        background: #ffffff;
+        border: 1px solid var(--dash-border, #E5E5E5);
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        box-sizing: border-box;
+    }
+    .cmc-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    .cmc-title-box {
+        flex: 1;
+        min-width: 0;
+    }
+    .cmc-title {
+        margin: 0 0 4px 0;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: var(--dash-text, #000000);
+        line-height: 1.3;
+        word-break: break-word;
+    }
+    .cmc-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.78rem;
+        color: var(--dash-muted, #737373);
+        flex-wrap: wrap;
+    }
+    .cmc-initiator {
+        font-weight: 700;
+        color: var(--dash-text, #000000);
+    }
+    .cmc-badge {
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 800;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .cmc-progress-box {
+        background: #F5F5F5;
+        border: 1px solid #F5F5F5;
+        border-radius: 10px;
+        padding: 0.75rem;
+    }
+    .cmc-amounts-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 6px;
+    }
+    .cmc-label {
+        display: block;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--dash-muted, #737373);
+    }
+    .cmc-val-col {
+        color: #FF4A0D;
+        font-size: 1rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+    }
+    .cmc-val-obj {
+        color: var(--dash-muted, #737373);
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .cmc-bar-wrapper {
+        background: #E5E5E5;
+        height: 6px;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-bottom: 6px;
+    }
+    .cmc-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #FF4A0D, #FF4A0D);
+        border-radius: 999px;
+    }
+    .cmc-progress-sub {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.76rem;
+        color: var(--dash-muted, #737373);
+    }
+    .cmc-actions-row {
+        display: flex;
+        gap: 6px;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--dash-border, #E5E5E5);
+    }
+    .cmc-btn {
+        flex: 1;
+        padding: 0.55rem 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        box-sizing: border-box;
+        transition: opacity 0.15s ease;
+    }
+    .cmc-btn:hover {
+        opacity: 0.85;
+    }
+    .cmc-btn-active {
+        background: #FFF2ED;
+        color: #000000;
+    }
+    .cmc-btn-finish {
+        background: #F5F5F5;
+        color: #737373;
+    }
+    .cmc-btn-cancel {
+        background: #F5F5F5;
+        color: #000000;
+    }
+}
+
+@media (max-width: 480px) {
+    .cotis-kpis-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.65rem !important;
+    }
+}
+</style>
+
 <div class="dash-container">
     <!-- ==============================================================================
          1. EN-TÊTE DASHBOARD PRO
          ============================================================================== -->
-    <div class="dash-header-section" style="margin-bottom: 1.25rem;">
+    <div class="cotis-header-section">
         <div class="dash-title-box">
             <h1>
-                <i class="fa-solid fa-hand-holding-heart" style="color: #ec4899; font-size: 1.55rem;"></i>
+                <i class="fa-solid fa-hand-holding-heart" style="color: #FF4A0D; font-size: 1.55rem;"></i>
                 Gestion des Cotisations & Cagnottes
             </h1>
             <p>Supervisez les collectes de fonds solidaires, validez les campagnes et suivez les dons reçus.</p>
         </div>
 
-        <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
-            <button type="button" onclick="document.getElementById('formNewCampagne').scrollIntoView({behavior: 'smooth'})" class="dash-btn-action btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+        <div class="cotis-header-actions">
+            <a href="export.php?type=cotisations&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les cotisations et donateurs sur Excel (CSV)">
+                <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
+            </a>
+            <button type="button" onclick="document.getElementById('formNewCampagne').scrollIntoView({behavior: 'smooth'})" class="eventia-btn-primary" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
                 <i class="fa-solid fa-plus"></i> Nouvelle Campagne Admin
             </button>
         </div>
     </div>
 
     <?php if (!empty($message)): ?>
-        <div style="background: <?php echo $msg_type === 'success' ? '#f0fdf4' : '#fef2f2'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#bbf7d0' : '#fecaca'; ?>; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; color: <?php echo $msg_type === 'success' ? '#166534' : '#991b1b'; ?>; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+        <div class="eventia-alert eventia-alert-<?php echo ($msg_type === 'success') ? 'success' : 'error'; ?>" style="margin-bottom: 1.25rem;">
             <i class="fa-solid <?php echo ($msg_type === 'success') ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>"></i>
             <span><?php echo htmlspecialchars($message); ?></span>
         </div>
@@ -163,35 +440,35 @@ try {
     <!-- ==============================================================================
          2. BARRE DE FILTRES EN HAUT (PILULES ACTIVES BIEN VISIBLES)
          ============================================================================== -->
-    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; background: #ffffff; padding: 0.65rem 0.85rem; border-radius: 12px; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); flex-wrap: wrap;">
+    <div class="cotis-tabs-bar">
         <!-- À GAUCHE : PILULES STATUT -->
-        <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
-            <a href="?statut=tous&q=<?php echo urlencode($search); ?>" style="text-decoration: none; border-radius: 9px; padding: 0.45rem 0.95rem; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; <?php echo $statut_f === 'tous' ? 'background: #0f172a; color: #ffffff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);' : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; ?>">
-                <i class="fa-solid fa-list" style="<?php echo $statut_f === 'tous' ? 'color: #2dd4bf;' : ''; ?>"></i> Toutes (<?php echo $tot_campagnes; ?>)
+        <div class="cotis-tabs-pills">
+            <a href="?statut=tous&q=<?php echo urlencode($search); ?>" class="cotis-tab-link" style="<?php echo $statut_f === 'tous' ? 'background: var(--tikeli-black, #000000); color: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);' : 'background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5;'; ?>">
+                <i class="fa-solid fa-list" style="<?php echo $statut_f === 'tous' ? 'color: var(--tikeli-orange, #FF4A0D);' : ''; ?>"></i> Toutes (<?php echo $tot_campagnes; ?>)
             </a>
 
-            <a href="?statut=active&q=<?php echo urlencode($search); ?>" style="text-decoration: none; border-radius: 9px; padding: 0.45rem 0.95rem; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; <?php echo $statut_f === 'active' ? 'background: #0f172a; color: #ffffff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);' : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; ?>">
-                <i class="fa-solid fa-bolt" style="color: #10b981;"></i> En cours (Actives)
+            <a href="?statut=active&q=<?php echo urlencode($search); ?>" class="cotis-tab-link" style="<?php echo $statut_f === 'active' ? 'background: var(--tikeli-black, #000000); color: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);' : 'background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5;'; ?>">
+                <i class="fa-solid fa-bolt" style="color: var(--tikeli-orange, #FF4A0D);"></i> En cours (Actives)
             </a>
 
-            <a href="?statut=terminee&q=<?php echo urlencode($search); ?>" style="text-decoration: none; border-radius: 9px; padding: 0.45rem 0.95rem; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; <?php echo $statut_f === 'terminee' ? 'background: #0f172a; color: #ffffff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);' : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; ?>">
-                <i class="fa-solid fa-flag-checkered" style="color: #64748b;"></i> Clôturées
+            <a href="?statut=terminee&q=<?php echo urlencode($search); ?>" class="cotis-tab-link" style="<?php echo $statut_f === 'terminee' ? 'background: var(--tikeli-black, #000000); color: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);' : 'background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5;'; ?>">
+                <i class="fa-solid fa-flag-checkered" style="color: #737373;"></i> Clôturées
             </a>
 
-            <a href="?statut=en_attente&q=<?php echo urlencode($search); ?>" style="text-decoration: none; border-radius: 9px; padding: 0.45rem 0.95rem; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; <?php echo $statut_f === 'en_attente' ? 'background: #0f172a; color: #ffffff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);' : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; ?>">
-                <i class="fa-solid fa-clock" style="color: #f59e0b;"></i> En attente
+            <a href="?statut=en_attente&q=<?php echo urlencode($search); ?>" class="cotis-tab-link" style="<?php echo $statut_f === 'en_attente' ? 'background: var(--tikeli-black, #000000); color: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);' : 'background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5;'; ?>">
+                <i class="fa-solid fa-clock" style="color: var(--tikeli-orange, #FF4A0D);"></i> En attente
             </a>
         </div>
 
         <!-- À DROITE : RECHERCHE -->
-        <form method="GET" action="cotisations.php" style="display: inline-flex; gap: 6px; align-items: center; margin: 0;">
+        <form method="GET" action="cotisations.php" style="display: inline-flex; gap: 6px; align-items: center; margin: 0; flex-wrap: wrap;">
             <input type="hidden" name="statut" value="<?php echo htmlspecialchars($statut_f); ?>">
-            <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Titre ou promoteur..." style="padding: 0.4rem 0.75rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.82rem; width: 170px; background: #ffffff;">
-            <button type="submit" class="dash-btn-action" style="padding: 0.4rem 0.85rem; font-size: 0.82rem; background: var(--dash-primary); color: #ffffff; border-radius: 8px;">
+            <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Titre ou promoteur..." style="padding: 0.4rem 0.75rem; border-radius: 8px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.82rem; width: 170px; background: #ffffff;">
+            <button type="submit" class="eventia-btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">
                 Filtrer
             </button>
             <?php if ($statut_f !== 'tous' || $search !== ''): ?>
-                <a href="cotisations.php" style="color: #ef4444; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
+                <a href="cotisations.php" style="color: var(--eventia-danger, #000000); font-size: 0.78rem; text-decoration: underline;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -199,41 +476,41 @@ try {
     <!-- ==============================================================================
          3. CARTES KPIS DE COTISATION (AU-DESSOUS DES FILTRES)
          ============================================================================== -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+    <div class="cotis-kpis-grid">
+        <div class="eventia-kpi-card" style="border-left: 4px solid var(--tikeli-orange, #FF4A0D);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #16a34a; text-transform: uppercase;">Total Collecté</span>
-                <span style="background: #dcfce7; color: #16a34a; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-coins"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--tikeli-orange, #FF4A0D); text-transform: uppercase;">Total Collecté</span>
+                <span style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D); width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-coins"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #16a34a;"><?php echo number_format($tot_collecte, 0, ',', ' '); ?> F</div>
-            <small style="color: #16a34a; font-size: 0.75rem;">Dons reçus via Mobile Money</small>
+            <div style="font-size: 1.75rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; color: var(--tikeli-orange, #FF4A0D);"><?php echo number_format($tot_collecte, 0, ',', ' '); ?> F</div>
+            <small style="color: var(--tikeli-orange, #FF4A0D); font-size: 0.75rem; font-weight: 600;">Dons reçus via Mobile Money</small>
         </div>
 
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7; text-transform: uppercase;">Objectifs Cumulés</span>
-                <span style="background: #e0f2fe; color: #0284c7; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-bullseye"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--eventia-muted, #737373); text-transform: uppercase;">Objectifs Cumulés</span>
+                <span style="background: #FFF2ED; color: #FF4A0D; width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-bullseye"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #0284c7;"><?php echo number_format($tot_objectif, 0, ',', ' '); ?> F</div>
-            <small style="color: #0284c7; font-size: 0.75rem;">Budget total recherché sur les campagnes</small>
+            <div style="font-size: 1.75rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; color: var(--eventia-navy, #000000);"><?php echo number_format($tot_objectif, 0, ',', ' '); ?> F</div>
+            <small style="color: var(--eventia-muted, #737373); font-size: 0.75rem;">Budget total recherché</small>
         </div>
 
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #ec4899; text-transform: uppercase;">Campagnes Publiées</span>
-                <span style="background: #fdf2f8; color: #ec4899; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-hand-holding-heart"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--eventia-muted, #737373); text-transform: uppercase;">Campagnes Publiées</span>
+                <span style="background: rgba(11, 29, 58, 0.08); color: var(--eventia-navy, #000000); width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-hand-holding-heart"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #ec4899;"><?php echo $tot_campagnes; ?></div>
-            <small style="color: #ec4899; font-size: 0.75rem;">Incluses dans l'espace Cotisations</small>
+            <div style="font-size: 1.75rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; color: var(--eventia-navy, #000000);"><?php echo $tot_campagnes; ?></div>
+            <small style="color: var(--eventia-muted, #737373); font-size: 0.75rem;">Incluses dans l'espace Cotisations</small>
         </div>
 
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: var(--dash-muted); text-transform: uppercase;">Donateurs Solidaires</span>
-                <span style="background: #f1f5f9; color: var(--dash-muted); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-users"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--eventia-muted, #737373); text-transform: uppercase;">Donateurs Solidaires</span>
+                <span style="background: rgba(11, 29, 58, 0.08); color: var(--eventia-navy, #000000); width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-users"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: var(--dash-text);"><?php echo $tot_donateurs; ?></div>
-            <small style="color: var(--dash-muted); font-size: 0.75rem;">Contributeurs distincts enregistrés</small>
+            <div style="font-size: 1.75rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; color: var(--eventia-navy, #000000);"><?php echo $tot_donateurs; ?></div>
+            <small style="color: var(--eventia-muted, #737373); font-size: 0.75rem;">Contributeurs distincts enregistrés</small>
         </div>
     </div>
 
@@ -249,12 +526,13 @@ try {
 
         <?php if (empty($campagnes)): ?>
             <div style="text-align: center; padding: 3rem 1rem; color: var(--dash-muted);">
-                <i class="fa-solid fa-hand-holding-heart" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+                <i class="fa-solid fa-hand-holding-heart" style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                 Aucune campagne de cotisation dans cette catégorie.
             </div>
         <?php else: ?>
-            <div style="overflow-x: auto;">
-                <table class="dash-table">
+            <!-- Vue Table Desktop (> 860px) -->
+            <div class="dash-table-wrapper cotis-desktop-table" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
+                <table class="dash-table" style="min-width: 900px; width: 100%;">
                     <thead>
                         <tr>
                             <th>Campagne</th>
@@ -273,7 +551,7 @@ try {
                             $pct = ($obj > 0) ? min(100, round(($col / $obj) * 100)) : 0;
                             ?>
                             <tr>
-                                <td>
+                                <td data-label="Campagne">
                                     <strong style="color: var(--dash-text); font-size: 0.9rem; display: block;">
                                         <?php echo htmlspecialchars($camp['titre']); ?>
                                     </strong>
@@ -281,54 +559,54 @@ try {
                                         <?php echo $camp['date_limite'] ? '<i class="fa-regular fa-calendar"></i> Jusqu\'au ' . date('d/m/Y', strtotime($camp['date_limite'])) : 'Durée illimitée'; ?>
                                     </small>
                                 </td>
-                                <td>
+                                <td data-label="Initiateur">
                                     <span style="font-weight: 700; color: var(--dash-text); font-size: 0.84rem;">
-                                        <?php echo $camp['promoteur_nom'] ? htmlspecialchars($camp['promoteur_nom']) : '<span style="color: #0d9488; font-weight: 700;">Plateforme (Admin)</span>'; ?>
+                                        <?php echo $camp['promoteur_nom'] ? htmlspecialchars($camp['promoteur_nom']) : '<span style="color: var(--eventia-turquoise-dark, #FF4A0D); font-weight: 700;">Plateforme (Admin)</span>'; ?>
                                     </span>
                                 </td>
-                                <td>
-                                    <strong style="color: #16a34a; font-size: 0.92rem;">
-                                        <?php echo number_format($col, 0, ',', ' '); ?> F
+                                <td data-label="Collecté" style="white-space: nowrap;">
+                                    <strong class="cell-amount" style="color: #FF4A0D; font-size: 0.92rem; font-weight: 800; white-space: nowrap;">
+                                        <?php echo str_replace(' ', '&nbsp;', number_format($col, 0, ',', ' ')); ?>&nbsp;F
                                     </strong>
-                                    <small style="color: var(--dash-muted); display: block; font-size: 0.74rem;">
-                                        sur <?php echo number_format($obj, 0, ',', ' '); ?> F
+                                    <small style="color: var(--dash-muted); display: block; font-size: 0.74rem; white-space: nowrap;">
+                                        sur <?php echo str_replace(' ', '&nbsp;', number_format($obj, 0, ',', ' ')); ?>&nbsp;F
                                     </small>
                                 </td>
-                                <td>
-                                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--dash-text);">
+                                <td data-label="Avancement" style="white-space: nowrap;">
+                                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--dash-text); white-space: nowrap;">
                                         <?php echo $pct; ?>% <small style="color: var(--dash-muted); font-weight: normal;">(<?php echo (int)$camp['nb_contributeurs']; ?> donateurs)</small>
                                     </div>
-                                    <div style="background: #e2e8f0; height: 6px; border-radius: 999px; overflow: hidden; margin-top: 4px; width: 110px;">
-                                        <div style="height: 100%; width: <?php echo $pct; ?>%; background: linear-gradient(90deg, #ec4899, #8b5cf6); border-radius: 999px;"></div>
+                                    <div style="background: #E5E5E5; height: 6px; border-radius: 999px; overflow: hidden; margin-top: 4px; width: 110px;">
+                                        <div style="height: 100%; width: <?php echo $pct; ?>%; background: linear-gradient(90deg, #FF4A0D, #FF4A0D); border-radius: 999px;"></div>
                                     </div>
                                 </td>
-                                <td>
+                                <td data-label="Statut" style="white-space: nowrap;">
                                     <?php if ($camp['statut'] === 'active'): ?>
-                                        <span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">🟢 Active</span>
+                                        <span class="cell-status-badge" style="background: #FFF2ED; color: #000000; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.74rem; display: inline-flex; align-items: center; white-space: nowrap;">Active</span>
                                     <?php elseif ($camp['statut'] === 'terminee'): ?>
-                                        <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">🏁 Terminée</span>
+                                        <span class="cell-status-badge" style="background: #F5F5F5; color: #737373; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.74rem; display: inline-flex; align-items: center; white-space: nowrap;">Terminée</span>
                                     <?php elseif ($camp['statut'] === 'en_attente'): ?>
-                                        <span style="background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">🟡 En attente</span>
+                                        <span class="cell-status-badge" style="background: #FFF2ED; color: #FF4A0D; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.74rem; display: inline-flex; align-items: center; white-space: nowrap;">En attente</span>
                                     <?php else: ?>
-                                        <span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">🔴 Annulée</span>
+                                        <span class="cell-status-badge" style="background: #F5F5F5; color: #000000; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.74rem; display: inline-flex; align-items: center; white-space: nowrap;">Annulée</span>
                                     <?php endif; ?>
                                 </td>
-                                <td style="text-align: right;">
+                                <td data-label="Actions" style="text-align: right; white-space: nowrap;">
                                     <form method="POST" action="cotisations.php" style="display: inline-flex; gap: 4px; margin: 0;">
                                         <input type="hidden" name="action" value="changer_statut">
                                         <input type="hidden" name="campagne_id" value="<?php echo (int)$camp['id']; ?>">
                                         <?php if ($camp['statut'] !== 'active'): ?>
-                                            <button type="submit" name="statut" value="active" class="dash-btn-action" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; background: #dcfce7; color: #166534;" title="Activer / Publier">
+                                            <button type="submit" name="statut" value="active" class="dash-btn-action" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; background: #FFF2ED; color: #000000; white-space: nowrap;" title="Activer / Publier">
                                                 <i class="fa-solid fa-play"></i> Activer
                                             </button>
                                         <?php endif; ?>
                                         <?php if ($camp['statut'] !== 'terminee'): ?>
-                                            <button type="submit" name="statut" value="terminee" class="dash-btn-action" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; background: #f1f5f9; color: #475569;" title="Marquer comme Terminée">
+                                            <button type="submit" name="statut" value="terminee" class="dash-btn-action" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; background: #F5F5F5; color: #737373; white-space: nowrap;" title="Marquer comme Terminée">
                                                 <i class="fa-solid fa-flag-checkered"></i>
                                             </button>
                                         <?php endif; ?>
                                         <?php if ($camp['statut'] !== 'annulee'): ?>
-                                            <button type="submit" name="statut" value="annulee" class="dash-btn-action" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444;" title="Annuler">
+                                            <button type="submit" name="statut" value="annulee" class="dash-btn-action" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; background: #F5F5F5; color: #000000; white-space: nowrap;" title="Annuler">
                                                 <i class="fa-solid fa-ban"></i>
                                             </button>
                                         <?php endif; ?>
@@ -338,6 +616,92 @@ try {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Vue Cartes Mobile (<= 860px) -->
+            <div class="cotis-mobile-list">
+                <?php foreach ($campagnes as $camp): ?>
+                    <?php
+                    $col = (float)$camp['montant_collecte'];
+                    $obj = (float)$camp['montant_objectif'];
+                    $pct = ($obj > 0) ? min(100, round(($col / $obj) * 100)) : 0;
+                    
+                    $badge_status = [
+                        'active' => ['Active', '#FFF2ED', '#000000'],
+                        'terminee' => ['Terminée', '#F5F5F5', '#737373'],
+                        'en_attente' => ['En attente', '#FFF2ED', '#FF4A0D'],
+                        'annulee' => ['Annulée', '#F5F5F5', '#000000']
+                    ];
+                    [$st_label, $st_bg, $st_fg] = $badge_status[$camp['statut']] ?? ['Inconnu', '#F5F5F5', '#737373'];
+                    ?>
+                    <div class="cotis-mobile-card">
+                        <div class="cmc-head">
+                            <div class="cmc-title-box">
+                                <h4 class="cmc-title"><?php echo htmlspecialchars($camp['titre']); ?></h4>
+                                <div class="cmc-meta">
+                                    <span class="cmc-initiator">
+                                        <i class="fa-solid fa-user-tie" style="font-size: 0.72rem;"></i>
+                                        <?php echo $camp['promoteur_nom'] ? htmlspecialchars($camp['promoteur_nom']) : 'Plateforme (Admin)'; ?>
+                                    </span>
+                                    <span>·</span>
+                                    <span class="cmc-date">
+                                        <?php echo $camp['date_limite'] ? '<i class="fa-regular fa-calendar"></i> ' . date('d/m/Y', strtotime($camp['date_limite'])) : 'Durée illimitée'; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="cmc-badge" style="background: <?php echo $st_bg; ?>; color: <?php echo $st_fg; ?>;">
+                                <?php echo $st_label; ?>
+                            </span>
+                        </div>
+
+                        <!-- Jauge financière & progression -->
+                        <div class="cmc-progress-box">
+                            <div class="cmc-amounts-row">
+                                <div>
+                                    <span class="cmc-label">Collecté</span>
+                                    <strong class="cmc-val-col"><?php echo number_format($col, 0, ',', ' '); ?> F</strong>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span class="cmc-label">Objectif</span>
+                                    <span class="cmc-val-obj"><?php echo number_format($obj, 0, ',', ' '); ?> F</span>
+                                </div>
+                            </div>
+
+                            <div class="cmc-bar-wrapper">
+                                <div class="cmc-bar-fill" style="width: <?php echo $pct; ?>%;"></div>
+                            </div>
+
+                            <div class="cmc-progress-sub">
+                                <span><strong><?php echo $pct; ?>%</strong> atteint</span>
+                                <span><i class="fa-solid fa-users" style="font-size: 0.72rem;"></i> <?php echo (int)$camp['nb_contributeurs']; ?> donateur(s)</span>
+                            </div>
+                        </div>
+
+                        <!-- Actions Admin -->
+                        <div class="cmc-actions-row">
+                            <form method="POST" action="cotisations.php" style="display: flex; gap: 6px; width: 100%; margin: 0;">
+                                <input type="hidden" name="action" value="changer_statut">
+                                <input type="hidden" name="campagne_id" value="<?php echo (int)$camp['id']; ?>">
+                                
+                                <?php if ($camp['statut'] !== 'active'): ?>
+                                    <button type="submit" name="statut" value="active" class="cmc-btn cmc-btn-active">
+                                        <i class="fa-solid fa-play"></i> Activer
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($camp['statut'] !== 'terminee'): ?>
+                                    <button type="submit" name="statut" value="terminee" class="cmc-btn cmc-btn-finish">
+                                        <i class="fa-solid fa-flag-checkered"></i> Clôturer
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($camp['statut'] !== 'annulee'): ?>
+                                    <button type="submit" name="statut" value="annulee" class="cmc-btn cmc-btn-cancel">
+                                        <i class="fa-solid fa-ban"></i> Annuler
+                                    </button>
+                                <?php endif; ?>
+                            </form>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>
@@ -403,7 +767,8 @@ try {
                 Aucune contribution reçue pour l'instant.
             </div>
         <?php else: ?>
-            <div style="overflow-x: auto;">
+            <!-- Vue Table Desktop (> 860px) -->
+            <div class="cotis-contrib-desktop-table" style="overflow-x: auto;">
                 <table class="dash-table">
                     <thead>
                         <tr>
@@ -432,17 +797,17 @@ try {
                                     </span>
                                 </td>
                                 <td>
-                                    <strong style="color: #16a34a; font-size: 0.95rem;">
+                                    <strong style="color: #FF4A0D; font-size: 0.95rem;">
                                         <?php echo number_format((float)$ct['montant'], 0, ',', ' '); ?> F
                                     </strong>
                                 </td>
                                 <td>
                                     <?php if ($ct['statut'] === 'payee'): ?>
-                                        <span style="background: #dcfce7; color: #166534; padding: 2px 7px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">🟢 Payée</span>
+                                        <span style="background: #FFF2ED; color: #000000; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.74rem;">Payée</span>
                                     <?php elseif ($ct['statut'] === 'annule'): ?>
-                                        <span style="background: #fee2e2; color: #991b1b; padding: 2px 7px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">🔴 Annulée</span>
+                                        <span style="background: #F5F5F5; color: #000000; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.74rem;">Annulée</span>
                                     <?php else: ?>
-                                        <span style="background: #fef3c7; color: #b45309; padding: 2px 7px; border-radius: 6px; font-weight: 800; font-size: 0.74rem;">🟡 En attente</span>
+                                        <span style="background: #FFF2ED; color: #FF4A0D; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.74rem;">En attente</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -455,12 +820,12 @@ try {
                                         <input type="hidden" name="action" value="statut_cotisation">
                                         <input type="hidden" name="cotisation_id" value="<?php echo (int)$ct['id']; ?>">
                                         <?php if ($ct['statut'] !== 'payee'): ?>
-                                            <button type="submit" name="statut" value="payee" class="dash-btn-action" style="padding: 0.3rem 0.6rem; font-size: 0.74rem; background: #dcfce7; color: #166534;" title="Valider comme Payée">
+                                            <button type="submit" name="statut" value="payee" class="dash-btn-action" style="padding: 0.3rem 0.6rem; font-size: 0.74rem; background: #FFF2ED; color: #000000;" title="Valider comme Payée">
                                                 <i class="fa-solid fa-check"></i> Valider
                                             </button>
                                         <?php endif; ?>
                                         <?php if ($ct['statut'] !== 'annule'): ?>
-                                            <button type="submit" name="statut" value="annule" class="dash-btn-action" style="padding: 0.3rem 0.6rem; font-size: 0.74rem; background: #fee2e2; color: #ef4444;" title="Annuler">
+                                            <button type="submit" name="statut" value="annule" class="dash-btn-action" style="padding: 0.3rem 0.6rem; font-size: 0.74rem; background: #F5F5F5; color: #000000;" title="Annuler">
                                                 <i class="fa-solid fa-xmark"></i>
                                             </button>
                                         <?php endif; ?>
@@ -470,6 +835,65 @@ try {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Vue Cartes Mobile Dons (<= 860px) -->
+            <div class="cotis-contrib-mobile-list">
+                <?php foreach ($toutes_contributions as $ct): ?>
+                    <?php
+                    $st_badge = [
+                        'payee' => ['Payée', '#FFF2ED', '#000000'],
+                        'annule' => ['Annulée', '#F5F5F5', '#000000'],
+                        'en_attente' => ['En attente', '#FFF2ED', '#FF4A0D']
+                    ];
+                    [$cl_l, $cl_b, $cl_f] = $st_badge[$ct['statut']] ?? ['Inconnu', '#F5F5F5', '#737373'];
+                    ?>
+                    <div class="contrib-mobile-card">
+                        <div class="cmc-head">
+                            <div>
+                                <strong style="color: var(--dash-text, #000000); font-size: 0.92rem; display: block;">
+                                    <?php echo htmlspecialchars($ct['nom']); ?>
+                                </strong>
+                                <small style="color: var(--dash-muted, #737373); font-size: 0.76rem;">
+                                    <?php echo htmlspecialchars($ct['telephone'] ?? $ct['email'] ?? '—'); ?>
+                                </small>
+                            </div>
+                            <span style="background: <?php echo $cl_b; ?>; color: <?php echo $cl_f; ?>; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; text-transform: uppercase;">
+                                <?php echo $cl_l; ?>
+                            </span>
+                        </div>
+
+                        <div style="font-size: 0.8rem; color: var(--dash-muted, #737373); margin: 2px 0;">
+                            Campagne : <strong style="color: var(--dash-text, #000000);"><?php echo $ct['campagne_titre'] ? htmlspecialchars($ct['campagne_titre']) : 'Contribution Générale'; ?></strong>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--dash-border, #E5E5E5); padding-top: 0.5rem; margin-top: 0.25rem;">
+                            <div>
+                                <strong style="color: #FF4A0D; font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums;">
+                                    <?php echo number_format((float)$ct['montant'], 0, ',', ' '); ?> F
+                                </strong>
+                                <small style="color: var(--dash-muted, #737373); display: block; font-size: 0.72rem;">
+                                    <?php echo date('d/m/Y à H:i', strtotime($ct['created_at'])); ?>
+                                </small>
+                            </div>
+
+                            <form method="POST" action="cotisations.php" style="display: inline-flex; gap: 4px; margin: 0;">
+                                <input type="hidden" name="action" value="statut_cotisation">
+                                <input type="hidden" name="cotisation_id" value="<?php echo (int)$ct['id']; ?>">
+                                <?php if ($ct['statut'] !== 'payee'): ?>
+                                    <button type="submit" name="statut" value="payee" class="dash-btn-action" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: #FFF2ED; color: #000000; font-weight: 700; border-radius: 6px;">
+                                        <i class="fa-solid fa-check"></i> Valider
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($ct['statut'] !== 'annule'): ?>
+                                    <button type="submit" name="statut" value="annule" class="dash-btn-action" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: #F5F5F5; color: #000000; font-weight: 700; border-radius: 6px;">
+                                        <i class="fa-solid fa-xmark"></i> Annuler
+                                    </button>
+                                <?php endif; ?>
+                            </form>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>

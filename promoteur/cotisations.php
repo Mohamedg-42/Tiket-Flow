@@ -144,17 +144,17 @@ $total_donateurs = array_sum(array_column($mes_campagnes, 'nb_contributeurs'));
 function get_cotisation_badge($statut) {
     switch ($statut) {
         case 'en_attente':
-            return ['En attente admin', '#fef3c7', '#b45309', 'fa-solid fa-hourglass-half'];
+            return ['En attente admin', '#FFF2ED', '#FF4A0D', 'fa-solid fa-hourglass-half'];
         case 'active':
         case 'approuve':
-            return ['Active & En ligne', '#dcfce7', '#166534', 'fa-solid fa-circle-check'];
+            return ['Active & En ligne', '#FFF2ED', '#000000', 'fa-solid fa-circle-check'];
         case 'terminee':
-            return ['Terminée', '#e2e8f0', '#475569', 'fa-solid fa-flag-checkered'];
+            return ['Terminée', '#E5E5E5', '#737373', 'fa-solid fa-flag-checkered'];
         case 'annulee':
         case 'refuse':
-            return ['Refusée', '#fee2e2', '#b91c1c', 'fa-solid fa-ban'];
+            return ['Refusée', '#F5F5F5', '#000000', 'fa-solid fa-ban'];
     }
-    return [ucfirst($statut), '#f1f5f9', '#475569', 'fa-solid fa-info'];
+    return [ucfirst($statut), '#F5F5F5', '#737373', 'fa-solid fa-info'];
 }
 ?>
 
@@ -166,12 +166,12 @@ function get_cotisation_badge($statut) {
     height: 65px;
     border-radius: 12px;
     object-fit: cover;
-    background: #f1f5f9;
+    background: #F5F5F5;
     border: 1px solid var(--dash-border);
     flex-shrink: 0;
 }
 .camp-progress-bar {
-    background: #e2e8f0;
+    background: #E5E5E5;
     border-radius: 999px;
     height: 8px;
     overflow: hidden;
@@ -191,21 +191,24 @@ function get_cotisation_badge($statut) {
     <div class="dash-header-section" style="margin-bottom: 1.5rem;">
         <div class="dash-title-box">
             <h1>
-                <i class="fa-solid fa-hand-holding-heart" style="color: #ec4899; font-size: 1.55rem;"></i>
+                <i class="fa-solid fa-hand-holding-heart" style="color: var(--tikeli-orange, #FF4A0D); font-size: 1.55rem;"></i>
                 Mes Campagnes de Cotisation & Financement
             </h1>
             <p>Mobilisez votre communauté pour co-financer vos productions, concerts ou causes. Suivez les contributions en temps réel.</p>
         </div>
 
-        <div>
-            <button type="button" onclick="openNewCampagneModal()" class="dash-btn-action btn-primary" style="padding: 0.6rem 1.15rem; display: inline-flex; align-items: center; gap: 6px;">
+        <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
+            <a href="export.php?type=cotisations" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les campagnes et contributions sur Excel (CSV)">
+                <i class="fa-solid fa-file-excel" style="color: var(--tikeli-black, #000000);"></i> Exporter Excel
+            </a>
+            <button type="button" onclick="openNewCampagneModal()" class="eventia-btn-primary" style="padding: 0.6rem 1.15rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;">
                 <i class="fa-solid fa-plus"></i> Créer une Campagne
             </button>
         </div>
     </div>
 
     <?php if (!empty($message)): ?>
-        <div style="background: <?php echo $msg_type === 'success' ? '#f0fdf4' : '#fef2f2'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#bbf7d0' : '#fecaca'; ?>; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: <?php echo $msg_type === 'success' ? '#166534' : '#991b1b'; ?>; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+        <div class="eventia-alert eventia-alert-<?php echo $msg_type === 'success' ? 'success' : 'error'; ?>" style="margin-bottom: 1.5rem;">
             <i class="fa-solid <?php echo $msg_type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>"></i>
             <span><?php echo htmlspecialchars($message); ?></span>
         </div>
@@ -215,40 +218,40 @@ function get_cotisation_badge($statut) {
          2. KPI CARDS : SYNTHÈSE DE COLLECTE
          ============================================================================== -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: var(--dash-muted); text-transform: uppercase;">Campagnes</span>
-                <span style="background: #f1f5f9; color: var(--dash-text); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-layer-group"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--eventia-muted, #737373); text-transform: uppercase;">Campagnes</span>
+                <span style="background: rgba(11, 29, 58, 0.08); color: var(--eventia-navy, #000000); width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-layer-group"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: var(--dash-text);"><?php echo $total_campagnes; ?></div>
-            <small style="color: var(--dash-muted); font-size: 0.75rem;">Collectes lancées</small>
+            <div style="font-size: 1.75rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; color: var(--eventia-navy, #000000);"><?php echo $total_campagnes; ?></div>
+            <small style="color: var(--eventia-muted, #737373); font-size: 0.75rem;">Collectes lancées</small>
         </div>
 
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div class="eventia-kpi-card" style="border-left: 4px solid var(--tikeli-orange, #FF4A0D);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #ec4899; text-transform: uppercase;">Total Collecté</span>
-                <span style="background: #fdf2f8; color: #ec4899; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-hand-holding-dollar"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--tikeli-orange, #FF4A0D); text-transform: uppercase;">Total Collecté</span>
+                <span style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D); width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-hand-holding-dollar"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #ec4899;"><?php echo number_format($total_collecte_cumul, 0, ',', ' '); ?> F</div>
-            <small style="color: #ec4899; font-size: 0.75rem;">Fonds déjà réunis</small>
+            <div style="font-size: 1.75rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; color: var(--tikeli-orange, #FF4A0D);"><?php echo number_format($total_collecte_cumul, 0, ',', ' '); ?> F</div>
+            <small style="color: var(--tikeli-orange, #FF4A0D); font-size: 0.75rem; font-weight: 600;">Fonds déjà réunis</small>
         </div>
 
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #059669; text-transform: uppercase;">Objectif Cumulé</span>
-                <span style="background: #dcfce7; color: #059669; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-bullseye"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--eventia-muted, #737373); text-transform: uppercase;">Objectif Cumulé</span>
+                <span style="background: #FFF2ED; color: #FF4A0D; width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-bullseye"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #059669;"><?php echo number_format($total_objectif_cumul, 0, ',', ' '); ?> F</div>
-            <small style="color: #059669; font-size: 0.75rem;">Total des cibles financières</small>
+            <div style="font-size: 1.75rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; color: var(--eventia-navy, #000000);"><?php echo number_format($total_objectif_cumul, 0, ',', ' '); ?> F</div>
+            <small style="color: var(--eventia-muted, #737373); font-size: 0.75rem;">Total des cibles financières</small>
         </div>
 
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7; text-transform: uppercase;">Donateurs</span>
-                <span style="background: #e0f2fe; color: #0284c7; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-users"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--eventia-muted, #737373); text-transform: uppercase;">Donateurs</span>
+                <span style="background: rgba(11, 29, 58, 0.08); color: var(--eventia-navy, #000000); width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-users"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #0284c7;"><?php echo $total_donateurs; ?></div>
-            <small style="color: #0284c7; font-size: 0.75rem;">Contributions individuelles</small>
+            <div style="font-size: 1.75rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; color: var(--eventia-navy, #000000);"><?php echo $total_donateurs; ?></div>
+            <small style="color: var(--eventia-muted, #737373); font-size: 0.75rem;">Contributions individuelles</small>
         </div>
     </div>
 
@@ -263,15 +266,15 @@ function get_cotisation_badge($statut) {
             </a>
 
             <a href="?statut=active&periode=<?php echo $periode; ?>" class="dash-chart-tab <?php echo $filter_statut === 'active' ? 'active' : ''; ?>" style="text-decoration: none; border-radius: 8px; padding: 0.45rem 0.95rem; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> En cours
+                <i class="fa-solid fa-circle-check" style="color: #FF4A0D;"></i> En cours
             </a>
 
             <a href="?statut=en_attente&periode=<?php echo $periode; ?>" class="dash-chart-tab <?php echo $filter_statut === 'en_attente' ? 'active' : ''; ?>" style="text-decoration: none; border-radius: 8px; padding: 0.45rem 0.95rem; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-hourglass-half" style="color: #f59e0b;"></i> En attente
+                <i class="fa-solid fa-hourglass-half" style="color: #FF4A0D;"></i> En attente
             </a>
 
             <a href="?statut=terminee&periode=<?php echo $periode; ?>" class="dash-chart-tab <?php echo $filter_statut === 'terminee' ? 'active' : ''; ?>" style="text-decoration: none; border-radius: 8px; padding: 0.45rem 0.95rem; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-flag-checkered" style="color: #64748b;"></i> Terminées
+                <i class="fa-solid fa-flag-checkered" style="color: #737373;"></i> Terminées
             </a>
         </div>
 
@@ -280,7 +283,7 @@ function get_cotisation_badge($statut) {
             <input type="hidden" name="statut" value="<?php echo htmlspecialchars($filter_statut); ?>">
 
             <!-- Sélecteur PÉRIODE -->
-            <div style="display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; padding: 3px 10px;">
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 8px; padding: 3px 10px;">
                 <i class="fa-regular fa-calendar-days" style="color: var(--dash-primary); font-size: 0.85rem;"></i>
                 <select name="periode" onchange="this.form.submit()" style="border: 0; background: transparent; font-size: 0.82rem; font-weight: 700; color: var(--dash-text); cursor: pointer; padding: 0.3rem 0.2rem; outline: none;">
                     <option value="toutes" <?php echo $periode === 'toutes' ? 'selected' : ''; ?>>Toutes les dates</option>
@@ -302,7 +305,7 @@ function get_cotisation_badge($statut) {
             </button>
 
             <?php if ($periode !== 'toutes' || $search_q !== '' || $filter_statut !== 'tous'): ?>
-                <a href="cotisations.php" style="color: #ef4444; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
+                <a href="cotisations.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -347,7 +350,7 @@ function get_cotisation_badge($statut) {
                                 </small>
 
                                 <?php if (!empty($camp['commentaire_admin'])): ?>
-                                    <div style="margin-top: 4px; color: #b91c1c; font-size: 0.75rem; background: #fee2e2; padding: 2px 8px; border-radius: 4px; display: inline-block;">
+                                    <div style="margin-top: 4px; color: #000000; font-size: 0.75rem; background: #F5F5F5; padding: 2px 8px; border-radius: 4px; display: inline-block;">
                                         <i class="fa-solid fa-comment-dots"></i> Motif admin : <?php echo htmlspecialchars($camp['commentaire_admin']); ?>
                                     </div>
                                 <?php endif; ?>
@@ -356,7 +359,7 @@ function get_cotisation_badge($statut) {
 
                         <!-- Montants collectés -->
                         <div style="text-align: right;">
-                            <strong style="color: #ec4899; font-size: 1.35rem; font-weight: 800; display: block;">
+                            <strong style="color: #FF4A0D; font-size: 1.35rem; font-weight: 800; display: block;">
                                 <?php echo number_format($collecte, 0, ',', ' '); ?> FCFA
                             </strong>
                             <small style="color: var(--dash-muted); font-size: 0.8rem;">
@@ -400,10 +403,10 @@ function get_cotisation_badge($statut) {
                                     </thead>
                                     <tbody>
                                         <?php foreach ($contributions_par_campagne[$camp['id']] as $ct): ?>
-                                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                            <tr style="border-bottom: 1px solid #F5F5F5;">
                                                 <td style="padding: 0.45rem 0; font-weight: 600; color: var(--dash-text);"><?php echo htmlspecialchars($ct['nom']); ?></td>
                                                 <td style="padding: 0.45rem; color: var(--dash-muted);"><?php echo htmlspecialchars($ct['telephone'] ?? '—'); ?></td>
-                                                <td style="padding: 0.45rem; font-weight: 700; color: #ec4899;">+ <?php echo number_format((float)$ct['montant'], 0, ',', ' '); ?> F</td>
+                                                <td style="padding: 0.45rem; font-weight: 700; color: #10b981;">+ <?php echo number_format((float)$ct['montant'], 0, ',', ' '); ?> F</td>
                                                 <td style="padding: 0.45rem;">
                                                     <?php if ($ct['statut'] === 'payee'): ?>
                                                         <span style="color: #10b981; font-weight: 700;">Payée</span>
@@ -424,7 +427,7 @@ function get_cotisation_badge($statut) {
         </div>
     <?php else: ?>
         <div class="dash-card" style="text-align: center; padding: 3.5rem 1rem; color: var(--dash-muted);">
-            <i class="fa-solid fa-hand-holding-heart" style="font-size: 2.75rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+            <i class="fa-solid fa-hand-holding-heart" style="font-size: 2.75rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
             <strong style="display: block; font-size: 1.05rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucune campagne de cotisation</strong>
             <p style="font-size: 0.84rem; margin: 0 0 1.25rem;">Lancez une campagne pour inviter votre public à soutenir vos projets artistiques ou événements.</p>
             <button type="button" onclick="openNewCampagneModal()" class="dash-btn-action btn-primary" style="display: inline-flex;">
@@ -439,9 +442,9 @@ function get_cotisation_badge($statut) {
      ============================================================================== -->
 <div id="modalNewCampagne" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
     <div style="background: #ffffff; width: 100%; max-width: 540px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
-        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--dash-border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--dash-border); display: flex; justify-content: space-between; align-items: center; background: #F5F5F5;">
             <h3 style="margin: 0; font-size: 1.1rem; color: var(--dash-text); font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-hand-holding-heart" style="color: #ec4899;"></i> Nouvelle Campagne de Cotisation
+                <i class="fa-solid fa-hand-holding-heart" style="color: #FF4A0D;"></i> Nouvelle Campagne de Cotisation
             </h3>
             <button type="button" onclick="closeNewCampagneModal()" style="border: 0; background: transparent; font-size: 1.2rem; color: var(--dash-muted); cursor: pointer;">&times;</button>
         </div>
@@ -487,7 +490,7 @@ function get_cotisation_badge($statut) {
 
             <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--dash-border); padding-top: 1rem;">
                 <button type="button" onclick="closeNewCampagneModal()" class="dash-btn-action" style="padding: 0.55rem 1rem;">Annuler</button>
-                <button type="submit" class="dash-btn-action btn-primary" style="padding: 0.55rem 1.25rem; font-weight: 800; background: linear-gradient(135deg, #ec4899, #f43f5e); border: none;">
+                <button type="submit" class="dash-btn-action btn-primary" style="padding: 0.55rem 1.25rem; font-weight: 800; background: linear-gradient(135deg, #FF4A0D, #FF4A0D); border: none;">
                     <i class="fa-solid fa-paper-plane"></i> Soumettre la Campagne
                 </button>
             </div>

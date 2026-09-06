@@ -127,7 +127,7 @@ $ticket_types = $stmt_list->fetchAll();
             <form method="GET" action="ticket-types.php" style="margin: 0;">
                 <div class="dash-control-select" style="padding: 0.4rem 0.8rem;">
                     <i class="fa-solid fa-calendar-days" style="color: var(--dash-primary);"></i>
-                    <select name="event_id" onchange="this.form.submit()" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer;">
+                    <select name="event_id" onchange="this.form.submit()" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; max-width: 100%; text-overflow: ellipsis; box-sizing: border-box;">
                         <option value="">Tous mes événements</option>
                         <?php foreach ($my_events as $ev): ?>
                             <option value="<?php echo $ev['id']; ?>" <?php echo ($filter_event == $ev['id']) ? 'selected' : ''; ?>>
@@ -138,6 +138,11 @@ $ticket_types = $stmt_list->fetchAll();
                 </div>
             </form>
 
+            <a href="export.php?type=evenements" class="dash-btn-action" style="text-decoration: none;" title="Exporter les jauges et tarifs sur Excel (CSV)">
+                <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
+                <span>Exporter Excel</span>
+            </a>
+
             <button type="button" class="dash-btn-action btn-primary" onclick="toggleAddModal(true)">
                 <i class="fa-solid fa-plus"></i>
                 <span>Nouveau Type de Billet</span>
@@ -147,7 +152,7 @@ $ticket_types = $stmt_list->fetchAll();
 
     <!-- Notifications Flash -->
     <?php if (!empty($message)): ?>
-        <div style="padding: 0.85rem 1.25rem; border-radius: 12px; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.88rem; font-weight: 700; background: <?php echo $msg_type === 'success' ? '#ecfdf5' : '#fef2f2'; ?>; color: <?php echo $msg_type === 'success' ? '#065f46' : '#991b1b'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#a7f3d0' : '#fecaca'; ?>;">
+        <div style="padding: 0.85rem 1.25rem; border-radius: 12px; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; font-size: 0.88rem; font-weight: 700; background: <?php echo $msg_type === 'success' ? '#FFF2ED' : '#F5F5F5'; ?>; color: <?php echo $msg_type === 'success' ? '#000000' : '#000000'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#FFF2ED' : '#E5E5E5'; ?>;">
             <i class="fa-solid <?php echo $msg_type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'; ?>"></i>
             <span><?php echo $message; ?></span>
         </div>
@@ -189,7 +194,7 @@ $ticket_types = $stmt_list->fetchAll();
                             $tot = (int)$tt['quantite'];
                             $r = max(0, $tot - $v);
                             $pct = ($tot > 0) ? min(100, round(($v / $tot) * 100)) : 0;
-                            $bar_color = ($pct >= 85) ? '#ef4444' : (($pct >= 50) ? '#f59e0b' : '#10b981');
+                            $bar_color = ($pct >= 85) ? '#000000' : (($pct >= 50) ? '#FF4A0D' : '#FF4A0D');
                             ?>
                             <tr>
                                 <td>
@@ -203,7 +208,7 @@ $ticket_types = $stmt_list->fetchAll();
                                 </td>
                                 <td>
                                     <a href="mes-ventes.php?type=<?php echo urlencode($tt['nom']); ?>" style="text-decoration: none;" title="Voir les ventes de cette formule">
-                                        <span style="background: #eeedfd; color: #5b50e6; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.82rem;">
+                                        <span style="background: #FFF2ED; color: #FF4A0D; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.82rem;">
                                             <i class="fa-solid fa-tag" style="font-size: 0.7rem; margin-right: 4px;"></i><?php echo htmlspecialchars($tt['nom']); ?>
                                         </span>
                                     </a>
@@ -217,7 +222,7 @@ $ticket_types = $stmt_list->fetchAll();
                                     <strong style="color: var(--dash-text); font-size: 0.9rem;"><?php echo number_format($tt['prix'], 0, ',', ' '); ?> F</strong>
                                 </td>
                                 <td>
-                                    <a href="mes-ventes.php?event_id=<?php echo $tt['event_id']; ?>&type=<?php echo urlencode($tt['nom']); ?>" style="text-decoration: none; color: #0ea5e9;" title="Voir les acheteurs de cette catégorie">
+                                    <a href="mes-ventes.php?event_id=<?php echo $tt['event_id']; ?>&type=<?php echo urlencode($tt['nom']); ?>" style="text-decoration: none; color: #FF4A0D;" title="Voir les acheteurs de cette catégorie">
                                         <strong style="font-size: 0.9rem; display: inline-flex; align-items: center; gap: 3px;">
                                             <i class="fa-solid fa-circle-check" style="font-size: 0.75rem;"></i> <?php echo $v; ?>
                                             <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem;"></i>
@@ -226,9 +231,9 @@ $ticket_types = $stmt_list->fetchAll();
                                 </td>
                                 <td>
                                     <?php if ($r === 0 && $tot > 0): ?>
-                                        <span style="background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; border-radius: 6px; padding: 2px 7px; font-weight: 800; font-size: 0.75rem;">Épuisé</span>
+                                        <span style="background: #F5F5F5; color: #000000; border: 1px solid #F5F5F5; border-radius: 6px; padding: 2px 7px; font-weight: 800; font-size: 0.75rem;">Épuisé</span>
                                     <?php else: ?>
-                                        <span style="background: #ecfdf5; color: #10b981; border: 1px solid #d1fae5; border-radius: 6px; padding: 2px 7px; font-weight: 800; font-size: 0.75rem;"><?php echo $r; ?> restant(s)</span>
+                                        <span style="background: #FFF2ED; color: #FF4A0D; border: 1px solid #E5E5E5; border-radius: 6px; padding: 2px 7px; font-weight: 800; font-size: 0.75rem;"><?php echo $r; ?> restant(s)</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -242,14 +247,14 @@ $ticket_types = $stmt_list->fetchAll();
                                 </td>
                                 <td style="text-align: right; white-space: nowrap;">
                                     <button type="button" class="dash-btn-action" style="padding: 4px 8px; font-size: 0.76rem;" onclick='openEditModal(<?php echo json_encode($tt); ?>)' title="Modifier les tarifs ou quotas">
-                                        <i class="fa-solid fa-pen-to-square" style="color: #0284c7;"></i> Modifier
+                                        <i class="fa-solid fa-pen-to-square" style="color: #FF4A0D;"></i> Modifier
                                     </button>
                                     <?php if ($v === 0): ?>
-                                        <a href="ticket-types.php?delete=<?php echo $tt['id']; ?>" class="dash-btn-action" style="padding: 4px 8px; font-size: 0.76rem; color: #ef4444; margin-left: 4px;" onclick="return confirm('Voulez-vous vraiment supprimer ce type de ticket ?')" title="Supprimer">
+                                        <a href="ticket-types.php?delete=<?php echo $tt['id']; ?>" class="dash-btn-action btn-danger" style="padding: 4px 8px; font-size: 0.76rem; margin-left: 4px;" onclick="return confirm('Voulez-vous vraiment supprimer ce type de ticket ?')" title="Supprimer">
                                             <i class="fa-solid fa-trash"></i>
                                         </a>
                                     <?php else: ?>
-                                        <span class="dash-btn-action" style="padding: 4px 8px; font-size: 0.76rem; color: #94a3b8; margin-left: 4px; cursor: not-allowed;" title="Impossible : ventes déjà enregistrées">
+                                        <span class="dash-btn-action" style="padding: 4px 8px; font-size: 0.76rem; color: #737373; margin-left: 4px; cursor: not-allowed;" title="Impossible : ventes déjà enregistrées">
                                             <i class="fa-solid fa-lock"></i>
                                         </span>
                                     <?php endif; ?>
@@ -259,7 +264,7 @@ $ticket_types = $stmt_list->fetchAll();
                     <?php else: ?>
                         <tr>
                             <td colspan="7" style="text-align: center; color: var(--dash-muted); padding: 3rem 1rem;">
-                                <i class="fa-solid fa-tags" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display: block;"></i>
+                                <i class="fa-solid fa-tags" style="font-size: 2rem; color: #E5E5E5; margin-bottom: 0.5rem; display: block;"></i>
                                 Aucun type de billet configuré.
                                 <br><button type="button" class="dash-btn-action btn-primary" onclick="toggleAddModal(true)" style="margin-top: 0.75rem;">+ Créer un premier type de billet</button>
                             </td>
@@ -274,17 +279,17 @@ $ticket_types = $stmt_list->fetchAll();
 <!-- Modal Ajout -->
 <div id="modalAddTicket" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 9999; backdrop-filter: blur(4px); place-items: center; padding: 1rem;">
     <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
-        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #F5F5F5; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: #000000; margin: 0;">
                 <i class="fa-solid fa-plus-circle" style="color: var(--dash-primary);"></i> Nouveau Type de Billet
             </h3>
-            <button type="button" onclick="toggleAddModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #94a3b8;">&times;</button>
+            <button type="button" onclick="toggleAddModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
         <form method="POST" action="ticket-types.php" style="padding: 1.5rem;">
             <input type="hidden" name="action_add" value="1">
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Événement *</label>
-                <select name="event_id" required style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.86rem;">
+                <select name="event_id" required style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; outline: none; font-size: 0.86rem;">
                     <?php foreach ($my_events as $ev): ?>
                         <option value="<?php echo $ev['id']; ?>"><?php echo htmlspecialchars($ev['nom']); ?></option>
                     <?php endforeach; ?>
@@ -292,21 +297,21 @@ $ticket_types = $stmt_list->fetchAll();
             </div>
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Nom de la catégorie *</label>
-                <input type="text" name="nom" required placeholder="Ex: VIP, Pass 2 Jours, Standard" style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
+                <input type="text" name="nom" required placeholder="Ex: VIP, Pass 2 Jours, Standard" style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                 <div>
                     <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Prix Unitaire (FCFA) *</label>
-                    <input type="number" name="prix" min="0" step="100" required placeholder="0" style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
+                    <input type="number" name="prix" min="0" step="100" required placeholder="0" style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
                 </div>
                 <div>
                     <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Quota / Places *</label>
-                    <input type="number" name="quantite" min="1" required placeholder="100" style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
+                    <input type="number" name="quantite" min="1" required placeholder="100" style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
                 </div>
             </div>
             <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Description / Avantages</label>
-                <textarea name="description" rows="2" placeholder="Accès salon VIP, coupe-file, boisson offerte..." style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;"></textarea>
+                <textarea name="description" rows="2" placeholder="Accès salon VIP, coupe-file, boisson offerte..." style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;"></textarea>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
                 <button type="button" onclick="toggleAddModal(false)" class="dash-btn-action">Annuler</button>
@@ -319,33 +324,33 @@ $ticket_types = $stmt_list->fetchAll();
 <!-- Modal Modification -->
 <div id="modalEditTicket" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 9999; backdrop-filter: blur(4px); place-items: center; padding: 1rem;">
     <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;">
-        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0;">
-                <i class="fa-solid fa-pen-to-square" style="color: #0284c7;"></i> Modifier le Type de Billet
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #F5F5F5; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: #000000; margin: 0;">
+                <i class="fa-solid fa-pen-to-square" style="color: #FF4A0D;"></i> Modifier le Type de Billet
             </h3>
-            <button type="button" onclick="toggleEditModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #94a3b8;">&times;</button>
+            <button type="button" onclick="toggleEditModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
         <form method="POST" action="ticket-types.php" style="padding: 1.5rem;">
             <input type="hidden" name="action_edit" value="1">
             <input type="hidden" name="tt_id" id="edit_tt_id">
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Nom de la catégorie *</label>
-                <input type="text" name="nom" id="edit_nom" required style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
+                <input type="text" name="nom" id="edit_nom" required style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                 <div>
                     <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Prix (FCFA) *</label>
-                    <input type="number" name="prix" id="edit_prix" min="0" step="100" required style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
+                    <input type="number" name="prix" id="edit_prix" min="0" step="100" required style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
                 </div>
                 <div>
                     <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Quota Total *</label>
-                    <input type="number" name="quantite" id="edit_quantite" min="1" required style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
+                    <input type="number" name="quantite" id="edit_quantite" min="1" required style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;">
                     <small id="edit_vendus_notice" style="color: var(--dash-muted); font-size: 0.72rem; display: block; margin-top: 3px;"></small>
                 </div>
             </div>
             <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Description</label>
-                <textarea name="description" id="edit_description" rows="2" style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;"></textarea>
+                <textarea name="description" id="edit_description" rows="2" style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; outline: none; font-size: 0.86rem; box-sizing: border-box;"></textarea>
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
                 <button type="button" onclick="toggleEditModal(false)" class="dash-btn-action">Annuler</button>

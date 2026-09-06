@@ -1,42 +1,37 @@
 <?php
 // ==============================================================================
-// FICHIER DE CONNEXION À LA BASE DE DONNÉES (PDO)
-// Mise à jour automatique des statuts d'événements expirés (statut -> 'termine')
+// FICHIER DE CONNEXION POSTGRESQL (config/database.php)
+// Plateforme Eventia — Connecté à PostgreSQL
 // ==============================================================================
 
-// 1. Paramètres de connexion
-$host    = 'localhost';        // Adresse du serveur de base de données (WAMP)
-$db      = 'ticket_platform';  // Nom de la base de données
-$user    = 'root';             // Utilisateur MySQL
-$pass    = '';                 // Mot de passe MySQL
-$charset = 'utf8mb4';          // Encodage
+$host    = '127.0.0.1';
+$port    = '5432';
+$db      = 'ticket_platform';
+$user    = 'postgres';
+$pass    = '123';
 
-// 2. Construction du DSN
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$dsn = "pgsql:host=$host;port=$port;dbname=$db;";
 
-// 3. Options de configuration de PDO
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES   => false,
 ];
 
-// 4. Connexion PDO
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 
-    // 5. MISE À JOUR AUTOMATIQUE DU STATUT DES ÉVÉNEMENTS TERMINÉS
-    // Dès que la date et l'heure de l'événement sont passées, son statut bascule à 'termine'
+    // Mise à jour automatique du statut des événements terminés
     $pdo->exec("
-        UPDATE `events` 
-        SET `statut` = 'termine' 
-        WHERE `statut` = 'actif' 
+        UPDATE events 
+        SET statut = 'termine' 
+        WHERE statut = 'actif' 
           AND (
-              `date_evenement` < CURDATE() 
-              OR (`date_evenement` = CURDATE() AND `heure` <= CURTIME())
+              date_evenement < CURRENT_DATE 
+              OR (date_evenement = CURRENT_DATE AND heure <= CURRENT_TIME)
           )
     ");
 
 } catch (\PDOException $e) {
-    die("❌ Erreur de connexion à la base de données : " . $e->getMessage());
+    die("❌ Erreur de connexion à PostgreSQL : " . $e->getMessage());
 }

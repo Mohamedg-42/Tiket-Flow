@@ -1,16 +1,16 @@
 <?php
 // ==============================================================================
 // VÉRIFICATION DES BILLETS PAR L'AGENT (agent/verification.php)
-// Contrôle d'accès strict : l'agent ne peut valider QUE les billets de l'événement assigné
+// Interface de contrôle d'accès simple, rapide et aux couleurs Eventia
 // ==============================================================================
 
-$page_title = "Vérification des Billets - Espace Agent";
+$page_title = "Contrôle d'Accès - Espace Agent";
 include 'header.php';
 
 $result = null;
-$agent_id = (int)$_SESSION['user_id'];
+$agent_id = (int) $_SESSION['user_id'];
 
-// 1. Récupération des affectations de l'agent (Promoteur & Événements autorisés)
+// 1. Récupération des affectations de l'agent
 $stmt_my_assignments = $pdo->prepare("
     SELECT aa.*, e.id AS assigned_event_id, e.nom AS assigned_event_nom, e.date_evenement, e.lieu,
            COALESCE(p.nom_commercial, u_prom.nom) AS promoter_name
@@ -49,44 +49,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['code_unique'])) {
         if (!$ticket) {
             $result = [
                 'status' => 'invalid',
-                'title'  => '❌ TICKET INVALIDE',
-                'msg'    => 'Ce code de billet n’existe pas dans la base de données.',
-                'color'  => '#ef4444'
+                'title' => 'TICKET INCONNU',
+                'msg' => 'Ce code de billet n’existe pas dans la base.',
+                'color' => '#ef4444',
+                'icon' => 'fa-circle-xmark'
             ];
-        } elseif (!empty($authorized_event_ids) && !in_array((int)$ticket['event_id'], array_map('intval', $authorized_event_ids), true)) {
-            // Le ticket existe mais n'appartient PAS à l'événement assigné à cet agent !
+        } elseif (!empty($authorized_event_ids) && !in_array((int) $ticket['event_id'], array_map('intval', $authorized_event_ids), true)) {
             $result = [
                 'status' => 'wrong_event',
-                'title'  => '🚫 ACCÈS REFUSÉ (MAUVAIS ÉVÉNEMENT)',
-                'msg'    => 'Ce billet est émis pour un AUTRE événement (« ' . htmlspecialchars($ticket['event_name']) . ' »). Vous n\'êtes pas autorisé à le composter à cette porte.',
-                'data'   => $ticket,
-                'color'  => '#dc2626'
+                'title' => 'MAUVAIS ÉVÉNEMENT',
+                'msg' => 'Billet émis pour « ' . htmlspecialchars($ticket['event_name']) . ' ».',
+                'data' => $ticket,
+                'color' => '#ef4444',
+                'icon' => 'fa-ban'
             ];
         } elseif ($ticket['statut'] === 'utilise') {
             $date_u = !empty($ticket['date_utilisation']) ? date('d/m/Y à H:i', strtotime($ticket['date_utilisation'])) : 'Date inconnue';
             $result = [
                 'status' => 'already_used',
-                'title'  => '⚠️ BILLET DÉJÀ UTILISÉ',
-                'msg'    => 'Ce billet a déjà été validé à l\'entrée le ' . $date_u . ($ticket['agent_nom'] ? ' par ' . htmlspecialchars($ticket['agent_nom']) : '') . '.',
-                'data'   => $ticket,
-                'color'  => '#f59e0b'
+                'title' => 'DÉJÀ COMPOSTÉ',
+                'msg' => 'Validé le ' . $date_u . ($ticket['agent_nom'] ? ' par ' . htmlspecialchars($ticket['agent_nom']) : '') . '.',
+                'data' => $ticket,
+                'color' => '#f59e0b',
+                'icon' => 'fa-triangle-exclamation'
             ];
         } elseif ($ticket['statut'] === 'annule') {
             $result = [
                 'status' => 'cancelled',
-                'title'  => '❌ BILLET ANNULÉ',
-                'msg'    => 'Ce billet a été invalidé ou remboursé.',
-                'data'   => $ticket,
-                'color'  => '#64748b'
+                'title' => 'BILLET ANNULÉ',
+                'msg' => 'Ce billet a été remboursé ou annulé.',
+                'data' => $ticket,
+                'color' => '#ef4444',
+                'icon' => 'fa-ban'
             ];
         } else {
-            // Le ticket est bien 'vendu' et correspond à l'événement assigné
             $result = [
                 'status' => 'valid',
-                'title'  => '✅ BILLET VALIDE POUR CET ÉVÉNEMENT',
-                'msg'    => 'Le billet est authentique et conforme pour l\'accès en salle.',
-                'data'   => $ticket,
-                'color'  => '#10b981'
+                'title' => 'ACCÈS AUTORISÉ',
+                'msg' => 'Billet authentique et valide.',
+                'data' => $ticket,
+                'color' => '#10b981',
+                'icon' => 'fa-circle-check'
             ];
         }
     }
@@ -94,184 +97,191 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['code_unique'])) {
 
 // 3. Validation définitive du ticket (Passage à 'utilise')
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['validate_ticket_id'])) {
-    $ticket_id = (int)$_POST['validate_ticket_id'];
+    $ticket_id = (int) $_POST['validate_ticket_id'];
 
-    // Vérification de sécurité supplémentaire sur l'événement
     $stmt_check = $pdo->prepare("SELECT event_id FROM tickets WHERE id = ?");
     $stmt_check->execute([$ticket_id]);
     $tk_check = $stmt_check->fetch();
 
-    if ($tk_check && (empty($authorized_event_ids) || in_array((int)$tk_check['event_id'], array_map('intval', $authorized_event_ids), true))) {
+    if ($tk_check && (empty($authorized_event_ids) || in_array((int) $tk_check['event_id'], array_map('intval', $authorized_event_ids), true))) {
         $stmt_val = $pdo->prepare("
             UPDATE tickets 
             SET statut = 'utilise', date_utilisation = NOW(), validated_by = ? 
             WHERE id = ? AND statut = 'vendu'
         ");
         $stmt_val->execute([$agent_id, $ticket_id]);
-
-        if ($stmt_val->rowCount() === 1) {
-            $success_validation = "✅ Entrée validée avec succès ! Le billet est composté.";
-        } else {
-            $error_validation = "❌ Impossible de valider : le billet a déjà été utilisé.";
-        }
-    } else {
-        $error_validation = "🚫 Vous n'êtes pas assigné au contrôle de cet événement.";
     }
 }
+
+// 4. Nombre de scans aujourd'hui
+$stmt_scans_today = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE validated_by = ? AND DATE(date_utilisation) = CURDATE()");
+$stmt_scans_today->execute([$agent_id]);
+$kpi_scans_today = (int) $stmt_scans_today->fetchColumn();
 ?>
 
-<main class="container" style="margin: clamp(1rem, 3vw, 2rem) auto; padding: 0 var(--container-padding);">
-    <!-- En-tête avec rappel du promoteur et de l'événement assigné -->
-    <div class="page-header" style="margin-bottom: var(--spacing-lg);">
-        <div class="page-heading">
-            <span class="page-kicker" style="font-size: var(--font-size-xs);"><i class="fa-solid fa-shield-halved"></i> Contrôle d'Accès Sécurisé</span>
-            <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--spacing-sm);">Vérification des Entrées</h1>
-            <p style="font-size: var(--font-size-sm); color: var(--muted);">Scannez le QR Code ou saisissez le numéro de billet pour autoriser l'accès.</p>
-        </div>
-        <div style="font-size: var(--font-size-xs); text-align: left; margin-top: var(--spacing-md);">
-            <div style="margin-bottom: 0.5rem;">Agent : <strong style="color: var(--navy);"><?php echo htmlspecialchars($_SESSION['user_nom']); ?></strong></div>
-            <?php if (count($my_assignments) > 0): ?>
-                <span style="color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
-                    <i class="fa-solid fa-briefcase"></i> Promoteur : <?php echo htmlspecialchars($my_assignments[0]['promoter_name']); ?>
-                </span>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- Badge des postes assignés à l'agent -->
-    <div style="background: #f0fdfa; border: 1px solid #99f6e4; border-radius: var(--radius-md); padding: clamp(0.75rem, 2vw, 1rem); margin-bottom: var(--spacing-lg); display: flex; flex-direction: column; gap: var(--spacing-sm);">
-        <div style="display: flex; align-items: flex-start; gap: var(--spacing-md);">
-            <div style="width: 36px; height: 36px; border-radius: 50%; background: #ccfbf1; color: var(--primary); display: grid; place-items: center; font-size: 1.1rem; flex-shrink: 0;">
-                <i class="fa-solid fa-calendar-check"></i>
-            </div>
-            <div style="flex: 1; min-width: 0;">
-                <strong style="color: #0f766e; font-size: var(--font-size-xs); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Votre poste de contrôle :</strong>
-                <?php if (count($my_assignments) > 0): ?>
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        <?php foreach ($my_assignments as $as): ?>
-                            <span style="display: inline-block; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; padding: clamp(0.4rem, 1vw, 0.5rem) clamp(0.6rem, 1.5vw, 0.8rem); font-weight: 700; font-size: var(--font-size-xs); color: var(--navy); word-break: break-word;">
-                                <?php echo htmlspecialchars($as['assigned_event_nom']); ?> (<?php echo date('d/m/Y', strtotime($as['date_evenement'])); ?> - <?php echo htmlspecialchars($as['lieu']); ?>)
-                            </span>
-                        <?php endforeach; ?>
+<main style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: calc(100vh - 140px); padding: 1.5rem 1rem 2.5rem; box-sizing: border-box; width: 100%;">
+    <div style="max-width: 440px; width: 100%; margin: auto; box-sizing: border-box;">
+        
+        <!-- Événement assigné -->
+        <?php if (count($my_assignments) > 0): ?>
+            <div style="background: var(--eventia-white, #ffffff); border: 1px solid var(--eventia-border, #E5E5E5); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.84rem; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
+                    <span style="width: 30px; height: 30px; border-radius: 8px; background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D); display: grid; place-items: center; font-size: 0.9rem; flex-shrink: 0;">
+                        <i class="fa-solid fa-calendar-check"></i>
+                    </span>
+                    <div style="overflow: hidden;">
+                        <small style="color: var(--eventia-muted, #737373); font-size: 0.72rem; display: block; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Poste de Contrôle</small>
+                        <strong style="color: var(--eventia-navy, #000000); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; font-size: 0.88rem;">
+                            <?php echo htmlspecialchars($my_assignments[0]['assigned_event_nom']); ?>
+                        </strong>
                     </div>
-                <?php else: ?>
-                    <span style="color: #ef4444; font-weight: 600; font-size: var(--font-size-xs);">Aucun événement assigné par un promoteur.</span>
-                <?php endif; ?>
+                </div>
+                <span style="color: var(--tikeli-orange, #FF4A0D); font-weight: 800; font-size: 0.74rem; background: #FFF2ED; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(255, 74, 13, 0.25); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #FF4A0D;"></span> Actif
+                </span>
             </div>
-        </div>
-    </div>
+        <?php endif; ?>
 
-    <!-- Alertes après validation -->
-    <?php if (isset($success_validation)): ?>
-        <div class="alert alert-success" style="font-size: var(--font-size-sm); padding: var(--spacing-md); margin-bottom: var(--spacing-lg); border-radius: var(--radius-md);">
-            <i class="fa-solid fa-circle-check"></i> <?php echo $success_validation; ?>
-        </div>
-    <?php endif; ?>
+        <?php if ($result): ?>
+            <!-- ==============================================================================
+                 ÉCRAN RÉSULTAT (GRAND, CLAIR & TRÈS VISUEL)
+                 ============================================================================== -->
+            <div style="background: var(--eventia-white, #ffffff); border: 2px solid <?php echo $result['color']; ?>; border-radius: 20px; padding: 2.25rem 1.5rem; text-align: center; box-shadow: 0 12px 32px rgba(0,0,0,0.06); margin-bottom: 1.25rem;">
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: <?php echo $result['status'] === 'valid' ? '#ecfdf5' : ($result['status'] === 'already_used' ? '#fef3c7' : '#fee2e2'); ?>; color: <?php echo $result['color']; ?>; display: grid; place-items: center; font-size: 2.5rem; margin: 0 auto 1.15rem;">
+                    <i class="fa-solid <?php echo $result['icon']; ?>"></i>
+                </div>
 
-    <?php if (isset($error_validation)): ?>
-        <div class="alert alert-error" style="font-size: var(--font-size-sm); padding: var(--spacing-md); margin-bottom: var(--spacing-lg); border-radius: var(--radius-md);">
-            <i class="fa-solid fa-circle-exclamation"></i> <?php echo $error_validation; ?>
-        </div>
-    <?php endif; ?>
+                <h2 style="color: <?php echo $result['color']; ?>; margin: 0 0 0.4rem; font-size: 1.5rem; font-weight: 900; font-family: var(--font-heading, 'Outfit', sans-serif); letter-spacing: -0.02em;">
+                    <?php echo $result['title']; ?>
+                </h2>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(clamp(280px, 45vw, 360px), 1fr)); gap: var(--spacing-lg); align-items: start;">
-        <!-- 1. Scanner Caméra & Saisie manuelle -->
-        <div style="width: 100%; max-width: 100%; box-sizing: border-box;">
-            <!-- Caméra -->
-            <div class="content-section" style="margin-bottom: var(--spacing-lg); width: 100%; box-sizing: border-box;">
-                <div class="section-title" style="font-size: var(--font-size-lg);"><i class="fa-solid fa-camera"></i> Scanner QR Code</div>
-                <div id="qr-reader" style="width: 100%; height: clamp(250px, 50vw, 320px); border-radius: 8px; overflow: hidden; margin-bottom: var(--spacing-md);"></div>
-                <button type="button" id="btn-start-scanner" class="btn-submit" style="width: 100%; padding: clamp(0.65rem, 1.5vw, 0.85rem); font-size: var(--font-size-sm);">
+                <p style="color: var(--eventia-navy, #000000); font-size: 0.92rem; font-weight: 600; margin: 0 0 1.25rem; line-height: 1.4;">
+                    <?php echo $result['msg']; ?>
+                </p>
+
+                <?php if (!empty($result['data'])): ?>
+                    <?php $tk = $result['data']; ?>
+                    <div style="background: var(--eventia-background, #F5F5F5); border: 1px solid var(--eventia-border, #E5E5E5); border-radius: 12px; padding: 1.1rem; text-align: left; font-size: 0.85rem; margin-bottom: 1.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; border-bottom: 1px dashed var(--eventia-border, #E5E5E5); padding-bottom: 0.55rem;">
+                            <span style="font-weight: 800; color: #FF4A0D; background: #FFF2ED; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem;">
+                                <i class="fa-solid fa-ticket" style="margin-right: 4px;"></i> <?php echo htmlspecialchars($tk['type_ticket']); ?>
+                            </span>
+                            <strong style="color: var(--eventia-navy, #000000); font-size: 1rem; font-family: var(--font-heading, 'Outfit', sans-serif);">
+                                <?php echo number_format($tk['prix'], 0, ',', ' '); ?> F
+                            </strong>
+                        </div>
+
+                        <div style="color: var(--eventia-navy, #000000); font-weight: 700; font-size: 0.95rem; margin-bottom: 0.35rem;">
+                            <i class="fa-solid fa-user" style="color: var(--eventia-muted, #737373); font-size: 0.82rem; margin-right: 6px;"></i>
+                            <?php echo htmlspecialchars($tk['client_nom']); ?>
+                        </div>
+                        <div style="color: var(--eventia-muted, #737373); font-size: 0.78rem; font-family: monospace;">
+                            Code Billet : <strong style="color: var(--eventia-navy, #000000); font-size: 0.85rem;"><?php echo htmlspecialchars($tk['code_unique']); ?></strong>
+                        </div>
+                    </div>
+
+                    <?php if ($result['status'] === 'valid'): ?>
+                        <form id="auto-validate-form" method="POST" action="verification.php" style="margin-bottom: 0.75rem;">
+                            <input type="hidden" name="validate_ticket_id" value="<?php echo (int) $tk['id']; ?>">
+                            <button type="submit" class="eventia-btn-primary" style="width: 100%; padding: 0.9rem; font-size: 0.98rem; font-weight: 800; justify-content: center; border-radius: 12px;">
+                                <i class="fa-solid fa-check"></i> Valider l'Entrée
+                            </button>
+                        </form>
+                        <script>
+                            setTimeout(function () {
+                                document.getElementById('auto-validate-form').submit();
+                            }, 1200);
+                        </script>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <a href="verification.php" class="eventia-btn-secondary" style="width: 100%; padding: 0.8rem; font-size: 0.9rem; font-weight: 700; justify-content: center; text-decoration: none; display: inline-flex; border-radius: 12px; box-sizing: border-box;">
+                    <i class="fa-solid fa-rotate-left"></i> Prêt pour le suivant
+                </a>
+            </div>
+
+        <?php else: ?>
+            <!-- ==============================================================================
+                 SCANNER PRINCIPAL (SIMPLE, RAPIDE & ÉPURÉ)
+                 ============================================================================== -->
+            <div style="background: var(--eventia-white, #ffffff); border: 1px solid var(--eventia-border, #E5E5E5); border-radius: 20px; padding: 1.5rem 1.25rem; box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 1.25rem;">
+                
+                <!-- Zone caméra avec cadre de visée stylisé -->
+                <div id="qr-reader" style="width: 100%; min-height: 250px; background: #000000; border-radius: 16px; overflow: hidden; margin-bottom: 1.25rem; display: grid; place-items: center; color: #737373; position: relative;">
+                    <div style="text-align: center; padding: 2.5rem 1rem;">
+                        <div style="width: 64px; height: 64px; border: 2px dashed rgba(255, 74, 13, 0.45); border-radius: 12px; display: grid; place-items: center; margin: 0 auto 0.75rem;">
+                            <i class="fa-solid fa-qrcode" style="font-size: 2rem; color: var(--tikeli-orange, #FF4A0D);"></i>
+                        </div>
+                        <span style="font-size: 0.84rem; color: #737373; font-weight: 500; display: block;">Placez le QR code au centre</span>
+                    </div>
+                </div>
+
+                <button type="button" id="btn-start-scanner" class="eventia-btn-primary" style="width: 100%; padding: 0.9rem 1rem; font-size: 0.95rem; justify-content: center; font-weight: 800; border-radius: 12px; margin-bottom: 1.25rem; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.25);">
                     <i class="fa-solid fa-camera"></i> Activer la Caméra
                 </button>
+
+                <!-- Saisie Manuelle ou Douchette Laser -->
+                <div style="border-top: 1px solid var(--eventia-border, #E5E5E5); padding-top: 1.25rem;">
+                    <label for="code_unique" style="display: block; font-size: 0.76rem; font-weight: 800; color: var(--eventia-muted, #737373); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">
+                        Saisie Manuelle / Douchette Laser
+                    </label>
+                    <form method="POST" action="verification.php" style="display: flex; gap: 8px;">
+                        <input type="text" id="code_unique" name="code_unique" required placeholder="Code billet (ex: TK-8F92A7K3)"
+                            autocomplete="off" autofocus
+                            style="flex: 1; padding: 0.7rem 0.9rem; border-radius: 10px; border: 1px solid var(--eventia-border, #E5E5E5); font-family: monospace; font-size: 0.95rem; font-weight: 800; text-transform: uppercase; color: var(--eventia-navy, #000000); background: var(--eventia-background, #F5F5F5);">
+                        <button type="submit" class="eventia-btn-secondary" style="padding: 0.7rem 1.15rem; font-size: 0.88rem; font-weight: 800; white-space: nowrap; border-radius: 10px;">
+                            Vérifier
+                        </button>
+                    </form>
+                </div>
             </div>
 
-            <!-- Saisie Manuelle -->
-            <div class="content-section" style="width: 100%; box-sizing: border-box;">
-                <div class="section-title" style="font-size: var(--font-size-lg);"><i class="fa-solid fa-keyboard"></i> Saisie Manuelle</div>
-                <form method="POST" action="verification.php" style="width: 100%; box-sizing: border-box;">
-                    <div class="form-group" style="width: 100%; box-sizing: border-box;">
-                        <label for="code_unique" style="font-size: var(--font-size-sm); font-weight: 600;">Code Unique (ex: TK-8F92A7K3)</label>
-                        <input type="text" id="code_unique" name="code_unique" required placeholder="TK-..." style="text-transform: uppercase; font-family: monospace; font-size: clamp(0.9rem, 2.5vw, 1.15rem); letter-spacing: 1px; width: 100%; padding: clamp(0.65rem, 1.5vw, 0.85rem); box-sizing: border-box;">
-                    </div>
-                    <button type="submit" class="btn-submit" style="width: 100%; font-size: var(--font-size-sm); padding: clamp(0.65rem, 1.5vw, 0.85rem);">
-                        <i class="fa-solid fa-magnifying-glass"></i> Vérifier le Ticket
-                    </button>
-                </form>
+            <!-- Compteur rapide en bas -->
+            <div style="text-align: center; font-size: 0.84rem; color: var(--eventia-muted, #737373); padding: 0.25rem 0;">
+                <i class="fa-solid fa-circle-check" style="color: var(--tikeli-orange, #FF4A0D); margin-right: 4px;"></i>
+                <strong><?php echo $kpi_scans_today; ?></strong> billet<?php echo $kpi_scans_today > 1 ? 's' : ''; ?> validé<?php echo $kpi_scans_today > 1 ? 's' : ''; ?> aujourd'hui
+                · <a href="historique.php" style="color: var(--eventia-navy, #000000); font-weight: 700; text-decoration: underline;">Consulter l'historique</a>
             </div>
-        </div>
-
-        <!-- 2. Résultat de la Vérification -->
-        <div style="width: 100%; max-width: 100%; box-sizing: border-box;">
-            <div class="content-section" style="min-height: auto; width: 100%; box-sizing: border-box;">
-                <div class="section-title" style="font-size: var(--font-size-lg);"><i class="fa-solid fa-id-badge"></i> Résultat du Contrôle</div>
-
-                <?php if ($result): ?>
-                    <div style="border: 2px solid <?php echo $result['color']; ?>; background: #ffffff; border-radius: var(--radius-lg); padding: clamp(1rem, 2vw, 1.5rem); text-align: center; margin-top: var(--spacing-md); box-shadow: var(--shadow-md); width: 100%; box-sizing: border-box;">
-                        <h2 style="color: <?php echo $result['color']; ?>; margin: 0 0 var(--spacing-sm); font-size: clamp(1.1rem, 4vw, 1.35rem); word-break: break-word;">
-                            <?php echo $result['title']; ?>
-                        </h2>
-                        <p style="color: var(--navy); margin-bottom: var(--spacing-lg); font-size: var(--font-size-sm); font-weight: 500; word-break: break-word;">
-                            <?php echo $result['msg']; ?>
-                        </p>
-
-                        <?php if (!empty($result['data'])): ?>
-                            <?php $tk = $result['data']; ?>
-                            <div style="background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; padding: clamp(0.75rem, 2vw, 1rem); text-align: left; font-size: var(--font-size-xs); margin-bottom: var(--spacing-lg); width: 100%; box-sizing: border-box; overflow: hidden;">
-                                <div style="margin-bottom: 0.5rem;">
-                                    <span style="color: var(--muted); font-size: var(--font-size-xs); text-transform: uppercase; font-weight: bold;">Événement du billet :</span><br>
-                                    <strong style="color: var(--navy); font-size: clamp(0.95rem, 2.5vw, 1.05rem); word-break: break-word;"><?php echo htmlspecialchars($tk['event_name']); ?></strong>
-                                </div>
-                                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                    <span style="word-break: break-word;">Catégorie : <strong style="color: var(--primary);"><?php echo htmlspecialchars($tk['type_ticket']); ?></strong></span>
-                                    <span style="word-break: break-word;">Prix : <strong><?php echo number_format($tk['prix'], 0, ',', ' '); ?> F</strong></span>
-                                </div>
-                                <div style="margin-bottom: 0.5rem; word-break: break-word;">
-                                    <span style="color: var(--muted);">Détenteur :</span>
-                                    <strong><?php echo htmlspecialchars($tk['client_nom']); ?></strong>
-                                </div>
-                                <div style="word-break: break-word;">
-                                    <span style="color: var(--muted);">Date & Lieu :</span>
-                                    <strong><?php echo date('d/m/Y', strtotime($tk['date_evenement'])); ?> à <?php echo substr($tk['heure'], 0, 5); ?></strong> (<?php echo htmlspecialchars($tk['lieu']); ?>)
-                                </div>
-                            </div>
-
-                            <!-- Validation automatique si le ticket est 'valid' -->
-                            <?php if ($result['status'] === 'valid'): ?>
-                                <div style="text-align: center; padding: var(--spacing-md); background: #dcfce7; border-radius: 8px; margin-top: var(--spacing-md);">
-                                    <p style="color: #166534; font-weight: 600; margin: 0 0 var(--spacing-md); display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: var(--font-size-sm);">
-                                        <i class="fa-solid fa-spinner" style="animation: spin 2s linear infinite;"></i>
-                                        Validation automatique en cours...
-                                    </p>
-                                </div>
-                                <form id="auto-validate-form" method="POST" action="verification.php" style="display: none;">
-                                    <input type="hidden" name="validate_ticket_id" value="<?php echo (int)$tk['id']; ?>">
-                                </form>
-                                <script>
-                                    setTimeout(function() {
-                                        document.getElementById('auto-validate-form').submit();
-                                    }, 1500);
-                                </script>
-                                <style>
-                                    @keyframes spin {
-                                        0% { transform: rotate(0deg); }
-                                        100% { transform: rotate(360deg); }
-                                    }
-                                </style>
-                            <?php endif; ?>
-                        <?php endif; ?>
-                    </div>
-                <?php else: ?>
-                    <div style="text-align: center; color: var(--muted); padding: clamp(2rem, 5vw, 3rem) var(--spacing-md);">
-                        <i class="fa-solid fa-barcode" style="font-size: clamp(2rem, 8vw, 3.5rem); color: var(--line); margin-bottom: var(--spacing-md); display: block;"></i>
-                        <h3 style="color: var(--navy); margin-bottom: 0.4rem; font-size: var(--font-size-lg); word-break: break-word;">En attente de scan</h3>
-                        <p style="font-size: var(--font-size-sm); word-break: break-word;">Scannez un QR code ou saisissez un numéro pour vérifier l'accès.</p>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+        <?php endif; ?>
     </div>
 </main>
+
+<!-- Audio Feedback Synthesizer (Web Audio API) -->
+<script>
+    function playAudioTone(type) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            if (type === 'valid') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.3);
+            } else {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, ctx.currentTime);
+                osc.frequency.setValueAtTime(150, ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            }
+        } catch(e) {}
+    }
+
+    <?php if ($result): ?>
+        document.addEventListener('DOMContentLoaded', function() {
+            playAudioTone('<?php echo $result['status'] === 'valid' ? 'valid' : 'error'; ?>');
+        });
+    <?php endif; ?>
+</script>
 
 <!-- Script Scanner HTML5-QRCode -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -279,36 +289,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['validate_ticket_id'])
     const startBtn = document.getElementById('btn-start-scanner');
     let scanner = null;
 
-    startBtn.addEventListener('click', function() {
-        if (scanner) return;
+    if (startBtn) {
+        startBtn.addEventListener('click', function () {
+            if (scanner) return;
 
-        scanner = new Html5Qrcode('qr-reader');
-        scanner.start(
-            { facingMode: 'environment' },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            function(decodedText) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = 'verification.php';
+            scanner = new Html5Qrcode('qr-reader');
+            scanner.start(
+                { facingMode: 'environment' },
+                { fps: 12, qrbox: { width: 220, height: 220 } },
+                function (decodedText) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = 'verification.php';
 
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'code_unique';
-                input.value = decodedText.trim();
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'code_unique';
+                    input.value = decodedText.trim();
 
-                form.appendChild(input);
-                document.body.appendChild(form);
-                form.submit();
-            },
-            function() {}
-        ).then(function() {
-            startBtn.disabled = true;
-            startBtn.innerHTML = '<i class="fa-solid fa-circle" style="color: #10b981;"></i> Scanner actif...';
-        }).catch(function(err) {
-            alert("Impossible d'accéder à la caméra. Veuillez utiliser la saisie manuelle.");
-            scanner = null;
+                    form.appendChild(input);
+                    document.body.appendChild(form);
+                    form.submit();
+                },
+                function () { }
+            ).then(function () {
+                startBtn.disabled = true;
+                startBtn.innerHTML = '<i class="fa-solid fa-circle-dot" style="color: #FF4A0D;"></i> Caméra Active — Scannez';
+                startBtn.style.background = '#000000';
+                startBtn.style.color = '#ffffff';
+            }).catch(function (err) {
+                alert("Impossible d'accéder à la caméra. Veuillez utiliser la saisie manuelle.");
+                scanner = null;
+            });
         });
-    });
+    }
 </script>
 
 <?php include 'footer.php'; ?>

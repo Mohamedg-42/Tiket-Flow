@@ -104,34 +104,39 @@ foreach ($all_type_ids as $ticket_type_id) {
 
     $prix_unitaire = (float)$ticket['prix'];
 
-    // ===== Validation des places choisies (supplément selon le type de billet) =====
-    $frais_place_unitaire = (float)($ticket['frais_place'] ?? 0);
+    // ===== Validation des places choisies (supplément obligatoire pour choix de place) =====
+    $frais_place_unitaire = (float)(!empty($ticket['frais_place']) && (float)$ticket['frais_place'] > 0 ? $ticket['frais_place'] : 1000);
     $places_numero        = null;
     $frais_place_total    = 0;
     $places_a_reserver    = [];
 
     if (!empty($seat_ids)) {
-        if ($frais_place_unitaire <= 0) {
-            $_SESSION['order_message'] = "Le choix de place n'est pas disponible pour ce type de billet.";
-            header('Location: accueil.php');
-            exit();
+        $stmt_count_p = $pdo->prepare("SELECT COUNT(*) FROM places WHERE ticket_type_id = ?");
+        $stmt_count_p->execute([$ticket_type_id]);
+        $has_db_places = (int)$stmt_count_p->fetchColumn();
+
+        if ($has_db_places > 0) {
+            $in = implode(',', array_map('intval', $seat_ids));
+            $stmt_places = $pdo->prepare("SELECT id, numero FROM places WHERE ticket_type_id = ? AND id IN ($in) AND statut = 'libre'");
+            $stmt_places->execute([$ticket_type_id]);
+            $valid_places = $stmt_places->fetchAll();
+
+            if (count($valid_places) !== count(array_unique($seat_ids))) {
+                $_SESSION['order_message'] = "Une des places choisies n'est plus disponible. Veuillez en sélectionner d'autres.";
+                header('Location: accueil.php');
+                exit();
+            }
+
+            $places_a_reserver = array_column($valid_places, 'id');
+            $places_numero     = implode(', ', array_column($valid_places, 'numero'));
+            $qty               = count($valid_places);
+        } else {
+            // Places issues de la vue de scène 3D interactive
+            $qty = count($seat_ids);
+            $places_numero = implode(', ', array_map(fn($id) => 'Siège ' . (int)$id, $seat_ids));
         }
 
-        $in = implode(',', $seat_ids);
-        $stmt_places = $pdo->prepare("SELECT id, numero FROM places WHERE ticket_type_id = ? AND id IN ($in) AND statut = 'libre'");
-        $stmt_places->execute([$ticket_type_id]);
-        $valid_places = $stmt_places->fetchAll();
-
-        if (count($valid_places) !== count(array_unique($seat_ids))) {
-            $_SESSION['order_message'] = "Une des places choisies n'est plus disponible. Veuillez en sélectionner d'autres.";
-            header('Location: accueil.php');
-            exit();
-        }
-
-        $places_a_reserver = array_column($valid_places, 'id');
-        $places_numero     = implode(', ', array_column($valid_places, 'numero'));
-        $frais_place_total = $frais_place_unitaire * count($valid_places);
-        $qty               = count($valid_places);
+        $frais_place_total = max(0, $frais_place_unitaire) * $qty;
     }
 
     $sous_total = ($prix_unitaire * $qty) + $frais_place_total;

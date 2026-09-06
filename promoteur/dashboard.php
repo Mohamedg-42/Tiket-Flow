@@ -8,32 +8,32 @@
 $page_title = "Tableau de Bord - Espace Organisateur";
 include 'header.php';
 
-$user_id = (int)$_SESSION['user_id'];
+$user_id = (int) $_SESSION['user_id'];
 
 // 1. FILTRES DYNAMIQUES (PÉRIODE ET ÉVÉNEMENT DU PROMOTEUR)
 $period = $_GET['period'] ?? '30d';
-$selected_event_id = isset($_GET['event_id']) && $_GET['event_id'] !== '' ? (int)$_GET['event_id'] : null;
+$selected_event_id = isset($_GET['event_id']) && $_GET['event_id'] !== '' ? (int) $_GET['event_id'] : null;
 
 switch ($period) {
     case '7d':
-        $sql_period_cur_tkt = "t.date_achat >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-        $sql_period_prev_tkt = "t.date_achat BETWEEN DATE_SUB(NOW(), INTERVAL 14 DAY) AND DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        $sql_period_cur_tkt = "t.date_achat >= NOW() - INTERVAL '7 days'";
+        $sql_period_prev_tkt = "t.date_achat BETWEEN NOW() - INTERVAL '14 days' AND NOW() - INTERVAL '7 days'";
         $points_count = 7;
         $step_days = 1;
         $period_label = "7 derniers jours";
         break;
 
     case 'this_month':
-        $sql_period_cur_tkt = "MONTH(t.date_achat) = MONTH(CURDATE()) AND YEAR(t.date_achat) = YEAR(CURDATE())";
-        $sql_period_prev_tkt = "MONTH(t.date_achat) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND YEAR(t.date_achat) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))";
+        $sql_period_cur_tkt = "EXTRACT(MONTH FROM t.date_achat) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM t.date_achat) = EXTRACT(YEAR FROM CURRENT_DATE)";
+        $sql_period_prev_tkt = "EXTRACT(MONTH FROM t.date_achat) = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 month') AND EXTRACT(YEAR FROM t.date_achat) = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '1 month')";
         $points_count = 6;
         $step_days = 5;
         $period_label = "Ce mois-ci (" . date('F Y') . ")";
         break;
 
     case 'this_year':
-        $sql_period_cur_tkt = "YEAR(t.date_achat) = YEAR(CURDATE())";
-        $sql_period_prev_tkt = "YEAR(t.date_achat) = YEAR(CURDATE()) - 1";
+        $sql_period_cur_tkt = "EXTRACT(YEAR FROM t.date_achat) = EXTRACT(YEAR FROM CURRENT_DATE)";
+        $sql_period_prev_tkt = "EXTRACT(YEAR FROM t.date_achat) = EXTRACT(YEAR FROM CURRENT_DATE) - 1";
         $points_count = 7;
         $step_days = 50;
         $period_label = "Cette année (" . date('Y') . ")";
@@ -50,8 +50,8 @@ switch ($period) {
     case '30d':
     default:
         $period = '30d';
-        $sql_period_cur_tkt = "t.date_achat >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-        $sql_period_prev_tkt = "t.date_achat BETWEEN DATE_SUB(NOW(), INTERVAL 60 DAY) AND DATE_SUB(NOW(), INTERVAL 30 DAY)";
+        $sql_period_cur_tkt = "t.date_achat >= NOW() - INTERVAL '30 days'";
+        $sql_period_prev_tkt = "t.date_achat BETWEEN NOW() - INTERVAL '60 days' AND NOW() - INTERVAL '30 days'";
         $points_count = 7;
         $step_days = 5;
         $period_label = "30 derniers jours";
@@ -68,9 +68,11 @@ $stmt_my_ev_list->execute([$user_id]);
 $my_events_list = $stmt_my_ev_list->fetchAll();
 
 // Fonction dynamique de calcul d'évolution
-function get_prom_growth($current, $previous) {
+function get_prom_growth($current, $previous)
+{
     if ($previous <= 0) {
-        if ($current > 0) return ['dir' => 'up', 'text' => '+100%', 'class' => 'up'];
+        if ($current > 0)
+            return ['dir' => 'up', 'text' => '+100%', 'class' => 'up'];
         return ['dir' => 'neutral', 'text' => '0%', 'class' => 'neutral'];
     }
     $diff = (($current - $previous) / $previous) * 100;
@@ -95,7 +97,7 @@ $stmt_ca_cur = $pdo->prepare("
     WHERE e.user_id = ? AND t.statut IN ('vendu', 'utilise') AND $sql_period_cur_tkt $sql_ev_filter_tkt
 ");
 $stmt_ca_cur->execute([$user_id]);
-$total_ventes = (float)$stmt_ca_cur->fetchColumn();
+$total_ventes = (float) $stmt_ca_cur->fetchColumn();
 
 $stmt_ca_prev = $pdo->prepare("
     SELECT COALESCE(SUM(t.prix), 0)
@@ -104,7 +106,7 @@ $stmt_ca_prev = $pdo->prepare("
     WHERE e.user_id = ? AND t.statut IN ('vendu', 'utilise') AND $sql_period_prev_tkt $sql_ev_filter_tkt
 ");
 $stmt_ca_prev->execute([$user_id]);
-$prev_ventes = (float)$stmt_ca_prev->fetchColumn();
+$prev_ventes = (float) $stmt_ca_prev->fetchColumn();
 $ca_growth = get_prom_growth($total_ventes, $prev_ventes);
 
 // B. Revenu Net Promoteur (après déduction commission plateforme)
@@ -115,7 +117,7 @@ $stmt_comm = $pdo->prepare("
     WHERE e.user_id = ? AND t.statut IN ('vendu', 'utilise') AND $sql_period_cur_tkt $sql_ev_filter_tkt
 ");
 $stmt_comm->execute([$user_id]);
-$comm_prelevee = (float)$stmt_comm->fetchColumn();
+$comm_prelevee = (float) $stmt_comm->fetchColumn();
 $total_revenu_net = max(0, $total_ventes - $comm_prelevee);
 
 // C. Billets vendus & Capacité
@@ -126,7 +128,7 @@ $stmt_tkt_cur = $pdo->prepare("
     WHERE e.user_id = ? AND t.statut IN ('vendu', 'utilise') AND $sql_period_cur_tkt $sql_ev_filter_tkt
 ");
 $stmt_tkt_cur->execute([$user_id]);
-$total_tickets_sold = (int)$stmt_tkt_cur->fetchColumn();
+$total_tickets_sold = (int) $stmt_tkt_cur->fetchColumn();
 
 $stmt_tkt_prev = $pdo->prepare("
     SELECT COUNT(t.id)
@@ -135,7 +137,7 @@ $stmt_tkt_prev = $pdo->prepare("
     WHERE e.user_id = ? AND t.statut IN ('vendu', 'utilise') AND $sql_period_prev_tkt $sql_ev_filter_tkt
 ");
 $stmt_tkt_prev->execute([$user_id]);
-$prev_tickets_sold = (int)$stmt_tkt_prev->fetchColumn();
+$prev_tickets_sold = (int) $stmt_tkt_prev->fetchColumn();
 $tkt_growth = get_prom_growth($total_tickets_sold, $prev_tickets_sold);
 
 $stmt_prom_cap = $pdo->prepare("
@@ -145,7 +147,7 @@ $stmt_prom_cap = $pdo->prepare("
     WHERE e.user_id = ? $sql_ev_filter_cap
 ");
 $stmt_prom_cap->execute([$user_id]);
-$capacite_totale = (int)$stmt_prom_cap->fetchColumn();
+$capacite_totale = (int) $stmt_prom_cap->fetchColumn();
 $taux_occupation = ($capacite_totale > 0) ? min(100, round(($total_tickets_sold / $capacite_totale) * 100)) : 0;
 
 // D. Commandes et Panier Moyen
@@ -158,7 +160,7 @@ $stmt_prom_orders = $pdo->prepare("
 ");
 $stmt_prom_orders->execute([$user_id]);
 $prom_ord_res = $stmt_prom_orders->fetch();
-$total_orders = (int)$prom_ord_res['nb_orders'];
+$total_orders = (int) $prom_ord_res['nb_orders'];
 $panier_moyen = ($total_orders > 0) ? round($prom_ord_res['total_ca'] / $total_orders) : 0;
 
 // E. Check-in et Entrées aux portes
@@ -169,7 +171,7 @@ $stmt_prom_used = $pdo->prepare("
     WHERE e.user_id = ? AND t.statut = 'utilise' AND $sql_period_cur_tkt $sql_ev_filter_tkt
 ");
 $stmt_prom_used->execute([$user_id]);
-$total_tickets_used = (int)$stmt_prom_used->fetchColumn();
+$total_tickets_used = (int) $stmt_prom_used->fetchColumn();
 $taux_presence = ($total_tickets_sold > 0) ? min(100, round(($total_tickets_used / $total_tickets_sold) * 100)) : 0;
 
 // ==============================================================================
@@ -181,8 +183,10 @@ $chart_tickets_vals = [];
 
 for ($i = $points_count - 1; $i >= 0; $i--) {
     $offset = $i * $step_days;
-    $d = date('Y-m-d', strtotime("-$offset days"));
-    $chart_labels[] = date('d M', strtotime($d));
+    $d_end = date('Y-m-d', strtotime("-$offset days"));
+    $span = max(1, $step_days - 1);
+    $d_start = date('Y-m-d', strtotime("-$span days", strtotime($d_end)));
+    $chart_labels[] = date('d M', strtotime($d_end));
 
     $sql_pt_ev = $selected_event_id ? "AND t.event_id = $selected_event_id" : "";
     $stmt_pt = $pdo->prepare("
@@ -190,16 +194,17 @@ for ($i = $points_count - 1; $i >= 0; $i--) {
         FROM tickets t
         JOIN events e ON t.event_id = e.id
         WHERE e.user_id = ? AND t.statut IN ('vendu', 'utilise')
-          AND DATE(t.date_achat) BETWEEN DATE_SUB(?, INTERVAL ? DAY) AND ?
+          AND DATE(t.date_achat) BETWEEN ? AND ?
           $sql_pt_ev
     ");
-    $stmt_pt->execute([$user_id, $d, max(1, $step_days - 1), $d]);
+    $stmt_pt->execute([$user_id, $d_start, $d_end]);
     $row_pt = $stmt_pt->fetch();
-    $chart_revenue_vals[] = (float)($row_pt['ca'] ?? 0);
-    $chart_tickets_vals[] = (int)($row_pt['nb'] ?? 0);
+    $chart_revenue_vals[] = (float) ($row_pt['ca'] ?? 0);
+    $chart_tickets_vals[] = (int) ($row_pt['nb'] ?? 0);
 }
 
-$sparkline_data = array_map(function($v) { return max(1, (int)$v); }, $chart_revenue_vals);
+$sparkline_data = array_map(function ($v) {
+    return max(1, (int) $v); }, $chart_revenue_vals);
 
 // ==============================================================================
 // 4. RÉPARTITION MOBILE MONEY DYNAMIQUE DU PROMOTEUR
@@ -220,7 +225,7 @@ $methods_map = ['wave' => 0, 'orange_money' => 0, 'mtn_money' => 0, 'moov_money'
 foreach ($prom_methods_db as $m) {
     $k = $m['methode'];
     if (isset($methods_map[$k])) {
-        $methods_map[$k] = (float)$m['total_methode'];
+        $methods_map[$k] = (float) $m['total_methode'];
     }
 }
 $total_methods = array_sum($methods_map);
@@ -239,9 +244,9 @@ $stmt_orders_st = $pdo->prepare("
 $stmt_orders_st->execute([$user_id]);
 $prom_ord_st_map = $stmt_orders_st->fetchAll(PDO::FETCH_KEY_PAIR);
 
-$orders_payees   = (int)($prom_ord_st_map['payee'] ?? 0);
-$orders_attente  = (int)($prom_ord_st_map['en_attente'] ?? 0);
-$orders_annulees = (int)($prom_ord_st_map['annulee'] ?? 0) + (int)($prom_ord_st_map['echouee'] ?? 0);
+$orders_payees = (int) ($prom_ord_st_map['payee'] ?? 0);
+$orders_attente = (int) ($prom_ord_st_map['en_attente'] ?? 0);
+$orders_annulees = (int) ($prom_ord_st_map['annulee'] ?? 0) + (int) ($prom_ord_st_map['echouee'] ?? 0);
 $orders_all = $orders_payees + $orders_attente + $orders_annulees;
 
 // ==============================================================================
@@ -282,7 +287,7 @@ $tt_labels = [];
 $tt_values = [];
 foreach ($tt_stats_prom as $tts) {
     $tt_labels[] = $tts['nom'];
-    $tt_values[] = (float)$tts['ca_type'];
+    $tt_values[] = (float) $tts['ca_type'];
 }
 
 // ==============================================================================
@@ -321,31 +326,40 @@ try {
                 <i class="fa-solid fa-chart-pie" style="color: var(--dash-primary); font-size: 1.6rem;"></i>
                 Tableau de Bord Organisateur
             </h1>
-            <p>Données de billetterie en temps réel pour la période : <strong><?php echo htmlspecialchars($period_label); ?></strong></p>
+            <p>Bienvenue, <strong
+                    style="color: var(--dash-text);"><?php echo htmlspecialchars($user_full_name); ?></strong><?php if (!empty($nom_commercial)): ?> <span style="font-weight: 600; color: var(--dash-muted);">(<?php echo htmlspecialchars($nom_commercial); ?>)</span><?php endif; ?> · Données de
+                billetterie en temps réel pour la période :
+                <strong><?php echo htmlspecialchars($period_label); ?></strong></p>
         </div>
 
         <div class="dash-filter-bar">
             <!-- Formulaire de filtrage dynamique -->
-            <form method="GET" action="dashboard.php" id="promFilterForm" style="display: flex; align-items: center; gap: 0.5rem; margin: 0; flex-wrap: wrap;">
+            <form method="GET" action="dashboard.php" id="promFilterForm"
+                style="display: flex; align-items: center; gap: 0.5rem; margin: 0; flex-wrap: wrap;">
                 <!-- Filtre Période -->
                 <div class="dash-control-select" style="padding: 0.4rem 0.8rem;">
                     <i class="fa-regular fa-calendar" style="color: var(--dash-primary);"></i>
-                    <select name="period" onchange="document.getElementById('promFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer;">
+                    <select name="period" onchange="document.getElementById('promFilterForm').submit();"
+                        style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer;">
                         <option value="7d" <?php echo $period === '7d' ? 'selected' : ''; ?>>7 derniers jours</option>
                         <option value="30d" <?php echo $period === '30d' ? 'selected' : ''; ?>>30 derniers jours</option>
-                        <option value="this_month" <?php echo $period === 'this_month' ? 'selected' : ''; ?>>Ce mois-ci</option>
-                        <option value="this_year" <?php echo $period === 'this_year' ? 'selected' : ''; ?>>Cette année</option>
-                        <option value="all" <?php echo $period === 'all' ? 'selected' : ''; ?>>Toutes les périodes</option>
+                        <option value="this_month" <?php echo $period === 'this_month' ? 'selected' : ''; ?>>Ce mois-ci
+                        </option>
+                        <option value="this_year" <?php echo $period === 'this_year' ? 'selected' : ''; ?>>Cette année
+                        </option>
+                        <option value="all" <?php echo $period === 'all' ? 'selected' : ''; ?>>Toutes les périodes
+                        </option>
                     </select>
                 </div>
 
                 <!-- Filtre Événement spécifique -->
                 <div class="dash-control-select" style="padding: 0.4rem 0.8rem;">
                     <i class="fa-solid fa-filter" style="color: var(--dash-secondary);"></i>
-                    <select name="event_id" onchange="document.getElementById('promFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; max-width: 200px;">
+                    <select name="event_id" onchange="document.getElementById('promFilterForm').submit();"
+                        style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; max-width: 200px;">
                         <option value="">Tous mes événements</option>
                         <?php foreach ($my_events_list as $ev_item): ?>
-                            <option value="<?php echo $ev_item['id']; ?>" <?php echo $selected_event_id === (int)$ev_item['id'] ? 'selected' : ''; ?>>
+                            <option value="<?php echo $ev_item['id']; ?>" <?php echo $selected_event_id === (int) $ev_item['id'] ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars(mb_strimwidth($ev_item['nom'], 0, 25, '...')); ?>
                             </option>
                         <?php endforeach; ?>
@@ -353,8 +367,13 @@ try {
                 </div>
             </form>
 
+            <a href="export.php?type=ventes<?php echo $selected_event_id ? '&event_id=' . (int)$selected_event_id : ''; ?>&period=<?php echo urlencode($period); ?>" class="dash-btn-action" style="text-decoration: none;" title="Exporter les données de billetterie sur Excel (CSV)">
+                <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
+                <span>Exporter Excel</span>
+            </a>
+
             <button type="button" class="dash-btn-action" onclick="window.print()" title="Imprimer le bilan des ventes">
-                <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i>
+                <i class="fa-solid fa-file-pdf" style="color: #000000;"></i>
                 <span>Imprimer Bilan</span>
             </button>
 
@@ -369,18 +388,20 @@ try {
          2. RACCOURCIS D'ACTIONS RAPIDES
          ============================================================================== -->
     <div class="dash-quick-shortcuts">
-        <a href="solde.php" class="dash-shortcut-card" style="border-left: 4px solid #10b981;">
-            <div class="dash-shortcut-icon" style="background: #ecfdf5; color: #10b981;">
+        <a href="solde.php" class="dash-shortcut-card" style="border-left: 4px solid var(--tikeli-orange, #FF4A0D);">
+            <div class="dash-shortcut-icon" style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D);">
                 <i class="fa-solid fa-wallet"></i>
             </div>
             <div class="dash-shortcut-text">
-                <strong style="color: #10b981; font-size: 0.95rem;"><?php echo number_format($solde_actuel, 0, ',', ' '); ?> F</strong>
+                <strong
+                    style="color: var(--tikeli-orange, #FF4A0D); font-size: 0.95rem;"><?php echo number_format($solde_actuel, 0, ',', ' '); ?>
+                    F</strong>
                 <small>Solde Disponible (Retrait)</small>
             </div>
         </a>
 
         <a href="mes-ventes.php" class="dash-shortcut-card">
-            <div class="dash-shortcut-icon" style="background: #eeedfd; color: var(--dash-primary);">
+            <div class="dash-shortcut-icon" style="background: #F5F5F5; color: #000000;">
                 <i class="fa-solid fa-ticket"></i>
             </div>
             <div class="dash-shortcut-text">
@@ -390,7 +411,7 @@ try {
         </a>
 
         <a href="mes-evenements.php" class="dash-shortcut-card">
-            <div class="dash-shortcut-icon" style="background: #fff7ed; color: #f97316;">
+            <div class="dash-shortcut-icon" style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D);">
                 <i class="fa-solid fa-calendar-days"></i>
             </div>
             <div class="dash-shortcut-text">
@@ -400,7 +421,7 @@ try {
         </a>
 
         <a href="agents.php" class="dash-shortcut-card">
-            <div class="dash-shortcut-icon" style="background: #f0f9ff; color: #0ea5e9;">
+            <div class="dash-shortcut-icon" style="background: #F5F5F5; color: #000000;">
                 <i class="fa-solid fa-users-gear"></i>
             </div>
             <div class="dash-shortcut-text">
@@ -421,12 +442,15 @@ try {
                     <i class="fa-solid fa-money-bill-wave"></i>
                 </div>
                 <span class="dash-kpi-badge-pill <?php echo $ca_growth['class']; ?>">
-                    <i class="fa-solid fa-arrow-trend-<?php echo $ca_growth['dir'] === 'down' ? 'down' : 'up'; ?>"></i> <?php echo $ca_growth['text']; ?>
+                    <i class="fa-solid fa-arrow-trend-<?php echo $ca_growth['dir'] === 'down' ? 'down' : 'up'; ?>"></i>
+                    <?php echo $ca_growth['text']; ?>
                 </span>
             </div>
             <div class="dash-kpi-title">Recettes Brutes</div>
-            <div class="dash-kpi-amount"><?php echo number_format($total_ventes, 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
-            <div class="dash-kpi-sub">Total billets vendus sur la période <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-amount"><?php echo number_format($total_ventes, 0, ',', ' '); ?> <small
+                    style="font-size: 0.72rem; font-weight: 700;">F</small></div>
+            <div class="dash-kpi-sub">Total billets vendus sur la période <i class="fa-solid fa-arrow-right"
+                    style="font-size: 0.65rem; margin-left: 2px;"></i></div>
             <div class="dash-sparkline-box">
                 <canvas id="promSpark1"></canvas>
             </div>
@@ -443,8 +467,11 @@ try {
                 </span>
             </div>
             <div class="dash-kpi-title">Revenu Net (95%)</div>
-            <div class="dash-kpi-amount" style="color: #10b981;"><?php echo number_format($total_revenu_net, 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
-            <div class="dash-kpi-sub">Après déduction des commissions <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-amount" style="color: var(--tikeli-orange, #FF4A0D);">
+                <?php echo number_format($total_revenu_net, 0, ',', ' '); ?> <small
+                    style="font-size: 0.72rem; font-weight: 700;">F</small></div>
+            <div class="dash-kpi-sub">Après déduction des commissions <i class="fa-solid fa-arrow-right"
+                    style="font-size: 0.65rem; margin-left: 2px;"></i></div>
             <div class="dash-sparkline-box">
                 <canvas id="promSpark2"></canvas>
             </div>
@@ -457,12 +484,14 @@ try {
                     <i class="fa-solid fa-ticket"></i>
                 </div>
                 <span class="dash-kpi-badge-pill <?php echo $tkt_growth['class']; ?>">
-                    <i class="fa-solid fa-arrow-trend-<?php echo $tkt_growth['dir'] === 'down' ? 'down' : 'up'; ?>"></i> <?php echo $tkt_growth['text']; ?>
+                    <i class="fa-solid fa-arrow-trend-<?php echo $tkt_growth['dir'] === 'down' ? 'down' : 'up'; ?>"></i>
+                    <?php echo $tkt_growth['text']; ?>
                 </span>
             </div>
             <div class="dash-kpi-title">Billets Écoulés</div>
             <div class="dash-kpi-amount"><?php echo number_format($total_tickets_sold, 0, ',', ' '); ?></div>
-            <div class="dash-kpi-sub">Sur <?php echo number_format($capacite_totale, 0, ',', ' '); ?> places créées <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-sub">Sur <?php echo number_format($capacite_totale, 0, ',', ' '); ?> places créées <i
+                    class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
             <div class="dash-sparkline-box">
                 <canvas id="promSpark3"></canvas>
             </div>
@@ -479,8 +508,10 @@ try {
                 </span>
             </div>
             <div class="dash-kpi-title">Panier Moyen</div>
-            <div class="dash-kpi-amount"><?php echo number_format($panier_moyen, 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
-            <div class="dash-kpi-sub"><?php echo number_format($total_orders, 0, ',', ' '); ?> commandes passées <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-amount"><?php echo number_format($panier_moyen, 0, ',', ' '); ?> <small
+                    style="font-size: 0.72rem; font-weight: 700;">F</small></div>
+            <div class="dash-kpi-sub"><?php echo number_format($total_orders, 0, ',', ' '); ?> commandes passées <i
+                    class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
             <div class="dash-sparkline-box">
                 <canvas id="promSpark4"></canvas>
             </div>
@@ -498,7 +529,8 @@ try {
             </div>
             <div class="dash-kpi-title">Check-in Effectués</div>
             <div class="dash-kpi-amount"><?php echo number_format($total_tickets_used, 0, ',', ' '); ?></div>
-            <div class="dash-kpi-sub"><?php echo $taux_presence; ?>% de présence réelle <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-sub"><?php echo $taux_presence; ?>% de présence réelle <i
+                    class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
             <div class="dash-sparkline-box">
                 <canvas id="promSpark5"></canvas>
             </div>
@@ -515,8 +547,9 @@ try {
                 </span>
             </div>
             <div class="dash-kpi-title">Taux de Remplissage</div>
-            <div class="dash-kpi-amount" style="color: #ec4899;"><?php echo $taux_occupation; ?>%</div>
-            <div class="dash-kpi-sub">Capacité globale utilisée <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-amount" style="color: #FF4A0D;"><?php echo $taux_occupation; ?>%</div>
+            <div class="dash-kpi-sub">Capacité globale utilisée <i class="fa-solid fa-arrow-right"
+                    style="font-size: 0.65rem; margin-left: 2px;"></i></div>
             <div class="dash-sparkline-box">
                 <canvas id="promSpark6"></canvas>
             </div>
@@ -538,8 +571,10 @@ try {
                     <div class="dash-card-subtitle">7 repères clés de la période sélectionnée</div>
                 </div>
                 <div class="dash-chart-tabs">
-                    <button type="button" class="dash-chart-tab active" onclick="switchPromChartMode('revenue', this)">Recettes (F)</button>
-                    <button type="button" class="dash-chart-tab" onclick="switchPromChartMode('tickets', this)">Billets</button>
+                    <button type="button" class="dash-chart-tab active"
+                        onclick="switchPromChartMode('revenue', this)">Recettes (F)</button>
+                    <button type="button" class="dash-chart-tab"
+                        onclick="switchPromChartMode('tickets', this)">Billets</button>
                 </div>
             </div>
             <div style="height: 225px; max-height: 225px; position: relative; width: 100%; overflow: hidden;">
@@ -561,7 +596,8 @@ try {
             <div class="dash-donut-box" style="height: 180px;">
                 <canvas id="promPaymentChart"></canvas>
                 <div class="dash-donut-info-center">
-                    <strong style="font-size: 1.15rem;"><?php echo number_format($total_methods, 0, ',', ' '); ?> F</strong>
+                    <strong style="font-size: 1.15rem;"><?php echo number_format($total_methods, 0, ',', ' '); ?>
+                        F</strong>
                     <span style="font-size: 0.7rem;">Total Encaissé</span>
                 </div>
             </div>
@@ -569,15 +605,16 @@ try {
                 <?php
                 $methods_cfg = [
                     'wave' => ['label' => 'Wave', 'color' => '#1dc4e9'],
-                    'orange_money' => ['label' => 'Orange Money', 'color' => '#ff7900'],
-                    'mtn_money' => ['label' => 'MTN MoMo', 'color' => '#ffcc00'],
-                    'moov_money' => ['label' => 'Moov Money', 'color' => '#0066b3']
+                    'orange_money' => ['label' => 'Orange Money', 'color' => '#FF4A0D'],
+                    'mtn_money' => ['label' => 'MTN MoMo', 'color' => '#f59e0b'],
+                    'moov_money' => ['label' => 'Moov Money', 'color' => '#10b981']
                 ];
                 foreach ($methods_map as $key => $amount):
-                    $cfg = $methods_cfg[$key] ?? ['label' => ucfirst($key), 'color' => '#64748b'];
+                    $cfg = $methods_cfg[$key] ?? ['label' => ucfirst($key), 'color' => '#737373'];
                     $pct = ($total_methods > 0) ? round(($amount / $total_methods) * 100) : 0;
-                ?>
-                    <a href="mes-ventes.php" class="dash-legend-entry" title="Voir mes ventes <?php echo htmlspecialchars($cfg['label']); ?>">
+                    ?>
+                    <a href="mes-ventes.php" class="dash-legend-entry"
+                        title="Voir mes ventes <?php echo htmlspecialchars($cfg['label']); ?>">
                         <div class="dash-legend-name">
                             <span class="dash-legend-bullet" style="background: <?php echo $cfg['color']; ?>;"></span>
                             <span><?php echo $cfg['label']; ?></span>
@@ -617,7 +654,8 @@ try {
                     </div>
                     <div class="dash-legend-details">
                         <span class="dash-legend-num"><?php echo number_format($orders_payees, 0, ',', ' '); ?></span>
-                        <span class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_payees / $orders_all) * 100) : 0; ?>%)</span>
+                        <span
+                            class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_payees / $orders_all) * 100) : 0; ?>%)</span>
                     </div>
                 </a>
                 <a href="mes-ventes.php" class="dash-legend-entry" title="Voir mes commandes en attente">
@@ -627,7 +665,8 @@ try {
                     </div>
                     <div class="dash-legend-details">
                         <span class="dash-legend-num"><?php echo number_format($orders_attente, 0, ',', ' '); ?></span>
-                        <span class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_attente / $orders_all) * 100) : 0; ?>%)</span>
+                        <span
+                            class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_attente / $orders_all) * 100) : 0; ?>%)</span>
                     </div>
                 </a>
                 <a href="mes-ventes.php" class="dash-legend-entry" title="Voir mes commandes annulées">
@@ -637,7 +676,8 @@ try {
                     </div>
                     <div class="dash-legend-details">
                         <span class="dash-legend-num"><?php echo number_format($orders_annulees, 0, ',', ' '); ?></span>
-                        <span class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_annulees / $orders_all) * 100) : 0; ?>%)</span>
+                        <span
+                            class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_annulees / $orders_all) * 100) : 0; ?>%)</span>
                     </div>
                 </a>
             </div>
@@ -653,7 +693,7 @@ try {
             <div class="dash-card-head">
                 <div>
                     <h3 class="dash-card-title">
-                        <i class="fa-solid fa-calendar-check" style="color: #f59e0b;"></i>
+                        <i class="fa-solid fa-calendar-check" style="color: #FF4A0D;"></i>
                         Performances de Vos Événements
                     </h3>
                     <div class="dash-card-subtitle">Recettes générées sur la période</div>
@@ -674,11 +714,11 @@ try {
                         <?php if (!empty($my_top_events)): ?>
                             <?php foreach ($my_top_events as $ev): ?>
                                 <?php
-                                $cap = (int)$ev['capacite'];
-                                $vds = (int)$ev['tickets_vendus'];
+                                $cap = (int) $ev['capacite'];
+                                $vds = (int) $ev['tickets_vendus'];
                                 $pct = ($cap > 0) ? min(100, round(($vds / $cap) * 100)) : 0;
-                                $color = ($pct >= 75) ? '#10b981' : (($pct >= 50) ? '#f59e0b' : '#64748b');
-                                
+                                $color = ($pct >= 75) ? '#FF4A0D' : (($pct >= 50) ? '#FF4A0D' : '#737373');
+
                                 $ev_img = 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=150&q=80';
                                 if (!empty($ev['image'])) {
                                     if (strpos($ev['image'], 'http') === 0) {
@@ -688,25 +728,32 @@ try {
                                     }
                                 }
                                 ?>
-                                <tr class="dash-clickable-row" onclick="window.location='mes-ventes.php?event_id=<?php echo $ev['id']; ?>'" title="Cliquer pour gérer les ventes de cet événement">
+                                <tr class="dash-clickable-row"
+                                    onclick="window.location='mes-ventes.php?event_id=<?php echo $ev['id']; ?>'"
+                                    title="Cliquer pour gérer les ventes de cet événement">
                                     <td>
                                         <div class="dash-event-cell">
                                             <img src="<?php echo $ev_img; ?>" alt="" class="dash-event-poster">
                                             <div class="dash-event-meta">
                                                 <strong><?php echo htmlspecialchars($ev['nom']); ?></strong>
-                                                <small><i class="fa-solid fa-clock"></i> <?php echo htmlspecialchars($ev['heure'] ?: '20:00'); ?></small>
+                                                <small><i class="fa-solid fa-clock"></i>
+                                                    <?php echo htmlspecialchars($ev['heure'] ?: '20:00'); ?></small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td style="white-space: nowrap; font-size: 0.8rem;"><?php echo date('d/m/Y', strtotime($ev['date_evenement'])); ?></td>
+                                    <td style="white-space: nowrap; font-size: 0.8rem;">
+                                        <?php echo date('d/m/Y', strtotime($ev['date_evenement'])); ?></td>
                                     <td><strong><?php echo number_format($vds, 0, ',', ' '); ?></strong></td>
-                                    <td style="font-weight: 700; color: var(--dash-primary);"><?php echo number_format((float)$ev['ca_total'], 0, ',', ' '); ?> F</td>
+                                    <td style="font-weight: 700; color: var(--dash-primary);">
+                                        <?php echo number_format((float) $ev['ca_total'], 0, ',', ' '); ?> F</td>
                                     <td>
                                         <div style="display: flex; align-items: center;">
                                             <span class="dash-gauge-track">
-                                                <span class="dash-gauge-progress" style="width: <?php echo $pct; ?>%; background: <?php echo $color; ?>; display: block;"></span>
+                                                <span class="dash-gauge-progress"
+                                                    style="width: <?php echo $pct; ?>%; background: <?php echo $color; ?>; display: block;"></span>
                                             </span>
-                                            <strong style="color: <?php echo $color; ?>; font-size: 0.76rem;"><?php echo $pct; ?>%</strong>
+                                            <strong
+                                                style="color: <?php echo $color; ?>; font-size: 0.76rem;"><?php echo $pct; ?>%</strong>
                                         </div>
                                     </td>
                                 </tr>
@@ -714,7 +761,8 @@ try {
                         <?php else: ?>
                             <tr>
                                 <td colspan="5" style="text-align: center; color: var(--dash-muted); padding: 2rem;">
-                                    Vous n'avez pas encore d'événements créés. <a href="demande-evenement.php" style="color: var(--dash-primary); font-weight: 700;">Proposer un événement</a>
+                                    Vous n'avez pas encore d'événements créés. <a href="demande-evenement.php"
+                                        style="color: var(--dash-primary); font-weight: 700;">Proposer un événement</a>
                                 </td>
                             </tr>
                         <?php endif; ?>
@@ -744,13 +792,14 @@ try {
             <div class="dash-card-head">
                 <div>
                     <h3 class="dash-card-title">
-                        <i class="fa-solid fa-bolt" style="color: #10b981;"></i>
+                        <i class="fa-solid fa-bolt" style="color: #FF4A0D;"></i>
                         Activités Récentes en Direct
                     </h3>
                     <div class="dash-card-subtitle">Ventes et scans de vos événements</div>
                 </div>
-                <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 700; color: #10b981; background: #ecfdf5; padding: 3px 8px; border-radius: 6px;">
-                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981;"></span> Live
+                <span
+                    style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; font-weight: 700; color: #FF4A0D; background: #FFF2ED; padding: 3px 8px; border-radius: 6px;">
+                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #FF4A0D;"></span> Live
                 </span>
             </div>
             <div class="dash-live-stream">
@@ -758,23 +807,28 @@ try {
                     <?php foreach ($live_activities as $act): ?>
                         <a href="mes-ventes.php" class="dash-stream-card" title="Voir mes ventes">
                             <div class="dash-stream-left">
-                                <div class="dash-stream-icon" style="background: #eeedfd; color: var(--dash-primary);">
+                                <div class="dash-stream-icon" style="background: #FFF2ED; color: var(--dash-primary);">
                                     <i class="fa-solid fa-ticket"></i>
                                 </div>
                                 <div class="dash-stream-texts">
-                                    <span class="dash-stream-title"><?php echo htmlspecialchars($act['ticket_type'] ?: 'Billet'); ?> - <?php echo htmlspecialchars(mb_strimwidth($act['event_nom'], 0, 18, '...')); ?></span>
-                                    <span class="dash-stream-desc">Client : <?php echo htmlspecialchars($act['client_nom'] ?: 'Acheteur Web'); ?></span>
+                                    <span
+                                        class="dash-stream-title"><?php echo htmlspecialchars($act['ticket_type'] ?: 'Billet'); ?>
+                                        - <?php echo htmlspecialchars(mb_strimwidth($act['event_nom'], 0, 18, '...')); ?></span>
+                                    <span class="dash-stream-desc">Client :
+                                        <?php echo htmlspecialchars($act['client_nom'] ?: 'Acheteur Web'); ?></span>
                                 </div>
                             </div>
                             <div class="dash-stream-right">
                                 <span class="dash-stream-val">+<?php echo number_format($act['prix'], 0, ',', ' '); ?> F</span>
-                                <span class="dash-stream-time"><?php echo date('d/m H:i', strtotime($act['date_achat'])); ?></span>
+                                <span
+                                    class="dash-stream-time"><?php echo date('d/m H:i', strtotime($act['date_achat'])); ?></span>
                             </div>
                         </a>
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div style="text-align: center; color: var(--dash-muted); padding: 2.5rem 1rem;">
-                        <i class="fa-solid fa-inbox" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem; display: block;"></i>
+                        <i class="fa-solid fa-inbox"
+                            style="font-size: 2rem; color: #E5E5E5; margin-bottom: 0.5rem; display: block;"></i>
                         <span style="font-size: 0.85rem;">Aucune transaction enregistrée récemment.</span>
                     </div>
                 <?php endif; ?>
@@ -785,14 +839,17 @@ try {
     <!-- ==============================================================================
          6. PIED DE PAGE DE SYNCHRONISATION
          ============================================================================== -->
-    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid var(--dash-border); font-size: 0.82rem; color: var(--dash-muted); flex-wrap: wrap; gap: 0.75rem;">
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid var(--dash-border); font-size: 0.82rem; color: var(--dash-muted); flex-wrap: wrap; gap: 0.75rem;">
         <div>
-            <span><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Données financières synchronisées</span>
+            <span><i class="fa-solid fa-circle-check" style="color: #FF4A0D;"></i> Données financières
+                synchronisées</span>
             <span style="margin: 0 8px;">•</span>
             <span>Dernière synchronisation : <strong><?php echo date('d/m/Y à H:i:s'); ?></strong></span>
         </div>
         <div>
-            <a href="dashboard.php?period=<?php echo urlencode($period); ?><?php echo $selected_event_id ? '&event_id=' . $selected_event_id : ''; ?>" style="color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            <a href="dashboard.php?period=<?php echo urlencode($period); ?><?php echo $selected_event_id ? '&event_id=' . $selected_event_id : ''; ?>"
+                style="color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                 <i class="fa-solid fa-rotate"></i> Actualiser instantanément
             </a>
         </div>
@@ -803,254 +860,256 @@ try {
      SCRIPTS CHART.JS ORGANISATEUR
      ============================================================================== -->
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // 1. Sparklines pour les 6 KPIs
-    function drawPromSparkline(canvasId, lineColor, fillColor, dataPoints) {
-        const el = document.getElementById(canvasId);
-        if (!el) return;
-        const ctx = el.getContext('2d');
-        const grad = ctx.createLinearGradient(0, 0, 0, 42);
-        grad.addColorStop(0, fillColor);
-        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    document.addEventListener("DOMContentLoaded", function () {
+        // 1. Sparklines pour les 6 KPIs
+        function drawPromSparkline(canvasId, lineColor, fillColor, dataPoints) {
+            const el = document.getElementById(canvasId);
+            if (!el) return;
+            const ctx = el.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 42);
+            grad.addColorStop(0, fillColor);
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
-        new Chart(el, {
-            type: 'line',
-            data: {
-                labels: dataPoints.map((_, i) => i),
-                datasets: [{
-                    data: dataPoints,
-                    borderColor: lineColor,
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    fill: true,
-                    backgroundColor: grad,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                resizeDelay: 200,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                scales: {
-                    x: { display: false },
-                    y: { display: false, min: 0 }
-                }
-            }
-        });
-    }
-
-    const dynSparkProm = <?php echo json_encode(!empty($sparkline_data) ? $sparkline_data : [1, 2, 1, 3, 2, 4, 3]); ?>;
-    drawPromSparkline('promSpark1', '#5b50e6', 'rgba(91, 80, 230, 0.28)', dynSparkProm);
-    drawPromSparkline('promSpark2', '#10b981', 'rgba(16, 185, 129, 0.28)', dynSparkProm);
-    drawPromSparkline('promSpark3', '#0ea5e9', 'rgba(14, 165, 233, 0.28)', dynSparkProm);
-    drawPromSparkline('promSpark4', '#eab308', 'rgba(234, 179, 8, 0.28)',  dynSparkProm);
-    drawPromSparkline('promSpark5', '#f97316', 'rgba(249, 115, 22, 0.28)', dynSparkProm);
-    drawPromSparkline('promSpark6', '#ec4899', 'rgba(236, 72, 153, 0.28)', dynSparkProm);
-
-    // 2. Courbe Recettes & Billets du promoteur
-    const ctxMainProm = document.getElementById('promEvolutionChart');
-    let promChartInstance = null;
-
-    if (ctxMainProm) {
-        const mCtx = ctxMainProm.getContext('2d');
-        const revGrad = mCtx.createLinearGradient(0, 0, 0, 225);
-        revGrad.addColorStop(0, 'rgba(91, 80, 230, 0.32)');
-        revGrad.addColorStop(1, 'rgba(91, 80, 230, 0.01)');
-
-        promChartInstance = new Chart(ctxMainProm, {
-            type: 'line',
-            data: {
-                labels: <?php echo json_encode($chart_labels); ?>,
-                datasets: [{
-                    label: "Recettes (FCFA)",
-                    data: <?php echo json_encode($chart_revenue_vals); ?>,
-                    borderColor: '#5b50e6',
-                    borderWidth: 3,
-                    fill: true,
-                    backgroundColor: revGrad,
-                    tension: 0.38,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#5b50e6',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 7
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                resizeDelay: 200,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        titleFont: { size: 13, weight: 'bold' },
-                        bodyFont: { size: 12 },
-                        padding: 10,
-                        cornerRadius: 8,
-                        callbacks: {
-                            label: function(ctx) {
-                                return ctx.parsed.y.toLocaleString('fr-FR') + ' FCFA';
-                            }
-                        }
-                    }
+            new Chart(el, {
+                type: 'line',
+                data: {
+                    labels: dataPoints.map((_, i) => i),
+                    datasets: [{
+                        data: dataPoints,
+                        borderColor: lineColor,
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: true,
+                        backgroundColor: grad,
+                        tension: 0.4
+                    }]
                 },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#94a3b8', font: { size: 11, weight: '600' } }
-                    },
-                    y: {
-                        grid: { color: '#f1f5f9', borderDash: [4, 4] },
-                        ticks: {
-                            color: '#94a3b8',
-                            font: { size: 11 },
-                            callback: function(v) {
-                                if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
-                                if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
-                                return v;
-                            }
-                        }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    resizeDelay: 200,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false, min: 0 }
                     }
                 }
-            }
-        });
-    }
-
-    // Basculement Recettes / Billets
-    window.switchPromChartMode = function(mode, btn) {
-        document.querySelectorAll('.dash-chart-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        if (!promChartInstance) return;
-
-        if (mode === 'tickets') {
-            promChartInstance.data.datasets[0].label = "Billets vendus";
-            promChartInstance.data.datasets[0].data = <?php echo json_encode($chart_tickets_vals); ?>;
-            promChartInstance.data.datasets[0].borderColor = '#0ea5e9';
-            promChartInstance.options.plugins.tooltip.callbacks.label = function(ctx) {
-                return ctx.parsed.y + ' billets vendus';
-            };
-            promChartInstance.options.scales.y.ticks.callback = function(v) { return v; };
-        } else {
-            promChartInstance.data.datasets[0].label = "Recettes (FCFA)";
-            promChartInstance.data.datasets[0].data = <?php echo json_encode($chart_revenue_vals); ?>;
-            promChartInstance.data.datasets[0].borderColor = '#5b50e6';
-            promChartInstance.options.plugins.tooltip.callbacks.label = function(ctx) {
-                return ctx.parsed.y.toLocaleString('fr-FR') + ' FCFA';
-            };
-            promChartInstance.options.scales.y.ticks.callback = function(v) {
-                if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
-                if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
-                return v;
-            };
+            });
         }
-        promChartInstance.update();
-    };
 
-    // 3. Donut Moyens de Paiement
-    const ctxPaymentProm = document.getElementById('promPaymentChart');
-    if (ctxPaymentProm) {
-        new Chart(ctxPaymentProm, {
-            type: 'doughnut',
-            data: {
-                labels: ['Wave', 'Orange Money', 'MTN MoMo', 'Moov Money'],
-                datasets: [{
-                    data: [
-                        <?php echo (float)$methods_map['wave']; ?>,
-                        <?php echo (float)$methods_map['orange_money']; ?>,
-                        <?php echo (float)$methods_map['mtn_money']; ?>,
-                        <?php echo (float)$methods_map['moov_money']; ?>
-                    ],
-                    backgroundColor: ['#1dc4e9', '#ff7900', '#ffcc00', '#0066b3'],
-                    borderWidth: 0,
-                    hoverOffset: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '74%',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        padding: 10,
-                        callbacks: {
-                            label: function(ctx) {
-                                return ctx.label + ' : ' + ctx.parsed.toLocaleString('fr-FR') + ' FCFA';
+        const dynSparkProm = <?php echo json_encode(!empty($sparkline_data) ? $sparkline_data : [1, 2, 1, 3, 2, 4, 3]); ?>;
+        drawPromSparkline('promSpark1', '#FF4A0D', 'rgba(255, 74, 13, 0.28)', dynSparkProm);
+        drawPromSparkline('promSpark2', '#000000', 'rgba(0, 0, 0, 0.18)', dynSparkProm);
+        drawPromSparkline('promSpark3', '#FF4A0D', 'rgba(255, 74, 13, 0.28)', dynSparkProm);
+        drawPromSparkline('promSpark4', '#000000', 'rgba(0, 0, 0, 0.18)', dynSparkProm);
+        drawPromSparkline('promSpark5', '#FF4A0D', 'rgba(255, 74, 13, 0.28)', dynSparkProm);
+        drawPromSparkline('promSpark6', '#000000', 'rgba(0, 0, 0, 0.18)', dynSparkProm);
+
+        // 2. Courbe Recettes & Billets du promoteur
+        const ctxMainProm = document.getElementById('promEvolutionChart');
+        let promChartInstance = null;
+
+        if (ctxMainProm) {
+            const mCtx = ctxMainProm.getContext('2d');
+            const revGrad = mCtx.createLinearGradient(0, 0, 0, 225);
+            revGrad.addColorStop(0, 'rgba(255, 74, 13, 0.32)');
+            revGrad.addColorStop(1, 'rgba(255, 74, 13, 0.01)');
+
+            promChartInstance = new Chart(ctxMainProm, {
+                type: 'line',
+                data: {
+                    labels: <?php echo json_encode($chart_labels); ?>,
+                    datasets: [{
+                        label: "Recettes (FCFA)",
+                        data: <?php echo json_encode($chart_revenue_vals); ?>,
+                        borderColor: '#FF4A0D',
+                        borderWidth: 3,
+                        fill: true,
+                        backgroundColor: revGrad,
+                        tension: 0.38,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#FF4A0D',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    resizeDelay: 200,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#000000',
+                            titleFont: { size: 13, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ctx.parsed.y.toLocaleString('fr-FR') + ' FCFA';
+                                }
                             }
                         }
-                    }
-                }
-            }
-        });
-    }
-
-    // 4. Donut Statut des tickets
-    const ctxOrdersProm = document.getElementById('promOrdersStatusChart');
-    if (ctxOrdersProm) {
-        new Chart(ctxOrdersProm, {
-            type: 'doughnut',
-            data: {
-                labels: ['Payées', 'En attente', 'Annulées'],
-                datasets: [{
-                    data: [<?php echo $orders_payees; ?>, <?php echo $orders_attente; ?>, <?php echo $orders_annulees; ?>],
-                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                    borderWidth: 0,
-                    hoverOffset: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '74%',
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-
-    // 5. Histogramme Bar Chart des Types de Billets
-    const ctxBarProm = document.getElementById('promTicketTypeChart');
-    if (ctxBarProm) {
-        new Chart(ctxBarProm, {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode(!empty($tt_labels) ? $tt_labels : ['Aucun billet']); ?>,
-                datasets: [{
-                    label: "Chiffre d'affaires",
-                    data: <?php echo json_encode(!empty($tt_values) ? $tt_values : [0]); ?>,
-                    backgroundColor: '#5b50e6',
-                    borderRadius: 8,
-                    borderSkipped: false,
-                    barThickness: 32
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#94a3b8', font: { size: 11, weight: '700' } }
                     },
-                    y: {
-                        grid: { color: '#f1f5f9', borderDash: [4, 4] },
-                        ticks: {
-                            color: '#94a3b8',
-                            font: { size: 11 },
-                            callback: function(v) {
-                                if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
-                                if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
-                                return v;
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#737373', font: { size: 11, weight: '600' } }
+                        },
+                        y: {
+                            grid: { color: '#F5F5F5', borderDash: [4, 4] },
+                            ticks: {
+                                color: '#737373',
+                                font: { size: 11 },
+                                callback: function (v) {
+                                    if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
+                                    if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
+                                    return v;
+                                }
                             }
                         }
                     }
                 }
+            });
+        }
+
+        // Basculement Recettes / Billets
+        window.switchPromChartMode = function (mode, btn) {
+            document.querySelectorAll('.dash-chart-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (!promChartInstance) return;
+
+            if (mode === 'tickets') {
+                promChartInstance.data.datasets[0].label = "Billets vendus";
+                promChartInstance.data.datasets[0].data = <?php echo json_encode($chart_tickets_vals); ?>;
+                promChartInstance.data.datasets[0].borderColor = '#FF4A0D';
+                promChartInstance.options.plugins.tooltip.callbacks.label = function (ctx) {
+                    return ctx.parsed.y + ' billets vendus';
+                };
+                promChartInstance.options.scales.y.ticks.callback = function (v) { return v; };
+            } else {
+                promChartInstance.data.datasets[0].label = "Recettes (FCFA)";
+                promChartInstance.data.datasets[0].data = <?php echo json_encode($chart_revenue_vals); ?>;
+                promChartInstance.data.datasets[0].borderColor = '#FF4A0D';
+                promChartInstance.options.plugins.tooltip.callbacks.label = function (ctx) {
+                    return ctx.parsed.y.toLocaleString('fr-FR') + ' FCFA';
+                };
+                promChartInstance.options.scales.y.ticks.callback = function (v) {
+                    if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
+                    if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
+                    return v;
+                };
             }
-        });
-    }
-});
+            promChartInstance.update();
+        };
+
+        // 3. Donut Moyens de Paiement
+        const ctxPaymentProm = document.getElementById('promPaymentChart');
+        if (ctxPaymentProm) {
+            new Chart(ctxPaymentProm, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Wave', 'Orange Money', 'MTN MoMo', 'Moov Money'],
+                    datasets: [{
+                        data: [
+                            <?php echo (float) $methods_map['wave']; ?>,
+                            <?php echo (float) $methods_map['orange_money']; ?>,
+                            <?php echo (float) $methods_map['mtn_money']; ?>,
+                            <?php echo (float) $methods_map['moov_money']; ?>
+                        ],
+                        backgroundColor: ['#FF4A0D', '#FF4A0D', '#FF4A0D', '#FF4A0D'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '74%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#000000',
+                            padding: 10,
+                            callbacks: {
+                                label: function (ctx) {
+                                    return ctx.label + ' : ' + ctx.parsed.toLocaleString('fr-FR') + ' FCFA';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. Donut Statut des tickets
+        const ctxOrdersProm = document.getElementById('promOrdersStatusChart');
+        if (ctxOrdersProm) {
+            new Chart(ctxOrdersProm, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Payées', 'En attente', 'Annulées'],
+                    datasets: [{
+                        data: [<?php echo $orders_payees; ?>, <?php echo $orders_attente; ?>, <?php echo $orders_annulees; ?>],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '74%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // 5. Histogramme Bar Chart des Types de Billets
+        const ctxBarProm = document.getElementById('promTicketTypeChart');
+        if (ctxBarProm) {
+            new Chart(ctxBarProm, {
+                type: 'bar',
+                data: {
+                    labels: <?php echo json_encode(!empty($tt_labels) ? $tt_labels : ['Aucun billet']); ?>,
+                    datasets: [{
+                        label: "Chiffre d'affaires",
+                        data: <?php echo json_encode(!empty($tt_values) ? $tt_values : [0]); ?>,
+                        backgroundColor: '#FF4A0D',
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barThickness: 32
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#737373', font: { size: 11, weight: '700' } }
+                        },
+                        y: {
+                            grid: { color: '#F5F5F5', borderDash: [4, 4] },
+                            ticks: {
+                                color: '#737373',
+                                font: { size: 11 },
+                                callback: function (v) {
+                                    if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
+                                    if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
+                                    return v;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
 </script>
+
+<?php include 'footer.php'; ?>

@@ -7,17 +7,13 @@
 require_once '../config/database.php';
 session_start();
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: accueil.php');
-    exit();
-}
-
-$order_id = filter_input(INPUT_POST, 'order_id', FILTER_VALIDATE_INT);
-$methode  = $_POST['methode'] ?? '';
-$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money'];
+// Feexpay JS SDK redirige via GET
+$order_id = filter_input(INPUT_GET, 'order_id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'order_id', FILTER_VALIDATE_INT);
+$methode  = $_GET['methode'] ?? $_POST['methode'] ?? '';
+$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'feexpay'];
 
 if (!$order_id || !in_array($methode, $methodes_autorisees, true)) {
-    $_SESSION['order_message'] = "Méthode de paiement non reconnue.";
+    $_SESSION['order_message'] = "Paiement non validé, annulé ou méthode non reconnue.";
     header('Location: accueil.php');
     exit();
 }
@@ -131,7 +127,7 @@ try {
         for ($i = 0; $i < $quantity; $i++) {
             $code_unique = 'TK-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8));
             $qr_code_url = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' . urlencode($code_unique);
-            $place_numero = $places_list[$i] ?? null;
+            $place_numero = !empty($places_list[$i]) ? mb_substr(trim($places_list[$i]), 0, 20, 'UTF-8') : null;
 
             $stmt_ticket->execute([
                 $order_id,
@@ -183,6 +179,12 @@ try {
 
             $stmt_upd_prom = $pdo->prepare("UPDATE promoters SET solde = solde + ? WHERE user_id = ?");
             $stmt_upd_prom->execute([$gain_net_promoteur, $promoter_user_id]);
+            if ($stmt_upd_prom->rowCount() === 0) {
+                try {
+                    $stmt_ins_prom = $pdo->prepare("INSERT INTO promoters (user_id, solde, nom_commercial) VALUES (?, ?, 'Organisateur')");
+                    $stmt_ins_prom->execute([$promoter_user_id, $gain_net_promoteur]);
+                } catch (PDOException $e) {}
+            }
         }
     }
 
@@ -216,11 +218,11 @@ include 'header.php';
 <main style="max-width: 960px; margin: 2rem auto; padding: 0 clamp(0.75rem, 2vw, 1rem);">
     <!-- En-tête de confirmation -->
     <div style="background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius-xl); padding: 2.5rem; text-align: center; box-shadow: var(--shadow-lg); margin-bottom: 2rem;">
-        <div style="width: 70px; height: 70px; background: #dcfce7; color: #16a34a; border-radius: 50%; display: grid; place-items: center; font-size: 2rem; margin: 0 auto 1.25rem;">
+        <div style="width: 70px; height: 70px; background: #FFF2ED; color: #FF4A0D; border-radius: 50%; display: grid; place-items: center; font-size: 2rem; margin: 0 auto 1.25rem;">
             <i class="fa-solid fa-check"></i>
         </div>
 
-        <span class="page-kicker" style="color: #16a34a;"><i class="fa-solid fa-circle-check"></i> Paiement Réussi avec Succès</span>
+        <span class="page-kicker" style="color: #FF4A0D;"><i class="fa-solid fa-circle-check"></i> Paiement Réussi avec Succès</span>
         <h1 style="color: var(--navy); margin: 0.2rem 0 0.5rem; font-size: 1.85rem;">Vos Billets sont Prêts !</h1>
         <p style="color: var(--muted); font-size: 0.95rem; max-width: 600px; margin: 0 auto 1.5rem;">
             Merci <strong><?php echo htmlspecialchars($client_nom); ?></strong>.
@@ -239,6 +241,21 @@ include 'header.php';
         </p>
 
         <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+            <?php 
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https://" : "http://";
+                $public_link = $protocol . ($_SERVER['HTTP_HOST'] ?? '') . "/ticket-platform/client/telecharger-pdf.php?order_id=" . $order_id;
+                $pdf_order_filename = "billets-commande-" . $order_id . ".pdf";
+                $wa_message = "🎟️ *Billets Officiels Eventia*\nCommande #" . ($order['numero_commande'] ?? $order_id) . "\nTitulaire : " . $client_nom . "\n📥 Télécharger le PDF : " . $public_link;
+            ?>
+            <button type="button" 
+                data-pdf="telecharger-pdf.php?order_id=<?php echo $order_id; ?>"
+                data-filename="<?php echo htmlspecialchars($pdf_order_filename, ENT_QUOTES); ?>"
+                data-message="<?php echo htmlspecialchars($wa_message, ENT_QUOTES); ?>"
+                onclick="shareTicketPdfWhatsApp(this)"
+                class="btn-submit" style="width: auto; padding: 0.65rem 1.4rem; background: #FF4A0D; text-decoration: none; border-color: #FF4A0D; color: white; cursor: pointer;" title="Envoyer le fichier PDF par WhatsApp">
+                <i class="fa-brands fa-whatsapp" style="font-size: 1.1rem;"></i> Partager par WhatsApp (PDF)
+            </button>
+
             <a href="telecharger-ticket.php?order_id=<?php echo $order_id; ?>" target="_blank" class="btn-submit" style="width: auto; padding: 0.65rem 1.4rem; background: var(--primary); text-decoration: none;">
                 <i class="fa-solid fa-file-pdf"></i> Télécharger tous mes Billets (PDF)
             </a>
@@ -258,19 +275,19 @@ include 'header.php';
                     <span style="font-weight: 700; font-size: 0.9rem;">
                         <i class="fa-solid fa-ticket"></i> Billet #<?php echo $index + 1; ?> - <?php echo htmlspecialchars($tk['type_ticket']); ?>
                     </span>
-                    <span style="background: #10b981; color: #ffffff; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 10px;">
+                    <span style="background: #FF4A0D; color: #ffffff; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 10px;">
                         VALIDE
                     </span>
                 </div>
 
                 <div style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1;">
                     <!-- QR Code -->
-                    <div style="background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 0.75rem; margin-bottom: 1rem;">
+                    <div style="background: #ffffff; border: 2px dashed #E5E5E5; border-radius: 10px; padding: 0.75rem; margin-bottom: 1rem;">
                         <img src="<?php echo htmlspecialchars($tk['qr_code']); ?>" alt="QR Code" style="width: 160px; height: 160px; display: block;">
                     </div>
 
                     <!-- Code unique -->
-                    <div style="background: #f1f5f9; padding: 0.4rem 1rem; border-radius: 6px; font-family: monospace; font-size: 1.15rem; font-weight: 800; color: var(--navy); margin-bottom: 0.75rem; letter-spacing: 1px;">
+                    <div style="background: #F5F5F5; padding: 0.4rem 1rem; border-radius: 6px; font-family: monospace; font-size: 1.15rem; font-weight: 800; color: var(--navy); margin-bottom: 0.75rem; letter-spacing: 1px;">
                         <?php echo htmlspecialchars($tk['code_unique']); ?>
                     </div>
 
@@ -293,21 +310,28 @@ include 'header.php';
                         </div>
 
                         <?php
-                        // Lien de partage WhatsApp du billet
-                        $ticket_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/') . '/telecharger-ticket.php?code=' . urlencode($tk['code_unique']);
-                        $wa_text = "🎟️ Mon billet Eventia\nÉvénement : " . $tk['event_name']
-                            . "\nType : " . $tk['type_ticket']
-                            . (!empty($tk['place']) ? "\nPlace : " . $tk['place'] : '')
-                            . "\nCode : " . $tk['code_unique']
-                            . "\nTélécharger le billet : " . $ticket_url;
+                        // Fichier et lien PDF individuel
+                        $pdf_single_filename = "billet-" . preg_replace('/[^A-Za-z0-9\-]/', '', $tk['code_unique']) . ".pdf";
+                        $ticket_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/') . '/telecharger-pdf.php?code=' . urlencode($tk['code_unique']);
+                        $wa_text = "🎟️ *Billet Officiel Eventia (PDF)*\n"
+                            . "📌 *Événement :* " . $tk['event_name'] . "\n"
+                            . "🏷️ *Type :* " . $tk['type_ticket'] . "\n"
+                            . (!empty($tk['place']) ? "💺 *Place :* " . $tk['place'] . "\n" : "")
+                            . "🔑 *Code :* " . $tk['code_unique'] . "\n"
+                            . "📥 *Télécharger le PDF :* " . $ticket_url;
                         ?>
                         <div style="display: flex; gap: 0.5rem;">
                             <a href="telecharger-ticket.php?code=<?php echo urlencode($tk['code_unique']); ?>" target="_blank" class="btn-submit" style="flex: 1; padding: 0.55rem; font-size: 0.8rem; text-decoration: none;">
                                 <i class="fa-solid fa-download"></i> PDF
                             </a>
-                            <a href="https://wa.me/?text=<?php echo urlencode($wa_text); ?>" target="_blank" class="btn-submit" style="flex: 1; padding: 0.55rem; font-size: 0.8rem; background: #25D366; text-decoration: none;">
+                            <button type="button" 
+                                data-pdf="telecharger-pdf.php?code=<?php echo urlencode($tk['code_unique']); ?>"
+                                data-filename="<?php echo htmlspecialchars($pdf_single_filename, ENT_QUOTES); ?>"
+                                data-message="<?php echo htmlspecialchars($wa_text, ENT_QUOTES); ?>"
+                                onclick="shareTicketPdfWhatsApp(this)"
+                                class="btn-submit" style="flex: 1; padding: 0.55rem; font-size: 0.8rem; background: #FF4A0D; text-decoration: none; border: none; cursor: pointer;" title="Envoyer le PDF par WhatsApp">
                                 <i class="fa-brands fa-whatsapp"></i> WhatsApp
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -316,4 +340,5 @@ include 'header.php';
     </div>
 </main>
 
+<script src="../js/share-ticket.js"></script>
 <?php include 'footer.php'; ?>

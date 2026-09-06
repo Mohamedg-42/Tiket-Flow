@@ -94,7 +94,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creer_agent'])) {
 }
 
 // ------------------------------------------------------------------------------
-// 2. Traitement de la modification du mot de passe d'un agent
+// 2. Traitement de la modification complète d'un agent & de son affectation
+// ------------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_agent'])) {
+    $assign_id  = filter_input(INPUT_POST, 'assign_id', FILTER_VALIDATE_INT);
+    $agent_id   = filter_input(INPUT_POST, 'agent_id', FILTER_VALIDATE_INT);
+    $event_id   = filter_input(INPUT_POST, 'event_id', FILTER_VALIDATE_INT);
+    $nom        = trim($_POST['nom'] ?? '');
+    $email      = trim($_POST['email'] ?? '');
+    $telephone  = trim($_POST['telephone'] ?? '');
+    $password   = $_POST['password'] ?? '';
+
+    if (!$assign_id || !$agent_id || !$event_id || empty($nom) || empty($email)) {
+        $message = "Veuillez renseigner tous les champs obligatoires (nom, email et événement assigné).";
+        $msg_type = "error";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $message = "L'adresse email de l'agent est invalide.";
+        $msg_type = "error";
+    } elseif (!empty($password) && strlen($password) < 6) {
+        $message = "Le nouveau mot de passe doit comporter au moins 6 caractères.";
+        $msg_type = "error";
+    } else {
+        try {
+            $pdo->beginTransaction();
+
+            // 1. Vérification de la propriété de l'affectation par ce promoteur
+            $stmt_chk_assign = $pdo->prepare("SELECT id, agent_id, event_id FROM agent_assignments WHERE id = ? AND promoter_user_id = ?");
+            $stmt_chk_assign->execute([$assign_id, $promoter_user_id]);
+            $current_assign = $stmt_chk_assign->fetch();
+
+            if (!$current_assign || (int)$current_assign['agent_id'] !== $agent_id) {
+                throw new Exception("Vous n'avez pas l'autorisation de modifier cet agent.");
+            }
+
+            // 2. Vérification que le nouvel événement sélectionné appartient bien à ce promoteur
+            $stmt_chk_ev = $pdo->prepare("SELECT id, nom FROM events WHERE id = ? AND user_id = ?");
+            $stmt_chk_ev->execute([$event_id, $promoter_user_id]);
+            $ev_data = $stmt_chk_ev->fetch();
+            if (!$ev_data) {
+                throw new Exception("L'événement sélectionné est invalide ou ne vous appartient pas.");
+            }
+
+            // 3. Vérification de l'unicité de l'email
+            $stmt_chk_email = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+            $stmt_chk_email->execute([$email, $agent_id]);
+            if ($stmt_chk_email->fetch()) {
+                throw new Exception("Cette adresse email est déjà utilisée par un autre compte.");
+            }
+
+            // 4. Mise à jour des informations de l'agent (nom, email, téléphone, mot de passe éventuel)
+            if (!empty($password)) {
+                $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                $stmt_upd_user = $pdo->prepare("UPDATE users SET nom = ?, email = ?, telephone = ?, password = ? WHERE id = ? AND role = 'agent'");
+                $stmt_upd_user->execute([$nom, $email, $telephone, $password_hash, $agent_id]);
+            } else {
+                $stmt_upd_user = $pdo->prepare("UPDATE users SET nom = ?, email = ?, telephone = ? WHERE id = ? AND role = 'agent'");
+                $stmt_upd_user->execute([$nom, $email, $telephone, $agent_id]);
+            }
+
+            // 5. Mise à jour de l'affectation de l'événement si modifiée
+            if ((int)$current_assign['event_id'] !== $event_id) {
+                $stmt_dup = $pdo->prepare("SELECT id FROM agent_assignments WHERE agent_id = ? AND event_id = ? AND promoter_user_id = ? AND id != ?");
+                $stmt_dup->execute([$agent_id, $event_id, $promoter_user_id, $assign_id]);
+                if ($stmt_dup->fetch()) {
+                    throw new Exception("Cet agent est déjà assigné au contrôle de cet événement.");
+                }
+
+                $stmt_upd_assign = $pdo->prepare("UPDATE agent_assignments SET event_id = ? WHERE id = ? AND promoter_user_id = ?");
+                $stmt_upd_assign->execute([$event_id, $assign_id, $promoter_user_id]);
+            }
+
+            $pdo->commit();
+            $message = "Les informations de l'agent « " . htmlspecialchars($nom) . " » ont été modifiées avec succès !";
+            $msg_type = "success";
+
+        } catch (Exception $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $message = "Erreur : " . $e->getMessage();
+            $msg_type = "error";
+        }
+    }
+}
+
+// ------------------------------------------------------------------------------
+// 3. Traitement de la modification du mot de passe d'un agent
 // ------------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_password_agent'])) {
     $target_agent_id = filter_input(INPUT_POST, 'agent_id', FILTER_VALIDATE_INT);
@@ -205,7 +290,7 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
     width: 44px;
     height: 44px;
     border-radius: 12px;
-    background: linear-gradient(135deg, var(--dash-primary), #0284c7);
+    background: linear-gradient(135deg, var(--dash-primary), #FF4A0D);
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -216,14 +301,14 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
     flex-shrink: 0;
 }
 .scan-progress-bar {
-    background: #e2e8f0;
+    background: #E5E5E5;
     border-radius: 999px;
     height: 7px;
     overflow: hidden;
     margin-top: 5px;
 }
 .scan-progress-fill {
-    background: linear-gradient(90deg, #10b981, #059669);
+    background: linear-gradient(90deg, #FF4A0D, #FF4A0D);
     height: 100%;
     border-radius: 999px;
     transition: width 0.4s ease;
@@ -244,14 +329,170 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
     font-size: 0.85rem;
 }
 .agent-action-btn:hover {
-    background: #f8fafc;
+    background: #F5F5F5;
     border-color: var(--dash-primary);
     color: var(--dash-primary);
 }
 .agent-action-btn.btn-danger:hover {
-    background: #fee2e2;
-    border-color: #ef4444;
-    color: #ef4444;
+    background: #F5F5F5;
+    border-color: #000000;
+    color: #000000;
+}
+
+/* ==============================================================================
+   RESPONSIVE : AFFICHAGE TABLEAU BUREAU VS CARTES MOBILES
+   ============================================================================== */
+.agents-desktop-table {
+    display: block;
+}
+.agents-mobile-cards {
+    display: none;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 0.85rem;
+}
+.agent-card-mobile {
+    background: #ffffff;
+    border: 1px solid var(--dash-border);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.agent-card-mobile:hover {
+    border-color: var(--dash-primary);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.08);
+}
+.agent-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+.agent-card-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+    width: 100%;
+}
+.agent-card-event-badge {
+    background: #FFF2ED;
+    border: 1px solid #FFF2ED;
+    color: #FF4A0D;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.agent-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--dash-border);
+}
+.agent-card-actions .agent-mobile-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0.55rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 8px;
+    border: 1px solid var(--dash-border);
+    background: #F5F5F5;
+    color: var(--dash-text);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.agent-card-actions .agent-mobile-btn:hover {
+    background: #ffffff;
+    border-color: var(--dash-primary);
+    color: var(--dash-primary);
+}
+.agent-card-actions .agent-mobile-btn.btn-danger {
+    color: #000000;
+    border-color: #E5E5E5;
+    background: #F5F5F5;
+}
+.agent-card-actions .agent-mobile-btn.btn-danger:hover {
+    background: #F5F5F5;
+}
+
+@media (max-width: 860px) {
+    .agents-desktop-table {
+        display: none !important;
+    }
+    .agents-mobile-cards {
+        display: flex !important;
+    }
+    .dash-agents-header-card {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.85rem !important;
+    }
+    .dash-agents-header-card .dash-scanner-link {
+        width: 100% !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .dash-filter-form {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+    .dash-event-select-wrap {
+        width: 100% !important;
+        justify-content: flex-start !important;
+    }
+    .dash-event-select-wrap select {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 !important;
+    }
+    .dash-search-input-wrap {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    .dash-filter-card button {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .dash-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.65rem !important;
+    }
+    .dash-header-section {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.85rem !important;
+    }
+    .dash-header-section button {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
+
+@media (max-width: 500px) {
+    .modal-grid-2 {
+        grid-template-columns: 1fr !important;
+    }
 }
 </style>
 
@@ -276,7 +517,7 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
     </div>
 
     <?php if (!empty($message)): ?>
-        <div style="background: <?php echo $msg_type === 'success' ? '#f0fdf4' : '#fef2f2'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#bbf7d0' : '#fecaca'; ?>; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: <?php echo $msg_type === 'success' ? '#166534' : '#991b1b'; ?>; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+        <div style="background: <?php echo $msg_type === 'success' ? '#FFF2ED' : '#F5F5F5'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#FFF2ED' : '#E5E5E5'; ?>; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; color: <?php echo $msg_type === 'success' ? '#000000' : '#000000'; ?>; display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
             <i class="fa-solid <?php echo $msg_type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>"></i>
             <span><?php echo $message; ?></span>
         </div>
@@ -285,11 +526,11 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
     <!-- ==============================================================================
          2. KPI CARDS : STATISTIQUES DE CONTRÔLE D'ACCÈS
          ============================================================================== -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+    <div class="dash-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
         <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <span style="font-size: 0.8rem; font-weight: 700; color: var(--dash-muted); text-transform: uppercase;">Agents Déployés</span>
-                <span style="background: #f1f5f9; color: var(--dash-text); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-clipboard-user"></i></span>
+                <span style="background: #F5F5F5; color: var(--dash-text); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-clipboard-user"></i></span>
             </div>
             <div style="font-size: 1.65rem; font-weight: 800; color: var(--dash-text);"><?php echo $total_agents_uniques; ?></div>
             <small style="color: var(--dash-muted); font-size: 0.75rem;"><?php echo $total_postes_assignes; ?> affectation(s) d'événements</small>
@@ -297,41 +538,41 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
 
         <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #0284c7; text-transform: uppercase;">Événements Couverts</span>
-                <span style="background: #e0f2fe; color: #0284c7; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-calendar-check"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Événements Couverts</span>
+                <span style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-calendar-check"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #0284c7;"><?php echo count(array_unique(array_column($assigned_agents, 'event_id'))); ?></div>
-            <small style="color: #0284c7; font-size: 0.75rem;">Sous surveillance active</small>
+            <div style="font-size: 1.65rem; font-weight: 800; color: #FF4A0D;"><?php echo count(array_unique(array_column($assigned_agents, 'event_id'))); ?></div>
+            <small style="color: #FF4A0D; font-size: 0.75rem;">Sous surveillance active</small>
         </div>
 
         <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #059669; text-transform: uppercase;">Billets Scannés</span>
-                <span style="background: #dcfce7; color: #059669; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-qrcode"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Billets Scannés</span>
+                <span style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-qrcode"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #059669;"><?php echo number_format($total_billets_scannes, 0, ',', ' '); ?></div>
-            <small style="color: #059669; font-size: 0.75rem;">Entrées validées aux portes</small>
+            <div style="font-size: 1.65rem; font-weight: 800; color: #FF4A0D;"><?php echo number_format($total_billets_scannes, 0, ',', ' '); ?></div>
+            <small style="color: #FF4A0D; font-size: 0.75rem;">Entrées validées aux portes</small>
         </div>
 
         <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #b45309; text-transform: uppercase;">Taux de Contrôle</span>
-                <span style="background: #fef3c7; color: #b45309; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-chart-pie"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Taux de Contrôle</span>
+                <span style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-chart-pie"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #b45309;"><?php echo $taux_presence; ?>%</div>
-            <small style="color: #b45309; font-size: 0.75rem;">Ratio entrées / billets émis</small>
+            <div style="font-size: 1.65rem; font-weight: 800; color: #FF4A0D;"><?php echo $taux_presence; ?>%</div>
+            <small style="color: #FF4A0D; font-size: 0.75rem;">Ratio entrées / billets émis</small>
         </div>
     </div>
 
     <!-- ==============================================================================
          3. BARRE DE RECHERCHE & FILTRES
          ============================================================================== -->
-    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; background: #ffffff; padding: 0.65rem 0.85rem; border-radius: 12px; border: 1px solid var(--dash-border); flex-wrap: wrap;">
-        <form method="GET" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0; width: 100%;">
+    <div class="dash-filter-card" style="margin-bottom: 1.5rem; background: #ffffff; padding: 0.75rem 0.85rem; border-radius: 12px; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <form method="GET" class="dash-filter-form" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0; width: 100%;">
             <!-- Filtre Événement -->
-            <div style="display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid var(--dash-border); border-radius: 8px; padding: 2px 8px;">
-                <i class="fa-solid fa-calendar-days" style="color: var(--dash-primary); font-size: 0.85rem;"></i>
-                <select name="event_id" onchange="this.form.submit()" style="border: 0; background: transparent; font-size: 0.82rem; font-weight: 700; color: var(--dash-text); cursor: pointer; padding: 0.35rem 0.25rem;">
+            <div class="dash-event-select-wrap" style="display: inline-flex; align-items: center; gap: 6px; background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 8px; padding: 2px 10px; max-width: 100%; box-sizing: border-box; flex-shrink: 1;">
+                <i class="fa-solid fa-calendar-days" style="color: var(--dash-primary); font-size: 0.85rem; flex-shrink: 0;"></i>
+                <select name="event_id" onchange="this.form.submit()" style="border: 0; background: transparent; font-size: 0.84rem; font-weight: 700; color: var(--dash-text); cursor: pointer; padding: 0.4rem 0.25rem; max-width: 100%; outline: none; text-overflow: ellipsis; box-sizing: border-box;">
                     <option value="">Tous les événements</option>
                     <?php foreach ($my_events as $ev): ?>
                         <option value="<?php echo $ev['id']; ?>" <?php echo $filter_event === (int)$ev['id'] ? 'selected' : ''; ?>>
@@ -342,26 +583,32 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
             </div>
 
             <!-- Recherche texte -->
-            <div style="position: relative; flex-grow: 1; max-width: 320px;">
+            <div class="dash-search-input-wrap" style="position: relative; flex-grow: 1; min-width: 180px; max-width: 320px; box-sizing: border-box;">
                 <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--dash-muted); font-size: 0.8rem;"></i>
-                <input type="text" name="q" value="<?php echo htmlspecialchars($search_q); ?>" placeholder="Rechercher par nom, email d'agent..." style="padding: 0.45rem 0.75rem 0.45rem 2rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.82rem; width: 100%; background: #ffffff;">
+                <input type="text" name="q" value="<?php echo htmlspecialchars($search_q); ?>" placeholder="Rechercher par nom, email d'agent..." style="padding: 0.45rem 0.75rem 0.45rem 2rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.82rem; width: 100%; box-sizing: border-box; background: #ffffff;">
             </div>
 
-            <button type="submit" class="dash-btn-action" style="padding: 0.45rem 0.9rem; font-size: 0.82rem; background: var(--dash-primary); color: #ffffff; border-radius: 8px;">
+            <button type="submit" class="dash-btn-action" style="padding: 0.45rem 0.9rem; font-size: 0.82rem; background: var(--dash-primary); color: #ffffff; border-radius: 8px; flex-shrink: 0;">
                 <i class="fa-solid fa-filter"></i> Filtrer
             </button>
 
+            <!-- Export Excel des agents -->
+            <a href="export.php?type=agents&event_id=<?php echo (int)$filter_event; ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.45rem 0.9rem; font-size: 0.82rem; text-decoration: none; flex-shrink: 0;" title="Exporter la liste des agents sur Excel (CSV)">
+                <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
+                <span>Exporter Excel</span>
+            </a>
+
             <?php if ($filter_event || $search_q !== ''): ?>
-                <a href="agents.php" style="color: #ef4444; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
+                <a href="agents.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
 
     <!-- ==============================================================================
-         4. LISTE DES AGENTS DE CONTRÔLE (TABLEAU DASHBOARD PRO)
+         4. LISTE DES AGENTS DE CONTRÔLE (TABLEAU BUREAU & CARTES MOBILES)
          ============================================================================== -->
     <div class="dash-card" style="padding: 0; overflow: hidden;">
-        <div style="padding: 1.15rem 1.35rem; border-bottom: 1px solid var(--dash-border); display: flex; justify-content: space-between; align-items: center;">
+        <div class="dash-agents-header-card" style="padding: 1.15rem 1.35rem; border-bottom: 1px solid var(--dash-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
             <div>
                 <h3 style="margin: 0; font-size: 1rem; color: var(--dash-text); font-weight: 700;">
                     <i class="fa-solid fa-clipboard-user" style="color: var(--dash-primary); margin-right: 6px;"></i>
@@ -369,126 +616,253 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
                 </h3>
                 <small style="color: var(--dash-muted); font-size: 0.78rem;">Chaque agent dispose d'une connexion mobile dédiée pour valider les billets aux portes.</small>
             </div>
-            <a href="../agent/verification.php" target="_blank" style="font-size: 0.82rem; color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> Tester l'espace Scanner
+            <a href="../agent/verification.php" target="_blank" class="dash-scanner-link" style="font-size: 0.82rem; color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 0.45rem 0.85rem; background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: 8px; white-space: nowrap;">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> <span>Tester l'espace Scanner</span>
             </a>
         </div>
 
-        <div style="overflow-x: auto;">
-            <table class="dash-table" style="width: 100%; border-collapse: collapse; text-align: left;">
-                <thead>
-                    <tr style="background: #f8fafc; border-bottom: 1px solid var(--dash-border); font-size: 0.75rem; text-transform: uppercase; color: var(--dash-muted);">
-                        <th style="padding: 0.85rem 1.25rem;">Agent</th>
-                        <th style="padding: 0.85rem 1rem;">Événement Assigné</th>
-                        <th style="padding: 0.85rem 1rem;">Scans Validés</th>
-                        <th style="padding: 0.85rem 1rem;">Dernière Activité</th>
-                        <th style="padding: 0.85rem 1.25rem; text-align: right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody style="font-size: 0.85rem;">
-                    <?php if (count($assigned_agents) > 0): ?>
-                        <?php foreach ($assigned_agents as $ag): ?>
-                            <?php 
-                                $words = explode(' ', trim($ag['agent_nom']));
-                                $initials = strtoupper(substr($words[0] ?? 'A', 0, 1) . substr($words[1] ?? '', 0, 1));
-                                $pct_event = $ag['total_billets_evenement'] > 0 ? round(($ag['nb_scans'] / $ag['total_billets_evenement']) * 100, 1) : 0;
-                            ?>
-                            <tr style="border-bottom: 1px solid var(--dash-border); transition: background 0.15s ease;">
-                                <!-- Identité Agent -->
-                                <td style="padding: 1rem 1.25rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.85rem;">
-                                        <div class="agent-avatar"><?php echo htmlspecialchars($initials); ?></div>
-                                        <div>
-                                            <strong style="color: var(--dash-text); font-weight: 700; display: block; font-size: 0.9rem;">
-                                                <?php echo htmlspecialchars($ag['agent_nom']); ?>
-                                            </strong>
-                                            <div style="color: var(--dash-muted); font-size: 0.78rem; display: flex; align-items: center; gap: 6px; margin-top: 2px;">
-                                                <span><i class="fa-regular fa-envelope"></i> <?php echo htmlspecialchars($ag['agent_email']); ?></span>
-                                                <?php if (!empty($ag['agent_tel'])): ?>
-                                                    <span>•</span>
-                                                    <span><i class="fa-solid fa-phone"></i> <?php echo htmlspecialchars($ag['agent_tel']); ?></span>
-                                                <?php endif; ?>
+        <!-- 4.1 VUE TABLEAU (BUREAU / TABLETTE LARGE > 860px) -->
+        <div class="agents-desktop-table">
+            <div style="overflow-x: auto;">
+                <table class="dash-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #F5F5F5; border-bottom: 1px solid var(--dash-border); font-size: 0.75rem; text-transform: uppercase; color: var(--dash-muted);">
+                            <th style="padding: 0.85rem 1.25rem;">Agent</th>
+                            <th style="padding: 0.85rem 1rem;">Événement Assigné</th>
+                            <th style="padding: 0.85rem 1rem;">Scans Validés</th>
+                            <th style="padding: 0.85rem 1rem;">Dernière Activité</th>
+                            <th style="padding: 0.85rem 1.25rem; text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size: 0.85rem;">
+                        <?php if (count($assigned_agents) > 0): ?>
+                            <?php foreach ($assigned_agents as $ag): ?>
+                                <?php 
+                                    $words = explode(' ', trim($ag['agent_nom']));
+                                    $initials = strtoupper(substr($words[0] ?? 'A', 0, 1) . substr($words[1] ?? '', 0, 1));
+                                    $pct_event = $ag['total_billets_evenement'] > 0 ? round(($ag['nb_scans'] / $ag['total_billets_evenement']) * 100, 1) : 0;
+                                ?>
+                                <tr style="border-bottom: 1px solid var(--dash-border); transition: background 0.15s ease;">
+                                    <!-- Identité Agent -->
+                                    <td style="padding: 1rem 1.25rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.85rem;">
+                                            <div class="agent-avatar"><?php echo htmlspecialchars($initials); ?></div>
+                                            <div>
+                                                <strong style="color: var(--dash-text); font-weight: 700; display: block; font-size: 0.9rem;">
+                                                    <?php echo htmlspecialchars($ag['agent_nom']); ?>
+                                                </strong>
+                                                <div style="color: var(--dash-muted); font-size: 0.78rem; display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                                                    <span><i class="fa-regular fa-envelope"></i> <?php echo htmlspecialchars($ag['agent_email']); ?></span>
+                                                    <?php if (!empty($ag['agent_tel'])): ?>
+                                                        <span>•</span>
+                                                        <span><i class="fa-solid fa-phone"></i> <?php echo htmlspecialchars($ag['agent_tel']); ?></span>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </td>
+                                    </td>
 
-                                <!-- Événement Assigné -->
-                                <td style="padding: 1rem;">
-                                    <div style="display: inline-block;">
-                                        <span style="background: #e0f2fe; color: #0369a1; padding: 4px 9px; border-radius: 6px; font-weight: 700; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 5px;">
-                                            <i class="fa-solid fa-calendar-check" style="font-size: 0.75rem;"></i>
-                                            <?php echo htmlspecialchars($ag['event_nom']); ?>
-                                        </span>
-                                        <div style="color: var(--dash-muted); font-size: 0.75rem; margin-top: 4px;">
-                                            <i class="fa-regular fa-calendar"></i> <?php echo date('d/m/Y', strtotime($ag['date_evenement'])); ?>
-                                            • <i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($ag['lieu']); ?>
+                                    <!-- Événement Assigné -->
+                                    <td style="padding: 1rem;">
+                                        <div style="display: inline-block;">
+                                            <span style="background: #FFF2ED; color: #FF4A0D; padding: 4px 9px; border-radius: 6px; font-weight: 700; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 5px;">
+                                                <i class="fa-solid fa-calendar-check" style="font-size: 0.75rem;"></i>
+                                                <?php echo htmlspecialchars($ag['event_nom']); ?>
+                                            </span>
+                                            <div style="color: var(--dash-muted); font-size: 0.75rem; margin-top: 4px;">
+                                                <i class="fa-regular fa-calendar"></i> <?php echo date('d/m/Y', strtotime($ag['date_evenement'])); ?>
+                                                • <i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($ag['lieu']); ?>
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
+                                    </td>
 
-                                <!-- Scans Validés -->
-                                <td style="padding: 1rem; min-width: 180px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.82rem;">
-                                        <strong style="color: #059669; font-size: 0.95rem;">
-                                            <i class="fa-solid fa-qrcode" style="margin-right: 3px;"></i>
-                                            <?php echo (int)$ag['nb_scans']; ?>
-                                        </strong>
-                                        <span style="color: var(--dash-muted); font-size: 0.75rem;">
-                                            sur <?php echo (int)$ag['total_billets_evenement']; ?> billets (<?php echo $pct_event; ?>%)
-                                        </span>
-                                    </div>
-                                    <div class="scan-progress-bar">
-                                        <div class="scan-progress-fill" style="width: <?php echo min(100, $pct_event); ?>%;"></div>
-                                    </div>
-                                </td>
+                                    <!-- Scans Validés -->
+                                    <td style="padding: 1rem; min-width: 180px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.82rem;">
+                                            <strong style="color: #FF4A0D; font-size: 0.95rem;">
+                                                <i class="fa-solid fa-qrcode" style="margin-right: 3px;"></i>
+                                                <?php echo (int)$ag['nb_scans']; ?>
+                                            </strong>
+                                            <span style="color: var(--dash-muted); font-size: 0.75rem;">
+                                                sur <?php echo (int)$ag['total_billets_evenement']; ?> billets (<?php echo $pct_event; ?>%)
+                                            </span>
+                                        </div>
+                                        <div class="scan-progress-bar">
+                                            <div class="scan-progress-fill" style="width: <?php echo min(100, $pct_event); ?>%;"></div>
+                                        </div>
+                                    </td>
 
-                                <!-- Dernière Activité -->
-                                <td style="padding: 1rem;">
-                                    <?php if (!empty($ag['dernier_scan'])): ?>
-                                        <span style="color: var(--dash-text); font-weight: 600; font-size: 0.82rem; display: block;">
-                                            <?php echo date('d/m/Y à H:i', strtotime($ag['dernier_scan'])); ?>
-                                        </span>
-                                        <small style="color: #10b981; font-size: 0.72rem; font-weight: 700;">
-                                            <i class="fa-solid fa-circle" style="font-size: 0.5rem;"></i> Scan récent
-                                        </small>
-                                    <?php else: ?>
-                                        <span style="color: var(--dash-muted); font-size: 0.78rem; font-style: italic;">
-                                            En attente de premier scan
-                                        </span>
-                                    <?php endif; ?>
-                                </td>
+                                    <!-- Dernière Activité -->
+                                    <td style="padding: 1rem;">
+                                        <?php if (!empty($ag['dernier_scan'])): ?>
+                                            <span style="color: var(--dash-text); font-weight: 600; font-size: 0.82rem; display: block;">
+                                                <?php echo date('d/m/Y à H:i', strtotime($ag['dernier_scan'])); ?>
+                                            </span>
+                                            <small style="color: #FF4A0D; font-size: 0.72rem; font-weight: 700;">
+                                                <i class="fa-solid fa-circle" style="font-size: 0.5rem;"></i> Scan récent
+                                            </small>
+                                        <?php else: ?>
+                                            <span style="color: var(--dash-muted); font-size: 0.78rem; font-style: italic;">
+                                                En attente de premier scan
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
 
-                                <!-- Actions -->
-                                <td style="padding: 1rem 1.25rem; text-align: right;">
-                                    <div style="display: inline-flex; gap: 6px;">
-                                        <!-- Modifier Mot de passe -->
-                                        <button type="button" class="agent-action-btn" title="Modifier le mot de passe" onclick="openResetPasswordModal(<?php echo $ag['agent_id']; ?>, '<?php echo htmlspecialchars(addslashes($ag['agent_nom'])); ?>')">
-                                            <i class="fa-solid fa-key"></i>
-                                        </button>
+                                    <!-- Actions Bureau -->
+                                    <td style="padding: 0.85rem 1rem; text-align: right; white-space: nowrap;">
+                                        <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; white-space: nowrap;">
+                                            <!-- Modifier l'Agent & Affectation -->
+                                            <button type="button" class="agent-action-btn" title="Modifier l'agent et son affectation" onclick='openEditAgentModal(<?php echo htmlspecialchars(json_encode([
+                                                "assign_id"  => (int)$ag["assign_id"],
+                                                "agent_id"   => (int)$ag["agent_id"],
+                                                "nom"        => $ag["agent_nom"],
+                                                "email"      => $ag["agent_email"],
+                                                "telephone"  => $ag["agent_tel"] ?? "",
+                                                "event_id"   => (int)$ag["event_id"]
+                                            ]), ENT_QUOTES, "UTF-8"); ?>)'>
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
 
-                                        <!-- Retirer Affectation -->
-                                        <a href="?delete_assign=<?php echo $ag['assign_id']; ?>" class="agent-action-btn btn-danger" title="Retirer l'affectation à cet événement" onclick="return confirm('Êtes-vous sûr de vouloir retirer cet agent du contrôle de « <?php echo htmlspecialchars(addslashes($ag['event_nom'])); ?> » ?');">
-                                            <i class="fa-solid fa-trash-can"></i>
-                                        </a>
-                                    </div>
+                                            <!-- Modifier Mot de passe -->
+                                            <button type="button" class="agent-action-btn" title="Changer le mot de passe" onclick="openResetPasswordModal(<?php echo $ag['agent_id']; ?>, '<?php echo htmlspecialchars(addslashes($ag['agent_nom'])); ?>')">
+                                                <i class="fa-solid fa-key"></i>
+                                            </button>
+
+                                            <!-- Retirer Affectation -->
+                                            <a href="?delete_assign=<?php echo $ag['assign_id']; ?>" class="agent-action-btn btn-danger" title="Retirer l'affectation à cet événement" onclick="return confirm('Êtes-vous sûr de vouloir retirer cet agent du contrôle de « <?php echo htmlspecialchars(addslashes($ag['event_nom'])); ?> » ?');">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 3.5rem 1rem; color: var(--dash-muted);">
+                                    <i class="fa-solid fa-users-slash" style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
+                                    <strong style="display: block; font-size: 1rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucun agent assigné</strong>
+                                    <p style="font-size: 0.82rem; margin: 0 0 1rem;">Ajoutez vos agents de contrôle et assignez-les à vos événements pour débuter les vérifications aux portes.</p>
+                                    <button type="button" onclick="openCreateAgentModal()" class="dash-btn-action btn-primary" style="display: inline-flex;">
+                                        <i class="fa-solid fa-user-plus"></i> Assigner mon premier agent
+                                    </button>
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 3.5rem 1rem; color: var(--dash-muted);">
-                                <i class="fa-solid fa-users-slash" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
-                                <strong style="display: block; font-size: 1rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucun agent assigné</strong>
-                                <p style="font-size: 0.82rem; margin: 0 0 1rem;">Ajoutez vos agents de contrôle et assignez-les à vos événements pour débuter les vérifications aux portes.</p>
-                                <button type="button" onclick="openCreateAgentModal()" class="dash-btn-action btn-primary" style="display: inline-flex;">
-                                    <i class="fa-solid fa-user-plus"></i> Assigner mon premier agent
-                                </button>
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4.2 VUE CARTES MOBILES (SMARTPHONE <= 860px) -->
+        <div class="agents-mobile-cards">
+            <?php if (count($assigned_agents) > 0): ?>
+                <?php foreach ($assigned_agents as $ag): ?>
+                    <?php 
+                        $words = explode(' ', trim($ag['agent_nom']));
+                        $initials = strtoupper(substr($words[0] ?? 'A', 0, 1) . substr($words[1] ?? '', 0, 1));
+                        $pct_event = $ag['total_billets_evenement'] > 0 ? round(($ag['nb_scans'] / $ag['total_billets_evenement']) * 100, 1) : 0;
+                    ?>
+                    <div class="agent-card-mobile">
+                        <!-- Profil & Contact -->
+                        <div class="agent-card-header">
+                            <div class="agent-card-profile">
+                                <div class="agent-avatar" style="width: 44px; height: 44px; font-size: 0.95rem;"><?php echo htmlspecialchars($initials); ?></div>
+                                <div style="min-width: 0; flex: 1;">
+                                    <strong style="color: var(--dash-text); font-weight: 700; font-size: 0.95rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        <?php echo htmlspecialchars($ag['agent_nom']); ?>
+                                    </strong>
+                                    <div style="color: var(--dash-muted); font-size: 0.76rem; display: flex; flex-direction: column; gap: 2px; margin-top: 2px;">
+                                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <i class="fa-regular fa-envelope"></i> <?php echo htmlspecialchars($ag['agent_email']); ?>
+                                        </span>
+                                        <?php if (!empty($ag['agent_tel'])): ?>
+                                            <span>
+                                                <i class="fa-solid fa-phone"></i> 
+                                                <a href="tel:<?php echo htmlspecialchars($ag['agent_tel']); ?>" style="color: inherit; text-decoration: none; font-weight: 600;">
+                                                    <?php echo htmlspecialchars($ag['agent_tel']); ?>
+                                                </a>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Événement Assigné -->
+                        <div class="agent-card-event-badge">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-calendar-check" style="font-size: 0.85rem;"></i>
+                                <span style="font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><?php echo htmlspecialchars($ag['event_nom']); ?></span>
+                            </div>
+                            <div style="font-size: 0.74rem; font-weight: 500; color: #FF4A0D; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px;">
+                                <span><i class="fa-regular fa-calendar"></i> <?php echo date('d/m/Y', strtotime($ag['date_evenement'])); ?></span>
+                                <span>•</span>
+                                <span><i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($ag['lieu']); ?></span>
+                            </div>
+                        </div>
+
+                        <!-- Jauge de scan & Activité -->
+                        <div style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 8px; padding: 0.65rem 0.8rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.8rem;">
+                                <span style="color: var(--dash-muted); font-size: 0.75rem;">Scans validés</span>
+                                <div>
+                                    <strong style="color: #FF4A0D; font-size: 0.95rem;">
+                                        <i class="fa-solid fa-qrcode"></i> <?php echo (int)$ag['nb_scans']; ?>
+                                    </strong>
+                                    <span style="color: var(--dash-muted); font-size: 0.74rem;">
+                                        / <?php echo (int)$ag['total_billets_evenement']; ?> (<?php echo $pct_event; ?>%)
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="scan-progress-bar" style="margin-top: 6px;">
+                                <div class="scan-progress-fill" style="width: <?php echo min(100, $pct_event); ?>%;"></div>
+                            </div>
+
+                            <div style="margin-top: 6px; font-size: 0.73rem; color: var(--dash-muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                                <span>Dernière activité :</span>
+                                <?php if (!empty($ag['dernier_scan'])): ?>
+                                    <span style="color: #FF4A0D; font-weight: 700;">
+                                        <i class="fa-solid fa-circle" style="font-size: 0.45rem;"></i> <?php echo date('d/m/Y H:i', strtotime($ag['dernier_scan'])); ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span style="font-style: italic;">Aucun scan</span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Actions Tactiles Mobile -->
+                        <div class="agent-card-actions">
+                            <button type="button" class="agent-mobile-btn" onclick='openEditAgentModal(<?php echo htmlspecialchars(json_encode([
+                                "assign_id"  => (int)$ag["assign_id"],
+                                "agent_id"   => (int)$ag["agent_id"],
+                                "nom"        => $ag["agent_nom"],
+                                "email"      => $ag["agent_email"],
+                                "telephone"  => $ag["agent_tel"] ?? "",
+                                "event_id"   => (int)$ag["event_id"]
+                            ]), ENT_QUOTES, "UTF-8"); ?>)'>
+                                <i class="fa-solid fa-pen-to-square"></i> Modifier
+                            </button>
+
+                            <button type="button" class="agent-mobile-btn" onclick="openResetPasswordModal(<?php echo $ag['agent_id']; ?>, '<?php echo htmlspecialchars(addslashes($ag['agent_nom'])); ?>')">
+                                <i class="fa-solid fa-key"></i> Pass
+                            </button>
+
+                            <a href="?delete_assign=<?php echo $ag['assign_id']; ?>" class="agent-mobile-btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir retirer cet agent du contrôle de « <?php echo htmlspecialchars(addslashes($ag['event_nom'])); ?> » ?');">
+                                <i class="fa-solid fa-trash-can"></i> Retirer
+                            </a>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--dash-muted); background: #ffffff; border: 1px dashed var(--dash-border); border-radius: 12px;">
+                    <i class="fa-solid fa-users-slash" style="font-size: 2.2rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
+                    <strong style="display: block; font-size: 0.95rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucun agent assigné</strong>
+                    <p style="font-size: 0.8rem; margin: 0 0 1rem;">Ajoutez vos agents de contrôle pour débuter les vérifications.</p>
+                    <button type="button" onclick="openCreateAgentModal()" class="dash-btn-action btn-primary" style="display: inline-flex; width: 100%; justify-content: center;">
+                        <i class="fa-solid fa-user-plus"></i> Assigner un agent
+                    </button>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -533,7 +907,7 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
                     <input type="text" name="nom" required placeholder="Ex: Bakary Koné" style="width: 100%; padding: 0.55rem 0.75rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.85rem;">
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div class="modal-grid-2" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
                     <div>
                         <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--dash-text);">
                             <i class="fa-solid fa-envelope"></i> Email (Identifiant) *
@@ -570,7 +944,7 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
             </form>
         <?php else: ?>
             <div style="padding: 2.5rem 1.5rem; text-align: center; color: var(--dash-muted);">
-                <i class="fa-solid fa-calendar-xmark" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 0.75rem; display: block;"></i>
+                <i class="fa-solid fa-calendar-xmark" style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                 <strong style="display: block; font-size: 1rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucun événement créé</strong>
                 Vous devez d'abord créer ou avoir un événement approuvé pour y affecter des agents.<br><br>
                 <a href="demande-evenement.php" class="dash-btn-action btn-primary" style="display: inline-flex;">
@@ -582,7 +956,82 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
 </div>
 
 <!-- ==============================================================================
-     MODAL 2 : MODIFICATION DU MOT DE PASSE AGENT
+     MODAL 2 : MODIFICATION COMPLÈTE D'UN AGENT & AFFECTATION
+     ============================================================================== -->
+<div id="modalEditAgent" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #ffffff; width: 100%; max-width: 520px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); overflow: hidden;">
+        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--dash-border); display: flex; justify-content: space-between; align-items: center; background: #F5F5F5;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: var(--dash-text); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-user-pen" style="color: var(--dash-primary);"></i> Modifier l'Agent de Contrôle
+            </h3>
+            <button type="button" onclick="closeEditAgentModal()" style="border: 0; background: transparent; font-size: 1.2rem; color: var(--dash-muted); cursor: pointer;">&times;</button>
+        </div>
+
+        <form method="POST" action="agents.php" style="padding: 1.5rem;">
+            <input type="hidden" name="modifier_agent" value="1">
+            <input type="hidden" name="assign_id" id="edit_assign_id" value="">
+            <input type="hidden" name="agent_id" id="edit_agent_id" value="">
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--dash-text);">
+                    <i class="fa-solid fa-calendar-check" style="color: var(--dash-primary);"></i> Événement assigné *
+                </label>
+                <select name="event_id" id="edit_agent_event_id" required style="width: 100%; padding: 0.55rem 0.75rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.85rem; font-weight: 700;">
+                    <?php foreach ($my_events as $ev): ?>
+                        <option value="<?php echo $ev['id']; ?>">
+                            <?php echo htmlspecialchars($ev['nom']); ?> (<?php echo date('d/m/Y', strtotime($ev['date_evenement'])); ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--dash-text);">
+                    <i class="fa-solid fa-user"></i> Nom complet de l'agent *
+                </label>
+                <input type="text" name="nom" id="edit_agent_nom" required placeholder="Ex: Bakary Koné" style="width: 100%; padding: 0.55rem 0.75rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.85rem;">
+            </div>
+
+            <div class="modal-grid-2" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--dash-text);">
+                        <i class="fa-solid fa-envelope"></i> Email (Identifiant) *
+                    </label>
+                    <input type="email" name="email" id="edit_agent_email" required placeholder="agent@exemple.com" style="width: 100%; padding: 0.55rem 0.75rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.85rem;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--dash-text);">
+                        <i class="fa-solid fa-phone"></i> Téléphone
+                    </label>
+                    <input type="tel" name="telephone" id="edit_agent_telephone" placeholder="07 00 00 00 00" style="width: 100%; padding: 0.55rem 0.75rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.85rem;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--dash-text);">
+                    <i class="fa-solid fa-lock"></i> Nouveau mot de passe (optionnel)
+                </label>
+                <div style="position: relative;">
+                    <input type="password" id="edit_agent_pass_input" name="password" placeholder="Laissez vide pour conserver le mot de passe actuel" style="width: 100%; padding: 0.55rem 2.25rem 0.55rem 0.75rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.85rem;">
+                    <i class="fa-regular fa-eye" onclick="togglePassVisibility('edit_agent_pass_input', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--dash-muted); font-size: 0.85rem;"></i>
+                </div>
+                <small style="color: var(--dash-muted); font-size: 0.72rem; display: block; margin-top: 3px;">
+                    Renseignez ce champ uniquement si vous souhaitez changer les identifiants d'accès de l'agent.
+                </small>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" onclick="closeEditAgentModal()" class="dash-btn-action" style="padding: 0.55rem 1rem;">Annuler</button>
+                <button type="submit" class="dash-btn-action btn-primary" style="padding: 0.55rem 1.25rem;">
+                    <i class="fa-solid fa-floppy-disk"></i> Enregistrer les modifications
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==============================================================================
+     MODAL 3 : MODIFICATION RAPIDE DU MOT DE PASSE AGENT
      ============================================================================== -->
 <div id="modalResetPassword" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem;">
     <div style="background: #ffffff; width: 100%; max-width: 420px; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); overflow: hidden;">
@@ -628,6 +1077,24 @@ function closeCreateAgentModal() {
     m.style.display = 'none';
 }
 
+function openEditAgentModal(data) {
+    document.getElementById('edit_assign_id').value = data.assign_id || '';
+    document.getElementById('edit_agent_id').value = data.agent_id || '';
+    document.getElementById('edit_agent_nom').value = data.nom || '';
+    document.getElementById('edit_agent_email').value = data.email || '';
+    document.getElementById('edit_agent_telephone').value = data.telephone || '';
+    
+    if (data.event_id) {
+        document.getElementById('edit_agent_event_id').value = data.event_id;
+    }
+    
+    document.getElementById('edit_agent_pass_input').value = '';
+    document.getElementById('modalEditAgent').style.display = 'flex';
+}
+function closeEditAgentModal() {
+    document.getElementById('modalEditAgent').style.display = 'none';
+}
+
 function openResetPasswordModal(agentId, agentNom) {
     document.getElementById('reset_agent_id').value = agentId;
     document.getElementById('reset_agent_nom').innerText = agentNom;
@@ -653,9 +1120,11 @@ function togglePassVisibility(inputId, iconElem) {
 // Fermeture par clic en arrière-plan
 window.addEventListener('click', function(e) {
     const m1 = document.getElementById('modalCreateAgent');
-    const m2 = document.getElementById('modalResetPassword');
+    const m2 = document.getElementById('modalEditAgent');
+    const m3 = document.getElementById('modalResetPassword');
     if (e.target === m1) closeCreateAgentModal();
-    if (e.target === m2) closeResetPasswordModal();
+    if (e.target === m2) closeEditAgentModal();
+    if (e.target === m3) closeResetPasswordModal();
 });
 </script>
 
