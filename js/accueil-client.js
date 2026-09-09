@@ -243,6 +243,9 @@ function toggleSeatMap(ticketId, forcedEventId = null) {
         if (qtyInput) {
             qtyInput.dataset.seatMode = '0';
             qtyInput.disabled = false;
+            qtyInput.readOnly = false;
+            qtyInput.style.pointerEvents = '';
+            qtyInput.style.opacity = '';
             qtyInput.value = Math.min(1, Number(qtyInput.max) || 1);
         }
     }
@@ -428,12 +431,14 @@ function updateMultiTicketTotal() {
     if (totalEl) totalEl.textContent = totalPrice.toLocaleString('fr-FR') + ' FCFA';
 
     const submitBtn = document.getElementById('btnSubmitOrder');
-    if (totalCount <= 0) {
-        submitBtn.disabled = true;
-        submitBtn.style.opacity = '0.6';
-    } else {
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
+    if (submitBtn) {
+        if (totalCount <= 0) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+        }
     }
 }
 
@@ -1099,7 +1104,10 @@ function applyClient3DSelection() {
 
         if (qtyInput) {
             qtyInput.dataset.seatMode = '1';
-            qtyInput.disabled = true;
+            // readOnly (pas disabled) pour que la valeur soit incluse dans le POST du formulaire
+            qtyInput.readOnly = true;
+            qtyInput.style.pointerEvents = 'none';
+            qtyInput.style.opacity = '0.7';
             qtyInput.value = seats.length;
         }
 
@@ -1108,8 +1116,8 @@ function applyClient3DSelection() {
         syncTierSeats(tId);
     });
 
-    if (typeof updateMultiTicketTotal === 'function') updateMultiTicketTotal();
-    if (typeof calculateEventTotal === 'function') calculateEventTotal();
+    try { if (typeof updateMultiTicketTotal === 'function') updateMultiTicketTotal(); } catch (_) {}
+    try { if (typeof calculateEventTotal === 'function') calculateEventTotal(); } catch (_) {}
     closeClient3DSeating();
 }
 
