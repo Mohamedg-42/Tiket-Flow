@@ -8,7 +8,7 @@ require_once __DIR__ . '/../config/smtp.php';
 require_once __DIR__ . '/smtp.php';
 
 /**
- * Fonction générique pour expédier un email au format HTML via SMTP Eventia
+ * Fonction générique pour expédier un email au format HTML via SMTP Tikéli
  *
  * @param string $to_email       Adresse email du destinataire
  * @param string $to_name        Nom du destinataire
@@ -18,32 +18,32 @@ require_once __DIR__ . '/smtp.php';
  * @param string|null $attachment_filename Nom du fichier joint
  * @return bool True si expédié avec succès
  */
-function sendEventiaEmail(
-    string $to_email, 
-    string $to_name, 
-    string $subject, 
-    string $body_html, 
-    ?string $attachment_data = null, 
+function sendTikéliEmail(
+    string $to_email,
+    string $to_name,
+    string $subject,
+    string $body_html,
+    ?string $attachment_data = null,
     ?string $attachment_filename = null
 ): bool {
     if (empty($to_email) || !filter_var($to_email, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
 
-    $from_email = defined('SMTP_FROM') && !empty(SMTP_FROM) ? SMTP_FROM : 'no-reply@eventia.ci';
-    $from_name  = defined('SMTP_FROM_NAME') && !empty(SMTP_FROM_NAME) ? SMTP_FROM_NAME : 'Eventia';
+    $from_email = defined('SMTP_FROM') && !empty(SMTP_FROM) ? SMTP_FROM : 'no-reply@tikeli.ci';
+    $from_name = defined('SMTP_FROM_NAME') && !empty(SMTP_FROM_NAME) ? SMTP_FROM_NAME : 'Tikéli';
 
     if (!empty($attachment_data) && !empty($attachment_filename)) {
         // Message MIME multipart/mixed (HTML + Pièce jointe)
-        $boundary = 'EVENTIA_' . md5(uniqid((string)time(), true));
+        $boundary = 'TIKÉLI_' . md5(uniqid((string) time(), true));
 
-        $headers  = "MIME-Version: 1.0\r\n";
+        $headers = "MIME-Version: 1.0\r\n";
         $headers .= "From: {$from_name} <{$from_email}>\r\n";
         $headers .= "Reply-To: {$from_email}\r\n";
         $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
         $headers .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n";
 
-        $body  = "--{$boundary}\r\n";
+        $body = "--{$boundary}\r\n";
         $body .= "Content-Type: text/html; charset=UTF-8\r\n";
         $body .= "Content-Transfer-Encoding: 8bit\r\n\r\n";
         $body .= $body_html . "\r\n";
@@ -55,7 +55,7 @@ function sendEventiaEmail(
         $body .= "--{$boundary}--\r\n";
     } else {
         // Message MIME standard text/html
-        $headers  = "MIME-Version: 1.0\r\n";
+        $headers = "MIME-Version: 1.0\r\n";
         $headers .= "Content-type: text/html; charset=UTF-8\r\n";
         $headers .= "From: {$from_name} <{$from_email}>\r\n";
         $headers .= "Reply-To: {$from_email}\r\n";
@@ -66,16 +66,17 @@ function sendEventiaEmail(
     $res = smtp_send($to_email, $to_name, $subject, $headers, $body);
 
     if (!$res['ok']) {
-        error_log("[Eventia Mailer] Échec envoi à {$to_email} : " . $res['error']);
+        error_log("[Tikéli Mailer] Échec envoi à {$to_email} : " . $res['error']);
     }
 
-    return (bool)$res['ok'];
+    return (bool) $res['ok'];
 }
 
 /**
- * Enveloppe HTML standardisée aux couleurs Eventia (Navy & Ambre)
+ * Enveloppe HTML standardisée aux couleurs Tikéli (Navy & Ambre)
  */
-function wrapEventiaTemplate(string $title, string $content_html): string {
+function wrapTikéliTemplate(string $title, string $content_html): string
+{
     $site_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform";
     $year = date('Y');
 
@@ -90,12 +91,12 @@ function wrapEventiaTemplate(string $title, string $content_html): string {
     <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 30px 15px; color: #0f172a;'>
         <div style='max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0;'>
             
-            <!-- En-tête de marque Eventia -->
-            <div style='background: #16233f; color: #ffffff; padding: 28px 24px; text-align: center; border-bottom: 3px solid #d97706;'>
+            <!-- En-tête de marque Tikéli -->
+            <div style='background: #000000; color: #ffffff; padding: 28px 24px; text-align: center; border-bottom: 3px solid #FF4A0D;'>
                 <div style='font-size: 26px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 8px;'>
-                    EVENTIA
+                    TIKÉLI
                 </div>
-                <div style='color: #94a3b8; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;'>
+                <div style='color: #a3a3a3; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;'>
                     Plateforme Officielle de Billetterie
                 </div>
             </div>
@@ -107,11 +108,11 @@ function wrapEventiaTemplate(string $title, string $content_html): string {
 
             <!-- Pied de page -->
             <div style='background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;'>
-                <p style='margin: 0 0 6px;'>© {$year} Eventia. Tous droits réservés.</p>
+                <p style='margin: 0 0 6px;'>© {$year} Tikéli. Tous droits réservés.</p>
                 <p style='margin: 0;'>Paiements sécurisés par Mobile Money (Wave, Orange, MTN, Moov).</p>
                 <div style='margin-top: 10px;'>
                     <a href='{$site_url}/client/accueil.php' style='color: #16233f; text-decoration: none; font-weight: 700; margin: 0 8px;'>Accueil</a> ·
-                    <a href='{$site_url}/connexion.php' style='color: #16233f; text-decoration: none; font-weight: 700; margin: 0 8px;'>Espace Client</a>
+                    <a href='{$site_url}/connexion.php' style='color: #FF4A0D; text-decoration: none; font-weight: 700; margin: 0 8px;'>Connexion</a>
                 </div>
             </div>
 
@@ -124,31 +125,32 @@ function wrapEventiaTemplate(string $title, string $content_html): string {
  * 1. ENVOI DES BILLETS APRÈS ACHAT (sendTicketEmail)
  * Transmet les billets officiels avec QR Codes et pièce jointe PDF
  */
-function sendTicketEmail(string $to_email, string $to_name, string $order_number, array $tickets, int $order_id = 0): bool {
+function sendTicketEmail(string $to_email, string $to_name, string $order_number, array $tickets, int $order_id = 0): bool
+{
     if (empty($to_email) || !filter_var($to_email, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
 
-    $subject = "Vos Billets & QR Codes — Commande #" . $order_number . " - Eventia";
+    $subject = "Vos Billets & QR Codes — Commande #" . $order_number . " - Tikéli";
 
     // Cartes individuelles des billets
     $tickets_html = "";
     foreach ($tickets as $index => $t) {
         $qr_url = htmlspecialchars($t['qr_code']);
-        $code   = htmlspecialchars($t['code_unique']);
-        $event  = htmlspecialchars($t['event_name']);
-        $tier   = htmlspecialchars($t['type_ticket']);
-        $prix   = number_format($t['prix'], 0, ',', ' ') . " FCFA";
+        $code = htmlspecialchars($t['code_unique']);
+        $event = htmlspecialchars($t['event_name']);
+        $tier = htmlspecialchars($t['type_ticket']);
+        $prix = number_format($t['prix'], 0, ',', ' ') . " FCFA";
         $date_e = date('d/m/Y', strtotime($t['date_ev']));
-        $heure  = substr($t['heure'], 0, 5);
+        $heure = substr($t['heure'], 0, 5);
         $place_num = !empty($t['place']) ? $t['place'] : (!empty($t['place_numero']) ? $t['place_numero'] : '');
-        $place     = !empty($place_num) ? ("Place : <strong>" . htmlspecialchars($place_num) . "</strong>") : "";
-        $lieu      = htmlspecialchars($t['lieu'] ?? $t['event_lieu'] ?? $t['location'] ?? '');
+        $place = !empty($place_num) ? ("Place : <strong>" . htmlspecialchars($place_num) . "</strong>") : "";
+        $lieu = htmlspecialchars($t['lieu'] ?? $t['event_lieu'] ?? $t['location'] ?? '');
 
         $tickets_html .= "
         <div style='background: #ffffff; border: 1.5px solid #0f172a; border-radius: 20px; margin-bottom: 22px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.06);'>
             <div style='padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;'>
-                <span style='font-size: 15px; font-weight: 800; color: #0d9488; letter-spacing: 0.5px;'>EVENTIA</span>
+                <span style='font-size: 15px; font-weight: 800; color: #0d9488; letter-spacing: 0.5px;'>TIKÉLI</span>
                 <span style='background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: bold;'>✔ VENDU</span>
             </div>
             <div style='padding: 20px; text-align: left;'>
@@ -189,7 +191,28 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
         </div>";
     }
 
-    $download_link = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform/client/telecharger-ticket.php?order_id=" . $order_id;
+    $pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
+    $order_token = '';
+    try {
+        global $pdo;
+        if (!isset($pdo) || !$pdo) {
+            require_once __DIR__ . '/../config/database.php';
+        }
+        if ($pdo && $order_id > 0) {
+            $stmt_created = $pdo->prepare("SELECT created_at FROM orders WHERE id = ?");
+            $stmt_created->execute([$order_id]);
+            $created_at = $stmt_created->fetchColumn();
+            if ($created_at) {
+                $order_token = hash_hmac('sha256', $order_id . '|' . $created_at, $pay_secret);
+            }
+        }
+    } catch (Throwable $e) {
+        error_log("[Tikéli Mailer] Erreur génération token commande: " . $e->getMessage());
+    }
+
+    $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' && $_SERVER['HTTPS'] !== '') ? 'https://' : 'http://';
+    $base_host = $protocol . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    $download_link = $base_host . "/ticket-platform/client/telecharger-ticket.php?order_id=" . $order_id . ($order_token ? "&token=" . $order_token : "");
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Félicitations pour votre réservation !</h2>
@@ -218,29 +241,30 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
         </div>
     ";
 
-    $body_html = wrapEventiaTemplate("Vos Billets Eventia #" . $order_number, $content);
+    $body_html = wrapTikéliTemplate("Vos Billets Tikéli #" . $order_number, $content);
 
     // Pièce jointe PDF
     require_once __DIR__ . '/pdf.php';
     $pdf_data = generateTicketsPdf($tickets, $order_number, $to_name);
     $pdf_filename = 'billets-' . preg_replace('/[^A-Za-z0-9\-]/', '', $order_number) . '.pdf';
 
-    return sendEventiaEmail($to_email, $to_name, $subject, $body_html, $pdf_data ?: null, $pdf_filename);
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html, $pdf_data ?: null, $pdf_filename);
 }
 
 /**
  * 2. EMAIL DE BIENVENUE CLIENT (sendWelcomeClientEmail)
  * Envoyé lors de la création d'un compte client sur inscription.php
  */
-function sendWelcomeClientEmail(string $to_email, string $to_name): bool {
-    $subject = "Bienvenue sur Eventia, " . $to_name . " !";
+function sendWelcomeClientEmail(string $to_email, string $to_name): bool
+{
+    $subject = "Bienvenue sur Tikéli, " . $to_name . " !";
     $site_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform";
 
     $content = "
-        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Bienvenue dans la communauté Eventia !</h2>
+        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Bienvenue dans la communauté Tikéli !</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Votre compte client a été créé avec succès sur <strong>Eventia</strong>. Vous pouvez désormais réserver vos places de concert, festivals, spectacles et conférences en quelques clics par Mobile Money.
+            Votre compte client a été créé avec succès sur <strong>Tikéli</strong>. Vous pouvez désormais réserver vos places de concert, festivals, spectacles et conférences en quelques clics par Mobile Money.
         </p>
 
         <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin: 20px 0;'>
@@ -264,23 +288,24 @@ function sendWelcomeClientEmail(string $to_email, string $to_name): bool {
         </p>
     ";
 
-    $body_html = wrapEventiaTemplate("Bienvenue sur Eventia", $content);
-    return sendEventiaEmail($to_email, $to_name, $subject, $body_html);
+    $body_html = wrapTikéliTemplate("Bienvenue sur Tikéli", $content);
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html);
 }
 
 /**
  * 3. EMAIL DE CONFIRMATION DOSSIER PROMOTEUR (sendPromoterRegistrationEmail)
  * Envoyé lors de l'inscription d'un organisateur / promoteur
  */
-function sendPromoterRegistrationEmail(string $to_email, string $to_name, string $activite = ''): bool {
-    $subject = "Dossier Promoteur bien reçu — En cours d'examen - Eventia";
+function sendPromoterRegistrationEmail(string $to_email, string $to_name, string $activite = ''): bool
+{
+    $subject = "Dossier Promoteur bien reçu — En cours d'examen - Tikéli";
     $site_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform";
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Votre dossier promoteur a été enregistré</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Nous vous confirmons la bonne réception de votre demande d'ouverture de compte <strong>Organisateur / Promoteur</strong> sur Eventia.
+            Nous vous confirmons la bonne réception de votre demande d'ouverture de compte <strong>Organisateur / Promoteur</strong> sur Tikéli.
         </p>
 
         <div style='background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin: 18px 0; color: #166534; font-size: 13.5px; line-height: 1.5;'>
@@ -304,98 +329,137 @@ function sendPromoterRegistrationEmail(string $to_email, string $to_name, string
         </p>
     ";
 
-    $body_html = wrapEventiaTemplate("Dossier Promoteur Eventia", $content);
-    return sendEventiaEmail($to_email, $to_name, $subject, $body_html);
+    $body_html = wrapTikéliTemplate("Dossier Promoteur Tikéli", $content);
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html);
 }
 
 /**
  * 4. EMAIL DE CRÉATION DE COMPTE PAR L'ADMINISTRATEUR (sendAdminCreatedAccountEmail)
- * Envoie les identifiants d'accès au collaborateur / utilisateur
+ * Envoie la confirmation de création de compte avec liens sécurisés de connexion et de réinitialisation
  */
 function sendAdminCreatedAccountEmail(
-    string $to_email, 
-    string $to_name, 
-    string $role, 
-    string $password, 
-    string $profile_nom = ''
+    string $to_email,
+    string $to_name,
+    string $role,
+    string $password = '',
+    string $profile_nom = '',
+    ?string $custom_reset_url = null
 ): bool {
-    $subject = "Vos identifiants d'accès à la plateforme Eventia";
-    $login_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform/connexion.php";
+    global $pdo;
+    if (!isset($pdo)) {
+        @require_once __DIR__ . '/../config/database.php';
+    }
+
+    $subject = "Votre compte d'accès à la plateforme Tikéli a été créé";
+    $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $site_url = "{$scheme}://{$host}/ticket-platform";
+    $login_url = "{$site_url}/connexion.php";
+
+    // Génération automatique d'un jeton sécurisé de réinitialisation (valide 24h)
+    $reset_url = $custom_reset_url;
+    if (empty($reset_url) && !empty($pdo)) {
+        try {
+            $stmt_inv = $pdo->prepare("UPDATE password_resets SET used = 1 WHERE email = ? AND used = 0");
+            $stmt_inv->execute([$to_email]);
+
+            $token = bin2hex(random_bytes(32));
+            $stmt_ins = $pdo->prepare("
+                INSERT INTO password_resets (email, token, expires_at, used) 
+                VALUES (?, ?, NOW() + INTERVAL '24 hours', 0)
+            ");
+            $stmt_ins->execute([$to_email, $token]);
+            $reset_url = "{$site_url}/reinitialiser-mot-de-passe.php?token=" . urlencode($token) . "&email=" . urlencode($to_email);
+        } catch (\Throwable $e) {
+            error_log("[sendAdminCreatedAccountEmail Token Error] " . $e->getMessage());
+            $reset_url = "{$site_url}/mot-de-passe-oublie.php";
+        }
+    }
+    if (empty($reset_url)) {
+        $reset_url = "{$site_url}/mot-de-passe-oublie.php";
+    }
 
     $role_labels = [
-        'admin'     => 'Administrateur',
-        'agent'     => 'Agent de Contrôle (Scanners & Entrées)',
+        'admin' => 'Administrateur',
+        'agent' => 'Agent de Contrôle (Scanners & Entrées)',
         'promoteur' => 'Promoteur Événements',
-        'client'    => 'Client'
+        'client' => 'Client'
     ];
     $role_label = $role_labels[$role] ?? ucfirst($role);
 
     $content = "
-        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Votre compte Eventia a été créé</h2>
+        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Votre compte Tikéli a été créé</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Un administrateur de la plateforme <strong>Eventia</strong> vient de vous ouvrir un compte d'accès. Voici vos identifiants pour vous connecter :
+            Un administrateur de la plateforme <strong>Tikéli</strong> vient de vous ouvrir un compte d'accès officiel. Pour des raisons strictes de sécurité et de confidentialité, votre mot de passe n'est pas transmis en clair dans cet e-mail.
         </p>
 
-        <!-- Boîte des identifiants -->
+        <!-- Boîte des identifiants sécurisée -->
         <div style='background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 20px; margin: 20px 0;'>
             <table style='width: 100%; font-size: 14px; border-collapse: collapse;'>
                 <tr>
-                    <td style='padding: 6px 0; color: #64748b; width: 140px;'>Identifiant / Email :</td>
-                    <td style='padding: 6px 0; color: #16233f; font-weight: bold;'>" . htmlspecialchars($to_email) . "</td>
+                    <td style='padding: 8px 0; color: #64748b; width: 150px;'>Identifiant / Email :</td>
+                    <td style='padding: 8px 0; color: #000000; font-weight: bold;'>" . htmlspecialchars($to_email) . "</td>
                 </tr>
                 <tr>
-                    <td style='padding: 6px 0; color: #64748b;'>Mot de passe initial :</td>
-                    <td style='padding: 6px 0;'><code style='background: #eef1f6; padding: 4px 10px; border-radius: 6px; font-weight: bold; color: #d97706; font-size: 15px; letter-spacing: 1px;'>" . htmlspecialchars($password) . "</code></td>
+                    <td style='padding: 8px 0; color: #64748b;'>Rôle d'accès :</td>
+                    <td style='padding: 8px 0; color: #000000; font-weight: 600;'>{$role_label}" . (!empty($profile_nom) && strcasecmp($profile_nom, $role_label) !== 0 ? " — <span style='color: #64748b; font-weight: normal;'>(Profil : " . htmlspecialchars($profile_nom) . ")</span>" : "") . "</td>
                 </tr>
                 <tr>
-                    <td style='padding: 6px 0; color: #64748b;'>Rôle système :</td>
-                    <td style='padding: 6px 0; color: #16233f; font-weight: 600;'>{$role_label}</td>
+                    <td style='padding: 8px 0; color: #64748b;'>Mot de passe :</td>
+                    <td style='padding: 8px 0;'><span style='background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-style: italic;'>Configuré par l'administrateur (protégé)</span></td>
                 </tr>
-                " . (!empty($profile_nom) ? "
-                <tr>
-                    <td style='padding: 6px 0; color: #64748b;'>Profil métier :</td>
-                    <td style='padding: 6px 0; color: #16233f; font-weight: 600;'>" . htmlspecialchars($profile_nom) . "</td>
-                </tr>" : "") . "
             </table>
         </div>
 
-        <div style='text-align: center; margin: 24px 0;'>
-            <a href='{$login_url}' style='background: #16233f; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block; box-shadow: 0 4px 12px rgba(22, 35, 63, 0.25);'>
-                Me Connecter à Eventia
-            </a>
+        <!-- Boutons d'action : Connexion & Réinitialisation -->
+        <div style='text-align: center; margin: 28px 0;'>
+            <table align='center' border='0' cellpadding='0' cellspacing='0' style='margin: 0 auto;'>
+                <tr>
+                    <td align='center' style='padding: 6px;'>
+                        <a href='{$login_url}' style='background: #FF4A0D; color: #ffffff; padding: 13px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);'>
+                            Me Connecter à Tikéli
+                        </a>
+                    </td>
+                    <td align='center' style='padding: 6px;'>
+                        <a href='{$reset_url}' style='background: #ffffff; color: #0f172a; border: 2px solid #cbd5e1; padding: 11px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block;'>
+                            Réinitialiser mon mot de passe
+                        </a>
+                    </td>
+                </tr>
+            </table>
         </div>
 
-        <div style='background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 14px; border-radius: 0 6px 6px 0; font-size: 12.5px; color: #92400e; margin-top: 15px;'>
-            <strong>Sécurité :</strong> Pour votre sécurité, nous vous recommandons de modifier votre mot de passe dès votre première connexion.
+        <div style='background: #f0fdf4; border-left: 4px solid #16a34a; padding: 14px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #166534; margin-top: 15px; line-height: 1.5;'>
+            <strong>Sécurité & Confidentialité :</strong> Conformément aux normes de protection des données, votre mot de passe n'est jamais transmis par e-mail. Vous pouvez vous connecter avec le mot de passe convenu avec votre administrateur ou utiliser le bouton <strong>« Réinitialiser mon mot de passe »</strong> pour en définir un nouveau immédiatement (lien valable 24 heures).
         </div>
     ";
 
-    $body_html = wrapEventiaTemplate("Vos Identifiants Eventia", $content);
-    return sendEventiaEmail($to_email, $to_name, $subject, $body_html);
+    $body_html = wrapTikéliTemplate("Votre Compte Tikéli", $content);
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html);
 }
 
 /**
  * 5. EMAIL DE SUSPENSION / RÉACTIVATION DE COMPTE (sendAccountStatusNotificationEmail)
  */
 function sendAccountStatusNotificationEmail(
-    string $to_email, 
-    string $to_name, 
-    string $type, 
-    string $motif = '', 
+    string $to_email,
+    string $to_name,
+    string $type,
+    string $motif = '',
     ?string $date_fin = null
 ): bool {
     $is_reactivation = ($type === 'reactivation' || $type === 'actif');
-    $subject = $is_reactivation 
-        ? "Votre compte Eventia a été réactivé" 
-        : "Notification concernant l'état de votre compte Eventia";
+    $subject = $is_reactivation
+        ? "Votre compte Tikéli a été réactivé"
+        : "Notification concernant l'état de votre compte Tikéli";
 
     if ($is_reactivation) {
         $content = "
             <h2 style='margin: 0 0 12px; color: #16a34a; font-size: 20px;'>Votre compte est de nouveau actif</h2>
             <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
                 Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-                Nous vous informons que la suspension temporaire de votre compte Eventia a été levée. Vous pouvez à présent vous reconnecter et accéder à l'ensemble de vos services.
+                Nous vous informons que la suspension temporaire de votre compte Tikéli a été levée. Vous pouvez à présent vous reconnecter et accéder à l'ensemble de vos services.
             </p>
         ";
     } else {
@@ -404,7 +468,7 @@ function sendAccountStatusNotificationEmail(
             <h2 style='margin: 0 0 12px; color: #dc2626; font-size: 20px;'>Suspension de votre compte</h2>
             <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
                 Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-                L'administration d'Eventia vous informe que votre compte fait l'objet d'une suspension" . $fin_str . ".
+                L'administration de Tikéli vous informe que votre compte fait l'objet d'une suspension" . $fin_str . ".
             </p>
             " . (!empty($motif) ? "
             <div style='background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; color: #991b1b; margin: 15px 0;'>
@@ -416,16 +480,17 @@ function sendAccountStatusNotificationEmail(
         ";
     }
 
-    $body_html = wrapEventiaTemplate($subject, $content);
-    return sendEventiaEmail($to_email, $to_name, $subject, $body_html);
+    $body_html = wrapTikéliTemplate($subject, $content);
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html);
 }
 
 /**
  * 6. EMAIL D'APPROBATION DE COMPTE PROMOTEUR (sendPromoterApprovalEmail)
  * Prévient le promoteur que son dossier est validé et qu'il peut dès lors se connecter
  */
-function sendPromoterApprovalEmail(string $to_email, string $to_name, string $structure_name = ''): bool {
-    $subject = "Félicitations ! Votre compte Promoteur Eventia est activé";
+function sendPromoterApprovalEmail(string $to_email, string $to_name, string $structure_name = ''): bool
+{
+    $subject = "Félicitations ! Votre compte Promoteur Tikéli est activé";
     $login_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform/connexion.php";
 
     $nom_aff = !empty($structure_name) ? $structure_name : $to_name;
@@ -434,7 +499,7 @@ function sendPromoterApprovalEmail(string $to_email, string $to_name, string $st
         <h2 style='margin: 0 0 12px; color: #16a34a; font-size: 20px;'>Votre compte Promoteur est validé !</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            L'administration d'<strong>Eventia</strong> a le plaisir de vous informer que votre dossier d'éligibilité pour <strong>" . htmlspecialchars($nom_aff) . "</strong> a été <strong>validé avec succès</strong>.
+            L'administration d'<strong>Tikéli</strong> a le plaisir de vous informer que votre dossier d'éligibilité pour <strong>" . htmlspecialchars($nom_aff) . "</strong> a été <strong>validé avec succès</strong>.
         </p>
 
         <div style='background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 18px; margin: 20px 0;'>
@@ -459,15 +524,16 @@ function sendPromoterApprovalEmail(string $to_email, string $to_name, string $st
         </p>
     ";
 
-    $body_html = wrapEventiaTemplate("Compte Promoteur Activé - Eventia", $content);
-    return sendEventiaEmail($to_email, $to_name, $subject, $body_html);
+    $body_html = wrapTikéliTemplate("Compte Promoteur Activé - Tikéli", $content);
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html);
 }
 
 /**
  * 7. EMAIL DE REJET DE DOSSIER PROMOTEUR (sendPromoterRejectionEmail)
  */
-function sendPromoterRejectionEmail(string $to_email, string $to_name, string $motif = ''): bool {
-    $subject = "Notification concernant votre candidature promoteur Eventia";
+function sendPromoterRejectionEmail(string $to_email, string $to_name, string $motif = ''): bool
+{
+    $subject = "Notification concernant votre candidature promoteur Tikéli";
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #dc2626; font-size: 20px;'>Dossier Promoteur Non Validé</h2>
@@ -486,8 +552,8 @@ function sendPromoterRejectionEmail(string $to_email, string $to_name, string $m
         </p>
     ";
 
-    $body_html = wrapEventiaTemplate("Candidature Promoteur - Eventia", $content);
-    return sendEventiaEmail($to_email, $to_name, $subject, $body_html);
+    $body_html = wrapTikéliTemplate("Candidature Promoteur - Tikéli", $content);
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html);
 }
 
 /**
@@ -495,12 +561,12 @@ function sendPromoterRejectionEmail(string $to_email, string $to_name, string $m
  * Envoie un lien sécurisé à usage unique valable 60 minutes
  */
 function sendPasswordResetEmail(
-    string $to_email, 
-    string $to_name, 
-    string $reset_url, 
+    string $to_email,
+    string $to_name,
+    string $reset_url,
     int $expiry_minutes = 60
 ): bool {
-    $subject = "Réinitialisation de votre mot de passe Eventia";
+    $subject = "Réinitialisation de votre mot de passe Tikéli";
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Demande de réinitialisation de mot de passe</h2>
@@ -531,22 +597,23 @@ function sendPasswordResetEmail(
         </div>
     ";
 
-    $body_html = wrapEventiaTemplate("Réinitialisation Mot de Passe - Eventia", $content);
-    return sendEventiaEmail($to_email, $to_name, $subject, $body_html);
+    $body_html = wrapTikéliTemplate("Réinitialisation Mot de Passe - Tikéli", $content);
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html);
 }
 
 /**
  * 9. EMAIL DE CONFIRMATION DE CHANGEMENT DE MOT DE PASSE (sendPasswordChangedConfirmationEmail)
  */
-function sendPasswordChangedConfirmationEmail(string $to_email, string $to_name): bool {
-    $subject = "Votre mot de passe Eventia a été modifié";
+function sendPasswordChangedConfirmationEmail(string $to_email, string $to_name): bool
+{
+    $subject = "Votre mot de passe Tikéli a été modifié";
     $login_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform/connexion.php";
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #16a34a; font-size: 20px;'>Mot de passe mis à jour avec succès</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Le mot de passe de votre compte <strong>Eventia</strong> a été modifié avec succès le <strong>" . date('d/m/Y à H:i') . "</strong>.
+            Le mot de passe de votre compte <strong>Tikéli</strong> a été modifié avec succès le <strong>" . date('d/m/Y à H:i') . "</strong>.
         </p>
 
         <div style='text-align: center; margin: 24px 0;'>
@@ -556,11 +623,107 @@ function sendPasswordChangedConfirmationEmail(string $to_email, string $to_name)
         </div>
 
         <div style='background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px 14px; border-radius: 0 6px 6px 0; font-size: 12.5px; color: #991b1b; margin-top: 15px;'>
-            <strong>Alerte Sécurité :</strong> Si vous n'avez pas effectué ce changement, veuillez contacter immédiatement l'assistance Eventia pour sécuriser votre compte.
+            <strong>Alerte Sécurité :</strong> Si vous n'avez pas effectué ce changement, veuillez contacter immédiatement l'assistance Tikéli pour sécuriser votre compte.
         </div>
     ";
 
-    $body_html = wrapEventiaTemplate("Mot de Passe Modifié - Eventia", $content);
-    return sendEventiaEmail($to_email, $to_name, $subject, $body_html);
+    $body_html = wrapTikéliTemplate("Mot de Passe Modifié - Tikéli", $content);
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html);
 }
+
+/**
+ * 10. EMAIL DE CONFIRMATION DE CHANGEMENT DE PLACE (sendSeatChangedConfirmationEmail)
+ * Notifie le client que son siège a été modifié avec succès et joint le nouveau PDF
+ */
+function sendSeatChangedConfirmationEmail(
+    string $to_email,
+    string $to_name,
+    array $ticket,
+    string $ancienne_place,
+    string $nouvelle_place
+): bool {
+    $subject = "Votre place a été modifiée : " . $nouvelle_place . " — " . ($ticket['event_name'] ?? 'Tikéli');
+    $site_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/ticket-platform';
+
+    $content = "
+        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Votre place a bien été mise à jour !</h2>
+        <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
+            Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
+            Le changement de place pour votre billet de l'événement <strong>" . htmlspecialchars($ticket['event_name'] ?? '') . "</strong> a été validé avec succès.
+        </p>
+
+        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;'>
+            <table style='width: 100%; border-collapse: collapse; font-size: 14px;'>
+                <tr>
+                    <td style='padding: 8px 0; color: #64748b;'>Événement :</td>
+                    <td style='padding: 8px 0; font-weight: 700; color: #16233f; text-align: right;'>" . htmlspecialchars($ticket['event_name'] ?? '') . "</td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0; color: #64748b;'>Date & Heure :</td>
+                    <td style='padding: 8px 0; font-weight: 700; color: #16233f; text-align: right;'>" . htmlspecialchars($ticket['date_evenement'] ?? '') . " à " . htmlspecialchars($ticket['heure'] ?? '') . "</td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0; color: #64748b;'>Lieu :</td>
+                    <td style='padding: 8px 0; font-weight: 700; color: #16233f; text-align: right;'>" . htmlspecialchars($ticket['lieu'] ?? '') . "</td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0; color: #64748b;'>Catégorie :</td>
+                    <td style='padding: 8px 0; font-weight: 700; color: #16233f; text-align: right;'>" . htmlspecialchars($ticket['type_ticket'] ?? '') . "</td>
+                </tr>
+                <tr style='border-top: 1px dashed #cbd5e1;'>
+                    <td style='padding: 10px 0; color: #94a3b8;'>Ancienne place :</td>
+                    <td style='padding: 10px 0; color: #94a3b8; text-decoration: line-through; text-align: right;'>" . htmlspecialchars($ancienne_place ?: 'Non spécifiée') . "</td>
+                </tr>
+                <tr style='background: #fffbeb;'>
+                    <td style='padding: 10px 8px; color: #b45309; font-weight: bold;'>Nouvelle place :</td>
+                    <td style='padding: 10px 8px; color: #d97706; font-weight: 900; font-size: 16px; text-align: right;'>Place " . htmlspecialchars($nouvelle_place) . "</td>
+                </tr>
+                <tr>
+                    <td style='padding: 8px 0; color: #64748b;'>Code Billet :</td>
+                    <td style='padding: 8px 0; font-family: monospace; font-weight: 700; color: #16233f; text-align: right;'>" . htmlspecialchars($ticket['code_unique'] ?? '') . "</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style='text-align: center; margin: 24px 0;'>
+            <a href='{$site_url}/client/mes-tickets.php' style='background: #d97706; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block;'>
+                Voir mon billet actualisé
+            </a>
+        </div>
+
+        <p style='color: #64748b; font-size: 13px; line-height: 1.5; margin: 0;'>
+            Votre QR code reste identique et valide pour l'accès. Vous trouverez votre billet actualisé au format PDF en pièce jointe de cet email.
+        </p>
+    ";
+
+    $body_html = wrapTikéliTemplate("Changement de Place Confirmé - Tikéli", $content);
+
+    // Génération du PDF actualisé en pièce jointe
+    $pdf_data = null;
+    $pdf_filename = null;
+    try {
+        require_once __DIR__ . '/pdf.php';
+        $pdf_ticket_item = [
+            'code_unique' => $ticket['code_unique'] ?? '',
+            'qr_code' => $ticket['qr_code'] ?? '',
+            'event_name' => $ticket['event_name'] ?? '',
+            'type_ticket' => $ticket['type_ticket'] ?? '',
+            'place' => $nouvelle_place,
+            'prix' => $ticket['prix'] ?? 0,
+            'date_ev' => $ticket['date_evenement'] ?? '',
+            'heure' => $ticket['heure'] ?? '',
+            'lieu' => $ticket['lieu'] ?? '',
+            'date_achat' => date('Y-m-d H:i:s')
+        ];
+        $order_num = !empty($ticket['order_id']) ? "CMD-" . $ticket['order_id'] : $ticket['code_unique'];
+        $pdf_data = generateTicketsPdf([$pdf_ticket_item], $order_num, $to_name);
+        $pdf_filename = 'billet-' . preg_replace('/[^A-Za-z0-9\-]/', '', $ticket['code_unique']) . '.pdf';
+    } catch (Throwable $e) {
+        error_log("[Tikéli Mailer] Erreur génération PDF changement place : " . $e->getMessage());
+    }
+
+    return sendTikéliEmail($to_email, $to_name, $subject, $body_html, $pdf_data ?: null, $pdf_filename);
+}
+
+
 

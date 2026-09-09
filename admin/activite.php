@@ -68,7 +68,7 @@ $stmt->execute($params);
 $logs = $stmt->fetchAll();
 
 // Statistiques rapides
-$tot_logs_today = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE DATE(created_at) = CURDATE()")->fetchColumn();
+$tot_logs_today = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE DATE(created_at) = CURRENT_DATE")->fetchColumn();
 $tot_logins = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action = 'connexion'")->fetchColumn();
 $tot_updates = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action LIKE '%.update'")->fetchColumn();
 $tot_suspensions = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action = 'user.suspend'")->fetchColumn();
@@ -397,7 +397,7 @@ $tot_suspensions = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE a
                 <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary); font-size: 1.55rem;"></i>
                 Journal d'Activité & Traçabilité (Audit Trail)
             </h1>
-            <p>Historique immuable de toutes les actions sensibles effectuées sur la plateforme Eventia.</p>
+            <p>Historique immuable de toutes les actions sensibles effectuées sur la plateforme Tikéli.</p>
         </div>
 
         <div class="activite-header-actions">

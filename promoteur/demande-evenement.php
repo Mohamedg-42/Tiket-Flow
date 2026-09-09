@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $date_evenement = $_POST['date_evenement'] ?? '';
     $heure = $_POST['heure'] ?? '';
 
-    // Détermination de la Ville et de la Salle (Connue ou Pas)
+    // Détermination de la Ville et de la Salle (Connue / Répertoriée vs Espace Non Répertorié)
     $ville = trim($_POST['ville'] ?? '');
     $ville_custom = trim($_POST['ville_custom'] ?? '');
     if ($ville === 'Autre' && !empty($ville_custom)) {
@@ -87,11 +87,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($ville)) $ville = 'Abidjan';
 
     $salle_connue = $_POST['salle_connue'] ?? 'oui';
+    $salle_id = null;
+
     if ($salle_connue === 'non') {
-        $statut_salle = trim($_POST['statut_salle_inconnue'] ?? 'Lieu à confirmer');
-        if (empty($statut_salle)) $statut_salle = 'Lieu à confirmer';
-        $lieu = $statut_salle . ' (' . $ville . ')';
+        // Espace Non Répertorié / Lieu Libre : Pas de vue de scène 3D requise
+        $statut_salle = trim($_POST['statut_salle_inconnue'] ?? 'Espace non répertorié');
+        $espace_nom = trim($_POST['espace_nom_custom'] ?? '');
+        if (!empty($espace_nom)) {
+            $lieu = $espace_nom . ' (' . $ville . ')';
+        } else {
+            if (empty($statut_salle)) $statut_salle = 'Espace non répertorié';
+            $lieu = $statut_salle . ' (' . $ville . ')';
+        }
     } else {
+        // Salle Répertoriée : Filtrée selon la ville avec vue 3D
+        $salle_id = !empty($_POST['salle_id']) ? (int)$_POST['salle_id'] : null;
         $salle_nom = trim($_POST['salle_nom'] ?? '');
         $salle_select = trim($_POST['salle_select'] ?? '');
         $nom_choisi = !empty($salle_nom) ? $salle_nom : (($salle_select !== 'Autre' && !empty($salle_select)) ? $salle_select : '');
@@ -162,18 +172,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // 4. Structuration des types de tickets
+        // 4. Structuration des types de tickets (avec quota de places au choix défini par le promoteur)
+        $ticket_choix = $_POST['ticket_places_choisies'] ?? [];
         $tickets_data = [];
         for ($i = 0; $i < count($ticket_noms); $i++) {
             $t_nom = trim($ticket_noms[$i]);
             $t_prix = (float) ($ticket_prix[$i] ?? 0);
             $t_qty = (int) ($ticket_qtys[$i] ?? 0);
+            $t_choix = (isset($ticket_choix[$i]) && is_numeric($ticket_choix[$i])) ? max(0, min($t_qty, (int)$ticket_choix[$i])) : 0;
 
             if (!empty($t_nom) && $t_prix > 0 && $t_qty > 0) {
                 $tickets_data[] = [
                     'nom' => $t_nom,
                     'prix' => $t_prix,
                     'quantite' => $t_qty,
+                    'places_choisies' => $t_choix,
                     'frais_place' => max(0, (float) ($ticket_frais[$i] ?? 0))
                 ];
             }
@@ -185,12 +198,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $candidats_json = null;
 
+            // Calcul dynamique du taux de commission selon l'ampleur de l'événement
+            require_once '../includes/commission.php';
+            $req_capacity = 0;
+            $req_gross = 0;
+            foreach ($tickets_data as $tk) {
+                $req_capacity += (int)$tk['quantite'];
+                $req_gross += ((int)$tk['quantite'] * (float)$tk['prix']);
+            }
+            $scale_info = get_event_scale_tier($req_capacity, $req_gross);
+            $commission_rate = (isset($prom_info['commission_rate']) && (float)$prom_info['commission_rate'] > 0 && abs((float)$prom_info['commission_rate'] - 5.00) > 0.001) 
+                ? (float)$prom_info['commission_rate'] 
+                : (float)$scale_info['rate'];
+
             try {
                 $sql = "INSERT INTO event_requests (
                             user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote,
                             infos_supplementaires, type_personne, nom_structure, numero_rccm,
-                            document_justificatif, document_autorisation, ticket_types_data, candidats_data, statut
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente')";
+                            document_justificatif, document_autorisation, ticket_types_data, candidats_data, commission_rate, salle_id, statut
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente')";
 
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
@@ -210,7 +236,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $doc_justificatif,
                     $doc_autorisation,
                     json_encode($tickets_data, JSON_UNESCAPED_UNICODE),
-                    $candidats_json
+                    $candidats_json,
+                    $commission_rate,
+                    $salle_id
                 ]);
 
                 $message = "Votre proposition d'événement a été transmise à l'administrateur avec succès ! Vous pouvez suivre son approbation dans « Mes Événements ».";
@@ -493,26 +521,141 @@ try {
 }
 ?>
 
-<link rel="stylesheet" href="../Css/dashboard-pro.css">
-
 <style>
-    /* Styles complémentaires intégrés au design system */
+    /* ==============================================================================
+       RESPONSIVE DESIGN SYSTEM — PROPOSER UN ÉVÉNEMENT (TIKÉLI PRO)
+       Optimisation Multi-Écrans, Tablette, Mobile & Petits Écrans (Zéro Débordement)
+       ============================================================================== */
+
+    /* 1. Base du Conteneur & Protection Débordement */
+    .dash-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    form[style*="max-width: 960px"],
+    div[style*="max-width: 960px"] {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
     .dash-step-badge {
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #FF4A0D 0%, #FF4A0D 100%);
+        background: #FF4A0D;
         color: #ffffff;
         display: grid;
         place-items: center;
         font-weight: 800;
         font-size: 0.85rem;
         flex-shrink: 0;
-        box-shadow: 0 4px 10px rgba(91, 80, 230, 0.25);
+        box-shadow: 0 4px 10px rgba(255, 74, 13, 0.2);
     }
 
+    /* 2. En-tête de page & Titre fluide */
+    .dash-header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dash-title-box {
+        min-width: 0;
+        flex: 1 1 280px;
+    }
+
+    .dash-title-box h1 {
+        font-size: clamp(1.35rem, 3.5vw, 1.85rem) !important;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+        margin: 0 0 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        color: var(--dash-text, #000000);
+    }
+
+    .dash-title-box p {
+        font-size: clamp(0.82rem, 2vw, 0.95rem);
+        color: var(--dash-muted, #737373);
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .dash-filter-bar .dash-btn-action {
+        white-space: nowrap;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 3. Onglets de Navigation */
+    .events-creation-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        background: #ffffff;
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid var(--dash-border, #E5E5E5);
+        width: fit-content;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .events-creation-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .events-creation-tabs .dash-chart-tab {
+        flex-shrink: 0;
+        white-space: nowrap;
+        text-decoration: none;
+        border-radius: 8px;
+        padding: 0.55rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+    }
+
+    /* 4. Bannière d'Identité & Promoteur */
+    .dash-identity-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .dash-identity-banner > div:first-child {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        flex: 1 1 320px;
+    }
+
+    /* 5. Groupes de Formulaire & Entrées */
     .dash-form-group {
-        margin-bottom: 1.25rem;
+        margin-bottom: 1.15rem;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
     .dash-form-group label {
@@ -521,40 +664,98 @@ try {
         gap: 6px;
         font-size: 0.82rem;
         font-weight: 800;
-        color: var(--dash-text);
-        margin-bottom: 0.45rem;
+        color: var(--dash-text, #000000);
+        margin-bottom: 0.4rem;
         letter-spacing: -0.2px;
+        flex-wrap: wrap;
     }
 
-    .dash-form-group input[type="text"],
-    .dash-form-group input[type="date"],
-    .dash-form-group input[type="time"],
-    .dash-form-group input[type="number"],
+    .dash-form-group input,
     .dash-form-group select,
     .dash-form-group textarea {
-        width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
         padding: 0.72rem 0.95rem;
         background: #F5F5F5;
-        border: 1px solid var(--dash-border);
+        border: 1px solid var(--dash-border, #E5E5E5);
         border-radius: 10px;
         font-family: inherit;
         font-size: 0.88rem;
-        color: var(--dash-text);
+        color: var(--dash-text, #000000);
         outline: none;
         transition: all 0.2s ease;
-        box-sizing: border-box;
+        box-sizing: border-box !important;
     }
 
     .dash-form-group input:focus,
     .dash-form-group select:focus,
     .dash-form-group textarea:focus {
         background: #ffffff;
-        border-color: var(--dash-primary);
-        box-shadow: 0 0 0 3px rgba(91, 80, 230, 0.12);
+        border-color: #FF4A0D;
+        box-shadow: 0 0 0 3px rgba(255, 74, 13, 0.12);
+    }
+
+    .dash-form-group input[type="file"] {
+        background: #F5F5F5;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.82rem;
+        cursor: pointer;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* 6. Grilles 2 colonnes & Localisation */
+    .form-row-2col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .venue-main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .venue-toggle-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .venue-toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0.65rem 0.85rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        box-sizing: border-box;
+        min-height: 44px;
+        user-select: none;
+    }
+
+    .venue-toggle-btn input[type="radio"] {
+        width: auto !important;
+        margin: 0 !important;
+        flex-shrink: 0;
+    }
+
+    .venue-details-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 1rem;
     }
 
     .dash-entity-card {
-        border: 2px solid var(--dash-border);
+        border: 2px solid var(--dash-border, #E5E5E5);
         border-radius: 12px;
         padding: 1.1rem 1.25rem;
         cursor: pointer;
@@ -566,120 +767,487 @@ try {
     }
 
     .dash-entity-card:hover {
-        border-color: #E5E5E5;
+        border-color: #CBD5E1;
         background: #ffffff;
     }
 
     .dash-entity-card.active {
-        border-color: var(--dash-primary);
+        border-color: #FF4A0D;
         background: #FFF2ED;
-        box-shadow: 0 4px 14px rgba(91, 80, 230, 0.08);
+        box-shadow: 0 4px 14px rgba(255, 74, 13, 0.08);
     }
 
-    .dash-upload-box {
-        background: #F5F5F5;
-        border: 2px dashed #E5E5E5;
+    .step-header-with-action {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    /* 7. Bannière & Grille de Commission par Ampleur d'Événement */
+    .dash-commission-notice {
+        background: #FFFBF9;
+        border: 1px solid #F3DDD5;
         border-radius: 12px;
-        padding: 1.25rem;
-        transition: all 0.2s ease;
+        padding: 1.15rem 1.25rem;
+        margin-bottom: 1.25rem;
+        box-sizing: border-box;
     }
 
-    .dash-upload-box:hover {
-        border-color: var(--dash-primary);
+    .scale-tiers-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin-top: 0.85rem;
+    }
+
+    .scale-tier-card {
         background: #ffffff;
+        border: 1.5px solid #E5E5E5;
+        border-radius: 10px;
+        padding: 0.85rem 0.65rem 0.75rem;
+        text-align: center;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .scale-tier-card.is-active {
+        border-color: #FF4A0D;
+        background: #FFF2ED;
+        box-shadow: 0 3px 10px rgba(255, 74, 13, 0.12);
+    }
+
+    .scale-tier-card .tier-badge {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 2px;
+    }
+
+    .scale-tier-card.is-active .tier-badge {
+        color: #FF4A0D;
+    }
+
+    .scale-tier-card .tier-rate {
+        font-size: 1.35rem;
+        font-weight: 900;
+        color: #000000;
+        line-height: 1.15;
+    }
+
+    .scale-tier-card.is-active .tier-rate {
+        color: #FF4A0D;
+    }
+
+    .scale-tier-card .tier-range {
+        font-size: 0.72rem;
+        color: #737373;
+        margin-top: 3px;
+    }
+
+    .scale-tier-card .tier-tag {
+        display: none;
+        position: absolute;
+        top: -9px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #FF4A0D;
+        color: #ffffff;
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 1px 7px;
+        border-radius: 999px;
+        white-space: nowrap;
+        letter-spacing: 0.4px;
+    }
+
+    .scale-tier-card.is-active .tier-tag {
+        display: inline-block;
+    }
+
+    .scale-live-status {
+        margin-top: 0.85rem;
+        padding: 0.7rem 0.95rem;
+        background: #ffffff;
+        border: 1px solid #F0D9D0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        font-size: 0.82rem;
+        color: #000000;
+        line-height: 1.4;
+    }
+
+    /* 8. Lignes de Billets / Tarifs (Responsive & Anti-Débordement) */
+    #tickets-container {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .dash-ticket-row {
-        background: #F5F5F5;
-        border: 1px solid var(--dash-border);
+        background: #ffffff;
+        border: 1px solid var(--dash-border, #E2E8F0);
         border-radius: 12px;
         padding: 1rem 1.15rem;
         display: grid;
-        grid-template-columns: 2fr 1.2fr 1fr 1.2fr auto;
-        gap: 0.85rem;
+        grid-template-columns: minmax(130px, 2fr) minmax(90px, 1.1fr) minmax(75px, 0.9fr) minmax(95px, 1.1fr) minmax(90px, 1fr) 38px;
+        gap: 0.75rem;
         align-items: end;
         margin-bottom: 0.85rem;
         transition: all 0.15s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 100%;
     }
 
     .dash-ticket-row:hover {
-        border-color: #E5E5E5;
-        background: #ffffff;
+        border-color: #CBD5E1;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     }
 
-    @media (max-width: 700px) {
-        .dash-ticket-row {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
-    @media (max-width: 420px) {
-        .dash-ticket-row {
-            grid-template-columns: 1fr;
-        }
+    .dash-ticket-row > div {
+        min-width: 0 !important;
+        box-sizing: border-box;
     }
 
+    .dash-ticket-row label {
+        font-size: 0.76rem !important;
+        font-weight: 700 !important;
+        color: var(--dash-text, #000000);
+        display: block;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .dash-ticket-row input {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 0.6rem 0.7rem !important;
+        font-size: 0.86rem !important;
+        height: 40px !important;
+        border: 1px solid var(--dash-border, #E2E8F0) !important;
+        border-radius: 8px !important;
+        background: #ffffff !important;
+        color: var(--dash-text, #000000) !important;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .dash-ticket-row input:focus {
+        border-color: #FF4A0D !important;
+        box-shadow: 0 0 0 3px rgba(255, 74, 13, 0.12) !important;
+    }
+
+    .ticket-delete-btn-box {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        min-width: 38px !important;
+    }
+
+    .ticket-delete-btn-box button {
+        background: #F5F5F5;
+        color: #000000;
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
+        width: 38px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        transition: all 0.2s ease;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .ticket-delete-btn-box button:hover {
+        background: #FEE2E2;
+        color: #DC2626;
+    }
+
+    /* 9. Synthèse Financière Estimée */
     .dash-summary-strip {
-        background: linear-gradient(135deg, #000000 0%, #000000 100%);
+        background: #000000;
         color: #ffffff;
         border-radius: 12px;
         padding: 1.25rem 1.5rem;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
         gap: 1.25rem;
         margin-top: 1.25rem;
         margin-bottom: 1.5rem;
-    }
-
-    .dash-form-group {
-        margin-bottom: 1.15rem;
-        width: 100%;
-        min-width: 0;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
         box-sizing: border-box;
     }
 
-    .dash-form-group label {
+    .dash-summary-strip small {
+        color: #A3A3A3;
         display: block;
-        font-size: 0.82rem;
-        font-weight: 700;
-        margin-bottom: 0.35rem;
-        color: var(--dash-text, #000000);
-        word-break: break-word;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
     }
 
-    .dash-form-group input,
-    .dash-form-group select,
-    .dash-form-group textarea,
-    .dash-form-group input[type="file"],
-    .dash-form-group input[type="text"],
-    .dash-form-group input[type="date"],
-    .dash-form-group input[type="time"],
-    .dash-form-group input[type="number"],
-    .dash-form-group input[type="email"],
-    .dash-form-group input[type="password"] {
+    .dash-summary-strip strong {
+        font-size: clamp(1.05rem, 2.8vw, 1.25rem);
+        display: block;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    /* 10. Boutons de Soumission Fluides */
+    .btn-submit-large {
         width: 100% !important;
-        max-width: 100% !important;
+        justify-content: center !important;
+        padding: 0.95rem 1.5rem !important;
+        font-size: clamp(0.92rem, 2.5vw, 1.05rem) !important;
+        border-radius: 12px !important;
+        font-weight: 800 !important;
+        white-space: normal !important;
+        text-align: center !important;
+        line-height: 1.35 !important;
+        min-height: 50px !important;
         box-sizing: border-box !important;
     }
 
-    @media (max-width: 768px) {
-        div[style*="grid-template-columns: 1fr 1fr"],
-        div[style*="grid-template-columns: 1.2fr 1fr"],
-        div[style*="grid-template-columns: 1fr 1.2fr"],
-        div[style*="grid-template-columns: 1fr 1fr 1fr"],
-        div[style*="grid-template-columns: 2fr 1fr"],
-        div[style*="grid-template-columns: 1.5fr 1fr"] {
+    /* 11. Sélecteur de Modes de Vote (Tab 3) */
+    .vote-mode-buttons {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .vote-mode-buttons button {
+        flex: 1 1 240px;
+        justify-content: center;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.3;
+    }
+
+    /* ==============================================================================
+       POINTS DE RUPTURE (RESPONSIVE BREAKPOINTS)
+       ============================================================================== */
+
+    /* Écrans Moyens, Laptops & Tablettes Paysage (<= 1250px) */
+    @media (max-width: 1250px) {
+        .dash-ticket-row {
+            grid-template-columns: repeat(4, 1fr) 38px !important;
+            gap: 0.75rem !important;
+            padding: 1.1rem 1rem !important;
+        }
+        .dash-ticket-row .ticket-col-name {
+            grid-column: 1 / 5 !important;
+        }
+        .dash-ticket-row .ticket-delete-btn-box {
+            grid-column: 5 / 6 !important;
+            align-self: end !important;
+        }
+        .dash-ticket-row .ticket-col-price {
+            grid-column: 1 / 2 !important;
+        }
+        .dash-ticket-row .ticket-col-qty {
+            grid-column: 2 / 3 !important;
+        }
+        .dash-ticket-row .ticket-col-choix {
+            grid-column: 3 / 4 !important;
+        }
+        .dash-ticket-row .ticket-col-fee {
+            grid-column: 4 / 5 !important;
+        }
+
+        .dash-summary-strip {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 1.1rem !important;
+            padding: 1.15rem 1.25rem !important;
+        }
+
+        .venue-main-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0.95rem !important;
+        }
+    }
+
+    /* Tablettes Portrait (<= 860px) */
+    @media (max-width: 860px) {
+        .form-row-2col {
             grid-template-columns: 1fr !important;
             gap: 0.85rem !important;
         }
-
-        .dash-card {
-            padding: 1.15rem 1rem !important;
+        .venue-details-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0.75rem !important;
         }
+        .events-creation-tabs {
+            width: 100% !important;
+        }
+    }
 
-        .dash-card-head {
+    /* Mobiles Larges & Tablettes Étroites (<= 720px) */
+    @media (max-width: 720px) {
+        .dash-container {
+            padding: 1rem 0.85rem 2.5rem !important;
+        }
+        .dash-card {
+            padding: 1.15rem 0.95rem !important;
+            border-radius: 12px !important;
+        }
+        .dash-header-section {
             flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 0.5rem !important;
+            align-items: stretch !important;
+            gap: 0.85rem !important;
+        }
+        .dash-filter-bar {
+            width: 100% !important;
+        }
+        .dash-filter-bar .dash-btn-action {
+            width: 100% !important;
+            justify-content: center !important;
+        }
+        .step-header-with-action {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+        }
+        .step-header-with-action button {
+            width: 100% !important;
+            justify-content: center !important;
+        }
+        .dash-identity-banner {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+        }
+        .dash-identity-banner > div:last-child {
+            width: 100% !important;
+            justify-content: center !important;
+            box-sizing: border-box !important;
+        }
+        .dash-ticket-row {
+            grid-template-columns: 1fr 1fr !important;
+            padding: 1rem 0.85rem !important;
+            position: relative !important;
+            gap: 0.65rem !important;
+        }
+        .dash-ticket-row .ticket-col-name {
+            grid-column: 1 / -1 !important;
+            padding-right: 44px !important;
+        }
+        .dash-ticket-row .ticket-delete-btn-box {
+            position: absolute !important;
+            top: 0.95rem !important;
+            right: 0.85rem !important;
+            width: 36px !important;
+            height: 36px !important;
+        }
+        .dash-ticket-row .ticket-delete-btn-box button {
+            width: 36px !important;
+            height: 36px !important;
+        }
+        .dash-ticket-row .ticket-col-price {
+            grid-column: 1 / 2 !important;
+        }
+        .dash-ticket-row .ticket-col-qty {
+            grid-column: 2 / 3 !important;
+        }
+        .dash-ticket-row .ticket-col-choix {
+            grid-column: 1 / 2 !important;
+        }
+        .dash-ticket-row .ticket-col-fee {
+            grid-column: 2 / 3 !important;
+        }
+        .dash-commission-notice {
+            padding: 0.95rem 1rem !important;
+        }
+        .scale-tiers-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 0.6rem !important;
+        }
+        .scale-live-status {
+            font-size: 0.78rem !important;
+            padding: 0.6rem 0.75rem !important;
+        }
+        .vote-mode-buttons button {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+        .dash-cand-vote-row {
+            grid-template-columns: 1fr !important;
+            position: relative !important;
+            padding: 1rem 0.9rem !important;
+        }
+        .dash-cand-vote-row .cand-delete-box {
+            text-align: right !important;
+            padding-top: 0.35rem !important;
+        }
+    }
+
+    /* Mobiles Standards & Étroits (<= 480px) */
+    @media (max-width: 480px) {
+        .dash-container {
+            padding: 0.85rem 0.65rem 2rem !important;
+        }
+        .dash-card {
+            padding: 1rem 0.8rem !important;
+        }
+        .venue-toggle-buttons {
+            grid-template-columns: 1fr !important;
+        }
+        .form-row-2col.datetime-row {
+            grid-template-columns: 1fr !important;
+            gap: 0.75rem !important;
+        }
+        .dash-summary-strip {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.85rem !important;
+            padding: 1rem !important;
+        }
+        .dash-summary-strip strong {
+            font-size: 1.05rem !important;
+        }
+        /* Empêcher le zoom automatique iOS sur les contrôles de formulaire */
+        .dash-form-group input,
+        .dash-form-group select,
+        .dash-form-group textarea,
+        .dash-ticket-row input {
+            font-size: 16px !important;
+        }
+    }
+
+    /* Mobiles Très Étroits (<= 360px) */
+    @media (max-width: 360px) {
+        .dash-ticket-row {
+            grid-template-columns: 1fr !important;
+        }
+        .dash-ticket-row .ticket-col-name,
+        .dash-ticket-row .ticket-col-price,
+        .dash-ticket-row .ticket-col-qty,
+        .dash-ticket-row .ticket-col-choix,
+        .dash-ticket-row .ticket-col-fee {
+            grid-column: 1 / -1 !important;
+        }
+        .dash-summary-strip {
+            grid-template-columns: 1fr !important;
+            gap: 0.75rem !important;
+        }
+        .events-creation-tabs .dash-chart-tab {
+            font-size: 0.78rem !important;
+            padding: 0.5rem 0.75rem !important;
         }
     }
 </style>
@@ -725,8 +1293,7 @@ try {
     <?php endif; ?>
 
     <!-- Navigation par Onglets Épurée -->
-    <div
-        style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; background: #ffffff; padding: 6px; border-radius: 12px; border: 1px solid var(--dash-border); width: fit-content; flex-wrap: wrap;">
+    <div class="events-creation-tabs">
         <a href="demande-evenement.php" class="dash-chart-tab <?php echo $onglet === 'evenement' ? 'active' : ''; ?>"
             style="text-decoration: none; border-radius: 8px; padding: 0.5rem 1.15rem; font-size: 0.85rem;">
             <i class="fa-solid fa-calendar-plus" style="margin-right: 5px;"></i> Événement & Billetterie
@@ -751,7 +1318,7 @@ try {
 
             <!-- BANNIÈRE D'IDENTITÉ DE L'ORGANISATEUR (Statut Défini à la Création) -->
             <div class="dash-card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #F5F5F5 0%, #F5F5F5 100%); border: 1px solid var(--dash-border); padding: 1.15rem 1.4rem; border-radius: 14px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div class="dash-identity-banner">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <div style="width: 44px; height: 44px; border-radius: 10px; background: <?php echo ($type_personne === 'morale') ? '#FFF2ED' : '#FFF2ED'; ?>; color: <?php echo ($type_personne === 'morale') ? '#FF4A0D' : '#FF4A0D'; ?>; display: grid; place-items: center; font-size: 1.3rem; flex-shrink: 0;">
                             <i class="fa-solid <?php echo ($type_personne === 'morale') ? 'fa-building' : 'fa-user-check'; ?>"></i>
@@ -803,7 +1370,7 @@ try {
                         value="<?php echo htmlspecialchars($_POST['nom'] ?? ''); ?>">
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-row-2col">
                     <div class="dash-form-group">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 4px;">
                             <label for="categorie" style="margin-bottom: 0;">
@@ -847,7 +1414,7 @@ try {
                         placeholder="Artistes invités, déroulé de la soirée, temps forts, conditions d'accès..."><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-row-2col datetime-row">
                     <div class="dash-form-group">
                         <label for="date_evenement"><i class="fa-regular fa-calendar"
                                 style="color: var(--dash-primary);"></i> Date de l'événement *</label>
@@ -864,24 +1431,32 @@ try {
                 </div>
 
                 <!-- ==========================================================
-                     LOCALISATION : VILLE (LISTE) & SALLE (CONNUE OU PAS)
+                     LOCALISATION : VILLE (FILTRAGE SALLES) & SALLE CONNUE VS ESPACE NON RÉPERTORIÉ
                      ========================================================== -->
                 <div style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 12px; padding: 1.15rem; margin-top: 1rem; margin-bottom: 0.5rem;">
-                    <div style="font-weight: 800; font-size: 0.88rem; color: var(--dash-text); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-location-dot" style="color: var(--dash-primary);"></i> Localisation & Salle de la Manifestation
+                    <div style="font-weight: 800; font-size: 0.88rem; color: var(--dash-text); margin-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                        <span style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-location-dot" style="color: var(--dash-primary);"></i> Localisation & Configuration de l'Espace
+                        </span>
+                        <span id="venue_type_status_badge" style="font-size: 0.74rem; font-weight: 800; background: #FFF2ED; color: var(--dash-primary); border: 1px solid #F0D9D0; border-radius: 6px; padding: 2px 8px;">
+                            🏛️ Salle répertoriée (Vue 3D active)
+                        </span>
                     </div>
 
-                    <!-- 1. Sélection de la VILLE (Liste Déroulante) -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <!-- Champ caché pour stocker l'ID de la salle sélectionnée -->
+                    <input type="hidden" name="salle_id" id="input_salle_id" value="">
+
+                    <!-- 1. Sélection de la VILLE (Liste Déroulante) & Mode de Salle -->
+                    <div class="venue-main-grid">
                         <div class="dash-form-group" style="margin: 0;">
                             <label for="select_ville" style="font-size: 0.82rem; font-weight: 700; margin-bottom: 4px; display: block; color: var(--dash-text);">
-                                Ville / Localité *
+                                Ville / Localité * <span style="font-size: 0.72rem; color: var(--dash-muted); font-weight: normal;">(Filtre les salles disponibles)</span>
                             </label>
                             <select id="select_ville" name="ville" onchange="onVilleChange(this.value)" required style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.85rem; font-weight: 700; background: #ffffff; color: var(--dash-text); box-sizing: border-box;">
                                 <option value="Abidjan" selected>Abidjan (District Autonome)</option>
                                 <option value="Yamoussoukro">Yamoussoukro (Capitale)</option>
                                 <option value="Bouaké">Bouaké (Gbêkê)</option>
-                                <option value="San-Pédro">San-Pédro (Littoral)</option>
+                                <option value="San-Pédro">San-Pédro (Bas-Sassandra)</option>
                                 <option value="Korhogo">Korhogo (Poro)</option>
                                 <option value="Daloa">Daloa (Haut-Sassandra)</option>
                                 <option value="Grand-Bassam">Grand-Bassam (Sud-Comoé)</option>
@@ -889,87 +1464,114 @@ try {
                                 <option value="Man">Man (Tonkpi)</option>
                                 <option value="Gagnoa">Gagnoa (Gôh)</option>
                                 <option value="Soubré">Soubré (Nawa)</option>
-                                <option value="En Ligne">Événement 100% En Ligne (Live / Webinaire)</option>
-                                <option value="Autre">✏️ Autre ville...</option>
+                                <option value="En Ligne">Événement 100% En Ligne (Webinaire / Live)</option>
+                                <option value="Autre">✏️ Autre localité...</option>
                             </select>
                             <div id="box_ville_custom" style="display: none; margin-top: 6px;">
                                 <input type="text" name="ville_custom" id="input_ville_custom" placeholder="Saisissez le nom de la ville..." style="width: 100%; padding: 0.55rem; border: 1px solid var(--dash-primary); background: #ffffff; border-radius: 8px; font-size: 0.82rem; box-sizing: border-box;">
                             </div>
                         </div>
 
-                        <!-- 2. Choix : La salle est-elle connue ou pas ? -->
+                        <!-- 2. Choix : Salle Répertoriée (3D) ou Espace Non Répertorié (Sans vue de scène) -->
                         <div class="dash-form-group" style="margin: 0;">
                             <label style="font-size: 0.82rem; font-weight: 700; margin-bottom: 4px; display: block; color: var(--dash-text);">
-                                Choix de la salle / lieu précis *
+                                Type d'espace d'accueil *
                             </label>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <label id="label_salle_connue" onclick="setSalleConnue(true)" style="display: flex; align-items: center; gap: 8px; padding: 0.58rem 0.8rem; border: 1.5px solid var(--dash-primary); background: #FFF2ED; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                            <div class="venue-toggle-buttons">
+                                <label id="label_salle_connue" onclick="setSalleConnue(true)" class="venue-toggle-btn" style="border: 1.5px solid var(--dash-primary); background: #FFF2ED;">
                                     <input type="radio" name="salle_connue" value="oui" checked style="accent-color: var(--dash-primary); margin: 0;">
-                                    <span style="font-size: 0.8rem; font-weight: 700; color: #000000;">
-                                        <i class="fa-solid fa-check" style="color: var(--dash-primary);"></i> Salle connue
+                                    <span style="font-size: 0.8rem; font-weight: 700; color: #000000; white-space: nowrap;">
+                                        <i class="fa-solid fa-hotel" style="color: var(--dash-primary);"></i> Salle répertoriée (3D)
                                     </span>
                                 </label>
-                                <label id="label_salle_inconnue" onclick="setSalleConnue(false)" style="display: flex; align-items: center; gap: 8px; padding: 0.58rem 0.8rem; border: 1px solid #E5E5E5; background: #ffffff; border-radius: 8px; cursor: pointer; transition: all 0.2s;">
+                                <label id="label_salle_inconnue" onclick="setSalleConnue(false)" class="venue-toggle-btn" style="border: 1px solid #E5E5E5; background: #ffffff;">
                                     <input type="radio" name="salle_connue" value="non" style="accent-color: var(--dash-primary); margin: 0;">
-                                    <span style="font-size: 0.8rem; font-weight: 700; color: #737373;">
-                                        <i class="fa-solid fa-clock" style="color: #FF4A0D;"></i> Pas encore connue
+                                    <span style="font-size: 0.8rem; font-weight: 700; color: #737373; white-space: nowrap;">
+                                        <i class="fa-solid fa-tree" style="color: #FF4A0D;"></i> Espace non répertorié
                                     </span>
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 3.A : Si la salle EST CONNUE -->
+                    <!-- 3.A : Si la salle EST CONNUE / RÉPERTORIÉE (Filtrée par Ville) -->
                     <div id="section_salle_connue">
-                        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem;">
-                            <div>
+                        <div class="venue-details-grid" style="margin-top: 0.85rem;">
+                            <div id="salle_select_box">
                                 <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; color: var(--dash-text);">
-                                    Sélectionnez une salle ou tapez son nom *
+                                    Sélectionnez parmi les salles de <span id="label_ville_active" style="color: var(--dash-primary);">Abidjan</span> *
                                 </label>
-                                <select id="salle_select" name="salle_select" onchange="onSalleSelectChange(this.value)" style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.82rem; background: #ffffff; color: var(--dash-text); box-sizing: border-box;">
-                                    <option value="">-- Salles & Complexes répertoriés --</option>
-                                    <?php if (!empty($db_salles)): ?>
-                                        <?php 
-                                            $curr_v = '';
-                                            foreach ($db_salles as $ds): 
-                                                if ($ds['ville'] !== $curr_v) {
-                                                    if ($curr_v !== '') echo '</optgroup>';
-                                                    $curr_v = $ds['ville'];
-                                                    echo '<optgroup label="Salles & Complexes (' . htmlspecialchars($curr_v) . ')">';
-                                                }
-                                        ?>
-                                            <option value="<?php echo htmlspecialchars($ds['nom']); ?>">
-                                                <?php echo htmlspecialchars($ds['nom'] . ($ds['commune'] ? ' (' . $ds['commune'] . ')' : '') . ' - ' . number_format($ds['capacite'], 0, ',', ' ') . ' places'); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                        <?php if ($curr_v !== '') echo '</optgroup>'; ?>
-                                    <?php endif; ?>
-                                    <option value="Autre">✏️ Autre salle / Adresse personnalisée...</option>
+                                <select id="salle_select" name="salle_select" onchange="onSalleSelectChange(this.value)" style="width: 100%; padding: 0.65rem 0.8rem; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.82rem; font-weight: 600; background: #ffffff; color: var(--dash-text); box-sizing: border-box;">
+                                    <!-- Rempli dynamiquement en JS selon la ville -->
                                 </select>
                             </div>
                             <div>
                                 <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; color: var(--dash-text);">
-                                    Précision / Nom exact ou Adresse
+                                    Précision / Nom exact ou Salle interne
                                 </label>
-                                <input type="text" id="input_salle_nom" name="salle_nom" placeholder="Ex: Salle Lougah, Esplanade, Hall 1..." style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.82rem; box-sizing: border-box; background: #ffffff;">
+                                <input type="text" id="input_salle_nom" name="salle_nom" placeholder="Ex: Salle Lougah, Esplanade, Chapiteau..." style="width: 100%; padding: 0.65rem 0.8rem; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.82rem; box-sizing: border-box; background: #ffffff;">
+                            </div>
+                        </div>
+
+                        <!-- Notice si aucune salle 3D répertoriée dans la ville -->
+                        <div id="salle_no_rooms_notice" style="display: none; margin-top: 0.75rem; background: #FFFBF0; border: 1px solid #FDE68A; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.78rem; color: #92400E; line-height: 1.4;">
+                            <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i>
+                            Aucune salle avec modélisation 3D n'est encore répertoriée pour cette localité. Vous pouvez basculer sur <strong>« Espace non répertorié »</strong> ci-dessus ou saisir le nom de votre salle librement dans le champ prévu à cet effet.
+                        </div>
+
+                        <!-- Fiche d'information sur la salle sélectionnée (Capacité & 3D) -->
+                        <div id="salle_info_card" style="display: none; margin-top: 0.85rem; background: #ffffff; border: 1.5px solid #F0D9D0; border-radius: 10px; padding: 0.9rem 1.1rem;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <div style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: #737373; letter-spacing: 0.4px;">Salle répertoriée validée</div>
+                                    <strong id="salle_info_nom" style="font-size: 0.96rem; color: #000000; display: block; margin-top: 1px;">-</strong>
+                                    <span id="salle_info_loc" style="font-size: 0.78rem; color: #737373;">-</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: #737373;">Capacité officielle</div>
+                                    <strong id="salle_info_cap" style="font-size: 1.1rem; color: #000000; font-weight: 900;">-</strong>
+                                    <span style="display: block; font-size: 0.72rem; color: #16A34A; font-weight: 800;">
+                                        <i class="fa-solid fa-cube"></i> Vue 3D & Plan intégrés
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 3.B : Si la salle N'EST PAS ENCORE CONNUE -->
-                    <div id="section_salle_inconnue" style="display: none; background: #FFF2ED; border: 1px solid #E5E5E5; border-radius: 10px; padding: 0.85rem 1rem;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.4rem;">
-                            <i class="fa-solid fa-circle-info" style="color: #FF4A0D; font-size: 0.95rem;"></i>
-                            <strong style="color: #000000; font-size: 0.82rem;">La salle sera dévoilée ultérieurement</strong>
+                    <!-- 3.B : Si l'ESPACE N'EST PAS RÉPERTORIÉ (Pas de vue 3D requise) -->
+                    <div id="section_salle_inconnue" style="display: none; margin-top: 0.85rem; background: #FFF2ED; border: 1px solid #E5E5E5; border-radius: 10px; padding: 1rem 1.15rem;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.35rem;">
+                            <i class="fa-solid fa-circle-check" style="color: #FF4A0D; font-size: 1.1rem;"></i>
+                            <strong style="color: #000000; font-size: 0.88rem;">Espace Non Répertorié : Pas de vue de scène 3D requise</strong>
                         </div>
-                        <p style="margin: 0 0 0.5rem; font-size: 0.76rem; color: #000000; line-height: 1.4;">
-                            Choisissez le libellé qui s'affichera sur la page de l'événement et sur les billets des spectateurs :
+                        <p style="margin: 0 0 0.85rem; font-size: 0.78rem; color: #404040; line-height: 1.45;">
+                            Cet événement se déroulera dans un espace ouvert, un terrain ou un lieu libre sans besoin de modélisation 3D complexe. 
+                            <strong>Vous pourrez décider vous-même du nombre de places que les clients pourront choisir</strong> dans la grille tarifaire ci-dessous.
                         </p>
-                        <select name="statut_salle_inconnue" style="width: 100%; max-width: 400px; padding: 0.5rem 0.75rem; border: 1px solid #FF4A0D; border-radius: 8px; font-size: 0.82rem; font-weight: 700; background: #ffffff; color: #000000;">
-                            <option value="Lieu à confirmer">📍 Lieu à confirmer très prochainement</option>
-                            <option value="Lieu secret (bientôt dévoilé)">🤫 Lieu secret (dévoilé aux inscrits par SMS/Email)</option>
-                            <option value="Salle en cours de sélection">🏢 Salle en cours de sélection</option>
-                        </select>
+
+                        <div class="form-row-2col" style="gap: 0.75rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; color: #000000;">
+                                    Type d'espace ou statut
+                                </label>
+                                <select name="statut_salle_inconnue" style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid #FF4A0D; border-radius: 8px; font-size: 0.82rem; font-weight: 700; background: #ffffff; color: #000000;">
+                                    <option value="Terrain / Esplanade en plein air">🎪 Terrain / Esplanade en plein air</option>
+                                    <option value="Plage / Espace bord de mer">🏖️ Plage / Espace bord de mer</option>
+                                    <option value="Stade ou terrain communal">⚽ Stade ou terrain municipal ouvert</option>
+                                    <option value="Cour privée / Jardin événementiel">🏡 Cour privée / Jardin événementiel</option>
+                                    <option value="Rooftop / Terrasse panoramique">🌆 Rooftop / Terrasse</option>
+                                    <option value="Hangar / Entrepôt aménagé">🏭 Hangar / Entrepôt aménagé</option>
+                                    <option value="Lieu secret (bientôt dévoilé)">🤫 Lieu secret (dévoilé aux inscrits par SMS/Email)</option>
+                                    <option value="Lieu à confirmer très prochainement">📍 Lieu à confirmer très prochainement</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; color: #000000;">
+                                    Précision du nom ou repère (Optionnel)
+                                </label>
+                                <input type="text" name="espace_nom_custom" placeholder="Ex: Plage Cocody Danga, Grand terrain de l'INJS..." style="width: 100%; padding: 0.6rem 0.8rem; border: 1px solid #E5E5E5; border-radius: 8px; font-size: 0.82rem; background: #ffffff; box-sizing: border-box;">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -983,7 +1585,7 @@ try {
 
             <!-- ÉTAPE 2 : TARIFICATION DE LA BILLETTERIE & COMMISSION -->
             <div class="dash-card" style="margin-bottom: 1.5rem;">
-                <div class="dash-card-head" style="margin-bottom: 1.25rem; justify-content: space-between;">
+                <div class="dash-card-head">
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <div class="dash-step-badge">2</div>
                         <div>
@@ -992,78 +1594,146 @@ try {
                                 gains nets</div>
                         </div>
                     </div>
-
-                    <button type="button" onclick="addTicketRow()" class="dash-btn-action"
-                        style="padding: 5px 12px; font-size: 0.8rem; background: var(--dash-primary); color: #ffffff;">
-                        <i class="fa-solid fa-plus"></i> Ajouter un tarif
-                    </button>
                 </div>
 
-                <!-- Encadré explicatif Commission 5% -->
-                <div
-                    style="background: #FFF2ED; border: 1px solid #E5E5E5; border-radius: 10px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
-                    <div
-                        style="width: 42px; height: 42px; border-radius: 50%; background: #FFF2ED; color: #FF4A0D; display: grid; place-items: center; font-size: 1.15rem; flex-shrink: 0;">
-                        <i class="fa-solid fa-percent"></i>
+                <!-- Encadré explicatif Commission Dégressive selon l'Ampleur de l'Événement -->
+                <div class="dash-commission-notice">
+                    <div style="display: flex; align-items: center; gap: 0.85rem;">
+                        <div
+                            style="width: 42px; height: 42px; border-radius: 50%; background: #FFF2ED; color: #FF4A0D; display: grid; place-items: center; font-size: 1.15rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <strong style="color: #000000; font-size: 0.92rem; display: block; margin-bottom: 2px;">
+                                Commission Plateforme Dégressive : indexée sur l'ampleur de l'événement
+                            </strong>
+                            <p style="color: #737373; font-size: 0.8rem; margin: 0; line-height: 1.35;">
+                                Le pourcentage appliqué s'ajuste automatiquement selon la capacité totale de votre événement. Plus votre public est nombreux, plus vous gagnez !
+                            </p>
+                        </div>
                     </div>
+
+                    <!-- Grille des 4 Paliers d'Ampleur -->
+                    <div class="scale-tiers-grid">
+                        <div class="scale-tier-card" id="tier-card-intimiste" data-tier="intimiste">
+                            <span class="tier-tag">Actuel</span>
+                            <div class="tier-badge">Intimiste</div>
+                            <div class="tier-rate">7.0%</div>
+                            <div class="tier-range">&lt; 300 places</div>
+                        </div>
+                        <div class="scale-tier-card is-active" id="tier-card-standard" data-tier="standard">
+                            <span class="tier-tag">Actuel</span>
+                            <div class="tier-badge">Standard</div>
+                            <div class="tier-rate">5.0%</div>
+                            <div class="tier-range">300 – 1 499 places</div>
+                        </div>
+                        <div class="scale-tier-card" id="tier-card-grand" data-tier="grand">
+                            <span class="tier-tag">Actuel</span>
+                            <div class="tier-badge">Grand Evt</div>
+                            <div class="tier-rate">4.0%</div>
+                            <div class="tier-range">1 500 – 4 999 places</div>
+                        </div>
+                        <div class="scale-tier-card" id="tier-card-mega" data-tier="mega">
+                            <span class="tier-tag">Actuel</span>
+                            <div class="tier-badge">Festival / Stade</div>
+                            <div class="tier-rate">3.0%</div>
+                            <div class="tier-range">≥ 5 000 places</div>
+                        </div>
+                    </div>
+
+                    <!-- Statut Réactif Détecté en Direct -->
+                    <div class="scale-live-status" id="scale-live-status">
+                        <i class="fa-solid fa-bolt" style="color: #FF4A0D; font-size: 1rem; flex-shrink: 0;"></i>
+                        <div style="flex: 1; min-width: 0;">
+                            Ampleur détectée : <strong id="live-tier-name" style="color: #000000;">Événement Standard (500 places)</strong> • 
+                            Commission : <strong id="live-tier-rate" style="color: #FF4A0D;">5.0%</strong> • 
+                            Vous encaissez <strong id="live-tier-payout" style="color: #000000;">95.0% du montant brut</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bloc de contrôle du Choix des Places par les Spectateurs -->
+                <div style="background: #ffffff; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1.15rem; margin-bottom: 1.15rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 300px;">
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: #FFF2ED; color: var(--dash-primary); display: grid; place-items: center; font-size: 1rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-chair"></i>
+                        </div>
+                        <div>
+                            <strong style="font-size: 0.85rem; color: #000000; display: block;">Gestion du Choix des Places par les Spectateurs</strong>
+                            <span style="font-size: 0.77rem; color: #737373;">
+                                Définissez pour chaque tarif combien de places les clients peuvent choisir individuellement (laissez à 0 pour un placement 100% libre).
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" onclick="quickSetAllPlacesChoisies(true)" style="padding: 5px 12px; font-size: 0.75rem; font-weight: 700; border: 1px solid #E5E5E5; background: #F5F5F5; border-radius: 6px; cursor: pointer; color: #000000;" title="Permettre le choix de place sur toute la quantité">
+                            <i class="fa-solid fa-check-double" style="color: var(--dash-primary);"></i> Toutes au choix
+                        </button>
+                        <button type="button" onclick="quickSetAllPlacesChoisies(false)" style="padding: 5px 12px; font-size: 0.75rem; font-weight: 700; border: 1px solid #E5E5E5; background: #F5F5F5; border-radius: 6px; cursor: pointer; color: #737373;" title="Placement 100% libre sans sélection de numéros">
+                            <i class="fa-solid fa-ban"></i> 100% Libre (0)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- En-tête Direct de la Grille des Billets & Bouton Ajouter un Tarif -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.35rem; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 8px;">
                     <div>
-                        <strong style="color: #000000; font-size: 0.9rem; display: block; margin-bottom: 2px;">
-                            Commission Plateforme Standard : 5.0% par billet vendu
-                        </strong>
-                        <p style="color: #FF4A0D; font-size: 0.8rem; margin: 0; line-height: 1.4;">
-                            La plateforme prélève automatiquement 5% sur chaque billet encaissé. Vous percevez <strong>95%
-                                du montant brut</strong> directement sur votre solde disponible pour virement.
-                        </p>
+                        <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: var(--dash-text); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-tags" style="color: var(--dash-primary);"></i> Vos Catégories de Billets & Tarifs
+                        </h4>
+                        <small style="color: #737373; font-size: 0.78rem;">Définissez vos prix, quotas et options de places ci-dessous</small>
                     </div>
+
+                    <button type="button" onclick="addTicketRow()" class="dash-btn-action"
+                        style="padding: 7px 15px; font-size: 0.84rem; background: var(--dash-primary); color: #ffffff; border-radius: 8px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: none; box-shadow: 0 2px 6px rgba(255, 74, 13, 0.25);">
+                        <i class="fa-solid fa-plus"></i> Ajouter un tarif
+                    </button>
                 </div>
 
                 <div id="tickets-container">
                     <!-- Ligne de tarif 1 par défaut -->
                     <div class="dash-ticket-row">
-                        <div>
-                            <label
-                                style="font-size: 0.78rem; font-weight: 700; color: var(--dash-text); display: block; margin-bottom: 4px;">Catégorie</label>
-                            <input type="text" name="ticket_nom[]" required placeholder="Ex: STANDARD" value="STANDARD"
-                                style="padding: 0.6rem 0.8rem;">
+                        <div class="ticket-col-name">
+                            <label>Catégorie</label>
+                            <input type="text" name="ticket_nom[]" required placeholder="Ex: STANDARD" value="STANDARD">
                         </div>
-                        <div>
-                            <label
-                                style="font-size: 0.78rem; font-weight: 700; color: var(--dash-text); display: block; margin-bottom: 4px;">Prix
-                                unitaire (F)</label>
+                        <div class="ticket-col-price">
+                            <label>Prix unitaire (F)</label>
                             <input type="number" name="ticket_prix[]" required min="500" step="100" placeholder="5000"
-                                value="5000" oninput="calculateEventSummary()" style="padding: 0.6rem 0.8rem;">
+                                value="5000" oninput="calculateEventSummary()">
                         </div>
-                        <div>
-                            <label
-                                style="font-size: 0.78rem; font-weight: 700; color: var(--dash-text); display: block; margin-bottom: 4px;">Places</label>
+                        <div class="ticket-col-qty">
+                            <label>Places</label>
                             <input type="number" name="ticket_quantite[]" required min="1" placeholder="500" value="500"
-                                oninput="calculateEventSummary()" style="padding: 0.6rem 0.8rem;">
+                                oninput="calculateEventSummary()">
                         </div>
-                        <div>
-                            <label
-                                style="font-size: 0.78rem; font-weight: 700; color: var(--dash-text); display: block; margin-bottom: 4px;">Frais
-                                place (F)</label>
+                        <div class="ticket-col-choix">
+                            <label title="Nombre de places que les clients peuvent choisir individuellement">Places au choix</label>
+                            <input type="number" name="ticket_places_choisies[]" min="0" placeholder="0" value="0"
+                                title="Nombre de places que les spectateurs peuvent choisir (0 = placement 100% libre)"
+                                oninput="validatePlacesChoisies(this); calculateEventSummary();">
+                        </div>
+                        <div class="ticket-col-fee">
+                            <label>Frais choix (F)</label>
                             <input type="number" name="ticket_frais[]" min="0" step="100" placeholder="0" value="0"
-                                title="Supplément pour place numérotée" oninput="calculateEventSummary()"
-                                style="padding: 0.6rem 0.8rem;">
+                                title="Supplément pour place choisie" oninput="calculateEventSummary()">
                         </div>
-                        <div>
-                            <button type="button" onclick="removeTicketRow(this)"
-                                style="background: #F5F5F5; color: #000000; border: 0; border-radius: 8px; padding: 0.65rem 0.8rem; cursor: pointer;"
-                                title="Supprimer">
+                        <div class="ticket-delete-btn-box">
+                            <button type="button" onclick="removeTicketRow(this)" title="Supprimer">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Synthèse Financière Estimée -->
+                <!-- Synthèse Financière Estimée avec Taux Indexé sur l'Ampleur -->
                 <div class="dash-summary-strip">
                     <div>
                         <small
                             style="color: #737373; display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 800; margin-bottom: 3px;">Capacité
                             Totale</small>
                         <strong id="summary-capacity" style="font-size: 1.15rem; color: #ffffff;">500 places</strong>
+                        <span id="summary-tier-pill" style="display: block; font-size: 0.72rem; color: #FF4A0D; font-weight: 800; margin-top: 2px;">Standard</span>
                     </div>
 
                     <div>
@@ -1076,7 +1746,7 @@ try {
                     <div>
                         <small
                             style="color: #737373; display: block; font-size: 0.72rem; text-transform: uppercase; font-weight: 800; margin-bottom: 3px;">Commission
-                            (5%)</small>
+                            (<span id="summary-rate-pct">5.0%</span>)</small>
                         <strong id="summary-commission" style="font-size: 1.15rem; color: #FF4A0D;">125 000 F</strong>
                     </div>
 
@@ -1088,9 +1758,10 @@ try {
                     </div>
                 </div>
 
+                <input type="hidden" name="commission_rate" id="form_commission_rate" value="5.0">
+
                 <!-- Bouton de Soumission -->
-                <button type="submit" class="dash-btn-action btn-primary"
-                    style="width: 100%; justify-content: center; padding: 0.95rem 1.5rem; font-size: 1rem; border-radius: 12px; font-weight: 800;">
+                <button type="submit" class="dash-btn-action btn-primary btn-submit-large">
                     <i class="fa-solid fa-paper-plane"></i>
                     <span>Transmettre la Demande d'Événement à l'Admin</span>
                 </button>
@@ -1131,7 +1802,7 @@ try {
                             placeholder="Expliquez en détail aux donateurs le projet financé, la destination des fonds et l'impact de leur contribution..."></textarea>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-row-2col">
                         <div class="dash-form-group">
                             <label for="camp_objectif"><i class="fa-solid fa-bullseye" style="color: #FF4A0D;"></i> Montant
                                 cible à atteindre (FCFA) *</label>
@@ -1152,8 +1823,8 @@ try {
                         <input type="file" id="camp_image" name="image" accept="image/*" style="padding: 0.5rem 0.75rem;">
                     </div>
 
-                    <button type="submit" class="dash-btn-action btn-primary"
-                        style="width: 100%; justify-content: center; padding: 0.95rem 1.5rem; font-size: 1rem; border-radius: 12px; font-weight: 800; margin-top: 1rem;">
+                    <button type="submit" class="dash-btn-action btn-primary btn-submit-large"
+                        style="margin-top: 1rem;">
                         <i class="fa-solid fa-paper-plane"></i>
                         <span>Soumettre la Campagne de Cotisation à l'Admin</span>
                     </button>
@@ -1179,7 +1850,7 @@ try {
                 </div>
 
                 <!-- Sélecteur de mode : Concours vs Vote de réalisation -->
-                <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div class="vote-mode-buttons">
                     <button type="button" id="btn-mode-concours" onclick="switchVoteMode('concours')"
                         class="dash-chart-tab active"
                         style="padding: 0.65rem 1.35rem; font-size: 0.9rem; font-weight: 800; border-radius: 10px; border: 1px solid var(--dash-border); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
@@ -1220,75 +1891,60 @@ try {
                             </div>
                         </div>
 
-                        <!-- 1. Informations du Concours (Nom rentré manuellement + Photo de l'événement) -->
-                        <div
-                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
-                            <div class="dash-form-group" style="margin: 0;">
-                                <label for="concours_nom"><i class="fa-solid fa-tag"
-                                        style="color: var(--dash-primary);"></i> Nom du concours / de la compétition
-                                    *</label>
-                                <input type="text" id="concours_nom" name="nom" required
-                                    placeholder="Ex: Miss Abidjan 2026, Tremplin Voix d'Or, Battle Dance..."
-                                    style="font-weight: 600;">
-                            </div>
-
-                            <div class="dash-form-group" style="margin: 0;">
-                                <label for="concours_image"><i class="fa-solid fa-image" style="color: #FF4A0D;"></i> Photo
-                                    / Affiche officielle de l'événement</label>
-                                <input type="file" id="concours_image" name="image" accept="image/*"
-                                    style="padding: 0.5rem; background: #F5F5F5; border-radius: 8px;">
-                            </div>
+                        <div class="dash-form-group">
+                            <label for="concours_nom"><i class="fa-solid fa-heading"
+                                    style="color: var(--dash-primary);"></i> Nom du concours / de la compétition *</label>
+                            <input type="text" id="concours_nom" name="nom" required
+                                placeholder="Ex: Miss Campus Côte d'Ivoire 2026, Tremplin Jeunes Talents...">
                         </div>
 
-                        <div
-                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
-                            <div class="dash-form-group" style="margin: 0;">
-                                <label for="concours_date"><i class="fa-solid fa-calendar"
-                                        style="color: var(--dash-primary);"></i> Date de fin / finale *</label>
-                                <input type="date" id="concours_date" name="date_evenement" required
-                                    value="<?php echo date('Y-m-d', strtotime('+1 month')); ?>">
-                            </div>
-
-                            <div class="dash-form-group" style="margin: 0;">
-                                <label for="concours_heure"><i class="fa-solid fa-clock"
-                                        style="color: var(--dash-primary);"></i> Heure de clôture *</label>
-                                <input type="time" id="concours_heure" name="heure" required value="20:00">
-                            </div>
-
-                            <div class="dash-form-group" style="margin: 0;">
-                                <label for="concours_lieu"><i class="fa-solid fa-location-dot" style="color: #000000;"></i>
-                                    Ville / Lieu</label>
-                                <input type="text" id="concours_lieu" name="lieu"
-                                    placeholder="Ex: Palais de la Culture, Abidjan" value="Abidjan">
-                            </div>
-
-                            <div class="dash-form-group" style="margin: 0;">
+                        <div class="form-row-2col">
+                            <div class="dash-form-group">
                                 <label for="concours_prix_vote"><i class="fa-solid fa-coins" style="color: #FF4A0D;"></i>
-                                    Prix du vote par candidat (FCFA)</label>
-                                <input type="number" id="concours_prix_vote" name="prix_vote" min="0" step="500"
-                                    placeholder="0 = gratuit — Ex: 500 pour 500 F / vote">
+                                    Prix unitaire par vote (FCFA) *</label>
+                                <input type="number" id="concours_prix_vote" name="prix_vote" required min="0" step="50"
+                                    placeholder="Ex: 200 (0 = vote gratuit)">
+                            </div>
+
+                            <div class="dash-form-group">
+                                <label for="concours_image"><i class="fa-solid fa-image" style="color: #FF4A0D;"></i>
+                                    Affiche / Logo officiel du concours</label>
+                                <input type="file" id="concours_image" name="image" accept="image/*"
+                                    style="padding: 0.5rem 0.75rem;">
                             </div>
                         </div>
 
-                        <div class="dash-form-group" style="margin-bottom: 1.5rem;">
-                            <label for="concours_desc"><i class="fa-solid fa-align-left"
-                                    style="color: var(--dash-muted);"></i> Description & Règlement du concours</label>
-                            <textarea id="concours_desc" name="description" rows="2"
-                                placeholder="Présentation du concours, règles de vote, récompenses à la clé..."></textarea>
+                        <div class="form-row-2col datetime-row">
+                            <div class="dash-form-group">
+                                <label for="concours_date"><i class="fa-regular fa-calendar"
+                                        style="color: var(--dash-primary);"></i> Date de clôture des votes *</label>
+                                <input type="date" id="concours_date" name="date_evenement" required>
+                            </div>
+
+                            <div class="dash-form-group">
+                                <label for="concours_heure"><i class="fa-regular fa-clock" style="color: #FF4A0D;"></i>
+                                    Heure de fin des votes *</label>
+                                <input type="time" id="concours_heure" name="heure" required value="23:59">
+                            </div>
                         </div>
 
-                        <!-- 2. Bloc dynamique des multiples candidats -->
+                        <div class="dash-form-group">
+                            <label for="concours_desc"><i class="fa-solid fa-align-left"
+                                    style="color: var(--dash-muted);"></i> Règlement & Présentation du concours</label>
+                            <textarea id="concours_desc" name="description" rows="3"
+                                placeholder="Critères d'évaluation, récompenses, déroulement des votes..."></textarea>
+                        </div>
+
+                        <!-- SOUS-SECTION : CANDIDATS DYNAMIQUES -->
                         <div
-                            style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 12px; padding: 1.35rem; margin-bottom: 1.5rem;">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #E5E5E5; padding-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                            style="margin-top: 1.5rem; margin-bottom: 1.5rem; background: #ffffff; border: 1px solid var(--dash-border); border-radius: 12px; padding: 1.25rem;">
+                            <div class="step-header-with-action">
                                 <div>
-                                    <strong style="color: var(--dash-text); font-size: 0.98rem;">
-                                        <i class="fa-solid fa-users" style="color: var(--dash-primary);"></i> Participants &
-                                        Candidats en Compétition
-                                    </strong>
-                                    <small style="display: block; color: var(--dash-muted); font-size: 0.75rem;">
-                                        Ajoutez autant de candidats que nécessaire avec leur nom, biographie et photo
+                                    <h5 style="margin: 0; font-size: 0.95rem; color: var(--dash-text); font-weight: 800;">
+                                        <i class="fa-solid fa-users" style="color: #FF4A0D;"></i> Candidats enregistrés
+                                    </h5>
+                                    <small style="color: var(--dash-muted); font-size: 0.78rem;">
+                                        Ajoutez chaque candidat en spécifiant son nom complet, son talent et sa photo
                                         individuelle.
                                     </small>
                                 </div>
@@ -1302,8 +1958,7 @@ try {
                             </div>
                         </div>
 
-                        <button type="submit" class="dash-btn-action btn-primary"
-                            style="font-size: 0.95rem; padding: 0.8rem 1.75rem; border-radius: 10px;">
+                        <button type="submit" class="dash-btn-action btn-primary btn-submit-large">
                             <i class="fa-solid fa-paper-plane"></i> Soumettre la Demande de Concours avec ses Candidats
                         </button>
                     </form>
@@ -1334,7 +1989,6 @@ try {
                             </div>
                         </div>
 
-                        <!-- 1. Informations de l'Événement (Nom rentré manuellement + Photo de l'événement) -->
                         <div
                             style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
                             <div class="dash-form-group" style="margin: 0;">
@@ -1357,7 +2011,6 @@ try {
                             </div>
                         </div>
 
-                        <!-- 2. Question ou Proposition soumise au vote du public -->
                         <div class="dash-form-group" style="margin-bottom: 1.25rem;">
                             <label for="realisation_vote_question" style="color: #000000; font-weight: 800;">
                                 <i class="fa-solid fa-circle-question" style="color: #FF4A0D;"></i> Question ou Proposition
@@ -1414,14 +2067,13 @@ try {
                         </div>
 
                         <div
-                            style="background: #FFF2ED; border-left: 4px solid #FF4A0D; padding: 0.85rem 1.15rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.82rem; color: #FF4A0D;">
+                            style="background: #FFF2ED; border: 1px solid #FFD8CC; padding: 0.85rem 1.15rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.82rem; color: #FF4A0D;">
                             <i class="fa-solid fa-circle-info" style="margin-right: 5px;"></i>
                             <strong>Aucun candidat à enregistrer</strong> : En mode « Vote pour la réalisation », les
                             spectateurs votent pour valider ou encourager la tenue globale du projet.
                         </div>
 
-                        <button type="submit" class="dash-btn-action"
-                            style="font-size: 0.95rem; padding: 0.8rem 1.75rem; background: #FF4A0D; color: #ffffff; border-radius: 10px;">
+                        <button type="submit" class="dash-btn-action btn-primary btn-submit-large">
                             <i class="fa-solid fa-paper-plane"></i> Soumettre la Demande de Vote de Réalisation
                         </button>
                     </form>
@@ -1565,8 +2217,6 @@ try {
 </div>
 
 <script>
-    const COMMISSION_RATE = 0.05; // 5%
-
     // Gestion de la Catégorie Personnalisée
     function onCategorySelectChange(sel) {
         const box = document.getElementById('container_custom_cat');
@@ -1597,20 +2247,84 @@ try {
         }
     }
 
-    // Gestion de la Ville (Liste déroulante) et de la Salle (Connue ou Pas)
+    // Liste officielle des salles actives chargée depuis le serveur
+    const DB_SALLES = <?php echo json_encode($db_salles, JSON_UNESCAPED_UNICODE); ?>;
+
+    // Gestion de la Ville (Liste déroulante) et Filtrage des Salles
     function onVilleChange(val) {
         const boxCustom = document.getElementById('box_ville_custom');
         const inputCustom = document.getElementById('input_ville_custom');
-        const optAbidjan = document.getElementById('optgroup_abidjan');
+        const labelVilleActive = document.getElementById('label_ville_active');
 
         if (boxCustom) {
             boxCustom.style.display = (val === 'Autre') ? 'block' : 'none';
             if (inputCustom) inputCustom.required = (val === 'Autre');
         }
 
-        // Si la ville n'est pas Abidjan, suggérer la saisie directe
-        if (optAbidjan) {
-            optAbidjan.style.display = (val === 'Abidjan') ? 'block' : 'none';
+        if (labelVilleActive) {
+            labelVilleActive.textContent = val;
+        }
+
+        // Filtre dynamiquement les salles répertoriées pour cette ville
+        populateSallesForVille(val);
+    }
+
+    function populateSallesForVille(ville) {
+        const sel = document.getElementById('salle_select');
+        const noticeNoRooms = document.getElementById('salle_no_rooms_notice');
+        const card = document.getElementById('salle_info_card');
+        const inputSalleNom = document.getElementById('input_salle_nom');
+        const hiddenId = document.getElementById('input_salle_id');
+        if (!sel) return;
+
+        sel.innerHTML = '';
+
+        // Salles de la ville
+        const filtered = (DB_SALLES || []).filter(function (s) {
+            return s.ville && s.ville.trim().toLowerCase() === ville.trim().toLowerCase();
+        });
+
+        if (filtered.length > 0) {
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = `-- Salles répertoriées à ${ville} (${filtered.length} disponible${filtered.length > 1 ? 's' : ''}) --`;
+            sel.appendChild(defaultOpt);
+
+            filtered.forEach(function (s) {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.dataset.nom = s.nom;
+                opt.dataset.capacite = s.capacite;
+                opt.dataset.commune = s.commune || '';
+                opt.dataset.ville = s.ville;
+                opt.textContent = '🏛️ ' + s.nom + (s.commune ? ' (' + s.commune + ')' : '') + ' — ' + Number(s.capacite).toLocaleString('fr-FR') + ' places';
+                sel.appendChild(opt);
+            });
+
+            const customOpt = document.createElement('option');
+            customOpt.value = 'Autre';
+            customOpt.textContent = '✏️ Autre salle ou lieu non listé...';
+            sel.appendChild(customOpt);
+
+            if (noticeNoRooms) noticeNoRooms.style.display = 'none';
+            // Sélectionne la 1ère salle par défaut si disponible
+            sel.selectedIndex = 1;
+            onSalleSelectChange(sel.value);
+        } else {
+            const noOpt = document.createElement('option');
+            noOpt.value = '';
+            noOpt.textContent = `-- Aucune salle avec modélisation 3D pour ${ville} --`;
+            sel.appendChild(noOpt);
+
+            const customOpt = document.createElement('option');
+            customOpt.value = 'Autre';
+            customOpt.textContent = '✏️ Saisie libre du nom de salle...';
+            customOpt.selected = true;
+            sel.appendChild(customOpt);
+
+            if (noticeNoRooms) noticeNoRooms.style.display = 'block';
+            if (hiddenId) hiddenId.value = '';
+            if (card) card.style.display = 'none';
         }
     }
 
@@ -1624,6 +2338,7 @@ try {
         const lblNon = document.getElementById('label_salle_inconnue');
         const secOui = document.getElementById('section_salle_connue');
         const secNon = document.getElementById('section_salle_inconnue');
+        const badge = document.getElementById('venue_type_status_badge');
 
         if (isKnown) {
             if (lblOui) {
@@ -1636,6 +2351,14 @@ try {
             }
             if (secOui) secOui.style.display = 'block';
             if (secNon) secNon.style.display = 'none';
+            if (badge) {
+                badge.innerHTML = '🏛️ Salle répertoriée (Vue 3D active)';
+                badge.style.background = '#FFF2ED';
+                badge.style.color = 'var(--dash-primary)';
+                badge.style.borderColor = '#F0D9D0';
+            }
+            const sel = document.getElementById('salle_select');
+            if (sel) onSalleSelectChange(sel.value);
         } else {
             if (lblNon) {
                 lblNon.style.border = '1.5px solid #FF4A0D';
@@ -1647,19 +2370,84 @@ try {
             }
             if (secOui) secOui.style.display = 'none';
             if (secNon) secNon.style.display = 'block';
+            if (badge) {
+                badge.innerHTML = '📍 Espace non répertorié (Sans vue 3D)';
+                badge.style.background = '#F5F5F5';
+                badge.style.color = '#737373';
+                badge.style.borderColor = '#E5E5E5';
+            }
+            // Pas de salle_id pour un espace non répertorié
+            const hiddenId = document.getElementById('input_salle_id');
+            if (hiddenId) hiddenId.value = '';
+            const card = document.getElementById('salle_info_card');
+            if (card) card.style.display = 'none';
         }
     }
 
     function onSalleSelectChange(val) {
         const inputSalle = document.getElementById('input_salle_nom');
-        if (val && val !== 'Autre') {
-            if (inputSalle) inputSalle.value = val;
-        } else if (val === 'Autre') {
-            if (inputSalle) {
-                inputSalle.value = '';
+        const hiddenId = document.getElementById('input_salle_id');
+        const card = document.getElementById('salle_info_card');
+        const sel = document.getElementById('salle_select');
+
+        if (!val || val === 'Autre') {
+            if (hiddenId) hiddenId.value = '';
+            if (card) card.style.display = 'none';
+            if (val === 'Autre' && inputSalle) {
                 inputSalle.focus();
             }
+            return;
         }
+
+        const selectedOption = sel.options[sel.selectedIndex];
+        if (!selectedOption) return;
+
+        const sId = val;
+        const sNom = selectedOption.dataset.nom || '';
+        const sCap = selectedOption.dataset.capacite || 0;
+        const sLoc = (selectedOption.dataset.commune ? selectedOption.dataset.commune + ', ' : '') + (selectedOption.dataset.ville || '');
+
+        if (hiddenId) hiddenId.value = sId;
+        if (inputSalle && sNom) inputSalle.value = sNom;
+
+        if (card) {
+            card.style.display = 'block';
+            document.getElementById('salle_info_nom').textContent = sNom;
+            document.getElementById('salle_info_loc').textContent = sLoc;
+            document.getElementById('salle_info_cap').textContent = Number(sCap).toLocaleString('fr-FR') + ' places';
+        }
+    }
+
+    // Validation du nombre de places que les clients peuvent choisir
+    function validatePlacesChoisies(input) {
+        if (!input) return;
+        const row = input.closest('.dash-ticket-row');
+        if (!row) return;
+        const qtyInput = row.querySelector('input[name="ticket_quantite[]"]');
+        const totalQty = Number(qtyInput ? qtyInput.value : 0) || 0;
+        let chosen = Number(input.value) || 0;
+
+        if (chosen < 0) {
+            input.value = 0;
+            chosen = 0;
+        }
+        if (chosen > totalQty) {
+            input.value = totalQty;
+            chosen = totalQty;
+        }
+    }
+
+    // Raccourcis pour configurer rapidement les places au choix sur tous les tarifs
+    function quickSetAllPlacesChoisies(enabled) {
+        const rows = document.querySelectorAll('.dash-ticket-row');
+        rows.forEach(function (row) {
+            const qtyInput = row.querySelector('input[name="ticket_quantite[]"]');
+            const choixInput = row.querySelector('input[name="ticket_places_choisies[]"]');
+            if (choixInput && qtyInput) {
+                choixInput.value = enabled ? (Number(qtyInput.value) || 0) : 0;
+            }
+        });
+        calculateEventSummary();
     }
 
     // 1. Ajout dynamique d'une ligne de tarif
@@ -1668,24 +2456,28 @@ try {
         const row = document.createElement('div');
         row.className = 'dash-ticket-row';
         row.innerHTML = `
-            <div>
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--dash-text); display: block; margin-bottom: 4px;">Catégorie</label>
-                <input type="text" name="ticket_nom[]" required placeholder="Ex: VIP" value="VIP" style="padding: 0.6rem 0.8rem;">
+            <div class="ticket-col-name">
+                <label>Catégorie</label>
+                <input type="text" name="ticket_nom[]" required placeholder="Ex: VIP" value="VIP">
             </div>
-            <div>
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--dash-text); display: block; margin-bottom: 4px;">Prix unitaire (F)</label>
-                <input type="number" name="ticket_prix[]" required min="500" step="100" placeholder="15000" value="15000" oninput="calculateEventSummary()" style="padding: 0.6rem 0.8rem;">
+            <div class="ticket-col-price">
+                <label>Prix unitaire (F)</label>
+                <input type="number" name="ticket_prix[]" required min="500" step="100" placeholder="15000" value="15000" oninput="calculateEventSummary()">
             </div>
-            <div>
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--dash-text); display: block; margin-bottom: 4px;">Places</label>
-                <input type="number" name="ticket_quantite[]" required min="1" placeholder="100" value="100" oninput="calculateEventSummary()" style="padding: 0.6rem 0.8rem;">
+            <div class="ticket-col-qty">
+                <label>Places</label>
+                <input type="number" name="ticket_quantite[]" required min="1" placeholder="100" value="100" oninput="validatePlacesChoisies(this.closest('.dash-ticket-row').querySelector('input[name=\\'ticket_places_choisies[]\\']')); calculateEventSummary();">
             </div>
-            <div>
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--dash-text); display: block; margin-bottom: 4px;">Frais place (F)</label>
-                <input type="number" name="ticket_frais[]" min="0" step="100" placeholder="0" value="0" title="Supplément facturé pour le choix de place" oninput="calculateEventSummary()" style="padding: 0.6rem 0.8rem;">
+            <div class="ticket-col-choix">
+                <label title="Nombre de places que les spectateurs peuvent choisir">Places au choix</label>
+                <input type="number" name="ticket_places_choisies[]" min="0" placeholder="0" value="0" title="Nombre de places que les spectateurs peuvent choisir (0 = libre)" oninput="validatePlacesChoisies(this); calculateEventSummary();">
             </div>
-            <div>
-                <button type="button" onclick="removeTicketRow(this)" style="background: #F5F5F5; color: #000000; border: 0; border-radius: 8px; padding: 0.65rem 0.8rem; cursor: pointer;" title="Supprimer">
+            <div class="ticket-col-fee">
+                <label>Frais choix (F)</label>
+                <input type="number" name="ticket_frais[]" min="0" step="100" placeholder="0" value="0" title="Supplément facturé pour le choix de place" oninput="calculateEventSummary()">
+            </div>
+            <div class="ticket-delete-btn-box">
+                <button type="button" onclick="removeTicketRow(this)" title="Supprimer">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
@@ -1704,7 +2496,60 @@ try {
         }
     }
 
-    // 3. Calcul en temps réel de la capacité, du brut, de la commission et du net
+    // 2. Barème Dégressif selon l'Ampleur de l'Événement (Capacité & Recette) ou Taux Négocié
+    const PROMOTER_CUSTOM_RATE = <?php echo json_encode(isset($prom_info['commission_rate']) && abs((float)$prom_info['commission_rate'] - 5.00) > 0.001 ? (float)$prom_info['commission_rate'] : null); ?>;
+
+    function getEventScale(capacity, gross) {
+        if (PROMOTER_CUSTOM_RATE !== null) {
+            return {
+                tier: 'custom',
+                name: 'Taux Négocié',
+                rate: PROMOTER_CUSTOM_RATE / 100,
+                percent: PROMOTER_CUSTOM_RATE,
+                payout: (100 - PROMOTER_CUSTOM_RATE),
+                range: 'Taux personnalisé accordé par l\'administrateur'
+            };
+        }
+        if (capacity >= 5000 || gross >= 50000000) {
+            return {
+                tier: 'mega',
+                name: 'Festival & Stade',
+                rate: 0.03,
+                percent: 3.0,
+                payout: 97.0,
+                range: '≥ 5 000 places'
+            };
+        } else if (capacity >= 1500 || gross >= 15000000) {
+            return {
+                tier: 'grand',
+                name: 'Grand Événement',
+                rate: 0.04,
+                percent: 4.0,
+                payout: 96.0,
+                range: '1 500 – 4 999 places'
+            };
+        } else if (capacity >= 300 || gross >= 3000000) {
+            return {
+                tier: 'standard',
+                name: 'Événement Standard',
+                rate: 0.05,
+                percent: 5.0,
+                payout: 95.0,
+                range: '300 – 1 499 places'
+            };
+        } else {
+            return {
+                tier: 'intimiste',
+                name: 'Événement Intimiste',
+                rate: 0.07,
+                percent: 7.0,
+                payout: 93.0,
+                range: '< 300 places'
+            };
+        }
+    }
+
+    // 3. Calcul en temps réel de la capacité, du brut, du barème et du net
     function calculateEventSummary() {
         const priceInputs = document.querySelectorAll('input[name="ticket_prix[]"]');
         const qtyInputs = document.querySelectorAll('input[name="ticket_quantite[]"]');
@@ -1720,22 +2565,56 @@ try {
             totalGross += (price * qty);
         }
 
-        const totalCommission = totalGross * COMMISSION_RATE;
+        // Détermination dynamique de l'ampleur et du taux
+        const scale = getEventScale(totalCapacity, totalGross);
+        const totalCommission = Math.round(totalGross * scale.rate);
         const totalNet = totalGross - totalCommission;
 
+        // Mise à jour de la synthèse
         const capEl = document.getElementById('summary-capacity');
         const grossEl = document.getElementById('summary-gross');
         const commEl = document.getElementById('summary-commission');
         const netEl = document.getElementById('summary-net');
+        const ratePctEl = document.getElementById('summary-rate-pct');
+        const tierPillEl = document.getElementById('summary-tier-pill');
+        const hiddenRateInput = document.getElementById('form_commission_rate');
 
         if (capEl) capEl.textContent = totalCapacity.toLocaleString('fr-FR') + ' places';
         if (grossEl) grossEl.textContent = totalGross.toLocaleString('fr-FR') + ' FCFA';
         if (commEl) commEl.textContent = totalCommission.toLocaleString('fr-FR') + ' FCFA';
         if (netEl) netEl.textContent = totalNet.toLocaleString('fr-FR') + ' FCFA';
+        if (ratePctEl) ratePctEl.textContent = scale.percent.toFixed(1) + '%';
+        if (tierPillEl) tierPillEl.textContent = scale.name + ' (' + scale.percent.toFixed(1) + '%)';
+        if (hiddenRateInput) hiddenRateInput.value = scale.percent.toFixed(1);
+
+        // Mise à jour visuelle des cartes de barème
+        ['intimiste', 'standard', 'grand', 'mega'].forEach(function(t) {
+            const card = document.getElementById('tier-card-' + t);
+            if (card) {
+                if (t === scale.tier) {
+                    card.classList.add('is-active');
+                } else {
+                    card.classList.remove('is-active');
+                }
+            }
+        });
+
+        // Mise à jour du bandeau de statut live
+        const liveName = document.getElementById('live-tier-name');
+        const liveRate = document.getElementById('live-tier-rate');
+        const livePayout = document.getElementById('live-tier-payout');
+
+        if (liveName) liveName.textContent = scale.name + ' (' + totalCapacity.toLocaleString('fr-FR') + ' places)';
+        if (liveRate) liveRate.textContent = scale.percent.toFixed(1) + '%';
+        if (livePayout) livePayout.textContent = scale.payout.toFixed(1) + '% du montant brut';
     }
 
     // Initialisation
     calculateEventSummary();
+    const currentVilleInput = document.getElementById('select_ville');
+    if (currentVilleInput) {
+        onVilleChange(currentVilleInput.value);
+    }
 
     // 4. Basculement entre Concours et Vote de réalisation
     function switchVoteMode(mode) {
@@ -1796,7 +2675,7 @@ try {
                 <input type="file" name="cand_photo[]" accept="image/*" style="width: 100%; padding: 0.4rem; font-size: 0.75rem; background: #ffffff; border-radius: 8px;">
             </div>
 
-            <div style="text-align: right; padding-top: 1.1rem;">
+            <div class="cand-delete-box" style="text-align: right; padding-top: 1.1rem;">
                 <button type="button" onclick="this.closest('.dash-cand-vote-row').remove()" style="background: #F5F5F5; color: #000000; border: 0; border-radius: 8px; padding: 0.55rem 0.75rem; cursor: pointer;" title="Supprimer ce candidat">
                     <i class="fa-solid fa-trash"></i>
                 </button>

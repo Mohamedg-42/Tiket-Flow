@@ -6,6 +6,7 @@
 
 $admin_page_title = "Centre des Demandes - Administration";
 include 'header.php';
+require_once '../includes/commission.php';
 
 $message = "";
 $msg_type = "";
@@ -37,21 +38,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $pdo->beginTransaction();
 
-                $stmt_ev = $pdo->prepare("INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, statut) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')");
-                $stmt_ev->execute([$req['user_id'], $req['nom'], $req['description'], $req['image'], $req['categorie'], $req['date_evenement'], $req['heure'], $req['lieu'], (float) ($req['prix_vote'] ?? 0), $req['type_vote'] ?? 'aucun', $req['vote_question'] ?? null, $commission_rate]);
+                $salle_id = !empty($req['salle_id']) ? (int) $req['salle_id'] : null;
+                $stmt_ev = $pdo->prepare("INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, salle_id, statut) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')");
+                $stmt_ev->execute([$req['user_id'], $req['nom'], $req['description'], $req['image'], $req['categorie'], $req['date_evenement'], $req['heure'], $req['lieu'], (float) ($req['prix_vote'] ?? 0), $req['type_vote'] ?? 'aucun', $req['vote_question'] ?? null, $commission_rate, $salle_id]);
                 $new_event_id = (int) $pdo->lastInsertId();
 
                 $ticket_types = json_decode($req['ticket_types_data'] ?? '[]', true);
                 if (!empty($ticket_types) && is_array($ticket_types)) {
                     require_once '../includes/places.php';
-                    $stmt_tt = $pdo->prepare("INSERT INTO ticket_types (event_id, nom, prix, frais_place, quantite, quantite_vendue) VALUES (?, ?, ?, ?, ?, 0)");
+                    $stmt_tt = $pdo->prepare("INSERT INTO ticket_types (event_id, nom, prix, frais_place, quantite, places_choisies, quantite_vendue) VALUES (?, ?, ?, ?, ?, ?, 0)");
                     foreach ($ticket_types as $tt) {
+                        $p_choisies = isset($tt['places_choisies']) ? max(0, (int) $tt['places_choisies']) : 0;
                         $stmt_tt->execute([
                             $new_event_id,
                             $tt['nom'],
                             (float) $tt['prix'],
                             (float) ($tt['frais_place'] ?? 0),
-                            (int) $tt['quantite']
+                            (int) $tt['quantite'],
+                            $p_choisies
                         ]);
                         // Génération automatique des places pour ce tarif
                         generer_places_type($pdo, (int) $pdo->lastInsertId(), (int) $tt['quantite']);
@@ -120,9 +124,10 @@ $classement_votes = [];
 // Onglet 1 : Demandes d'événements
 try {
     $event_requests = $pdo->query("
-        SELECT r.*, u.nom AS promoteur_nom, u.email AS promoteur_email
+        SELECT r.*, u.nom AS promoteur_nom, u.email AS promoteur_email, p.commission_rate AS promoteur_commission_rate
         FROM event_requests r
         LEFT JOIN users u ON r.user_id = u.id
+        LEFT JOIN promoters p ON p.user_id = r.user_id
         ORDER BY (r.statut = 'en_attente') DESC, r.created_at DESC
     ")->fetchAll();
 } catch (PDOException $e) {
@@ -606,9 +611,16 @@ $nb_campagnes_pending = count(array_filter($campagnes_list, fn($c) => $c['statut
                                 $r_candidats = json_decode($r['candidats_data'] ?? '[]', true) ?: [];
                                 $has_vote = !empty($r['type_vote']) && $r['type_vote'] !== 'aucun' && $r['type_vote'] !== '';
                                 $total_places_demandees = 0;
+                                $total_recette_estimee = 0;
                                 foreach ($t_data as $tt) {
-                                    $total_places_demandees += (int) ($tt['quantite'] ?? 0);
+                                    $t_qty = (int) ($tt['quantite'] ?? 0);
+                                    $t_px  = (float) ($tt['prix'] ?? 0);
+                                    $total_places_demandees += $t_qty;
+                                    $total_recette_estimee += ($t_qty * $t_px);
                                 }
+                                $req_scale = get_event_scale_tier($total_places_demandees, $total_recette_estimee);
+                                $promoter_custom_rate = isset($r['promoteur_commission_rate']) && $r['promoteur_commission_rate'] !== null ? (float)$r['promoteur_commission_rate'] : null;
+                                $suggested_comm_rate = ($promoter_custom_rate !== null) ? $promoter_custom_rate : (!empty($r['commission_rate']) ? (float)$r['commission_rate'] : (float)$req_scale['rate']);
                                 $badge_st = [
                                     'en_attente' => ['En attente', '#FFF2ED', '#FF4A0D'],
                                     'approuve' => ['Approuvée', '#FFF2ED', '#000000'],
@@ -738,7 +750,10 @@ $nb_campagnes_pending = count(array_filter($campagnes_list, fn($c) => $c['statut
                                         <div>
                                             <?php if (!empty($t_data)): ?>
                                                 <strong style="font-size: 0.84rem; color: var(--dash-text); display: block;"><?php echo count($t_data); ?> tarif(s)</strong>
-                                                <small style="color: var(--dash-muted); font-size: 0.76rem;"><?php echo $total_places_demandees; ?> places</small>
+                                                <small style="color: var(--dash-muted); font-size: 0.76rem;"><?php echo number_format($total_places_demandees, 0, ',', ' '); ?> places</small>
+                                                <div style="margin-top: 4px;">
+                                                    <?php echo render_scale_badge_html($req_scale); ?>
+                                                </div>
                                             <?php else: ?>
                                                 <span style="color: var(--dash-muted); font-size: 0.8rem;">Sans billetterie</span>
                                             <?php endif; ?>
@@ -771,11 +786,12 @@ $nb_campagnes_pending = count(array_filter($campagnes_list, fn($c) => $c['statut
                                                     <input type="hidden" name="action" value="approuver_evenement">
                                                     <input type="hidden" name="request_id" value="<?php echo $r['id']; ?>">
                                                     <div
-                                                        style="display: inline-flex; align-items: center; gap: 4px; background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 8px; padding: 3px 8px; flex-shrink: 0;">
-                                                        <span style="font-size: 0.74rem; color: var(--dash-muted); font-weight: 700;">Com.</span>
-                                                        <input type="number" name="commission_rate" value="5.0" min="0" max="30" step="0.5"
-                                                            style="width: 44px; border: 0; background: transparent; font-weight: 800; font-size: 0.8rem; text-align: center; outline: none;">
-                                                        <span style="font-size: 0.74rem; color: var(--dash-muted); font-weight: 700;">%</span>
+                                                        style="display: inline-flex; align-items: center; gap: 4px; background: #FFF2ED; border: 1px solid #FF4A0D; border-radius: 8px; padding: 3px 8px; flex-shrink: 0;"
+                                                        title="Barème suggéré selon l'ampleur : <?php echo htmlspecialchars($req_scale['name']); ?>">
+                                                        <span style="font-size: 0.74rem; color: #FF4A0D; font-weight: 700;">Com.</span>
+                                                        <input type="number" name="commission_rate" value="<?php echo number_format($suggested_comm_rate, 1, '.', ''); ?>" min="0" max="30" step="0.5"
+                                                            style="width: 44px; border: 0; background: transparent; font-weight: 800; font-size: 0.8rem; text-align: center; outline: none; color: #FF4A0D;">
+                                                        <span style="font-size: 0.74rem; color: #FF4A0D; font-weight: 700;">%</span>
                                                     </div>
                                                     <button type="submit" class="dash-btn-action"
                                                         style="background: #FF4A0D; color: #ffffff; padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 800; border-color: #FF4A0D;">

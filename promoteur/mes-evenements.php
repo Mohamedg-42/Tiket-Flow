@@ -264,9 +264,9 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
 /* Responsivité Mobile & Tablette */
 .events-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
-    margin-bottom: 1.75rem;
+    margin-bottom: 1.5rem;
 }
 
 .events-filter-bar {
@@ -276,16 +276,18 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
     gap: 0.75rem;
     margin-bottom: 1.25rem;
     background: #ffffff;
-    padding: 0.6rem 0.85rem;
+    padding: 0.65rem 0.85rem;
     border-radius: 12px;
     border: 1px solid var(--dash-border);
     box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    flex-wrap: wrap;
 }
 
 .events-tabs-scroll {
     display: flex;
     gap: 0.35rem;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .events-filter-form {
@@ -293,18 +295,188 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
     gap: 8px;
     align-items: center;
     margin: 0;
+    flex-wrap: wrap;
+}
+
+/* Actions Compactes & Stylisées pour le Tableau Desktop */
+.table-actions-group {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+}
+
+.table-action-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border: 1px solid var(--dash-border, #E5E5E5);
+    color: var(--dash-text, #000000);
+    font-size: 0.78rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.table-action-icon:hover {
+    background: #000000;
+    color: #ffffff;
+    border-color: #000000;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+}
+
+.table-action-icon.action-primary:hover {
+    background: var(--tikeli-orange, #FF4A0D);
+    border-color: var(--tikeli-orange, #FF4A0D);
+    color: #ffffff;
+}
+
+.table-action-icon.action-danger {
+    color: #dc2626;
+    border-color: #fee2e2;
+    background: #fff5f5;
+}
+
+.table-action-icon.action-danger:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.table-action-icon.action-success {
+    color: #16a34a;
+    border-color: #dcfce7;
+    background: #f0fdf4;
+}
+
+.table-action-icon.action-success:hover {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+}
+
+/* Grille d'actions tactiles pour les Cartes Mobile */
+.card-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--dash-border);
+}
+
+.card-action-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 4px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid var(--dash-border);
+    color: var(--dash-text);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-decoration: none;
+    gap: 3px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.card-action-btn i {
+    font-size: 0.85rem;
+}
+
+.card-action-btn:hover {
+    background: #000000;
+    color: #ffffff;
+    border-color: #000000;
+}
+
+.card-action-btn.action-primary {
+    color: var(--tikeli-orange, #FF4A0D);
+    border-color: #ffd8c7;
+    background: #fff8f5;
+}
+
+.card-action-btn.action-primary:hover {
+    background: var(--tikeli-orange, #FF4A0D);
+    color: #ffffff;
+    border-color: var(--tikeli-orange, #FF4A0D);
+}
+
+.card-action-btn.action-danger {
+    color: #dc2626;
+    border-color: #fee2e2;
+    background: #fff5f5;
+}
+
+.card-action-btn.action-danger:hover {
+    background: #dc2626;
+    color: #ffffff;
+    border-color: #dc2626;
+}
+
+.card-action-btn.action-success {
+    color: #16a34a;
+    border-color: #dcfce7;
+    background: #f0fdf4;
+}
+
+.card-action-btn.action-success:hover {
+    background: #16a34a;
+    color: #ffffff;
+    border-color: #16a34a;
 }
 
 .events-desktop-table {
     display: block;
+    width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #E5E5E5 transparent;
+}
+.events-desktop-table::-webkit-scrollbar {
+    height: 4px;
+}
+.events-desktop-table::-webkit-scrollbar-thumb {
+    background: #E5E5E5;
+    border-radius: 4px;
 }
 
 .events-mobile-cards {
     display: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
+    .events-kpi-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem !important;
+    }
+    body:not(.sidebar-collapsed) .events-desktop-table {
+        display: none !important;
+    }
+    body:not(.sidebar-collapsed) .events-mobile-cards {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.85rem !important;
+        padding: 0.85rem !important;
+    }
+}
+
+/* Bascule responsive optimisée à 991px pour tous les modes */
+@media (max-width: 991px) {
     .dash-container {
         padding: 0.75rem !important;
     }
@@ -330,19 +502,6 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
         padding: 0.55rem 0.5rem !important;
         font-size: 0.8rem !important;
         text-align: center !important;
-    }
-
-    /* KPI Cards 2 colonnes */
-    .events-kpi-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.6rem !important;
-        margin-bottom: 1.25rem !important;
-    }
-    .events-kpi-grid .dash-kpi-card {
-        padding: 0.85rem !important;
-    }
-    .events-kpi-grid .dash-kpi-card > div:nth-child(2) {
-        font-size: 1.3rem !important;
     }
 
     /* Barre de filtres adaptative */
@@ -382,7 +541,7 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
         justify-content: center !important;
     }
 
-    /* Masquer le tableau horizontal coupé et activer les cartes tactiles */
+    /* Masquer le tableau et afficher les cartes fluides */
     .events-desktop-table {
         display: none !important;
     }
@@ -391,6 +550,16 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
         flex-direction: column !important;
         gap: 0.85rem !important;
         padding: 0.85rem !important;
+    }
+}
+
+@media (max-width: 580px) {
+    .events-kpi-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.6rem !important;
+    }
+    .dash-header-section > div:last-child {
+        grid-template-columns: 1fr !important;
     }
 }
 </style>
@@ -429,40 +598,44 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
          2. KPI CARDS : SYNTHÈSE DE GESTION DES ÉVÉNEMENTS
          ============================================================================== -->
     <div class="events-kpi-grid">
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: var(--dash-muted); text-transform: uppercase;">Total Événements</span>
-                <span style="background: #F5F5F5; color: var(--dash-text); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-calendar-check"></i></span>
+        <!-- 1. Total Événements -->
+        <div class="dash-kpi-card" style="padding: 1.15rem 1.25rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border, #E2E8F0); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                <span style="font-size: 0.76rem; font-weight: 700; color: var(--dash-muted, #64748B); text-transform: uppercase; letter-spacing: 0.04em;">Total Événements</span>
+                <span style="background: #F8FAFC; border: 1px solid #E2E8F0; color: var(--dash-text, #0F172A); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-calendar-check"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: var(--dash-text);"><?php echo $total_events_count; ?></div>
-            <small style="color: var(--dash-muted); font-size: 0.75rem;">En ligne & enregistrés</small>
+            <div style="font-size: 1.7rem; font-weight: 800; color: var(--dash-text, #0F172A); letter-spacing: -0.02em; line-height: 1.2;"><?php echo $total_events_count; ?></div>
+            <small style="color: var(--dash-muted, #64748B); font-size: 0.75rem; margin-top: 4px; display: block;">En ligne & enregistrés</small>
         </div>
 
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Billets Écoulés</span>
-                <span style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-ticket"></i></span>
+        <!-- 2. Billets Écoulés -->
+        <div class="dash-kpi-card" style="padding: 1.15rem 1.25rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border, #E2E8F0); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                <span style="font-size: 0.76rem; font-weight: 700; color: var(--dash-muted, #64748B); text-transform: uppercase; letter-spacing: 0.04em;">Billets Écoulés</span>
+                <span style="background: #F8FAFC; border: 1px solid #E2E8F0; color: var(--dash-text, #0F172A); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-ticket"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #FF4A0D;"><?php echo number_format($total_billets_vendus_sum, 0, ',', ' '); ?></div>
-            <small style="color: #FF4A0D; font-size: 0.75rem;">sur <?php echo number_format($total_places_sum, 0, ',', ' '); ?> places disponibles</small>
+            <div style="font-size: 1.7rem; font-weight: 800; color: var(--dash-text, #0F172A); letter-spacing: -0.02em; line-height: 1.2;"><?php echo number_format($total_billets_vendus_sum, 0, ',', ' '); ?></div>
+            <small style="color: var(--dash-muted, #64748B); font-size: 0.75rem; margin-top: 4px; display: block;">sur <?php echo number_format($total_places_sum, 0, ',', ' '); ?> places disponibles</small>
         </div>
 
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Recettes Cumulées</span>
-                <span style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-coins"></i></span>
+        <!-- 3. Recettes Cumulées -->
+        <div class="dash-kpi-card" style="padding: 1.15rem 1.25rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border, #E2E8F0); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                <span style="font-size: 0.76rem; font-weight: 700; color: var(--dash-muted, #64748B); text-transform: uppercase; letter-spacing: 0.04em;">Recettes Cumulées</span>
+                <span style="background: #F8FAFC; border: 1px solid #E2E8F0; color: #16A34A; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-coins"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #FF4A0D;"><?php echo number_format($total_recettes_sum, 0, ',', ' '); ?> F</div>
-            <small style="color: #FF4A0D; font-size: 0.75rem;">Chiffre d'affaires brut généré</small>
+            <div style="font-size: 1.7rem; font-weight: 800; color: #16A34A; letter-spacing: -0.02em; line-height: 1.2;"><?php echo number_format($total_recettes_sum, 0, ',', ' '); ?> <span style="font-size: 1rem; font-weight: 700;">FCFA</span></div>
+            <small style="color: var(--dash-muted, #64748B); font-size: 0.75rem; margin-top: 4px; display: block;">Chiffre d'affaires brut généré</small>
         </div>
 
-        <div class="dash-kpi-card" style="padding: 1.15rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Remplissage Moyen</span>
-                <span style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-chart-pie"></i></span>
+        <!-- 4. Remplissage Moyen -->
+        <div class="dash-kpi-card" style="padding: 1.15rem 1.25rem; border-radius: 12px; background: #ffffff; border: 1px solid var(--dash-border, #E2E8F0); box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                <span style="font-size: 0.76rem; font-weight: 700; color: var(--dash-muted, #64748B); text-transform: uppercase; letter-spacing: 0.04em;">Remplissage Moyen</span>
+                <span style="background: #F8FAFC; border: 1px solid #E2E8F0; color: var(--dash-text, #0F172A); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-chart-pie"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: #FF4A0D;"><?php echo $taux_remplissage_global; ?>%</div>
-            <small style="color: #FF4A0D; font-size: 0.75rem;">Capacité totale occupée</small>
+            <div style="font-size: 1.7rem; font-weight: 800; color: var(--dash-text, #0F172A); letter-spacing: -0.02em; line-height: 1.2;"><?php echo $taux_remplissage_global; ?>%</div>
+            <small style="color: var(--dash-muted, #64748B); font-size: 0.75rem; margin-top: 4px; display: block;">Capacité globale occupée</small>
         </div>
     </div>
 
@@ -529,7 +702,7 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
             <div>
                 <h3 style="margin: 0; font-size: 1rem; color: var(--dash-text); font-weight: 700;">
                     <i class="fa-solid fa-bullhorn" style="color: var(--dash-primary); margin-right: 6px;"></i>
-                    Événements Publiés sur Eventia (<?php echo count($all_events); ?>)
+                    Événements Publiés sur Tikéli (<?php echo count($all_events); ?>)
                 </h3>
                 <small style="color: var(--dash-muted); font-size: 0.78rem;">Suivi en direct des ventes, entrées scannées et pilotage de la billetterie.</small>
             </div>
@@ -543,13 +716,13 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
             <div class="events-desktop-table">
                 <table class="dash-table" style="width: 100%; border-collapse: collapse; text-align: left;">
                     <thead>
-                        <tr style="background: #F5F5F5; border-bottom: 1px solid var(--dash-border); font-size: 0.75rem; text-transform: uppercase; color: var(--dash-muted);">
-                            <th style="padding: 0.85rem 1.25rem;">Événement</th>
-                            <th style="padding: 0.85rem 1rem;">Date & Lieu</th>
-                            <th style="padding: 0.85rem 1rem;">Billetterie & Remplissage</th>
-                            <th style="padding: 0.85rem 1rem;">Recettes Brutes</th>
-                            <th style="padding: 0.85rem 1rem;">Statut</th>
-                            <th style="padding: 0.85rem 1.25rem; text-align: right;">Actions de Gestion</th>
+                        <tr style="background: #F5F5F5; border-bottom: 1px solid var(--dash-border); font-size: 0.74rem; text-transform: uppercase; color: var(--dash-muted); letter-spacing: 0.04em;">
+                            <th style="padding: 0.75rem 0.85rem;">Événement</th>
+                            <th style="padding: 0.75rem 0.65rem;">Date & Lieu</th>
+                            <th style="padding: 0.75rem 0.65rem; width: 160px;">Billetterie & Remplissage</th>
+                            <th style="padding: 0.75rem 0.65rem; text-align: right;">Recettes</th>
+                            <th style="padding: 0.75rem 0.65rem; text-align: center;">Statut</th>
+                            <th style="padding: 0.75rem 0.85rem; text-align: right; width: 170px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody style="font-size: 0.85rem;">
@@ -570,23 +743,23 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
                             ?>
                             <tr style="border-bottom: 1px solid var(--dash-border); transition: background 0.15s ease;">
                                 <!-- Événement & Affiche -->
-                                <td style="padding: 1rem 1.25rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.85rem;">
-                                        <img src="<?php echo $img_src; ?>" alt="<?php echo htmlspecialchars($ev['nom']); ?>" class="event-thumb" onerror="this.onerror=null; this.src='../uploads/events/default.jpg';">
-                                        <div>
-                                            <strong style="color: var(--dash-text); font-weight: 700; display: block; font-size: 0.92rem;">
+                                <td style="padding: 0.75rem 0.85rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <img src="<?php echo $img_src; ?>" alt="<?php echo htmlspecialchars($ev['nom']); ?>" class="event-thumb" style="width: 44px; height: 44px; border-radius: 8px;" onerror="this.onerror=null; this.src='../uploads/events/default.jpg';">
+                                        <div style="min-width: 0;">
+                                            <strong style="color: var(--dash-text); font-weight: 700; display: block; font-size: 0.88rem; line-height: 1.25; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                                 <?php echo htmlspecialchars($ev['nom']); ?>
                                             </strong>
-                                            <div style="color: var(--dash-muted); font-size: 0.78rem; display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap;">
-                                                <span style="background: #F5F5F5; color: var(--dash-text); padding: 1px 6px; border-radius: 4px; font-weight: 600; font-size: 0.72rem;">
+                                            <div style="color: var(--dash-muted); font-size: 0.74rem; display: flex; align-items: center; gap: 4px; margin-top: 3px; flex-wrap: wrap;">
+                                                <span style="background: #F5F5F5; color: var(--dash-text); padding: 1px 6px; border-radius: 4px; font-weight: 600; font-size: 0.7rem;">
                                                     <?php echo htmlspecialchars($ev['categorie']); ?>
                                                 </span>
-                                                <span style="background: #FFF2ED; color: #FF4A0D; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 0.72rem;">
+                                                <span style="background: #FFF2ED; color: #FF4A0D; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 0.7rem;">
                                                     <?php echo $type_label; ?>
                                                 </span>
                                                 <?php if ($ev['nb_agents'] > 0): ?>
-                                                    <span style="color: #FF4A0D; font-size: 0.74rem;">
-                                                        <i class="fa-solid fa-shield-halved"></i> <?php echo $ev['nb_agents']; ?> agent(s)
+                                                    <span style="color: #FF4A0D; font-size: 0.72rem; font-weight: 600;">
+                                                        <i class="fa-solid fa-shield-halved"></i> <?php echo $ev['nb_agents']; ?>
                                                     </span>
                                                 <?php endif; ?>
                                             </div>
@@ -595,90 +768,90 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
                                 </td>
 
                                 <!-- Date & Lieu -->
-                                <td style="padding: 1rem;">
-                                    <div style="color: var(--dash-text); font-weight: 600; font-size: 0.84rem;">
-                                        <i class="fa-regular fa-calendar" style="color: var(--dash-primary); margin-right: 4px;"></i>
+                                <td style="padding: 0.75rem 0.65rem; white-space: nowrap;">
+                                    <div style="color: var(--dash-text); font-weight: 700; font-size: 0.82rem;">
+                                        <i class="fa-regular fa-calendar" style="color: var(--dash-primary); margin-right: 3px;"></i>
                                         <?php echo date('d/m/Y', strtotime($ev['date_evenement'])); ?>
                                     </div>
-                                    <small style="color: var(--dash-muted); font-size: 0.78rem; display: block; margin-top: 2px;">
+                                    <small style="color: var(--dash-muted); font-size: 0.75rem; display: block; margin-top: 2px; max-width: 150px; overflow: hidden; text-overflow: ellipsis;">
                                         <i class="fa-regular fa-clock"></i> <?php echo substr($ev['heure'], 0, 5); ?>
-                                        • <i class="fa-solid fa-location-dot"></i> <?php echo htmlspecialchars($ev['lieu']); ?>
+                                        • <?php echo htmlspecialchars($ev['lieu']); ?>
                                     </small>
                                 </td>
 
                                 <!-- Billetterie & Remplissage -->
-                                <td style="padding: 1rem; min-width: 190px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.82rem;">
-                                        <strong style="color: #FF4A0D; font-size: 0.9rem;">
+                                <td style="padding: 0.75rem 0.65rem; width: 160px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 0.8rem;">
+                                        <strong style="color: #FF4A0D; font-size: 0.86rem;">
                                             <?php echo $vendus; ?> vendu(s)
                                         </strong>
-                                        <span style="color: var(--dash-muted); font-size: 0.75rem;">
-                                            <?php echo $restants; ?> restant(s) / <?php echo $total; ?>
+                                        <span style="color: var(--dash-muted); font-size: 0.72rem;">
+                                            / <?php echo $total; ?>
                                         </span>
                                     </div>
-                                    <div class="event-progress-bar">
+                                    <div class="event-progress-bar" style="height: 6px; margin-top: 4px;">
                                         <div class="event-progress-fill" style="width: <?php echo min(100, $pct); ?>%; background: <?php echo $is_soldout ? '#ef4444' : ($pct > 80 ? '#f59e0b' : '#10b981'); ?>;"></div>
                                     </div>
                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px;">
-                                        <small style="color: var(--dash-muted); font-size: 0.72rem;">Rempli à <?php echo $pct; ?>%</small>
+                                        <small style="color: var(--dash-muted); font-size: 0.7rem;">Rempli à <?php echo $pct; ?>%</small>
                                         <?php if ($ev['total_scans'] > 0): ?>
-                                            <small style="color: #10b981; font-size: 0.72rem; font-weight: 700;">
-                                                <i class="fa-solid fa-qrcode"></i> <?php echo $ev['total_scans']; ?> scanné(s)
+                                            <small style="color: #10b981; font-size: 0.7rem; font-weight: 700;">
+                                                <i class="fa-solid fa-qrcode"></i> <?php echo $ev['total_scans']; ?>
                                             </small>
                                         <?php endif; ?>
                                     </div>
                                 </td>
 
                                 <!-- Recettes -->
-                                <td style="padding: 1rem;">
-                                    <strong style="color: #10b981; font-size: 0.95rem; display: block;">
+                                <td style="padding: 0.75rem 0.65rem; text-align: right; white-space: nowrap;">
+                                    <strong style="color: #10b981; font-size: 0.92rem; display: block;">
                                         <?php echo number_format($ev['total_recette'], 0, ',', ' '); ?> F
                                     </strong>
-                                    <small style="color: var(--dash-muted); font-size: 0.72rem;">Com. plateforme: <?php echo (float)$ev['commission_rate']; ?>%</small>
+                                    <small style="color: var(--dash-muted); font-size: 0.7rem;">Com: <?php echo (float)$ev['commission_rate']; ?>%</small>
                                 </td>
 
                                 <!-- Statut -->
-                                <td style="padding: 1rem;">
+                                <td style="padding: 0.75rem 0.65rem; text-align: center; white-space: nowrap;">
                                     <?php if ($ev['statut'] === 'termine'): ?>
-                                        <span style="background: #E5E5E5; color: #737373; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
+                                        <span style="background: #E5E5E5; color: #737373; padding: 3px 7px; border-radius: 6px; font-weight: 700; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px;">
                                             <i class="fa-solid fa-flag-checkered"></i> Terminé
                                         </span>
                                     <?php elseif ($is_soldout): ?>
-                                        <span style="background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
+                                        <span style="background: #fee2e2; color: #dc2626; padding: 3px 7px; border-radius: 6px; font-weight: 700; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px;">
                                             <i class="fa-solid fa-ban"></i> Complet
                                         </span>
                                     <?php elseif ($is_actif): ?>
-                                        <span style="background: #ecfdf5; color: #166534; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
+                                        <span style="background: #ecfdf5; color: #166534; padding: 3px 7px; border-radius: 6px; font-weight: 700; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px;">
                                             <i class="fa-solid fa-circle-dot" style="color: #10b981;"></i> En vente
                                         </span>
                                     <?php else: ?>
-                                        <span style="background: #F5F5F5; color: var(--dash-muted); padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">
+                                        <span style="background: #F5F5F5; color: var(--dash-muted); padding: 3px 7px; border-radius: 6px; font-weight: 700; font-size: 0.72rem;">
                                             <?php echo htmlspecialchars(ucfirst($ev['statut'])); ?>
                                         </span>
                                     <?php endif; ?>
                                 </td>
 
                                 <!-- Actions de Gestion -->
-                                <td style="padding: 0.85rem 1rem; text-align: right; white-space: nowrap;">
-                                    <div style="display: inline-flex; gap: 5px; align-items: center; justify-content: flex-end; white-space: nowrap;">
-                                        <!-- Voir la vitrine publique -->
-                                        <a href="../client/accueil.php" target="_blank" class="dash-btn-action" style="padding: 0.35rem 0.6rem; font-size: 0.74rem;" title="Voir côté public">
-                                            <i class="fa-solid fa-eye"></i>
+                                <td style="padding: 0.75rem 0.85rem; text-align: right; white-space: nowrap; width: 170px;">
+                                    <div class="table-actions-group">
+                                        <!-- Voir côté public -->
+                                        <a href="../client/accueil.php" target="_blank" class="table-action-icon" title="Voir côté public" aria-label="Voir côté public">
+                                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                         </a>
 
                                         <!-- Modifier -->
-                                        <button type="button" class="dash-btn-action" style="padding: 0.35rem 0.65rem; font-size: 0.74rem;" title="Modifier l'événement" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($ev)); ?>)">
-                                            <i class="fa-solid fa-pen"></i> Modifier
+                                        <button type="button" class="table-action-icon" title="Modifier l'événement" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($ev)); ?>)" aria-label="Modifier">
+                                            <i class="fa-solid fa-pen-to-square"></i>
                                         </button>
 
                                         <!-- Agents -->
-                                        <a href="agents.php?event_id=<?php echo $ev['id']; ?>" class="dash-btn-action" style="padding: 0.35rem 0.65rem; font-size: 0.74rem;" title="Gérer les agents de scan">
-                                            <i class="fa-solid fa-shield-halved"></i> Agents
+                                        <a href="agents.php?event_id=<?php echo $ev['id']; ?>" class="table-action-icon" title="Gérer les agents de scan" aria-label="Agents">
+                                            <i class="fa-solid fa-shield-halved"></i>
                                         </a>
 
                                         <!-- Ventes -->
-                                        <a href="mes-ventes.php?event_id=<?php echo $ev['id']; ?>" class="dash-btn-action" style="padding: 0.35rem 0.65rem; font-size: 0.74rem;" title="Consulter les ventes">
-                                            <i class="fa-solid fa-receipt"></i> Ventes
+                                        <a href="mes-ventes.php?event_id=<?php echo $ev['id']; ?>" class="table-action-icon action-primary" title="Consulter les ventes & recettes" aria-label="Ventes">
+                                            <i class="fa-solid fa-chart-pie"></i>
                                         </a>
 
                                         <!-- Clôturer / Réactiver -->
@@ -686,16 +859,16 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
                                             <form method="POST" style="margin: 0; display: inline;" onsubmit="return confirm('Voulez-vous clôturer la billetterie de « <?php echo htmlspecialchars(addslashes($ev['nom'])); ?> » ?');">
                                                 <input type="hidden" name="action_cloturer" value="1">
                                                 <input type="hidden" name="event_id" value="<?php echo $ev['id']; ?>">
-                                                <button type="submit" class="dash-btn-action btn-danger" style="padding: 0.35rem 0.65rem; font-size: 0.74rem;" title="Clôturer la billetterie">
-                                                    <i class="fa-solid fa-stop"></i> Clôturer
+                                                <button type="submit" class="table-action-icon action-danger" title="Clôturer la billetterie" aria-label="Clôturer">
+                                                    <i class="fa-solid fa-power-off"></i>
                                                 </button>
                                             </form>
                                         <?php elseif ($ev['statut'] === 'termine'): ?>
                                             <form method="POST" style="margin: 0; display: inline;" onsubmit="return confirm('Réactiver cet événement et rouvrir sa billetterie ?');">
                                                 <input type="hidden" name="action_reactiver" value="1">
                                                 <input type="hidden" name="event_id" value="<?php echo $ev['id']; ?>">
-                                                <button type="submit" class="dash-btn-action btn-success" style="padding: 0.35rem 0.65rem; font-size: 0.74rem;" title="Réactiver la billetterie">
-                                                    <i class="fa-solid fa-play"></i> Réactiver
+                                                <button type="submit" class="table-action-icon action-success" title="Réactiver la billetterie" aria-label="Réactiver">
+                                                    <i class="fa-solid fa-play"></i>
                                                 </button>
                                             </form>
                                         <?php endif; ?>
@@ -817,35 +990,46 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
                         </div>
 
                         <!-- Barre d'actions tactiles -->
-                        <div style="display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 5px; padding-top: 4px;">
-                            <a href="../client/accueil.php" target="_blank" class="dash-btn-action" style="padding: 8px 0; font-size: 0.78rem; justify-content: center;" title="Voir côté public">
-                                <i class="fa-solid fa-eye"></i>
+                        <div class="card-actions-grid">
+                            <a href="../client/accueil.php" target="_blank" class="card-action-btn" title="Voir côté public" aria-label="Voir côté public">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                <span>Voir</span>
                             </a>
-                            <button type="button" class="dash-btn-action" style="padding: 8px 0; font-size: 0.78rem; justify-content: center;" title="Modifier l'événement" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($ev)); ?>)">
-                                <i class="fa-solid fa-pen"></i>
+                            <button type="button" class="card-action-btn" title="Modifier l'événement" onclick="openEditModal(<?php echo htmlspecialchars(json_encode($ev)); ?>)" aria-label="Modifier">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                                <span>Modifier</span>
                             </button>
-                            <a href="agents.php?event_id=<?php echo $ev['id']; ?>" class="dash-btn-action" style="padding: 8px 0; font-size: 0.78rem; justify-content: center;" title="Gérer les agents">
+                            <a href="agents.php?event_id=<?php echo $ev['id']; ?>" class="card-action-btn" title="Gérer les agents" aria-label="Agents">
                                 <i class="fa-solid fa-shield-halved"></i>
+                                <span>Agents</span>
                             </a>
-                            <a href="mes-ventes.php?event_id=<?php echo $ev['id']; ?>" class="dash-btn-action" style="padding: 8px 0; font-size: 0.78rem; justify-content: center;" title="Consulter les ventes">
-                                <i class="fa-solid fa-receipt"></i>
+                            <a href="mes-ventes.php?event_id=<?php echo $ev['id']; ?>" class="card-action-btn action-primary" title="Consulter les ventes" aria-label="Ventes">
+                                <i class="fa-solid fa-chart-pie"></i>
+                                <span>Ventes</span>
                             </a>
                             <?php if ($is_actif): ?>
-                                <form method="POST" style="margin: 0;" onsubmit="return confirm('Voulez-vous clôturer la billetterie de « <?php echo htmlspecialchars(addslashes($ev['nom'])); ?> » ?');">
+                                <form method="POST" style="margin: 0; width: 100%; display: flex;" onsubmit="return confirm('Voulez-vous clôturer la billetterie de « <?php echo htmlspecialchars(addslashes($ev['nom'])); ?> » ?');">
                                     <input type="hidden" name="action_cloturer" value="1">
                                     <input type="hidden" name="event_id" value="<?php echo $ev['id']; ?>">
-                                    <button type="submit" class="dash-btn-action btn-danger" style="padding: 8px 12px; font-size: 0.78rem;" title="Clôturer la billetterie">
-                                        <i class="fa-solid fa-stop"></i>
+                                    <button type="submit" class="card-action-btn action-danger" title="Clôturer la billetterie" aria-label="Clôturer">
+                                        <i class="fa-solid fa-power-off"></i>
+                                        <span>Clôturer</span>
                                     </button>
                                 </form>
                             <?php elseif ($ev['statut'] === 'termine'): ?>
-                                <form method="POST" style="margin: 0;" onsubmit="return confirm('Réactiver cet événement et rouvrir sa billetterie ?');">
+                                <form method="POST" style="margin: 0; width: 100%; display: flex;" onsubmit="return confirm('Réactiver cet événement et rouvrir sa billetterie ?');">
                                     <input type="hidden" name="action_reactiver" value="1">
                                     <input type="hidden" name="event_id" value="<?php echo $ev['id']; ?>">
-                                    <button type="submit" class="dash-btn-action btn-success" style="padding: 8px 12px; font-size: 0.78rem;" title="Réactiver la billetterie">
+                                    <button type="submit" class="card-action-btn action-success" title="Réactiver la billetterie" aria-label="Réactiver">
                                         <i class="fa-solid fa-play"></i>
+                                        <span>Rouvrir</span>
                                     </button>
                                 </form>
+                            <?php else: ?>
+                                <div class="card-action-btn" style="opacity: 0.4; cursor: default;">
+                                    <i class="fa-solid fa-lock"></i>
+                                    <span>Fermé</span>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>

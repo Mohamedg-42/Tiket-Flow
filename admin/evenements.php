@@ -109,11 +109,11 @@ if (!empty($category)) {
 }
 
 if ($period === 'a_venir') {
-    $sql .= " AND (e.date_evenement > CURDATE() OR (e.date_evenement = CURDATE() AND e.heure >= CURTIME()))";
+    $sql .= " AND (e.date_evenement > CURRENT_DATE OR (e.date_evenement = CURRENT_DATE AND e.heure >= CURRENT_TIME))";
 } elseif ($period === 'passe') {
-    $sql .= " AND (e.date_evenement < CURDATE() OR (e.date_evenement = CURDATE() AND e.heure < CURTIME()))";
+    $sql .= " AND (e.date_evenement < CURRENT_DATE OR (e.date_evenement = CURRENT_DATE AND e.heure < CURRENT_TIME))";
 } elseif ($period === 'aujourdhui') {
-    $sql .= " AND e.date_evenement = CURDATE()";
+    $sql .= " AND e.date_evenement = CURRENT_DATE";
 }
 
 $sql .= " ORDER BY e.date_evenement DESC, e.heure DESC";

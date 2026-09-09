@@ -1,7 +1,7 @@
 <?php
 // ==============================================================================
 // GESTION DES COMPTES, RÔLES & PERMISSIONS (admin/utilisateurs.php)
-// Administration Eventia — Supervision complète, profils métiers, suspensions et historique
+// Administration Tikéli — Supervision complète, profils métiers, suspensions et historique
 // ==============================================================================
 
 $admin_page_title = "Gestion des Comptes - Administration";
@@ -42,59 +42,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_user'])) {
         $message = "Le mot de passe doit comporter au moins 6 caractères.";
         $msg_type = "error";
     } else {
-        try {
-            $pass_hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt_add = $pdo->prepare("
-                INSERT INTO users (nom, prenom, email, telephone, password, role, profile_id, statut, est_verifie) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'actif', 1)
-            ");
-            $stmt_add->execute([$nom, $prenom, $email, $telephone, $pass_hash, $role, $profile_id]);
-            $new_user_id = (int) $pdo->lastInsertId();
-
-            $full_name = trim("$prenom $nom");
-
-            // Si le compte créé est un promoteur, initialisation du profil promoteur
-            if ($role === 'promoteur') {
-                $type_entite = $_POST['type_entite_promo'] ?? 'physique';
-                $nom_commercial = !empty($_POST['nom_commercial_promo']) ? trim($_POST['nom_commercial_promo']) : $full_name;
-                $numero_registre = !empty($_POST['numero_registre_promo']) ? trim($_POST['numero_registre_promo']) : null;
-                $rep_legal = !empty($_POST['representant_legal_promo']) ? trim($_POST['representant_legal_promo']) : $full_name;
-
-                $st_promo = $pdo->prepare("
-                    INSERT INTO promoters (user_id, type_entite, nom_commercial, numero_registre, representant_legal, telephone_contact, email_contact, statut, solde)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'approuve', 0.00)
-                    ON DUPLICATE KEY UPDATE 
-                        statut = 'approuve',
-                        type_entite = VALUES(type_entite),
-                        nom_commercial = VALUES(nom_commercial),
-                        numero_registre = VALUES(numero_registre),
-                        representant_legal = VALUES(representant_legal)
-                ");
-                $st_promo->execute([$new_user_id, $type_entite, $nom_commercial, $numero_registre, $rep_legal, $telephone, $email]);
-            }
-
-            // Récupération du libellé du profil si assigné
-            $profile_nom = '';
-            if ($profile_id) {
-                $st_p = $pdo->prepare("SELECT nom FROM profiles WHERE id = ?");
-                $st_p->execute([$profile_id]);
-                $profile_nom = (string) $st_p->fetchColumn();
-            }
-
-            // Envoi immédiat des identifiants par e-mail
-            $email_sent = sendAdminCreatedAccountEmail($email, $full_name, $role, $password, $profile_nom);
-
-            logActivity('user.create', 'user', $new_user_id, "Création du compte « $full_name » (Rôle: $role, Profil: " . ($profile_nom ?: 'aucun') . ") — Email identifiants: " . ($email_sent ? 'envoyé' : 'échec'));
-
-            $message = "Le compte « " . htmlspecialchars($full_name) . " » a été créé avec succès !" . ($email_sent ? " Un e-mail contenant ses identifiants a été envoyé à $email." : " (Note: l'e-mail automatique n'a pas pu être délivré).");
-            $msg_type = "success";
-        } catch (PDOException $e) {
-            if ($e->getCode() == 23000 || str_contains($e->getMessage(), 'Duplicate entry')) {
-                $message = "Cette adresse email est déjà associée à un compte.";
-            } else {
-                $message = "Erreur lors de la création : " . $e->getMessage();
-            }
+        // Vérification préalable d'unicité de l'email
+        $stmt_check_email = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt_check_email->execute([$email]);
+        if ($stmt_check_email->fetch()) {
+            $message = "Cette adresse email est déjà associée à un compte utilisateur.";
             $msg_type = "error";
+        } else {
+            try {
+                $pass_hash = password_hash($password, PASSWORD_DEFAULT);
+                $stmt_add = $pdo->prepare("
+                    INSERT INTO users (nom, prenom, email, telephone, password, role, profile_id, statut, est_verifie) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'actif', 1)
+                ");
+                $stmt_add->execute([$nom, $prenom, $email, $telephone, $pass_hash, $role, $profile_id]);
+                $new_user_id = (int) $pdo->lastInsertId();
+
+                $full_name = trim("$prenom $nom");
+
+                // Si le compte créé est un promoteur, initialisation du profil promoteur
+                if ($role === 'promoteur') {
+                    $type_entite = $_POST['type_entite_promo'] ?? 'physique';
+                    $nom_commercial = !empty($_POST['nom_commercial_promo']) ? trim($_POST['nom_commercial_promo']) : $full_name;
+                    $numero_registre = !empty($_POST['numero_registre_promo']) ? trim($_POST['numero_registre_promo']) : null;
+                    $rep_legal = !empty($_POST['representant_legal_promo']) ? trim($_POST['representant_legal_promo']) : $full_name;
+                    $promo_comm = isset($_POST['commission_rate_promo']) ? (float)str_replace(',', '.', trim($_POST['commission_rate_promo'])) : 5.00;
+                    if ($promo_comm < 0 || $promo_comm > 50) $promo_comm = 5.00;
+
+                    $st_chk_p = $pdo->prepare("SELECT id FROM promoters WHERE user_id = ?");
+                    $st_chk_p->execute([$new_user_id]);
+                    if ($st_chk_p->fetch()) {
+                        $st_promo = $pdo->prepare("
+                            UPDATE promoters 
+                            SET type_entite = ?, nom_commercial = ?, numero_registre = ?, representant_legal = ?, telephone_contact = ?, email_contact = ?, commission_rate = ?, statut = 'approuve'
+                            WHERE user_id = ?
+                        ");
+                        $st_promo->execute([$type_entite, $nom_commercial, $numero_registre, $rep_legal, $telephone, $email, $promo_comm, $new_user_id]);
+                    } else {
+                        $st_promo = $pdo->prepare("
+                            INSERT INTO promoters (user_id, type_entite, nom_commercial, numero_registre, representant_legal, telephone_contact, email_contact, statut, solde, commission_rate, created_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, 'approuve', 0.00, ?, NOW())
+                        ");
+                        $st_promo->execute([$new_user_id, $type_entite, $nom_commercial, $numero_registre, $rep_legal, $telephone, $email, $promo_comm]);
+                    }
+                }
+
+                // Récupération du libellé du profil si assigné
+                $profile_nom = '';
+                if ($profile_id) {
+                    $st_p = $pdo->prepare("SELECT nom FROM profiles WHERE id = ?");
+                    $st_p->execute([$profile_id]);
+                    $profile_nom = (string) $st_p->fetchColumn();
+                }
+
+                // Envoi immédiat des identifiants par e-mail
+                $email_sent = sendAdminCreatedAccountEmail($email, $full_name, $role, $password, $profile_nom);
+
+                logActivity('user.create', 'user', $new_user_id, "Création du compte « $full_name » (Rôle: $role, Profil: " . ($profile_nom ?: 'aucun') . ") — Email identifiants: " . ($email_sent ? 'envoyé' : 'échec'));
+
+                $message = "Le compte « " . htmlspecialchars($full_name) . " » a été créé avec succès !" . ($email_sent ? " Un e-mail contenant ses identifiants a été envoyé à $email." : " (Note: l'e-mail automatique n'a pas pu être délivré).");
+                $msg_type = "success";
+            } catch (PDOException $e) {
+                if ($e->getCode() == '23000' || $e->getCode() == '23505' || str_contains($e->getMessage(), 'uq_users_email') || str_contains($e->getMessage(), 'Duplicate entry') || str_contains($e->getMessage(), 'unique constraint')) {
+                    $message = "Cette adresse email est déjà associée à un compte.";
+                } else {
+                    $message = "Erreur lors de la création : " . $e->getMessage();
+                }
+                $msg_type = "error";
+            }
         }
     }
 }
@@ -153,6 +168,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
 
             $stmt_up = $pdo->prepare($sql_up);
             $stmt_up->execute($params);
+
+            // Si le compte est ou devient un promoteur, mise à jour ou initialisation du profil et du taux de commission
+            if ($role === 'promoteur' && isset($_POST['commission_rate_promo_edit'])) {
+                $promo_comm = (float)str_replace(',', '.', trim($_POST['commission_rate_promo_edit']));
+                if ($promo_comm < 0 || $promo_comm > 50) $promo_comm = 5.00;
+
+                $st_chk_p = $pdo->prepare("SELECT id, commission_rate FROM promoters WHERE user_id = ?");
+                $st_chk_p->execute([$user_id]);
+                $existing_p = $st_chk_p->fetch();
+
+                if ($existing_p) {
+                    $st_up_p = $pdo->prepare("UPDATE promoters SET commission_rate = ? WHERE user_id = ?");
+                    $st_up_p->execute([$promo_comm, $user_id]);
+                    if (abs((float)$existing_p['commission_rate'] - $promo_comm) > 0.001) {
+                        $changes[] = "Taux commission : " . number_format((float)$existing_p['commission_rate'], 2) . "% → " . number_format($promo_comm, 2) . "%";
+                    }
+                } else {
+                    $full_name = trim("$prenom $nom");
+                    $st_ins_p = $pdo->prepare("
+                        INSERT INTO promoters (user_id, type_entite, nom_commercial, representant_legal, telephone_contact, email_contact, statut, solde, commission_rate, created_at)
+                        VALUES (?, 'physique', ?, ?, ?, ?, 'approuve', 0.00, ?, NOW())
+                    ");
+                    $st_ins_p->execute([$user_id, $full_name, $full_name, $telephone, $email, $promo_comm]);
+                    $changes[] = "Profil promoteur initialisé (taux : " . number_format($promo_comm, 2) . "%)";
+                }
+
+                // Synchronisation optionnelle des événements actifs
+                if (!empty($_POST['update_active_events_edit'])) {
+                    $st_ev = $pdo->prepare("UPDATE events SET commission_rate = ? WHERE user_id = ? AND statut = 'actif'");
+                    $st_ev->execute([$promo_comm, $user_id]);
+                    $ev_count = $st_ev->rowCount();
+                    if ($ev_count > 0) {
+                        $changes[] = "$ev_count événement(s) actif(s) mis à jour au taux de " . number_format($promo_comm, 2) . "%";
+                    }
+                }
+            }
 
             $diff_str = !empty($changes) ? implode(', ', $changes) : "Mise à jour sans changement majeur";
             $admin_label = $_SESSION['user_nom'] ?? 'Un administrateur';
@@ -269,9 +320,10 @@ $statut_filt = trim($_GET['statut'] ?? '');
 $prof_filter = filter_input(INPUT_GET, 'profile_id', FILTER_VALIDATE_INT) ?: 0;
 
 $sql = "
-    SELECT u.*, p.nom AS profile_nom
+    SELECT u.*, p.nom AS profile_nom, pr.commission_rate AS promoter_commission_rate
     FROM users u
     LEFT JOIN profiles p ON u.profile_id = p.id
+    LEFT JOIN promoters pr ON pr.user_id = u.id
     WHERE 1=1
 ";
 $params = [];
@@ -633,7 +685,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                         class="fa-solid fa-users"></i></span>
             </div>
             <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy);"><?php echo $tot_users; ?></div>
-            <small style="color: var(--muted); font-size: 0.74rem;">Inscrits sur Eventia</small>
+            <small style="color: var(--muted); font-size: 0.74rem;">Inscrits sur Tikéli</small>
         </div>
 
         <div class="dash-kpi-card" style="padding: 1rem 1.15rem;">
@@ -810,10 +862,17 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
 
                                 <!-- Type de compte & Profil métier -->
                                 <td>
-                                    <span
-                                        style="display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; <?php echo $r_style; ?> margin-bottom: 2px;">
-                                        <?php echo $r_text; ?>
-                                    </span>
+                                    <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-bottom: 2px;">
+                                        <span
+                                            style="display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; <?php echo $r_style; ?>;">
+                                            <?php echo $r_text; ?>
+                                        </span>
+                                        <?php if ($u['role'] === 'promoteur' && isset($u['promoter_commission_rate'])): ?>
+                                            <span style="display: inline-block; font-size: 0.7rem; font-family: monospace; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 4px;" title="Taux de commission Tikéli">
+                                                <?php echo number_format((float)$u['promoter_commission_rate'], 2); ?>%
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                     <?php if (!empty($u['profile_nom'])): ?>
                                         <small style="display: block; color: var(--primary); font-size: 0.74rem; font-weight: 600;">
                                             <i class="fa-solid fa-id-badge"></i> <?php echo htmlspecialchars($u['profile_nom']); ?>
@@ -966,6 +1025,11 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                                 <span style="display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; <?php echo $r_style; ?>">
                                     <?php echo $r_text; ?>
                                 </span>
+                                <?php if ($u['role'] === 'promoteur' && isset($u['promoter_commission_rate'])): ?>
+                                    <span style="display: inline-block; font-size: 0.7rem; font-family: monospace; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 4px;">
+                                        <?php echo number_format((float)$u['promoter_commission_rate'], 2); ?>%
+                                    </span>
+                                <?php endif; ?>
                                 <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; <?php echo $s_style; ?>" title="<?php echo htmlspecialchars($u['suspension_reason'] ?? ''); ?>">
                                     <i class="fa-solid <?php echo $s_ico; ?>" style="font-size: 0.65rem;"></i>
                                     <?php echo $s_text; ?>
@@ -1089,7 +1153,10 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
 
                 <div class="form-group">
                     <label>Mot de passe initial *</label>
-                    <input type="password" name="password" required minlength="6" placeholder="Au moins 6 caractères">
+                    <div style="position: relative;">
+                        <input type="password" id="create_user_pass" name="password" required minlength="6" placeholder="Au moins 6 caractères" style="width: 100%; box-sizing: border-box; padding-right: 2.25rem;">
+                        <i class="fa-regular fa-eye" onclick="togglePassVisibility('create_user_pass', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--dash-muted, #737373); font-size: 0.85rem;"></i>
+                    </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -1220,9 +1287,29 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                     </div>
                 </div>
 
+                <div id="edit_promoter_section" style="display: none; background: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; padding: 0.85rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                        <label style="font-weight: 700; color: #9a3412; font-size: 0.82rem; margin: 0;">
+                            <i class="fa-solid fa-percent"></i> Taux de Commission Négocié (%)
+                        </label>
+                        <span style="font-family: monospace; font-size: 0.72rem; color: #c2410c; background: #ffedd5; padding: 2px 6px; border-radius: 4px;">Défaut : 5.00%</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="number" step="0.1" min="0" max="50" name="commission_rate_promo_edit" id="edit_commission_rate" value="5.00" style="width: 110px; font-weight: 700; padding: 0.4rem 0.6rem; border: 1px solid #fdba74; border-radius: 6px;">
+                        <span style="font-size: 0.82rem; color: #78350f;">% prélevé par Tikéli sur chaque billet vendu</span>
+                    </div>
+                    <label style="display: flex; align-items: center; gap: 0.45rem; margin-top: 0.5rem; font-size: 0.78rem; color: #9a3412; cursor: pointer; user-select: none;">
+                        <input type="checkbox" name="update_active_events_edit" value="1">
+                        <span>Appliquer aussi ce taux à tous ses événements actuellement actifs</span>
+                    </label>
+                </div>
+
                 <div class="form-group" style="border-top: 1px solid var(--line); padding-top: 0.75rem;">
                     <label>Nouveau mot de passe (laisser vide pour ne pas changer)</label>
-                    <input type="password" name="new_password" placeholder="Nouveau mot de passe (optionnel)">
+                    <div style="position: relative;">
+                        <input type="password" id="edit_user_pass" name="new_password" placeholder="Nouveau mot de passe (optionnel)" style="width: 100%; box-sizing: border-box; padding-right: 2.25rem;">
+                        <i class="fa-regular fa-eye" onclick="togglePassVisibility('edit_user_pass', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--dash-muted, #737373); font-size: 0.85rem;"></i>
+                    </div>
                 </div>
             </div>
             <div class="dash-modal-footer">
@@ -1482,12 +1569,39 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
         document.getElementById('edit_prenom').value = user.prenom || '';
         document.getElementById('edit_email').value = user.email || '';
         document.getElementById('edit_telephone').value = user.telephone || '';
-        document.getElementById('edit_role').value = user.role || 'client';
+        const role = user.role || 'client';
+        document.getElementById('edit_role').value = role;
         document.getElementById('edit_profile_id').value = user.profile_id || '';
+
+        const promoSection = document.getElementById('edit_promoter_section');
+        const commInput = document.getElementById('edit_commission_rate');
+        if (promoSection && commInput) {
+            if (role === 'promoteur') {
+                promoSection.style.display = 'block';
+                commInput.value = (user.promoter_commission_rate !== undefined && user.promoter_commission_rate !== null)
+                    ? parseFloat(user.promoter_commission_rate).toFixed(2)
+                    : '5.00';
+            } else {
+                promoSection.style.display = 'none';
+                commInput.value = '5.00';
+            }
+        }
+
         document.getElementById('editUserModal').style.display = 'flex';
     }
     function closeEditUserModal() {
         document.getElementById('editUserModal').style.display = 'none';
+    }
+
+    // Bascule dynamique du champ commission lors d'un changement de rôle dans l'édition
+    const editRoleEl = document.getElementById('edit_role');
+    if (editRoleEl) {
+        editRoleEl.addEventListener('change', function() {
+            const promoSection = document.getElementById('edit_promoter_section');
+            if (promoSection) {
+                promoSection.style.display = (this.value === 'promoteur') ? 'block' : 'none';
+            }
+        });
     }
 
     // Modale Suspension
@@ -1528,6 +1642,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
         <div style="display: grid; gap: 0.65rem; background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 1rem;">
             <div><span style="color: var(--muted); font-size: 0.78rem;">Email :</span> <strong style="color: var(--navy);">${u.email || '—'}</strong></div>
             <div><span style="color: var(--muted); font-size: 0.78rem;">Téléphone :</span> <strong style="color: var(--navy);">${u.telephone || 'Non renseigné'}</strong></div>
+            ${u.role === 'promoteur' ? `<div><span style="color: var(--muted); font-size: 0.78rem;">Taux Commission :</span> <strong style="color: #b45309; font-family: monospace;">${u.promoter_commission_rate ? parseFloat(u.promoter_commission_rate).toFixed(2) : '5.00'}%</strong></div>` : ''}
             <div><span style="color: var(--muted); font-size: 0.78rem;">Profil Métier :</span> <strong style="color: var(--primary);">${u.profile_nom || 'Aucun (Standard)'}</strong></div>
             <div><span style="color: var(--muted); font-size: 0.78rem;">Statut Actuel :</span> <strong style="text-transform: capitalize;">${u.statut || 'Actif'}</strong></div>
             <div><span style="color: var(--muted); font-size: 0.78rem;">Dernière connexion :</span> <strong>${u.derniere_connexion || 'Jamais connecté'}</strong></div>

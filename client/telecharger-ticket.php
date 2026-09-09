@@ -8,13 +8,18 @@ require_once '../config/database.php';
 session_start();
 
 $code = trim($_GET['code'] ?? '');
-$order_id = filter_input(INPUT_GET, 'order_id', FILTER_VALIDATE_INT);
-$ticket_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+$order_id = filter_input(INPUT_GET, 'order_id', FILTER_VALIDATE_INT) ?: filter_var($_GET['order_id'] ?? null, FILTER_VALIDATE_INT);
+$ticket_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
+$token = trim($_GET['token'] ?? $_GET['order_token'] ?? '');
+$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
+
+$session_user_id = (int) ($_SESSION['user_id'] ?? 0);
+$is_admin = ($_SESSION['user_role'] ?? '') === 'admin';
 
 $tickets = [];
 
 if (!empty($code)) {
-    // Recherche par code unique de billet
+    // 1. Recherche par jeton secret unique (accessible avec le lien du QR code / email)
     $stmt = $pdo->prepare("
         SELECT t.*, e.nom AS event_name, e.description AS event_desc, e.date_evenement, e.heure, e.lieu, e.image AS event_image,
                p.nom_commercial AS promoter_name, p.telephone_contact AS promoter_phone
@@ -27,8 +32,28 @@ if (!empty($code)) {
     $tickets = $stmt->fetchAll();
 
 } elseif ($order_id) {
-    // Recherche par commande complète
-    $stmt = $pdo->prepare("
+    // 2. Recherche par commande : contrôle d'accès (propriétaire, admin, session acheteur, token ou commande payée)
+    $stmt_ord = $pdo->prepare("SELECT id, user_id, statut, numero_commande, created_at FROM orders WHERE id = ?");
+    $stmt_ord->execute([$order_id]);
+    $order_info = $stmt_ord->fetch();
+
+    if (!$order_info) {
+        http_response_code(404);
+        die("Commande introuvable. <a href='accueil.php'>Retour à l'accueil</a>");
+    }
+
+    $is_owner = ($session_user_id > 0 && (int) $order_info['user_id'] === $session_user_id);
+    $in_session = !empty($_SESSION['accessible_orders'][$order_id]);
+    $is_paid = in_array(strtolower($order_info['statut']), ['paye', 'payee', 'confirme'], true);
+    $expected_token = hash_hmac('sha256', $order_id . '|' . $order_info['created_at'], $pay_secret);
+    $token_valid = (!empty($token) && hash_equals($expected_token, $token));
+
+    if (!$is_admin && !$is_owner && !$in_session && !$token_valid && !$is_paid) {
+        http_response_code(403);
+        die("Accès refusé. Cette commande nécessite une connexion ou n'est pas encore validée. <a href='../connexion.php'>Connexion</a>");
+    }
+
+    $sql = "
         SELECT t.*, e.nom AS event_name, e.description AS event_desc, e.date_evenement, e.heure, e.lieu, e.image AS event_image,
                p.nom_commercial AS promoter_name, p.telephone_contact AS promoter_phone
         FROM tickets t
@@ -36,25 +61,40 @@ if (!empty($code)) {
         LEFT JOIN promoters p ON e.user_id = p.user_id
         WHERE t.order_id = ?
         ORDER BY t.id ASC
-    ");
+    ";
+    $stmt = $pdo->prepare($sql);
     $stmt->execute([$order_id]);
     $tickets = $stmt->fetchAll();
 
 } elseif ($ticket_id) {
-    // Recherche par ID de billet
-    $stmt = $pdo->prepare("
+    // 3. Recherche par ID de billet
+    $sql = "
         SELECT t.*, e.nom AS event_name, e.description AS event_desc, e.date_evenement, e.heure, e.lieu, e.image AS event_image,
-               p.nom_commercial AS promoter_name, p.telephone_contact AS promoter_phone
+               p.nom_commercial AS promoter_name, p.telephone_contact AS promoter_phone,
+               o.statut AS order_statut
         FROM tickets t
         JOIN events e ON t.event_id = e.id
         LEFT JOIN promoters p ON e.user_id = p.user_id
+        LEFT JOIN orders o ON t.order_id = o.id
         WHERE t.id = ?
-    ");
+    ";
+    $stmt = $pdo->prepare($sql);
     $stmt->execute([$ticket_id]);
     $tickets = $stmt->fetchAll();
+
+    if (!empty($tickets)) {
+        $first = $tickets[0];
+        $is_owner = ($session_user_id > 0 && (int) $first['user_id'] === $session_user_id);
+        $is_sold = ($first['statut'] === 'vendu');
+        if (!$is_admin && !$is_owner && !$is_sold) {
+            http_response_code(403);
+            die("Accès refusé. Veuillez vous connecter pour accéder à ce billet. <a href='../connexion.php'>Connexion</a>");
+        }
+    }
 }
 
 if (empty($tickets)) {
+    http_response_code(404);
     die("Billet introuvable ou référence invalide. <a href='accueil.php'>Retour à l'accueil</a>");
 }
 ?>
@@ -64,7 +104,7 @@ if (empty($tickets)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>e-Ticket Officiel - Eventia</title>
+    <title>e-Ticket Officiel - Tikéli</title>
     <!-- Google Fonts & FontAwesome -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -384,9 +424,9 @@ if (empty($tickets)) {
 
         <div style="display: flex; gap: 0.75rem;">
             <?php
-            // Construction du lien et fichier PDF du/des ticket(s)
-            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https://" : "http://";
-            $public_link = $protocol . ($_SERVER['HTTP_HOST'] ?? '') . "/ticket-platform/client/telecharger-pdf.php";
+            // Construction dynamique du lien et fichier PDF du/des ticket(s)
+            $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' && $_SERVER['HTTPS'] !== '' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/');
+            $public_link = $base_url . "/telecharger-pdf.php";
             $pdf_query = "telecharger-pdf.php";
 
             if (!empty($code)) {
@@ -394,15 +434,16 @@ if (empty($tickets)) {
                 $pdf_query .= "?code=" . urlencode($code);
                 $pdf_filename = "billet-" . preg_replace('/[^A-Za-z0-9\-]/', '', $code) . ".pdf";
             } elseif (!empty($order_id)) {
-                $public_link .= "?order_id=" . $order_id;
-                $pdf_query .= "?order_id=" . $order_id;
-                $pdf_filename = "billets-commande-" . $order_id . ".pdf";
+                $token_param = !empty($token) ? "&token=" . urlencode($token) : (!empty($expected_token) ? "&token=" . urlencode($expected_token) : "");
+                $public_link .= "?order_id=" . $order_id . $token_param;
+                $pdf_query .= "?order_id=" . $order_id . $token_param;
+                $pdf_filename = "billets-commande-" . ($order_info['numero_commande'] ?? $order_id) . ".pdf";
             } elseif (!empty($ticket_id)) {
                 $public_link .= "?id=" . $ticket_id;
                 $pdf_query .= "?id=" . $ticket_id;
                 $pdf_filename = "billet-" . $ticket_id . ".pdf";
             } else {
-                $pdf_filename = "billet-eventia.pdf";
+                $pdf_filename = "billet-tikeli.pdf";
             }
 
             $first_tk = $tickets[0] ?? [];
@@ -413,7 +454,7 @@ if (empty($tickets)) {
             $tk_type = $first_tk['type_ticket'] ?? '';
             $tk_code = $first_tk['code_unique'] ?? '';
 
-            $wa_message = "🎟️ *Billet Officiel Eventia*\n"
+            $wa_message = "🎟️ *Billet Officiel Tikéli*\n"
                 . "📌 *Événement :* " . $ev_name . "\n"
                 . "🏷️ *Catégorie :* " . $tk_type . "\n"
                 . "📅 *Date :* " . $ev_date . ($ev_time ? " à " . $ev_time : "") . "\n"
@@ -443,7 +484,7 @@ if (empty($tickets)) {
                 <div class="ticket-main">
                     <div class="ticket-header">
                         <div class="ticket-brand">
-                            <i class="fa-solid fa-ticket"></i> EVENTIA
+                            <i class="fa-solid fa-ticket"></i> TIKÉLI
                         </div>
                         <div class="ticket-badge">
                             <i class="fa-solid fa-circle-check"></i> <?php echo strtoupper($t['statut']); ?>
@@ -502,6 +543,10 @@ if (empty($tickets)) {
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="../js/share-ticket.js"></script>
+</body>
+
+</html>ript src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="../js/share-ticket.js"></script>
 </body>
 
 </html>

@@ -388,7 +388,7 @@ try {
          2. RACCOURCIS D'ACTIONS RAPIDES
          ============================================================================== -->
     <div class="dash-quick-shortcuts">
-        <a href="solde.php" class="dash-shortcut-card" style="border-left: 4px solid var(--tikeli-orange, #FF4A0D);">
+        <a href="solde.php" class="dash-shortcut-card">
             <div class="dash-shortcut-icon" style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D);">
                 <i class="fa-solid fa-wallet"></i>
             </div>

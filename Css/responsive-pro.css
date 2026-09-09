@@ -50,9 +50,14 @@
     --primary-light: #262626;
     --accent: var(--tikeli-orange);
     --accent-dark: #E03E08;
-    --success: var(--tikeli-orange);
-    --warning: var(--tikeli-orange);
-    --danger: var(--tikeli-black);
+    --success: #16A34A;
+    --success-light: #DCFCE7;
+    --warning: #D97706;
+    --warning-light: #FEF3C7;
+    --danger: #DC2626;
+    --danger-light: #FEE2E2;
+    --info: #0284C7;
+    --info-light: #E0F2FE;
 
     /* Design */
     --radius-sm: 8px;
@@ -190,31 +195,76 @@ body {
     
     .mobile-menu-toggle {
         display: block;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+    }
+    .mobile-menu-toggle:active {
+        transform: scale(0.88);
     }
     
+    @keyframes mobileNavSlideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes navItemStagger {
+        from {
+            opacity: 0;
+            transform: translateX(-8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
     .client-nav {
         display: none !important; /* Caché par défaut */
         position: absolute;
         top: 100%;
         left: 0;
         right: 0;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
         background: #ffffff;
         flex-direction: column;
         padding: 1rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        border-bottom: 1px solid var(--line, #E5E5E5);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+        border-bottom: 2px solid #FF4A0D;
         z-index: 9999;
     }
     
     .client-nav.active {
         display: flex !important;
+        animation: mobileNavSlideDown 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     
-    .client-nav a {
+    .client-nav.active a {
         width: 100%;
         padding: 0.85rem 1rem;
-        border-radius: 6px;
+        border-radius: 8px;
+        animation: navItemStagger 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+        transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
     }
+
+    .client-nav.active a:hover {
+        background: #FFF2ED;
+        color: #FF4A0D;
+        transform: translateX(4px);
+    }
+    
+    .client-nav.active a:nth-child(1) { animation-delay: 0.02s; }
+    .client-nav.active a:nth-child(2) { animation-delay: 0.05s; }
+    .client-nav.active a:nth-child(3) { animation-delay: 0.08s; }
+    .client-nav.active a:nth-child(4) { animation-delay: 0.11s; }
+    .client-nav.active a:nth-child(5) { animation-delay: 0.14s; }
+    .client-nav.active a:nth-child(6) { animation-delay: 0.17s; }
     
     .client-logout {
         margin-left: 0;

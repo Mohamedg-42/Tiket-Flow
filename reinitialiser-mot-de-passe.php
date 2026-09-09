@@ -23,28 +23,33 @@ $user_record = null;
 if (empty($token) || empty($email)) {
     $error = "Lien de réinitialisation invalide ou incomplet.";
 } else {
-    // 1. Vérification du jeton dans la table password_resets
-    $stmt = $pdo->prepare("
-        SELECT * FROM password_resets 
-        WHERE token = ? AND email = ? AND used = 0 AND expires_at >= NOW()
-        ORDER BY id DESC LIMIT 1
-    ");
-    $stmt->execute([$token, $email]);
-    $reset_record = $stmt->fetch();
+    try {
+        // 1. Vérification du jeton dans la table password_resets
+        $stmt = $pdo->prepare("
+            SELECT * FROM password_resets 
+            WHERE token = ? AND email = ? AND used = 0 AND expires_at >= NOW()
+            ORDER BY id DESC LIMIT 1
+        ");
+        $stmt->execute([$token, $email]);
+        $reset_record = $stmt->fetch();
 
-    if (!$reset_record) {
-        $error = "Ce lien de réinitialisation est invalide, a déjà été utilisé ou a expiré (validité de 60 minutes).";
-    } else {
-        // 2. Vérifier que l'utilisateur existe toujours
-        $stmt_u = $pdo->prepare("SELECT id, nom, prenom, email FROM users WHERE email = ?");
-        $stmt_u->execute([$email]);
-        $user_record = $stmt_u->fetch();
-
-        if (!$user_record) {
-            $error = "Compte utilisateur introuvable.";
+        if (!$reset_record) {
+            $error = "Ce lien de réinitialisation est invalide, a déjà été utilisé ou a expiré (validité de 60 minutes).";
         } else {
-            $token_valid = true;
+            // 2. Vérifier que l'utilisateur existe toujours
+            $stmt_u = $pdo->prepare("SELECT id, nom, prenom, email FROM users WHERE email = ?");
+            $stmt_u->execute([$email]);
+            $user_record = $stmt_u->fetch();
+
+            if (!$user_record) {
+                $error = "Compte utilisateur introuvable.";
+            } else {
+                $token_valid = true;
+            }
         }
+    } catch (Throwable $e) {
+        error_log("[Password Reset Verification Error] " . $e->getMessage());
+        $error = "Une erreur technique est survenue lors de la vérification de votre lien.";
     }
 }
 
@@ -60,34 +65,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
     } elseif ($new_password !== $confirm_password) {
         $error = "Les deux mots de passe saisis ne correspondent pas.";
     } else {
-        // A. Hachage sécurisé du nouveau mot de passe
-        $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+        try {
+            // A. Hachage sécurisé du nouveau mot de passe
+            $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
 
-        // B. Mise à jour dans la table users
-        $stmt_upd = $pdo->prepare("UPDATE users SET password = ?, updated_at = NOW() WHERE email = ?");
-        $stmt_upd->execute([$hashed_password, $email]);
+            // B. Mise à jour dans la table users
+            $stmt_upd = $pdo->prepare("UPDATE users SET password = ?, updated_at = NOW() WHERE email = ?");
+            $stmt_upd->execute([$hashed_password, $email]);
 
-        // C. Marquer le jeton comme utilisé
-        $stmt_mark = $pdo->prepare("UPDATE password_resets SET used = 1 WHERE id = ?");
-        $stmt_mark->execute([(int)$reset_record['id']]);
+            // C. Marquer le jeton comme utilisé
+            $stmt_mark = $pdo->prepare("UPDATE password_resets SET used = 1 WHERE id = ?");
+            $stmt_mark->execute([(int)$reset_record['id']]);
 
-        // D. Envoi d'un email de confirmation de changement
-        $to_name = trim(($user_record['prenom'] ?? '') . ' ' . $user_record['nom']);
-        if (empty($to_name)) $to_name = "Utilisateur Eventia";
-        sendPasswordChangedConfirmationEmail($user_record['email'], $to_name);
+            // D. Envoi d'un email de confirmation de changement
+            $to_name = trim(($user_record['prenom'] ?? '') . ' ' . $user_record['nom']);
+            if (empty($to_name)) $to_name = "Utilisateur Tikéli";
+            sendPasswordChangedConfirmationEmail($user_record['email'], $to_name);
 
-        // E. Enregistrement dans le journal d'audit
-        logActivity(
-            'user.password_reset_success', 
-            'user', 
-            (int)$user_record['id'], 
-            "Mot de passe réinitialisé avec succès via lien email sécurisé", 
-            (int)$user_record['id']
-        );
+            // E. Enregistrement dans le journal d'audit
+            logActivity(
+                'user.password_reset_success', 
+                'user', 
+                (int)$user_record['id'], 
+                "Mot de passe réinitialisé avec succès via lien email sécurisé", 
+                (int)$user_record['id']
+            );
 
-        // F. Redirection vers la page de connexion avec message de succès
-        header("Location: connexion.php?reset=success");
-        exit();
+            // F. Redirection vers la page de connexion avec message de succès
+            header("Location: connexion.php?reset=success");
+            exit();
+        } catch (Throwable $e) {
+            error_log("[Password Reset Save Error] " . $e->getMessage());
+            $error = "Une erreur technique est survenue lors de l'enregistrement de votre nouveau mot de passe.";
+        }
     }
 }
 ?>
@@ -97,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Nouveau mot de passe - Eventia</title>
+    <title>Nouveau mot de passe - Tikéli</title>
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
         rel="stylesheet">
     <!-- FontAwesome 6 Pro Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Style Principal Eventia -->
+    <!-- Style Principal Tikéli -->
     <link rel="stylesheet" href="Css/main.css">
     <style>
         :root {

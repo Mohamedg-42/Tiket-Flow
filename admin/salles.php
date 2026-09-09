@@ -2,7 +2,7 @@
 // ==============================================================================
 // GESTION DES SALLES & LIEUX DE SPECTACLE (admin/salles.php)
 // Administration complète des infrastructures, capacités, zones et équipements
-// Style Dashboard Pro & Swiss Grid System Eventia
+// Style Dashboard Pro & Swiss Grid System Tikéli
 // ==============================================================================
 
 $admin_page_title = "Gestion des Salles & Lieux - Administration";
@@ -647,7 +647,7 @@ function get_type_salle_label($type) {
                             <?php if (!empty($s['contact_responsable']) || !empty($s['telephone_responsable'])): ?>
                                 <i class="fa-solid fa-user-tie"></i> <?php echo htmlspecialchars($s['contact_responsable'] ?: 'Contact'); ?> (<?php echo htmlspecialchars($s['telephone_responsable']); ?>)
                             <?php else: ?>
-                                <span style="font-style: italic;">Régie Eventia</span>
+                                <span style="font-style: italic;">Régie Tikéli</span>
                             <?php endif; ?>
                         </div>
 
@@ -960,11 +960,11 @@ async function openStudio3D(salleId, salleNom) {
 
     const canvas = document.getElementById('studio3DCanvas');
     if (!admin3DEngine) {
-        admin3DEngine = new EventiaVenue3D(canvas, {
+        admin3DEngine = new TikéliVenue3D(canvas, {
             readOnly: false,
             onSeatSelect: (seat) => {
                 document.getElementById('studioSeatDetails').innerHTML = `
-                    <div style="background: #000000; color: #fff; padding: 0.75rem; border-radius: 8px; border-left: 3px solid #FF4A0D;">
+                    <div style="background: #000000; color: #fff; padding: 0.75rem; border-radius: 8px; border: 1px solid #262626;">
                         <div style="font-weight: 800; font-size: 0.9rem; color: #FF4A0D;"><i class="fa-solid fa-chair"></i> Siège ${seat.code} (Rang ${seat.row})</div>
                         <div style="font-size: 0.8rem; margin-top: 3px; color: #737373;">Zone : <strong style="color: #fff;">${seat.zone_name}</strong></div>
                         <div style="font-size: 0.8rem; color: #737373;">Tarif indicatif : <strong style="color: #FF4A0D;">${Number(seat.prix).toLocaleString('fr-FR')} FCFA</strong></div>
@@ -1148,11 +1148,18 @@ function closeStudio3D() {
     #modalStudio3D > div > div:nth-child(2) {
         flex-direction: column !important;
     }
+    /* Canvas 3D : priorité sur l'espace vertical */
+    #studioTabContent3D {
+        min-height: 50vh !important;
+        flex: 2 !important;
+    }
     #modalStudio3D > div > div:nth-child(2) > div:last-child {
         width: 100% !important;
         border-left: none !important;
-        border-top: 1px solid #000000 !important;
-        max-height: 40vh !important;
+        border-top: 1px solid #262626 !important;
+        max-height: 30vh !important;
+        flex: 0 0 auto !important;
+        overflow-y: auto !important;
     }
 }
 </style>

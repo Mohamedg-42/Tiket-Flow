@@ -227,7 +227,7 @@ function get_cotisation_badge($statut) {
             <small style="color: var(--eventia-muted, #737373); font-size: 0.75rem;">Collectes lancées</small>
         </div>
 
-        <div class="eventia-kpi-card" style="border-left: 4px solid var(--tikeli-orange, #FF4A0D);">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <span style="font-size: 0.8rem; font-weight: 700; color: var(--tikeli-orange, #FF4A0D); text-transform: uppercase;">Total Collecté</span>
                 <span style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D); width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-hand-holding-dollar"></i></span>
@@ -490,7 +490,7 @@ function get_cotisation_badge($statut) {
 
             <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--dash-border); padding-top: 1rem;">
                 <button type="button" onclick="closeNewCampagneModal()" class="dash-btn-action" style="padding: 0.55rem 1rem;">Annuler</button>
-                <button type="submit" class="dash-btn-action btn-primary" style="padding: 0.55rem 1.25rem; font-weight: 800; background: linear-gradient(135deg, #FF4A0D, #FF4A0D); border: none;">
+                <button type="submit" class="dash-btn-action btn-primary" style="padding: 0.55rem 1.25rem; font-weight: 800; background: #FF4A0D; border: none;">
                     <i class="fa-solid fa-paper-plane"></i> Soumettre la Campagne
                 </button>
             </div>

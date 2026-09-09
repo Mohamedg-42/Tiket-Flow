@@ -204,7 +204,7 @@ try {
     $default_profiles = [
         [
             'nom'         => 'Administrateur',
-            'description' => 'Accès complet et supervision totale de la plateforme Eventia.',
+            'description' => 'Accès complet et supervision totale de la plateforme Tikéli.',
             'is_system'   => 1,
             'perms'       => array_keys($perm_map) // Toutes les permissions
         ],

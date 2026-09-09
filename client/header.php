@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$page_title = $page_title ?? 'Eventia - Billetterie en ligne';
+$page_title = $page_title ?? 'Tikéli - Billetterie en ligne';
 $body_class = $body_class ?? 'client-page';
 $is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 $user_role = $_SESSION['user_role'] ?? 'client';
@@ -23,18 +23,18 @@ $user_role = $_SESSION['user_role'] ?? 'client';
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($page_title); ?></title>
     <link rel="icon" type="image/png" href="../images/logo.png">
-    <!-- Google Fonts: Outfit & Inter -->
+    <!-- Google Fonts: Outfit, Inter & Space Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Style CSS -->
-    <link rel="stylesheet" href="../css/style.css">
-    <!-- Eventia Brand Design System -->
-    <link rel="stylesheet" href="../css/eventia-brand.css">
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo time(); ?>">
+    <!-- Tikéli Brand Design System -->
+    <link rel="stylesheet" href="../css/eventia-brand.css?v=<?php echo time(); ?>">
     <!-- Responsive Professional CSS -->
-    <link rel="stylesheet" href="../css/responsive-pro.css">
+    <link rel="stylesheet" href="../css/responsive-pro.css?v=<?php echo time(); ?>">
 </head>
 <body class="<?php echo htmlspecialchars($body_class); ?>">
 

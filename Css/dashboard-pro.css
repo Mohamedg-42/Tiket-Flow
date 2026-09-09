@@ -8,32 +8,34 @@
     --tikeli-orange: #FF4A0D;
     --tikeli-black: #000000;
     --tikeli-white: #FFFFFF;
-    --tikeli-gray: #F5F5F5;
+    --tikeli-gray: #FAFAFA;
 
-    --dash-bg: var(--tikeli-gray);
+    --dash-bg: #FAFAFA;
     --dash-surface: var(--tikeli-white);
     --dash-card: var(--tikeli-white);
     --dash-text: #000000;
     --dash-muted: #737373;
     --dash-border: #E5E5E5;
     --dash-border-light: #F5F5F5;
-    --dash-primary: #121212;
+    --dash-primary: var(--tikeli-orange);
     --dash-primary-light: #FFF2ED;
-    --dash-primary-hover: #000000;
+    --dash-primary-hover: var(--tikeli-orange-hover);
     --dash-accent: var(--tikeli-orange);
     --dash-accent-hover: #E03E08;
-    --dash-secondary: #000000;
-    --dash-success: #10b981;
-    --dash-success-light: #ecfdf5;
-    --dash-warning: #f59e0b;
-    --dash-warning-light: #fef3c7;
-    --dash-danger: #ef4444;
-    --dash-danger-light: #fee2e2;
-    --dash-radius-lg: 14px;
-    --dash-radius-md: 10px;
-    --dash-radius-sm: 8px;
-    --dash-shadow: 0 4px 12px -2px rgba(16, 24, 40, 0.05), 0 2px 4px -1px rgba(16, 24, 40, 0.03);
-    --dash-shadow-hover: 0 12px 24px -4px rgba(16, 24, 40, 0.08), 0 4px 10px -2px rgba(16, 24, 40, 0.03);
+    --dash-secondary: #121212;
+    --dash-success: #16A34A;
+    --dash-success-light: #DCFCE7;
+    --dash-warning: #D97706;
+    --dash-warning-light: #FEF3C7;
+    --dash-danger: #DC2626;
+    --dash-danger-light: #FEE2E2;
+    --dash-info: #0284C7;
+    --dash-info-light: #E0F2FE;
+    --dash-radius-lg: 10px;
+    --dash-radius-md: 8px;
+    --dash-radius-sm: 6px;
+    --dash-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+    --dash-shadow-hover: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
 }
 
 /* ==============================================================================
@@ -124,7 +126,7 @@
         margin-bottom: 0 !important;
     }
 
-    body.sidebar-collapsed .ctrl-brand-logo > div:not(.ctrl-brand-icon),
+    body.sidebar-collapsed .ctrl-brand-logo>div:not(.ctrl-brand-icon),
     body.sidebar-collapsed .ctrl-badge-admin,
     body.sidebar-collapsed .ctrl-badge-pro {
         display: none !important;
@@ -155,9 +157,9 @@
         justify-content: center !important;
     }
 
-    body.sidebar-collapsed .ctrl-user-card > div:not(.ctrl-avatar),
+    body.sidebar-collapsed .ctrl-user-card>div:not(.ctrl-avatar),
     body.sidebar-collapsed .ctrl-user-info,
-    body.sidebar-collapsed .ctrl-user-card > i.fa-chevron-right {
+    body.sidebar-collapsed .ctrl-user-card>i.fa-chevron-right {
         display: none !important;
     }
 
@@ -251,6 +253,7 @@
         margin-left: 0 !important;
         width: 100% !important;
     }
+
     .ctrl-collapse-btn {
         display: none !important;
     }
@@ -335,7 +338,7 @@
     background: var(--dash-primary);
     color: #ffffff;
     border-color: var(--dash-primary);
-    box-shadow: 0 4px 14px rgba(91, 80, 230, 0.35);
+    box-shadow: 0 4px 14px rgba(255, 74, 13, 0.30);
 }
 
 .dash-btn-action.btn-primary:hover {
@@ -376,9 +379,9 @@
 .dash-kpi-card {
     background: var(--dash-card);
     border-radius: var(--dash-radius-lg);
-    padding: 1.25rem 1.25rem 0.85rem;
+    padding: 1.15rem 1.15rem 0.85rem;
     box-shadow: var(--dash-shadow);
-    border: 1px solid var(--dash-border-light);
+    border: 1px solid var(--dash-border);
     display: flex;
     flex-direction: column;
     position: relative;
@@ -390,9 +393,16 @@
 }
 
 .dash-kpi-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     box-shadow: var(--dash-shadow-hover);
-    border-color: #E5E5E5;
+    border-color: #CBD5E1;
+}
+
+/* Hiérarchie Niveau 1 : KPI Principal (section 11 du skill) */
+.dash-kpi-card.is-primary {
+    border-color: rgba(255, 74, 13, 0.35);
+    background: linear-gradient(180deg, #FFFFFF 0%, #FFFBF9 100%);
+    box-shadow: 0 2px 6px -1px rgba(255, 74, 13, 0.07), var(--dash-shadow);
 }
 
 .dash-clickable-row {
@@ -401,7 +411,7 @@
 }
 
 .dash-clickable-row:hover td {
-    background-color: #F5F5F5 !important;
+    background-color: #F8FAFC !important;
 }
 
 a.dash-stream-card {
@@ -420,79 +430,78 @@ a.dash-legend-entry {
 }
 
 a.dash-legend-entry:hover {
-    background-color: #F5F5F5;
+    background-color: #F8FAFC;
 }
 
 .dash-kpi-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 0.75rem;
 }
 
+/* Style d'icône unifié sobre (Interdictions visuelles 2 & Palette 3) */
 .dash-kpi-icon-wrap {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--dash-radius-md);
     display: grid;
     place-items: center;
-    font-size: 1.15rem;
+    font-size: 1rem;
     flex-shrink: 0;
+    background: #F1F5F9;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+    transition: all 0.2s ease;
 }
 
-.dash-kpi-icon-wrap.purple {
-    background: #5b50e6;
-    color: #ffffff;
+.dash-kpi-card.is-primary .dash-kpi-icon-wrap,
+.dash-kpi-icon-wrap.is-accent {
+    background: rgba(255, 74, 13, 0.08);
+    color: var(--tikeli-orange);
+    border-color: rgba(255, 74, 13, 0.2);
 }
 
-.dash-kpi-icon-wrap.blue {
-    background: #0ea5e9;
-    color: #ffffff;
-}
-
-.dash-kpi-icon-wrap.green {
-    background: #10b981;
-    color: #ffffff;
-}
-
-.dash-kpi-icon-wrap.orange {
-    background: #FF4A0D;
-    color: #ffffff;
-}
-
-.dash-kpi-icon-wrap.pink {
-    background: #ec4899;
-    color: #ffffff;
-}
-
+/* Rétrocompatibilité douce sans criard */
+.dash-kpi-icon-wrap.purple,
+.dash-kpi-icon-wrap.blue,
+.dash-kpi-icon-wrap.green,
+.dash-kpi-icon-wrap.orange,
+.dash-kpi-icon-wrap.pink,
 .dash-kpi-icon-wrap.amber {
-    background: #eab308;
-    color: #ffffff;
+    background: #F8FAFC;
+    color: #334155;
+    border: 1px solid #E2E8F0;
 }
 
 .dash-kpi-badge-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 3px 8px;
-    border-radius: 999px;
+    gap: 0.3rem;
+    padding: 2px 7px;
+    border-radius: 6px;
     font-size: 0.72rem;
     font-weight: 700;
+    line-height: 1.2;
+    border: 1px solid transparent;
 }
 
 .dash-kpi-badge-pill.up {
-    background: #ecfdf5;
-    color: #059669;
+    background: var(--dash-success-light);
+    color: var(--dash-success);
+    border-color: #BBF7D0;
 }
 
 .dash-kpi-badge-pill.down {
-    background: #fef2f2;
-    color: #dc2626;
+    background: var(--dash-danger-light);
+    color: var(--dash-danger);
+    border-color: #FECACA;
 }
 
 .dash-kpi-badge-pill.neutral {
-    background: #f1f5f9;
-    color: #64748b;
+    background: #F1F5F9;
+    color: var(--dash-muted);
+    border-color: #E2E8F0;
 }
 
 .dash-kpi-title {
@@ -503,20 +512,28 @@ a.dash-legend-entry:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    letter-spacing: 0.01em;
 }
 
 .dash-kpi-amount {
-    font-size: 1.45rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: var(--dash-text);
     letter-spacing: -0.025em;
     line-height: 1.2;
     margin-bottom: 0.25rem;
+    font-variant-numeric: tabular-nums;
+    font-family: var(--font-heading, 'Outfit', 'Inter', sans-serif);
+}
+
+.dash-kpi-card.is-primary .dash-kpi-amount {
+    font-size: 1.7rem;
+    color: #0F172A;
 }
 
 .dash-kpi-sub {
-    font-size: 0.72rem;
-    color: #737373;
+    font-size: 0.73rem;
+    color: var(--dash-muted);
     font-weight: 500;
 }
 
@@ -816,8 +833,10 @@ table.dash-table,
     border-bottom: 1px solid var(--dash-border-light);
     vertical-align: middle;
     color: var(--dash-text);
-    overflow-wrap: break-word;   /* coupure sûre si contenu très long */
-    word-break: normal;          /* jamais de coupure au milieu d'un mot */
+    overflow-wrap: break-word;
+    /* coupure sûre si contenu très long */
+    word-break: normal;
+    /* jamais de coupure au milieu d'un mot */
     hyphens: none;
     -webkit-hyphens: none;
 }
@@ -989,32 +1008,41 @@ table.dash-table,
 .dash-shortcut-card {
     background: #ffffff;
     border: 1px solid var(--dash-border);
-    border-radius: 14px;
-    padding: 1rem 1.15rem;
+    border-radius: var(--dash-radius-md, 8px);
+    padding: 0.85rem 1.1rem;
     display: flex;
     align-items: center;
     gap: 0.85rem;
     text-decoration: none;
     color: var(--dash-text);
-    transition: all 0.2s ease;
-}
-
-.dash-shortcut-card:hover {
-    border-color: var(--dash-primary);
-    transform: translateY(-2px);
+    transition: all 0.18s ease;
     box-shadow: var(--dash-shadow);
 }
 
+.dash-shortcut-card:hover {
+    border-color: #CBD5E1;
+    transform: translateY(-2px);
+    box-shadow: var(--dash-shadow-hover);
+}
+
 .dash-shortcut-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: var(--dash-primary-light);
-    color: var(--dash-primary);
+    width: 38px;
+    height: 38px;
+    border-radius: var(--dash-radius-md, 8px);
+    background: #F1F5F9;
+    color: #334155;
+    border: 1px solid #E2E8F0;
     display: grid;
     place-items: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
     flex-shrink: 0;
+    transition: all 0.18s ease;
+}
+
+.dash-shortcut-card:hover .dash-shortcut-icon {
+    background: #0F172A;
+    color: #ffffff;
+    border-color: #0F172A;
 }
 
 .dash-shortcut-text strong {
@@ -1027,6 +1055,66 @@ table.dash-table,
 .dash-shortcut-text small {
     font-size: 0.72rem;
     color: var(--dash-muted);
+}
+
+/* ==============================================================================
+   STATUS BADGES SÉMANTIQUES (Sections 16 & 34 du Skill)
+   ============================================================================== */
+.status-badge,
+.dash-status-pill,
+.badge-status {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    border: 1px solid transparent !important;
+}
+
+.status-badge.success,
+.status-badge.paye,
+.status-badge.actif,
+.status-badge.valide,
+.status-badge-paye,
+.status-badge-actif,
+.status-badge-valide {
+    background: #DCFCE7 !important;
+    color: #16A34A !important;
+    border-color: #BBF7D0 !important;
+}
+
+.status-badge.warning,
+.status-badge.en_attente,
+.status-badge.en_cours,
+.status-badge-en_attente,
+.status-badge-en_cours {
+    background: #FEF3C7 !important;
+    color: #B45309 !important;
+    border-color: #FDE68A !important;
+}
+
+.status-badge.danger,
+.status-badge.annule,
+.status-badge.refuse,
+.status-badge.echoue,
+.status-badge-annule,
+.status-badge-refuse,
+.status-badge-echoue {
+    background: #FEE2E2 !important;
+    color: #DC2626 !important;
+    border-color: #FECACA !important;
+}
+
+.status-badge.info,
+.status-badge.utilise,
+.status-badge-utilise {
+    background: #E0F2FE !important;
+    color: #0284C7 !important;
+    border-color: #BAE6FD !important;
 }
 
 /* ==============================================================================
@@ -1175,9 +1263,9 @@ td:last-child {
 .table-actions,
 td .actions-cell,
 td .actions-wrap,
-td > div[style*="inline-flex"],
-td > div[style*="display: inline-flex"],
-td > div[style*="display: flex"] {
+td>div[style*="inline-flex"],
+td>div[style*="display: inline-flex"],
+td>div[style*="display: flex"] {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: flex-end !important;
@@ -1287,6 +1375,7 @@ td[data-label*="Revenu"],
 .cell-amount {
     white-space: nowrap !important;
 }
+
 th[data-type="amount"],
 th:nth-last-child(2):has(+ th:last-child) {
     /* Colonnes financières alignées proprement */
@@ -1503,6 +1592,7 @@ th:nth-last-child(2):has(+ th:last-child) {
 }
 
 @media (max-width: 768px) {
+
     div[style*="grid-template-columns: 1fr 1fr"],
     div[style*="grid-template-columns: 1.2fr 1fr"],
     div[style*="grid-template-columns: 1fr 1.2fr"],
@@ -1571,5 +1661,30 @@ th:nth-last-child(2):has(+ th:last-child) {
     .eventia-demand-actions {
         width: 100% !important;
         justify-content: flex-end !important;
+    }
+}
+
+/* --- Pied de page Dashboard Responsive --- */
+.main-footer {
+    padding: 1.25rem 2rem;
+    border-top: 1px solid var(--dash-border, #E5E5E5);
+    background: #ffffff;
+    color: var(--dash-muted, #737373);
+    font-size: 0.82rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: auto;
+}
+
+@media (max-width: 640px) {
+    .main-footer {
+        padding: 1rem 1rem !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 8px !important;
     }
 }

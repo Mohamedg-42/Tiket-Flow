@@ -1,12 +1,56 @@
 <?php
 // ==============================================================================
 // GESTION DE L'AUTHENTIFICATION, DES RÔLES, PERMISSIONS & ACTIVITÉ (includes/auth.php)
-// Sécurisation granulaire côté serveur pour Eventia
+// Sécurisation granulaire côté serveur pour Tikéli
 // ==============================================================================
 
-// 1. Démarrage sécurisé de la session si ce n'est pas déjà fait
+// En-têtes HTTP de sécurité globaux (SEC-008)
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=(self)');
+}
+
+// 1. Démarrage sécurisé de la session avec protection des cookies (SEC-006)
 if (session_status() === PHP_SESSION_NONE) {
+    $is_https = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'domain'   => '',
+        'secure'   => $is_https,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
+}
+
+/**
+ * Fonctions de Protection Anti-CSRF (SEC-005)
+ */
+function getCsrfToken(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrfField(): string {
+    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(getCsrfToken(), ENT_QUOTES, 'UTF-8') . '">';
+}
+
+function verifyCsrfToken(bool $auto_exit = true): bool {
+    $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    $session_token = $_SESSION['csrf_token'] ?? '';
+    $valid = !empty($token) && !empty($session_token) && hash_equals($session_token, $token);
+    if (!$valid && $auto_exit) {
+        http_response_code(403);
+        die("<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><title>403 - Requête Invalide</title></head><body style='font-family:system-ui,sans-serif;text-align:center;padding:3rem;background:#f8fafc;'><h1>Erreur de Validation CSRF</h1><p>Votre session a expiré ou la requête est invalide. Veuillez recharger la page et réessayer.</p><p><a href='javascript:history.back()'>Retour</a></p></body></html>");
+    }
+    return $valid;
 }
 
 /**
@@ -122,7 +166,7 @@ function checkAccountStatus($user_or_id) {
     if ($statut === 'en_attente' || ($role === 'promoteur' && $est_verifie === 0)) {
         return [
             'allowed' => false,
-            'message' => "Votre dossier de promoteur est actuellement en cours d'examen par l'administration d'Eventia. Vous recevrez une notification par e-mail dès validation de votre compte, après quoi vous pourrez vous connecter.",
+            'message' => "Votre dossier de promoteur est actuellement en cours d'examen par l'administration de Tikéli. Vous recevrez une notification par e-mail dès validation de votre compte, après quoi vous pourrez vous connecter.",
             'statut'  => 'en_attente'
         ];
     }
@@ -275,7 +319,7 @@ function requirePermission($permission_code, $redirect_url = null) {
             exit();
         }
 
-        // Affichage d'un écran 403 propre et professionnel Eventia
+        // Affichage d'un écran 403 propre et professionnel Tikéli
         http_response_code(403);
         ?>
         <!DOCTYPE html>
@@ -283,7 +327,7 @@ function requirePermission($permission_code, $redirect_url = null) {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>403 - Accès Non Autorisé | Eventia</title>
+            <title>403 - Accès Non Autorisé | Tikéli</title>
             <link rel="stylesheet" href="../Css/style.css">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
             <style>

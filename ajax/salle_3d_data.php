@@ -5,15 +5,26 @@
 // ==============================================================================
 
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
 require_once __DIR__ . '/../config/database.php';
 
-$salle_id = filter_input(INPUT_GET, 'salle_id', FILTER_VALIDATE_INT);
-$event_id = filter_input(INPUT_GET, 'event_id', FILTER_VALIDATE_INT);
+$salle_id = isset($_GET['salle_id']) && is_numeric($_GET['salle_id']) ? (int)$_GET['salle_id'] : filter_input(INPUT_GET, 'salle_id', FILTER_VALIDATE_INT);
+$event_id = isset($_GET['event_id']) && is_numeric($_GET['event_id']) ? (int)$_GET['event_id'] : filter_input(INPUT_GET, 'event_id', FILTER_VALIDATE_INT);
 
 try {
     $salle = null;
     $event = null;
     $ticket_types = [];
+
+    $exclude_ticket_id = isset($_GET['exclude_ticket_id']) && is_numeric($_GET['exclude_ticket_id']) ? (int)$_GET['exclude_ticket_id'] : filter_input(INPUT_GET, 'exclude_ticket_id', FILTER_VALIDATE_INT);
+    $current_seat_code = null;
+    if ($exclude_ticket_id) {
+        $stmt_cur = $pdo->prepare("SELECT place_numero FROM tickets WHERE id = ?");
+        $stmt_cur->execute([$exclude_ticket_id]);
+        $current_seat_code = trim((string)$stmt_cur->fetchColumn());
+    }
 
     // 1. Si un event_id est fourni, on récupère l'événement et sa salle associée
     if ($event_id) {
@@ -27,16 +38,20 @@ try {
             $stmt_tt->execute([$event_id]);
             $ticket_types = $stmt_tt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Tenter de retrouver la salle par salle_id ou par nom/lieu
+            // Retrouver la salle officielle associée à l'événement ou fallback automatique
             if (!empty($event['salle_id'])) {
                 $stmt_s = $pdo->prepare("SELECT * FROM salles WHERE id = ?");
                 $stmt_s->execute([$event['salle_id']]);
                 $salle = $stmt_s->fetch(PDO::FETCH_ASSOC);
             }
-            
             if (!$salle && !empty($event['lieu'])) {
-                $stmt_s = $pdo->prepare("SELECT * FROM salles WHERE ? LIKE CONCAT('%', nom, '%') LIMIT 1");
+                $stmt_s = $pdo->prepare("SELECT * FROM salles WHERE statut = 'active' AND ? ILIKE '%' || nom || '%' ORDER BY id ASC LIMIT 1");
                 $stmt_s->execute([$event['lieu']]);
+                $salle = $stmt_s->fetch(PDO::FETCH_ASSOC);
+            }
+            if (!$salle) {
+                // Fallback sur la première salle active (salle de spectacle standard)
+                $stmt_s = $pdo->query("SELECT * FROM salles WHERE statut = 'active' ORDER BY id ASC LIMIT 1");
                 $salle = $stmt_s->fetch(PDO::FETCH_ASSOC);
             }
         }
@@ -148,7 +163,7 @@ try {
         }
     }
 
-    // 6. Récupération des places déjà réservées pour cet événement s'il y a lieu
+    // 6. Récupération des places déjà réservées pour cet événement
     $reserved_seat_keys = [];
     if ($event_id) {
         $stmt_res = $pdo->prepare("SELECT p.numero, p.ticket_type_id FROM places p 
@@ -156,7 +171,26 @@ try {
                                    WHERE tt.event_id = ? AND p.statut IN ('reserve', 'occupe', 'vendu')");
         $stmt_res->execute([$event_id]);
         while ($r = $stmt_res->fetch(PDO::FETCH_ASSOC)) {
-            $reserved_seat_keys[$r['numero']] = true;
+            $reserved_seat_keys[trim($r['numero'])] = true;
+        }
+
+        // Ajouter aussi les places actuellement vendues dans tickets
+        if (!empty($exclude_ticket_id)) {
+            $stmt_t_seats = $pdo->prepare("SELECT place_numero FROM tickets WHERE event_id = ? AND statut = 'vendu' AND place_numero IS NOT NULL AND id != ?");
+            $stmt_t_seats->execute([$event_id, $exclude_ticket_id]);
+        } else {
+            $stmt_t_seats = $pdo->prepare("SELECT place_numero FROM tickets WHERE event_id = ? AND statut = 'vendu' AND place_numero IS NOT NULL");
+            $stmt_t_seats->execute([$event_id]);
+        }
+        while ($ts = $stmt_t_seats->fetch(PDO::FETCH_ASSOC)) {
+            if (!empty($ts['place_numero'])) {
+                $reserved_seat_keys[trim($ts['place_numero'])] = true;
+            }
+        }
+
+        // Si le billet courant a une place, on la retire des places occupées pour lui permettre de la visualiser
+        if (!empty($current_seat_code)) {
+            unset($reserved_seat_keys[$current_seat_code]);
         }
     }
 
@@ -205,33 +239,34 @@ try {
                 $seat_code = substr($z_name, 0, 3) . '-' . $row_label . sprintf('%02d', $s);
                 
                 // Calcul de la position 3D spatiale (X, Y, Z)
-                $x_offset = ($s - ($seats_per_row + 1) / 2) * 22;
+                $x_offset = ($s - ($seats_per_row + 1) / 2) * 30;
                 $y_offset = 0;
                 $z_depth = 0;
 
                 if ($z_pos === 'vip_avant') {
-                    $z_depth = 60 + ($r * 24);
-                    $y_offset = 0 + ($r * 6);
+                    $z_depth = 60 + ($r * 34);
+                    $y_offset = 0 + ($r * 8);
                 } elseif ($z_pos === 'centre') {
-                    $z_depth = 160 + ($r * 26);
-                    $y_offset = 20 + ($r * 12);
+                    $z_depth = 170 + ($r * 36);
+                    $y_offset = 22 + ($r * 14);
                 } elseif ($z_pos === 'gauche') {
-                    $x_offset -= 160 + ($r * 8);
-                    $z_depth = 120 + ($r * 28);
-                    $y_offset = 30 + ($r * 16);
+                    $x_offset -= 180 + ($r * 10);
+                    $z_depth = 130 + ($r * 36);
+                    $y_offset = 32 + ($r * 18);
                 } elseif ($z_pos === 'droite') {
-                    $x_offset += 160 + ($r * 8);
-                    $z_depth = 120 + ($r * 28);
-                    $y_offset = 30 + ($r * 16);
+                    $x_offset += 180 + ($r * 10);
+                    $z_depth = 130 + ($r * 36);
+                    $y_offset = 32 + ($r * 18);
                 } elseif ($z_pos === 'balcon') {
-                    $z_depth = 280 + ($r * 24);
-                    $y_offset = 90 + ($r * 18);
+                    $z_depth = 300 + ($r * 32);
+                    $y_offset = 100 + ($r * 22);
                 } else { // arriere / gradin_haut
-                    $z_depth = 320 + ($r * 28);
-                    $y_offset = 70 + ($r * 22);
+                    $z_depth = 340 + ($r * 36);
+                    $y_offset = 80 + ($r * 26);
                 }
 
-                $is_taken = isset($reserved_seat_keys[$seat_code]) || ($seat_id_counter % 9 === 0);
+                $is_cur = (!empty($current_seat_code) && $seat_code === $current_seat_code);
+                $is_taken = !$is_cur && isset($reserved_seat_keys[$seat_code]);
 
                 $seats_3d[] = [
                     'id' => $seat_id_counter,
@@ -250,7 +285,8 @@ try {
                     'ticket_nom' => $tarif_info['ticket_nom'],
                     'prix' => $tarif_info['prix'],
                     'frais_place' => $tarif_info['frais_place'],
-                    'statut' => $is_taken ? 'reserve' : 'libre'
+                    'statut' => $is_cur ? 'actuelle' : ($is_taken ? 'reserve' : 'libre'),
+                    'is_current' => $is_cur
                 ];
 
                 $seat_id_counter++;

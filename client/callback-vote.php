@@ -7,11 +7,11 @@
 require_once '../config/database.php';
 session_start();
 
-// Feexpay JS SDK redirige via GET
+// FeexPay / passerelle redirige via GET
 $vote_paiement_id = filter_input(INPUT_GET, 'vote_paiement_id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'vote_paiement_id', FILTER_VALIDATE_INT);
 $methode          = $_GET['methode'] ?? $_POST['methode'] ?? '';
 $telephone        = trim($_POST['telephone_paiement'] ?? '');
-$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'feexpay'];
+$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kadevpay', 'feexpay'];
 
 if (!$vote_paiement_id || !in_array($methode, $methodes_autorisees, true)) {
     $_SESSION['vote_message'] = "Paiement non validé ou méthode non reconnue.";
@@ -36,9 +36,27 @@ if (!$vote_pay || $vote_pay['statut'] !== 'en_attente') {
     exit();
 }
 
-// Référence unique de paiement et ID de transaction (comme pour les billets)
-$reference          = 'VOTE-' . strtoupper($methode) . '-' . strtoupper(substr(uniqid(), -6));
-$transaction_api_id = 'TXN-' . date('YmdHis') . '-' . random_int(1000, 9999);
+// 1.1 Vérification de la signature cryptographique sécurisée anti-falsification (SEC-002)
+$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
+$expected_token = hash_hmac('sha256', $vote_pay['id'] . '|' . $vote_pay['montant'] . '|' . $vote_pay['created_at'], $pay_secret);
+$vote_token = $_GET['vote_token'] ?? $_POST['vote_token'] ?? '';
+
+if (empty($vote_token) || !hash_equals($expected_token, $vote_token)) {
+    $_SESSION['vote_message'] = "Validation rejetée : signature de paiement de vote invalide ou absente.";
+    $_SESSION['vote_type'] = 'error';
+    header('Location: accueil.php?onglet=voter');
+    exit();
+}
+
+// Référence unique de paiement et ID de transaction FeexPay / Mobile Money
+$payment_ref = trim($_GET['reference'] ?? $_POST['reference'] ?? $_GET['transaction_id'] ?? '');
+if (!empty($payment_ref)) {
+    $reference = (stripos($payment_ref, 'VOTE-') === 0 || stripos($payment_ref, 'PAY-') === 0) ? $payment_ref : 'VOTE-FEEXPAY-' . $payment_ref;
+    $transaction_api_id = $payment_ref;
+} else {
+    $reference          = 'VOTE-' . strtoupper($methode) . '-' . strtoupper(substr(uniqid(), -6));
+    $transaction_api_id = 'TXN-' . date('YmdHis') . '-' . random_int(1000, 9999);
+}
 
 try {
     $pdo->beginTransaction();
@@ -90,7 +108,7 @@ if (!empty($cands_ids) && is_array($cands_ids)) {
     }
 }
 
-$page_title = "Vote Confirmé - Eventia";
+$page_title = "Vote Confirmé - Tikéli";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>

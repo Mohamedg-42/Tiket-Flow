@@ -8,10 +8,10 @@
 require_once '../config/database.php';
 session_start();
 
-// Feexpay JS SDK redirige via GET
+// FeexPay / passerelle redirige via GET
 $cotisation_id = filter_input(INPUT_GET, 'cotisation_id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'cotisation_id', FILTER_VALIDATE_INT);
 $methode = $_GET['methode'] ?? $_POST['methode'] ?? '';
-$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'feexpay'];
+$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kadevpay', 'feexpay'];
 
 if (!$cotisation_id || !in_array($methode, $methodes_autorisees, true)) {
     $_SESSION['cotisation_message'] = "Paiement non validé ou méthode non reconnue.";
@@ -37,9 +37,27 @@ if (!$cotisation || $cotisation['statut'] !== 'en_attente') {
     exit();
 }
 
-// Référence unique de paiement et ID de transaction (comme pour les billets)
-$reference          = 'PAY-' . strtoupper($methode) . '-' . strtoupper(substr(uniqid(), -6));
-$transaction_api_id = 'TXN-' . date('YmdHis') . '-' . random_int(1000, 9999);
+// 1.1 Vérification de la signature cryptographique sécurisée anti-falsification (SEC-002)
+$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
+$expected_token = hash_hmac('sha256', $cotisation['id'] . '|' . $cotisation['montant'] . '|' . $cotisation['created_at'], $pay_secret);
+$cotisation_token = $_GET['cotisation_token'] ?? $_POST['cotisation_token'] ?? '';
+
+if (empty($cotisation_token) || !hash_equals($expected_token, $cotisation_token)) {
+    $_SESSION['cotisation_message'] = "Validation rejetée : signature de paiement de contribution invalide ou absente.";
+    $_SESSION['cotisation_type']    = 'error';
+    header('Location: accueil.php?onglet=cotisations');
+    exit();
+}
+
+// Référence unique de paiement et ID de transaction FeexPay / Mobile Money
+$payment_ref = trim($_GET['reference'] ?? $_POST['reference'] ?? $_GET['transaction_id'] ?? '');
+if (!empty($payment_ref)) {
+    $reference = (stripos($payment_ref, 'PAY-') === 0) ? $payment_ref : 'PAY-FEEXPAY-' . $payment_ref;
+    $transaction_api_id = $payment_ref;
+} else {
+    $reference          = 'PAY-' . strtoupper($methode) . '-' . strtoupper(substr(uniqid(), -6));
+    $transaction_api_id = 'TXN-' . date('YmdHis') . '-' . random_int(1000, 9999);
+}
 $telephone_final    = $cotisation['telephone'] ?? '';
 
 try {
@@ -65,7 +83,7 @@ try {
     exit();
 }
 
-$page_title = "Contribution Confirmée - Eventia";
+$page_title = "Contribution Confirmée - Tikéli";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>

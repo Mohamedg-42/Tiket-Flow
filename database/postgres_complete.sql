@@ -1,5 +1,5 @@
 -- =====================================================================
--- EVENTIA PLATFORM — SCHEMA POSTGRESQL COMPLET
+-- TIKÉLI PLATFORM — SCHEMA POSTGRESQL COMPLET
 -- Généré le 2026-09-03 00:41:21
 -- =====================================================================
 
@@ -373,6 +373,7 @@ CREATE TABLE "promoters" (
     "reseaux_sociaux" VARCHAR(255) NULL,
     "statut" VARCHAR(50) NOT NULL DEFAULT 'approuve',
     "solde" NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    "commission_rate" NUMERIC(5,2) NOT NULL DEFAULT 5.00,
     "created_at" TIMESTAMP WITHOUT TIME ZONE NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP WITHOUT TIME ZONE NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "pk_promoters" PRIMARY KEY ("id")
@@ -430,7 +431,7 @@ CREATE TABLE "withdrawals" (
 
 
 -- =====================================================================
--- EVENTIA PLATFORM — DONNEES POSTGRESQL
+-- TIKÉLI PLATFORM — DONNEES POSTGRESQL
 -- Généré le 2026-09-03 00:41:21
 -- =====================================================================
 
@@ -448,7 +449,7 @@ INSERT INTO "users" ("id", "nom", "prenom", "email", "telephone", "password", "r
 SELECT setval(pg_get_serial_sequence('"users"', 'id'), COALESCE((SELECT MAX("id") FROM "users"), 1), true);
 
 -- Données pour la table "profiles" (4 lignes)
-INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (1, 'Administrateur', 'Accès complet et supervision totale de la plateforme Eventia.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');
+INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (1, 'Administrateur', 'Accès complet et supervision totale de la plateforme Tikéli.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');
 INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (2, 'Gestionnaire d''événements', 'Gestion opérationnelle des événements, modération et configuration des salles.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');
 INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (3, 'Vérificateur', 'Contrôle des accès, vérification des billets et scan aux entrées.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');
 INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (4, 'Comptable', 'Suivi financier, ventes, paiements, commissions et validation des retraits.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');
@@ -4534,11 +4535,22 @@ INSERT INTO "vote_paiements" ("id", "event_id", "candidat_id", "candidats_ids", 
 INSERT INTO "vote_paiements" ("id", "event_id", "candidat_id", "candidats_ids", "user_id", "visitor_id", "telephone", "montant", "methode", "reference", "transaction_id_api", "statut", "created_at") VALUES (13, 1, 1, '[1,2,3,4]', 4, 'nksba7c72v8hj5qth68ufp09hc', NULL, 4000.00, 'wave', 'VOTE-WAVE-5F393B', 'TXN-20260901034837-8734', 'paye', '2026-09-01 03:48:32');
 INSERT INTO "vote_paiements" ("id", "event_id", "candidat_id", "candidats_ids", "user_id", "visitor_id", "telephone", "montant", "methode", "reference", "transaction_id_api", "statut", "created_at") VALUES (14, 1, 1, '[1,2,3,4]', NULL, 'p9o50uh090ckakmbg9bf8rstro', '', 4000.00, 'wave', 'VOTE-WAVE-BB6B72', 'TXN-20260901050603-8282', 'paye', '2026-09-01 05:05:49');
 INSERT INTO "vote_paiements" ("id", "event_id", "candidat_id", "candidats_ids", "user_id", "visitor_id", "telephone", "montant", "methode", "reference", "transaction_id_api", "statut", "created_at") VALUES (15, 1, 1, '[1,2,3,4]', 4, '2m01clp1o95mhmvenr12rvm1ue', NULL, 4000.00, NULL, 'VOTE-5569FB', NULL, 'en_attente', '2026-09-02 17:12:53');
-SELECT setval(pg_get_serial_sequence('"vote_paiements"', 'id'), COALESCE((SELECT MAX("id") FROM "vote_paiements"), 1), true);
-
 -- Données pour la table "withdrawals" (3 lignes)
 INSERT INTO "withdrawals" ("id", "user_id", "promoter_id", "montant", "methode", "numero_telephone", "statut", "commentaire_admin", "created_at", "reviewed_at") VALUES (1, 2, 1, 950000.00, 'orange_money', +2250700000002, 'paye', NULL, '2026-08-27 21:19:39', '2026-08-27 21:34:21');
 INSERT INTO "withdrawals" ("id", "user_id", "promoter_id", "montant", "methode", "numero_telephone", "statut", "commentaire_admin", "created_at", "reviewed_at") VALUES (2, 2, 1, 9500.00, 'wave', +2250700000002, 'paye', 'Virement Mobile Money instantané (VIR-WAVE-3CF5CC)', '2026-08-27 22:54:27', '2026-08-27 22:54:27');
 INSERT INTO "withdrawals" ("id", "user_id", "promoter_id", "montant", "methode", "numero_telephone", "statut", "commentaire_admin", "created_at", "reviewed_at") VALUES (3, 2, 1, 9500.00, 'wave', +2250700000002, 'paye', 'Virement Mobile Money instantané (VIR-WAVE-C2ECDA)', '2026-08-27 22:54:52', '2026-08-27 22:54:52');
 SELECT setval(pg_get_serial_sequence('"withdrawals"', 'id'), COALESCE((SELECT MAX("id") FROM "withdrawals"), 1), true);
+
+-- Table password_resets (Jetons de réinitialisation de mot de passe)
+CREATE TABLE IF NOT EXISTS "password_resets" (
+    "id" SERIAL PRIMARY KEY,
+    "email" VARCHAR(150) NOT NULL,
+    "token" VARCHAR(255) NOT NULL UNIQUE,
+    "created_at" TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    "expires_at" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    "used" SMALLINT NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS "idx_password_resets_token" ON "password_resets" ("token");
+CREATE INDEX IF NOT EXISTS "idx_password_resets_email" ON "password_resets" ("email");
+CREATE INDEX IF NOT EXISTS "idx_password_resets_validity" ON "password_resets" ("email", "used", "expires_at");
 

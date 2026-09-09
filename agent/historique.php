@@ -24,9 +24,9 @@ $sql = "
 $params = [$agent_id];
 
 if ($filter_period === 'aujourd_hui') {
-    $sql .= " AND DATE(t.date_utilisation) = CURDATE()";
+    $sql .= " AND DATE(t.date_utilisation) = CURRENT_DATE";
 } elseif ($filter_period === '7_jours') {
-    $sql .= " AND t.date_utilisation >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+    $sql .= " AND t.date_utilisation >= NOW() - INTERVAL '7 days'";
 }
 
 if (!empty($search_q)) {
@@ -43,7 +43,7 @@ $stmt->execute($params);
 $validated_tickets = $stmt->fetchAll();
 
 // KPIs
-$stmt_today = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE validated_by = ? AND DATE(date_utilisation) = CURDATE()");
+$stmt_today = $pdo->prepare("SELECT COUNT(*) FROM tickets WHERE validated_by = ? AND DATE(date_utilisation) = CURRENT_DATE");
 $stmt_today->execute([$agent_id]);
 $kpi_today = (int) $stmt_today->fetchColumn();
 

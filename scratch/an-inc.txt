@@ -1,5 +1,0 @@
-﻿auth.php
-mailer.php
-pdf.php
-places.php
-smtp.php

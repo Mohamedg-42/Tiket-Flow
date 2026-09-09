@@ -424,9 +424,9 @@ try {
             <a href="export.php?type=cotisations&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les cotisations et donateurs sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <button type="button" onclick="document.getElementById('formNewCampagne').scrollIntoView({behavior: 'smooth'})" class="eventia-btn-primary" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+            <a href="creer-evenement.php?onglet=cotisation" class="eventia-btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-plus"></i> Nouvelle Campagne Admin
-            </button>
+            </a>
         </div>
     </div>
 
@@ -477,7 +477,7 @@ try {
          3. CARTES KPIS DE COTISATION (AU-DESSOUS DES FILTRES)
          ============================================================================== -->
     <div class="cotis-kpis-grid">
-        <div class="eventia-kpi-card" style="border-left: 4px solid var(--tikeli-orange, #FF4A0D);">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <span style="font-size: 0.8rem; font-weight: 700; color: var(--tikeli-orange, #FF4A0D); text-transform: uppercase;">Total Collecté</span>
                 <span style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D); width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-coins"></i></span>

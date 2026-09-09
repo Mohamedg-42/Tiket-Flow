@@ -4,7 +4,7 @@
 // Interface personnelle pour suivre et mettre à jour l'avancement de ses tâches
 // ==============================================================================
 
-$admin_page_title = "Mes Tâches - Eventia";
+$admin_page_title = "Mes Tâches - Tikéli";
 include 'header.php';
 
 requireLogin('../connexion.php');

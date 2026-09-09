@@ -396,8 +396,7 @@ function get_dem_badge($statut)
                         ? '../uploads/events/' . htmlspecialchars($d['image'])
                         : 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=400&q=80';
                     ?>
-                    <div class="dash-card eventia-demand-card"
-                        style="border-left: 4px solid <?php echo $d['statut'] === 'en_attente' ? '#f59e0b' : ($d['statut'] === 'approuve' ? '#10b981' : '#ef4444'); ?>;">
+                    <div class="dash-card eventia-demand-card">
                         <div class="eventia-demand-body">
                             <!-- Visuel miniature + Infos principales -->
                             <div class="eventia-demand-main">
@@ -511,8 +510,7 @@ function get_dem_badge($statut)
                         ? '../uploads/events/' . htmlspecialchars($cv['image'])
                         : 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=400&q=80';
                     ?>
-                    <div class="dash-card eventia-demand-card"
-                        style="border-left: 4px solid <?php echo $is_realisation ? '#FF4A0D' : '#FF4A0D'; ?>;">
+                    <div class="dash-card eventia-demand-card">
                         <div class="eventia-demand-body">
                             <div class="eventia-demand-main">
                                 <img src="<?php echo $img_src; ?>" alt="<?php echo htmlspecialchars($cv['nom']); ?>"
@@ -648,7 +646,7 @@ function get_dem_badge($statut)
                         ? '../uploads/cotisations/' . htmlspecialchars($c['image'])
                         : 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=400&q=80';
                     ?>
-                    <div class="dash-card eventia-demand-card" style="border-left: 4px solid #FF4A0D;">
+                    <div class="dash-card eventia-demand-card">
                         <div class="eventia-demand-body">
                             <div class="eventia-demand-main">
                                 <img src="<?php echo $c_img; ?>" alt="<?php echo htmlspecialchars($c['titre']); ?>"

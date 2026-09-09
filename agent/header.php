@@ -11,7 +11,7 @@ require_once '../includes/auth.php';
 checkRole(['agent', 'admin'], '../connexion.php');
 
 $current_page = basename($_SERVER['PHP_SELF']);
-$page_title = $page_title ?? 'Espace Agent - Eventia';
+$page_title = $page_title ?? 'Espace Agent - Tikéli';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -33,16 +33,57 @@ $page_title = $page_title ?? 'Espace Agent - Eventia';
     <link rel="stylesheet" href="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.css">
     <!-- Style CSS -->
     <link rel="stylesheet" href="../css/style.css">
-    <!-- Eventia Brand Design System -->
+    <!-- Tikéli Brand Design System -->
     <link rel="stylesheet" href="../css/eventia-brand.css">
     <!-- Responsive Professional CSS -->
     <link rel="stylesheet" href="../css/responsive-pro.css">
+    <style>
+        /* Responsive Navigation Agent */
+        @media (max-width: 767px) {
+            .client-nav-toggle {
+                display: inline-flex !important;
+            }
+            .client-nav {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                background: #000000 !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+                flex-direction: column;
+                align-items: stretch !important;
+                padding: 1rem 1.25rem 1.5rem !important;
+                gap: 0.65rem !important;
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+                display: none !important;
+                z-index: 1000;
+            }
+            .client-nav.nav-open,
+            .client-nav.active {
+                display: flex !important;
+            }
+            .client-nav a {
+                width: 100%;
+                padding: 0.75rem 1rem !important;
+                border-radius: 10px !important;
+                box-sizing: border-box;
+            }
+        }
+        @media (min-width: 768px) {
+            .client-nav-toggle {
+                display: none !important;
+            }
+            .client-nav {
+                display: flex !important;
+            }
+        }
+    </style>
 </head>
 
 <body class="client-page" style="background-color: var(--tikeli-gray, #F5F5F5); min-height: 100vh; display: flex; flex-direction: column;">
 
     <header class="client-header shared-client-header"
-        style="background: var(--tikeli-black, #000000); color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0.85rem clamp(1rem, 4vw, 2.5rem); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.12);">
+        style="background: var(--tikeli-black, #000000); color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0.85rem clamp(1rem, 4vw, 2.5rem); display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.12);">
         <a href="verification.php" class="client-brand" style="text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
             <img src="../images/logo.png" alt="Tikéli" style="height: 34px; width: auto; max-width: 120px; object-fit: contain;">
             <span style="font-size: 0.72rem; font-weight: 800; background: rgba(255, 74, 13, 0.18); color: var(--tikeli-orange, #FF4A0D); border: 1px solid rgba(255, 74, 13, 0.35); padding: 2px 7px; border-radius: 6px; letter-spacing: 0.5px;">AGENT</span>
@@ -88,8 +129,9 @@ $page_title = $page_title ?? 'Espace Agent - Eventia';
 
             if (menuOpen) {
                 // Ouvrir le menu
-                nav.classList.add('nav-open');
+                nav.classList.add('nav-open', 'active');
                 btn.setAttribute('aria-expanded', 'true');
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
                 document.body.style.overflow = 'hidden';
             } else {
                 // Fermer le menu
@@ -105,10 +147,11 @@ $page_title = $page_title ?? 'Espace Agent - Eventia';
             if (!nav) return;
 
             menuOpen = false;
-            nav.classList.remove('nav-open');
+            nav.classList.remove('nav-open', 'active');
 
             if (btn) {
                 btn.setAttribute('aria-expanded', 'false');
+                btn.innerHTML = '<i class="fa-solid fa-bars"></i>';
             }
 
             document.body.style.overflow = '';

@@ -1,10 +1,14 @@
 <?php
 // ==============================================================================
 // ASSISTANT D'INSTALLATION & CONNEXION POSTGRESQL (installer_postgres.php)
-// Configure automatiquement la base de données PostgreSQL pour Eventia
+// Configure automatiquement la base de données PostgreSQL pour Tikéli
 // ==============================================================================
 
-$message = "";
+// Verrou de sécurité : interdire l'accès à l'installateur sur un système opérationnel (SEC-003)
+if (file_exists(__DIR__ . '/config/database.php')) {
+    http_response_code(403);
+    die("<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><title>403 - Installateur Verrouillé</title><style>body{font-family:system-ui,sans-serif;padding:3rem;background:#f8fafc;color:#0f172a;text-align:center;}h1{color:#ef4444;}</style></head><body><h1>Installateur Verrouillé</h1><p>Pour des raisons de sécurité, l'assistant d'installation a été verrouillé car la plateforme Tikéli est déjà configurée.</p><p><a href='connexion.php'>Accéder à la connexion</a> · <a href='client/accueil.php'>Accueil</a></p></body></html>");
+}
 $msg_type = "";
 $step_completed = false;
 
@@ -55,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_connect'])) {
             $config_content = "<?php
 // ==============================================================================
 // FICHIER DE CONNEXION POSTGRESQL (config/database.php)
-// Généré automatiquement par l'Assistant Eventia
+// Généré automatiquement par l'Assistant Tikéli
 // ==============================================================================
 
 \$host    = '" . addslashes($host) . "';
@@ -104,7 +108,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion PostgreSQL - Eventia</title>
+    <title>Connexion PostgreSQL - Tikéli</title>
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -225,7 +229,7 @@ try {
         <div class="brand-header">
             <div class="brand-logo">
                 <i class="fa-solid fa-database" style="color: #336791;"></i>
-                <span>EVENTIA <span style="color: var(--amber);">×</span> PostgreSQL</span>
+                <span>TIKÉLI <span style="color: var(--amber);">×</span> PostgreSQL</span>
             </div>
             <h2 style="margin: 0.5rem 0 0.25rem; font-size: 1.25rem; font-family: 'Outfit', sans-serif; color: var(--navy);">
                 Connexion PostgreSQL Locale
@@ -245,7 +249,7 @@ try {
         <?php if ($step_completed): ?>
             <div style="text-align: center; padding: 1rem 0;">
                 <a href="connexion.php" class="btn-submit" style="text-decoration: none; background: #0d9488; color: #ffffff;">
-                    <i class="fa-solid fa-arrow-right"></i> Accéder à Eventia (Connexion)
+                    <i class="fa-solid fa-arrow-right"></i> Accéder à Tikéli (Connexion)
                 </a>
             </div>
         <?php else: ?>
@@ -276,7 +280,13 @@ try {
 
                 <div class="form-group">
                     <label for="pass"><i class="fa-solid fa-key" style="color: var(--amber);"></i> Mot de passe PostgreSQL *</label>
-                    <input type="password" id="pass" name="pass" placeholder="Mot de passe créé à l'installation" autofocus required>
+                    <div style="position: relative; width: 100%;">
+                        <input type="password" id="pass" name="pass" placeholder="Mot de passe créé à l'installation" autofocus required style="width: 100%; box-sizing: border-box; padding-right: 2.5rem;">
+                        <button type="button" onclick="togglePassVisibility('pass', this.querySelector('i'))" aria-label="Afficher"
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 6px; display: grid; place-items: center; font-size: 0.9rem;">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                     <small style="color: #64748b; font-size: 0.76rem; display: block; margin-top: 4px;">
                         C'est le mot de passe que vous avez choisi lors de l'installation de PostgreSQL pour l'utilisateur <code>postgres</code>.
                     </small>
@@ -294,5 +304,25 @@ try {
             </a>
         </div>
     </div>
+
+    <script>
+    function togglePassVisibility(inputId, iconElem) {
+        const inp = document.getElementById(inputId);
+        if (!inp) return;
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            if (iconElem) {
+                iconElem.classList.remove('fa-eye');
+                iconElem.classList.add('fa-eye-slash');
+            }
+        } else {
+            inp.type = 'password';
+            if (iconElem) {
+                iconElem.classList.remove('fa-eye-slash');
+                iconElem.classList.add('fa-eye');
+            }
+        }
+    }
+    </script>
 </body>
 </html>

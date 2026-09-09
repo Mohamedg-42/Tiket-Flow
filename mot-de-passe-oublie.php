@@ -22,53 +22,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Veuillez renseigner une adresse email valide.";
     } else {
-        // 1. Recherche de l'utilisateur par son email
-        $stmt = $pdo->prepare("SELECT id, nom, prenom, email, statut FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
+        try {
+            // 1. Recherche de l'utilisateur par son email
+            $stmt = $pdo->prepare("SELECT id, nom, prenom, email, statut FROM users WHERE email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch();
 
-        if ($user) {
-            // Invalider les anciens tokens non utilisés pour cet email
-            $stmt_inv = $pdo->prepare("UPDATE password_resets SET used = 1 WHERE email = ? AND used = 0");
-            $stmt_inv->execute([$email]);
+            if ($user) {
+                // Invalider les anciens tokens non utilisés pour cet email
+                $stmt_inv = $pdo->prepare("UPDATE password_resets SET used = 1 WHERE email = ? AND used = 0");
+                $stmt_inv->execute([$email]);
 
-            // 2. Générer un jeton cryptographiquement sécurisé
-            $token = bin2hex(random_bytes(32));
+                // 2. Générer un jeton cryptographiquement sécurisé
+                $token = bin2hex(random_bytes(32));
 
-            // 3. Enregistrer le token avec validité de 60 minutes
-            $stmt_ins = $pdo->prepare("
-                INSERT INTO password_resets (email, token, expires_at, used) 
-                VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR), 0)
-            ");
-            $stmt_ins->execute([$email, $token]);
+                // 3. Enregistrer le token avec validité de 60 minutes (syntaxe compatible PostgreSQL)
+                $stmt_ins = $pdo->prepare("
+                    INSERT INTO password_resets (email, token, expires_at, used) 
+                    VALUES (?, ?, NOW() + INTERVAL '1 hour', 0)
+                ");
+                $stmt_ins->execute([$email, $token]);
 
-            // 4. Construction de l'URL sécurisée de réinitialisation
-            $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-            $dir = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
-            $reset_url = "{$scheme}://{$host}{$dir}/reinitialiser-mot-de-passe.php?token=" . urlencode($token) . "&email=" . urlencode($email);
+                // 4. Construction de l'URL sécurisée de réinitialisation
+                $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+                $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                $dir = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+                $reset_url = "{$scheme}://{$host}{$dir}/reinitialiser-mot-de-passe.php?token=" . urlencode($token) . "&email=" . urlencode($email);
 
-            // 5. Envoi de l'email via le service de messagerie Eventia
-            $to_name = trim(($user['prenom'] ?? '') . ' ' . $user['nom']);
-            if (empty($to_name)) $to_name = "Utilisateur Eventia";
+                // 5. Envoi de l'email via le service de messagerie Tikéli
+                $to_name = trim(($user['prenom'] ?? '') . ' ' . $user['nom']);
+                if (empty($to_name)) $to_name = "Utilisateur Tikéli";
 
-            $mail_ok = sendPasswordResetEmail($user['email'], $to_name, $reset_url, 60);
+                $mail_ok = sendPasswordResetEmail($user['email'], $to_name, $reset_url, 60);
 
-            logActivity(
-                'user.password_reset_request', 
-                'user', 
-                (int)$user['id'], 
-                "Demande de réinitialisation de mot de passe par email" . ($mail_ok ? " (Email envoyé)" : " (Échec d'envoi email)"),
-                (int)$user['id']
-            );
-        } else {
-            // Journaliser la tentative sans révéler l'inexistence de l'email
-            logActivity('user.password_reset_unknown', 'user', null, "Tentative de réinitialisation pour email inconnu : " . substr($email, 0, 80));
+                logActivity(
+                    'user.password_reset_request', 
+                    'user', 
+                    (int)$user['id'], 
+                    "Demande de réinitialisation de mot de passe par email" . ($mail_ok ? " (Email envoyé)" : " (Échec d'envoi email)"),
+                    (int)$user['id']
+                );
+            } else {
+                // Journaliser la tentative sans révéler l'inexistence de l'email
+                logActivity('user.password_reset_unknown', 'user', null, "Tentative de réinitialisation pour email inconnu : " . substr($email, 0, 80));
+            }
+
+            // Message générique de confirmation (protection contre l'énumération des comptes)
+            $email_sent = true;
+            $success_msg = "Si cette adresse est associée à un compte Tikéli, un email contenant les instructions et votre lien de réinitialisation vient de vous être envoyé. Pensez à vérifier vos courriers indésirables (spams).";
+        } catch (Throwable $e) {
+            error_log("[Password Reset Error] " . $e->getMessage());
+            $error = "Une erreur technique est survenue lors du traitement de votre demande. Veuillez réessayer dans quelques instants.";
         }
-
-        // Message générique de confirmation (protection contre l'énumération des comptes)
-        $email_sent = true;
-        $success_msg = "Si cette adresse est associée à un compte Eventia, un email contenant les instructions et votre lien de réinitialisation vient de vous être envoyé. Pensez à vérifier vos courriers indésirables (spams).";
     }
 }
 ?>
@@ -78,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Mot de passe oublié - Eventia</title>
+    <title>Mot de passe oublié - Tikéli</title>
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         rel="stylesheet">
     <!-- FontAwesome 6 Pro Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Style Principal Eventia -->
+    <!-- Style Principal Tikéli -->
     <link rel="stylesheet" href="Css/main.css">
     <style>
         :root {

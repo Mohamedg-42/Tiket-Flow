@@ -10,6 +10,11 @@ session_start();
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $redir_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: (int)($_GET['event_id'] ?? 0);
+    if ($redir_id > 0) {
+        header('Location: vote.php?id=' . $redir_id);
+        exit();
+    }
     http_response_code(405);
     echo json_encode(['error' => 'Méthode non autorisée.']);
     exit();
@@ -125,6 +130,47 @@ try {
     }
 
     // ===== VOTE GRATUIT : bascule voter / retirer le vote =====
+    $candidat_id = filter_input(INPUT_POST, 'candidat_id', FILTER_VALIDATE_INT) ?: null;
+
+    if ($candidat_id) {
+        if ($user_id) {
+            $stmt = $pdo->prepare("SELECT id FROM event_votes WHERE event_id = ? AND user_id = ? AND candidat_id = ?");
+            $stmt->execute([$event_id, $user_id, $candidat_id]);
+        } else {
+            $stmt = $pdo->prepare("SELECT id FROM event_votes WHERE event_id = ? AND visitor_id = ? AND candidat_id = ?");
+            $stmt->execute([$event_id, $visitor_id, $candidat_id]);
+        }
+        $existing_cand = $stmt->fetch();
+
+        if ($existing_cand) {
+            $stmt_del = $pdo->prepare("DELETE FROM event_votes WHERE id = ?");
+            $stmt_del->execute([$existing_cand['id']]);
+            $voted = false;
+        } else {
+            $stmt_ins = $pdo->prepare("INSERT INTO event_votes (event_id, user_id, visitor_id, candidat_id) VALUES (?, ?, ?, ?)");
+            $stmt_ins->execute([$event_id, $user_id, $visitor_id, $candidat_id]);
+            $voted = true;
+        }
+
+        // Compteur de ce candidat spécifique
+        $stmt_c = $pdo->prepare("SELECT COUNT(*) FROM event_votes WHERE candidat_id = ?");
+        $stmt_c->execute([$candidat_id]);
+        $cand_votes = (int)$stmt_c->fetchColumn();
+
+        // Nouveau compteur total de l'événement
+        $stmt_t = $pdo->prepare("SELECT COUNT(*) FROM event_votes WHERE event_id = ?");
+        $stmt_t->execute([$event_id]);
+        $total_votes = (int)$stmt_t->fetchColumn();
+
+        echo json_encode([
+            'voted'       => $voted,
+            'votes'       => $total_votes,
+            'candidat_id' => $candidat_id,
+            'cand_votes'  => $cand_votes
+        ]);
+        exit();
+    }
+
     $existing = vote_existant($pdo, $event_id, $user_id, $visitor_id);
 
     if ($existing) {

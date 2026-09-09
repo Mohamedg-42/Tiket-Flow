@@ -1,3 +1,0 @@
-﻿No syntax errors detected in c:\wamp64\www\ticket-platform\client\header.php
-css HTTP 200 - display none servi: True
-accueil HTTP 200 - toggle inline: True

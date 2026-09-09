@@ -1,7 +1,7 @@
 <?php
 // ==============================================================================
 // GESTION DES TÂCHES — VUE ADMINISTRATEUR (admin/taches.php)
-// Attribution, suivi, priorités et échéances pour les collaborateurs Eventia
+// Attribution, suivi, priorités et échéances pour les collaborateurs Tikéli
 // ==============================================================================
 
 $admin_page_title = "Gestion des Tâches - Administration";

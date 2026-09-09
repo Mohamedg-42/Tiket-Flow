@@ -92,16 +92,16 @@ if ($type === 'ventes') {
     if (!empty($filter_period)) {
         switch ($filter_period) {
             case 'today':
-                $sql .= " AND DATE(t.date_achat) = CURDATE()";
+                $sql .= " AND DATE(t.date_achat) = CURRENT_DATE";
                 break;
             case '7d':
-                $sql .= " AND t.date_achat >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+                $sql .= " AND t.date_achat >= NOW() - INTERVAL '7 days'";
                 break;
             case '30d':
-                $sql .= " AND t.date_achat >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+                $sql .= " AND t.date_achat >= NOW() - INTERVAL '30 days'";
                 break;
             case 'this_month':
-                $sql .= " AND MONTH(t.date_achat) = MONTH(CURRENT_DATE()) AND YEAR(t.date_achat) = YEAR(CURRENT_DATE())";
+                $sql .= " AND EXTRACT(MONTH FROM t.date_achat) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM t.date_achat) = EXTRACT(YEAR FROM CURRENT_DATE)";
                 break;
         }
     }

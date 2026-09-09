@@ -190,15 +190,6 @@ $nb_total = (int) $pdo->query("SELECT COUNT(*) FROM promoter_requests")->fetchCo
     position: relative;
     box-sizing: border-box;
 }
-.dp-card.border-pending {
-    border-left: 4px solid #FF4A0D;
-}
-.dp-card.border-approved {
-    border-left: 4px solid #FF4A0D;
-}
-.dp-card.border-rejected {
-    border-left: 4px solid #000000;
-}
 
 .dp-card-head {
     display: flex;

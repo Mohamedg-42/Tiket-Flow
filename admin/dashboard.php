@@ -437,8 +437,8 @@ try {
          2. RACCOURCIS D'ACTIONS RAPIDES
          ============================================================================== -->
     <div class="dash-quick-shortcuts">
-        <a href="demandes.php" class="dash-shortcut-card">
-            <div class="dash-shortcut-icon" style="background: #fff7ed; color: #FF4A0D;">
+        <a href="demandes.php" class="dash-shortcut-card" title="Examiner les demandes en attente">
+            <div class="dash-shortcut-icon">
                 <i class="fa-solid fa-inbox"></i>
             </div>
             <div class="dash-shortcut-text">
@@ -447,8 +447,8 @@ try {
             </div>
         </a>
 
-        <a href="retraits.php" class="dash-shortcut-card">
-            <div class="dash-shortcut-icon" style="background: #FFF2ED; color: #FF4A0D;">
+        <a href="retraits.php" class="dash-shortcut-card" title="Traiter les demandes de retrait">
+            <div class="dash-shortcut-icon">
                 <i class="fa-solid fa-money-bill-transfer"></i>
             </div>
             <div class="dash-shortcut-text">
@@ -457,18 +457,18 @@ try {
             </div>
         </a>
 
-        <a href="commandes.php" class="dash-shortcut-card">
-            <div class="dash-shortcut-icon" style="background: #FFF2ED; color: #FF4A0D;">
+        <a href="commandes.php" class="dash-shortcut-card" title="Consulter les commandes de la période">
+            <div class="dash-shortcut-icon">
                 <i class="fa-solid fa-cart-shopping"></i>
             </div>
             <div class="dash-shortcut-text">
                 <strong>Commandes Période</strong>
-                <small><?php echo number_format($total_orders, 0, ',', ' '); ?> commandes payées</small>
+                <small><?php echo number_format($total_orders, 0, ',', ' '); ?> payées</small>
             </div>
         </a>
 
-        <a href="verification.php" class="dash-shortcut-card">
-            <div class="dash-shortcut-icon" style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D);">
+        <a href="verification.php" class="dash-shortcut-card" title="Accéder au contrôle et scanner de billets">
+            <div class="dash-shortcut-icon">
                 <i class="fa-solid fa-qrcode"></i>
             </div>
             <div class="dash-shortcut-text">
@@ -482,10 +482,10 @@ try {
          3. BANDEAU DE 6 KPIS FINANCIERS & OPÉRATIONNELS AVEC ÉVOLUTIONS DYNAMIQUES
          ============================================================================== -->
     <div class="dash-kpi-grid-6">
-        <!-- 1. Chiffre d'Affaires Brut -->
-        <a href="paiements.php" class="dash-kpi-card" title="Voir tous les paiements et transactions">
+        <!-- 1. Chiffre d'Affaires Brut (KPI Principal - Niveau 1) -->
+        <a href="paiements.php" class="dash-kpi-card is-primary" title="Voir tous les paiements et transactions">
             <div class="dash-kpi-top">
-                <div class="dash-kpi-icon-wrap purple">
+                <div class="dash-kpi-icon-wrap is-accent">
                     <i class="fa-solid fa-coins"></i>
                 </div>
                 <span class="dash-kpi-badge-pill <?php echo $ca_growth['class']; ?>">
@@ -506,17 +506,16 @@ try {
         <!-- 2. Commissions plateforme -->
         <a href="retraits.php" class="dash-kpi-card" title="Gérer les retraits et commissions">
             <div class="dash-kpi-top">
-                <div class="dash-kpi-icon-wrap green">
+                <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-sack-dollar"></i>
                 </div>
                 <span class="dash-kpi-badge-pill <?php echo $comm_growth['class']; ?>">
-                    <i
-                        class="fa-solid fa-arrow-trend-<?php echo $comm_growth['dir'] === 'down' ? 'down' : 'up'; ?>"></i>
+                    <i class="fa-solid fa-arrow-trend-<?php echo $comm_growth['dir'] === 'down' ? 'down' : 'up'; ?>"></i>
                     <?php echo $comm_growth['text']; ?>
                 </span>
             </div>
             <div class="dash-kpi-title">Commissions Encaissées</div>
-            <div class="dash-kpi-amount" style="color: #10b981;">
+            <div class="dash-kpi-amount">
                 <?php echo number_format($total_commissions, 0, ',', ' '); ?> <small
                     style="font-size: 0.72rem; font-weight: 700;">F</small></div>
             <div class="dash-kpi-sub">Revenu net plateforme (5%) <i class="fa-solid fa-arrow-right"
@@ -529,7 +528,7 @@ try {
         <!-- 3. Billets vendus -->
         <a href="tickets.php" class="dash-kpi-card" title="Gérer les types de billets et tarifs">
             <div class="dash-kpi-top">
-                <div class="dash-kpi-icon-wrap blue">
+                <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-ticket"></i>
                 </div>
                 <span class="dash-kpi-badge-pill <?php echo $tkt_growth['class']; ?>">
@@ -549,7 +548,7 @@ try {
         <!-- 4. Panier Moyen -->
         <a href="commandes.php" class="dash-kpi-card" title="Voir toutes les commandes clients">
             <div class="dash-kpi-top">
-                <div class="dash-kpi-icon-wrap amber">
+                <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-basket-shopping"></i>
                 </div>
                 <span class="dash-kpi-badge-pill <?php echo $ord_growth['class']; ?>">
@@ -570,12 +569,11 @@ try {
         <!-- 5. Check-in & Entrées -->
         <a href="verification.php" class="dash-kpi-card" title="Accéder au scanner et contrôle des accès">
             <div class="dash-kpi-top">
-                <div class="dash-kpi-icon-wrap orange">
+                <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-user-check"></i>
                 </div>
                 <span class="dash-kpi-badge-pill <?php echo $used_growth['class']; ?>">
-                    <i
-                        class="fa-solid fa-arrow-trend-<?php echo $used_growth['dir'] === 'down' ? 'down' : 'up'; ?>"></i>
+                    <i class="fa-solid fa-arrow-trend-<?php echo $used_growth['dir'] === 'down' ? 'down' : 'up'; ?>"></i>
                     <?php echo $used_growth['text']; ?>
                 </span>
             </div>
@@ -591,15 +589,15 @@ try {
         <!-- 6. Taux de Remplissage -->
         <a href="evenements.php" class="dash-kpi-card" title="Gérer tous les événements de la plateforme">
             <div class="dash-kpi-top">
-                <div class="dash-kpi-icon-wrap pink">
+                <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-percent"></i>
                 </div>
-                <span class="dash-kpi-badge-pill up">
-                    <i class="fa-solid fa-chart-pie"></i> Actif
+                <span class="dash-kpi-badge-pill neutral">
+                    <i class="fa-solid fa-chart-pie"></i> Global
                 </span>
             </div>
             <div class="dash-kpi-title">Taux de Remplissage</div>
-            <div class="dash-kpi-amount" style="color: #FF4A0D;"><?php echo $taux_occupation; ?>%</div>
+            <div class="dash-kpi-amount"><?php echo $taux_occupation; ?>%</div>
             <div class="dash-kpi-sub">Capacité globale utilisée <i class="fa-solid fa-arrow-right"
                     style="font-size: 0.65rem; margin-left: 2px;"></i></div>
             <div class="dash-sparkline-box">
@@ -1021,12 +1019,12 @@ try {
         }
 
         const dynSpark = <?php echo json_encode(!empty($sparkline_data) ? $sparkline_data : [1, 2, 1, 3, 2, 4, 3]); ?>;
-        drawSparkline('kpiSpark1', '#FF4A0D', 'rgba(255, 74, 13, 0.28)', dynSpark);
-        drawSparkline('kpiSpark2', '#000000', 'rgba(0, 0, 0, 0.18)', dynSpark);
-        drawSparkline('kpiSpark3', '#FF4A0D', 'rgba(255, 74, 13, 0.28)', dynSpark);
-        drawSparkline('kpiSpark4', '#000000', 'rgba(0, 0, 0, 0.18)', dynSpark);
-        drawSparkline('kpiSpark5', '#FF4A0D', 'rgba(255, 74, 13, 0.28)', dynSpark);
-        drawSparkline('kpiSpark6', '#000000', 'rgba(0, 0, 0, 0.18)', dynSpark);
+        drawSparkline('kpiSpark1', '#FF4A0D', 'rgba(255, 74, 13, 0.22)', dynSpark);
+        drawSparkline('kpiSpark2', '#475569', 'rgba(71, 85, 105, 0.12)', dynSpark);
+        drawSparkline('kpiSpark3', '#475569', 'rgba(71, 85, 105, 0.12)', dynSpark);
+        drawSparkline('kpiSpark4', '#475569', 'rgba(71, 85, 105, 0.12)', dynSpark);
+        drawSparkline('kpiSpark5', '#475569', 'rgba(71, 85, 105, 0.12)', dynSpark);
+        drawSparkline('kpiSpark6', '#475569', 'rgba(71, 85, 105, 0.12)', dynSpark);
 
         // 2. Courbe d'Évolution avec support double mode (Recettes / Billets)
         const ctxMain = document.getElementById('mainEvolutionChart');

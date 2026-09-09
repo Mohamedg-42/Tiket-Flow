@@ -326,7 +326,7 @@ $taux_entree = ($tot_billets > 0) ? round(($tot_scannes / $tot_billets) * 100) :
          2. COMPOSTAGE RAPIDE DE BILLET PAR CODE (ESPACE ADMIN)
          ============================================================================== -->
     <div class="dash-card verif-scan-box"
-        style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #ffffff 0%, #F5F5F5 100%); border-left: 4px solid #FF4A0D;">
+        style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #ffffff 0%, #F5F5F5 100%);">
         <div
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
             <h3

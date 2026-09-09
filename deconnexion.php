@@ -15,26 +15,15 @@ if (!empty($_SESSION['user_id'])) {
     logActivity('deconnexion', 'user', (int)$_SESSION['user_id'], 'Déconnexion volontaire', (int)$_SESSION['user_id']);
 }
 
-// 1. On vide toutes les variables de session
+// 1. On vide toutes les variables de session utilisateur
 $_SESSION = [];
 
-// 2. Si un cookie de session existe, on le supprime
-if (ini_get("session.use_cookies")) {
-    $params = session_get_cookie_params();
-    setcookie(
-        session_name(),
-        '',
-        time() - 42000,
-        $params["path"],
-        $params["domain"],
-        $params["secure"],
-        $params["httponly"]
-    );
-}
+// 2. On régénère l'identifiant de session de manière propre
+session_regenerate_id(true);
 
-// 3. On détruit la session
-session_destroy();
+// 3. Message flash éphémère (consommé dès le premier affichage)
+$_SESSION['logout_success'] = true;
 
-// 4. On redirige vers la page d'accueil du site avec message de déconnexion
-header("Location: client/accueil.php?logout=1");
+// 4. On redirige vers la page d'accueil du site
+header("Location: client/accueil.php");
 exit();

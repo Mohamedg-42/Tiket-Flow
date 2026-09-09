@@ -203,8 +203,7 @@ $nb_total = (int) $pdo->query("SELECT COUNT(*) FROM claims")->fetchColumn();
                 ];
                 [$st_label, $st_bg, $st_fg] = $badge_st[$cl['statut']] ?? ['Inconnu', '#F5F5F5', '#737373'];
                 ?>
-                <div class="dash-card"
-                    style="padding: 1.5rem; <?php echo ($cl['statut'] === 'en_attente') ? 'border-left: 4px solid #FF4A0D;' : ''; ?>">
+                <div class="dash-card" style="padding: 1.5rem;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
                         <div>
@@ -262,7 +261,7 @@ $nb_total = (int) $pdo->query("SELECT COUNT(*) FROM claims")->fetchColumn();
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
                             <label style="font-size: 0.8rem; font-weight: 800; color: #000000; margin: 0;">
-                                <i class="fa-solid fa-reply"></i> Réponse officielle de la plateforme Eventia :
+                                <i class="fa-solid fa-reply"></i> Réponse officielle de la plateforme Tikéli :
                             </label>
 
                             <div style="display: inline-flex; align-items: center; gap: 6px;">

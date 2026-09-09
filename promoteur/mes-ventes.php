@@ -248,6 +248,23 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
     padding: 0.85rem 1.25rem;
 }
 @media (max-width: 900px) {
+    .dash-header-section {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+    .dash-header-section > div:last-child {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+    }
+    .dash-header-section .dash-btn-action {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 0.55rem 0.5rem !important;
+        box-sizing: border-box !important;
+    }
     .dash-filter-bar-bottom form {
         flex-direction: column !important;
         align-items: stretch !important;
@@ -259,6 +276,11 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
+    }
+}
+@media (max-width: 500px) {
+    .dash-header-section > div:last-child {
+        grid-template-columns: 1fr !important;
     }
 }
 </style>

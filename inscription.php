@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Créer un compte - Eventia</title>
+    <title>Créer un compte - Tikéli</title>
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- Style CSS & Eventia Brand -->
+    <!-- Style CSS & Tikéli Brand -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/eventia-brand.css">
     <link rel="stylesheet" href="css/responsive-pro.css">
@@ -155,19 +155,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             body {
                 padding: 1.25rem 0.75rem 2rem !important;
             }
+
             .auth-container {
                 padding: 1.5rem 1.25rem;
                 border-radius: 14px;
             }
+
             .form-grid-2 {
                 grid-template-columns: 1fr;
                 gap: 0;
             }
+
             .promoteur-invite-box {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 0.5rem;
             }
+
             .promoteur-invite-btn {
                 width: 100%;
                 text-align: center;
@@ -191,18 +195,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="auth-container eventia-card">
-        
+
         <!-- Logo & Titre Identique -->
         <div style="text-align: center; margin-bottom: 1.75rem;">
             <a href="client/accueil.php"
                 style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; text-decoration: none;">
-                <img src="images/logo.png" alt="Tikéli" style="height: 52px; width: auto; max-width: 190px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
+                <img src="images/logo.png" alt="Tikéli"
+                    style="height: 52px; width: auto; max-width: 190px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
             </a>
-            <h1 style="font-size: 1.35rem; font-weight: 800; color: var(--eventia-navy, #000000); margin: 0.35rem 0 0.25rem; font-family: var(--font-heading, 'Outfit', sans-serif);">
+            <h1
+                style="font-size: 1.35rem; font-weight: 800; color: var(--eventia-navy, #000000); margin: 0.35rem 0 0.25rem; font-family: var(--font-heading, 'Outfit', sans-serif);">
                 Créer un compte
             </h1>
             <p style="color: var(--eventia-muted, #737373); margin: 0; font-size: 0.88rem;">
-                Rejoignez Eventia et réservez vos places en quelques clics
+                Rejoignez Tikéli et réservez vos places en quelques clics
             </p>
         </div>
 
@@ -210,19 +216,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if (!empty($message)): ?>
             <div class="eventia-alert eventia-alert-<?php echo $msg_type === 'success' ? 'success' : 'error'; ?>"
                 style="background: <?php echo $msg_type === 'success' ? '#FFF2ED' : '#F5F5F5'; ?>; border: 1px solid <?php echo $msg_type === 'success' ? '#FFF2ED' : '#E5E5E5'; ?>; color: <?php echo $msg_type === 'success' ? '#FF4A0D' : '#000000'; ?>; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem;">
-                <i class="fa-solid <?php echo $msg_type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>" style="flex-shrink: 0;"></i>
+                <i class="fa-solid <?php echo $msg_type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>"
+                    style="flex-shrink: 0;"></i>
                 <span><?php echo htmlspecialchars($message); ?></span>
             </div>
         <?php endif; ?>
 
         <!-- Formulaire d'inscription -->
         <form method="POST" action="inscription.php" style="display: flex; flex-direction: column; gap: 1rem;">
-            
+
             <div class="form-grid-2">
                 <!-- Nom -->
                 <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
-                    <label for="nom" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
-                        <i class="fa-solid fa-user" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                    <label for="nom"
+                        style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                        <i class="fa-solid fa-user"
+                            style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
                         <span>Nom *</span>
                     </label>
                     <input type="text" id="nom" name="nom" required placeholder="Ex: Koffi"
@@ -232,8 +241,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <!-- Prénom -->
                 <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
-                    <label for="prenom" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
-                        <i class="fa-regular fa-user" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                    <label for="prenom"
+                        style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                        <i class="fa-regular fa-user"
+                            style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
                         <span>Prénom *</span>
                     </label>
                     <input type="text" id="prenom" name="prenom" required placeholder="Ex: Jean"
@@ -244,37 +255,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Email -->
             <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
-                <label for="email" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
-                    <i class="fa-solid fa-envelope" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                <label for="email"
+                    style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                    <i class="fa-solid fa-envelope"
+                        style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
                     <span>Adresse Email *</span>
                 </label>
                 <input type="email" id="email" name="email" required placeholder="nom@exemple.com"
-                    value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
-                    autocomplete="email"
+                    value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" autocomplete="email"
                     style="width: 100%; box-sizing: border-box; padding: 0.75rem 0.95rem; border-radius: 10px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.92rem; font-family: inherit; color: var(--eventia-navy, #000000); background: #ffffff;">
             </div>
 
             <!-- Téléphone -->
             <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
-                <label for="telephone" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
-                    <i class="fa-solid fa-phone" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                <label for="telephone"
+                    style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                    <i class="fa-solid fa-phone"
+                        style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
                     <span>Numéro de Téléphone (Mobile Money) *</span>
                 </label>
                 <input type="tel" id="telephone" name="telephone" required placeholder="Ex: +225 07 00 00 00 00"
-                    value="<?php echo htmlspecialchars($_POST['telephone'] ?? ''); ?>"
-                    autocomplete="tel"
+                    value="<?php echo htmlspecialchars($_POST['telephone'] ?? ''); ?>" autocomplete="tel"
                     style="width: 100%; box-sizing: border-box; padding: 0.75rem 0.95rem; border-radius: 10px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.92rem; font-family: inherit; color: var(--eventia-navy, #000000); background: #ffffff;">
             </div>
 
             <!-- Mot de passe -->
             <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 5px;">
-                <label for="password" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
-                    <i class="fa-solid fa-key" style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
+                <label for="password"
+                    style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000);">
+                    <i class="fa-solid fa-key"
+                        style="color: var(--eventia-navy-light, #000000); font-size: 0.82rem;"></i>
                     <span>Mot de passe (min. 6 caractères) *</span>
                 </label>
                 <div style="position: relative; width: 100%;">
-                    <input type="password" id="password" name="password" required
-                        placeholder="••••••••"
+                    <input type="password" id="password" name="password" required placeholder="••••••••"
                         autocomplete="new-password"
                         style="width: 100%; box-sizing: border-box; padding: 0.75rem 2.5rem 0.75rem 0.95rem; border-radius: 10px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.92rem; font-family: inherit; color: var(--eventia-navy, #000000); background: #ffffff;">
                     <button type="button" onclick="togglePasswordVisibility()" aria-label="Afficher le mot de passe"

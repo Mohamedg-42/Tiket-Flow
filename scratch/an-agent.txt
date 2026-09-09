@@ -1,4 +1,0 @@
-﻿footer.php
-header.php
-historique.php
-verification.php

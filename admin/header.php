@@ -12,7 +12,7 @@ require_once '../includes/auth.php';
 checkRole('admin', '../connexion.php');
 
 $current_page = basename($_SERVER['PHP_SELF']);
-$admin_page_title = $admin_page_title ?? 'Administration Control Center - Eventia';
+$admin_page_title = $admin_page_title ?? 'Administration Control Center - Tikéli';
 
 // Informations admin connecté (Prénom & Nom)
 $admin_prenom = trim($_SESSION['user_prenom'] ?? ($_SESSION['prenom'] ?? ''));
@@ -22,7 +22,7 @@ $admin_nom_base = trim($_SESSION['user_nom'] ?? ($_SESSION['nom'] ?? ''));
 if ((empty($admin_prenom) || empty($admin_nom_base)) && !empty($_SESSION['user_id'])) {
     try {
         $stmt_admin = $pdo->prepare("SELECT prenom, nom, email FROM users WHERE id = ?");
-        $stmt_admin->execute([(int)$_SESSION['user_id']]);
+        $stmt_admin->execute([(int) $_SESSION['user_id']]);
         $u_admin = $stmt_admin->fetch(PDO::FETCH_ASSOC);
         if ($u_admin) {
             if (empty($admin_prenom) && !empty($u_admin['prenom'])) {
@@ -36,7 +36,8 @@ if ((empty($admin_prenom) || empty($admin_nom_base)) && !empty($_SESSION['user_i
                 $_SESSION['nom'] = $admin_nom_base;
             }
         }
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) {
+    }
 }
 
 $admin_fullname = trim($admin_prenom . ' ' . $admin_nom_base);
@@ -63,13 +64,13 @@ if (empty($admin_initiales)) {
 }
 
 // 3. Comptage rapide des demandes et notifications
-$badge_promoter_reqs = (int)$pdo->query("SELECT COUNT(*) FROM promoter_requests WHERE statut = 'en_attente'")->fetchColumn();
-$badge_event_reqs    = (int)$pdo->query("SELECT COUNT(*) FROM event_requests WHERE statut = 'en_attente'")->fetchColumn();
-$badge_withdrawals   = (int)$pdo->query("SELECT COUNT(*) FROM withdrawals WHERE statut = 'en_attente'")->fetchColumn();
-$badge_claims        = (int)$pdo->query("SELECT COUNT(*) FROM claims WHERE statut = 'en_attente'")->fetchColumn();
+$badge_promoter_reqs = (int) $pdo->query("SELECT COUNT(*) FROM promoter_requests WHERE statut = 'en_attente'")->fetchColumn();
+$badge_event_reqs = (int) $pdo->query("SELECT COUNT(*) FROM event_requests WHERE statut = 'en_attente'")->fetchColumn();
+$badge_withdrawals = (int) $pdo->query("SELECT COUNT(*) FROM withdrawals WHERE statut = 'en_attente'")->fetchColumn();
+$badge_claims = (int) $pdo->query("SELECT COUNT(*) FROM claims WHERE statut = 'en_attente'")->fetchColumn();
 
 try {
-    $badge_campagnes_pending = (int)$pdo->query("SELECT COUNT(*) FROM cotisation_campagnes WHERE statut = 'en_attente'")->fetchColumn();
+    $badge_campagnes_pending = (int) $pdo->query("SELECT COUNT(*) FROM cotisation_campagnes WHERE statut = 'en_attente'")->fetchColumn();
 } catch (PDOException $e) {
     $badge_campagnes_pending = 0;
 }
@@ -78,12 +79,12 @@ $badge_demandes_all = $badge_event_reqs + $badge_campagnes_pending;
 $badge_my_tasks = 0;
 $badge_all_tasks = 0;
 try {
-    $uid = (int)($_SESSION['user_id'] ?? 0);
+    $uid = (int) ($_SESSION['user_id'] ?? 0);
     $stmt_mt = $pdo->prepare("SELECT COUNT(*) FROM tasks WHERE user_id = ? AND statut IN ('a_faire', 'en_cours')");
     $stmt_mt->execute([$uid]);
-    $badge_my_tasks = (int)$stmt_mt->fetchColumn();
+    $badge_my_tasks = (int) $stmt_mt->fetchColumn();
 
-    $badge_all_tasks = (int)$pdo->query("SELECT COUNT(*) FROM tasks WHERE statut IN ('a_faire', 'en_cours')")->fetchColumn();
+    $badge_all_tasks = (int) $pdo->query("SELECT COUNT(*) FROM tasks WHERE statut IN ('a_faire', 'en_cours')")->fetchColumn();
 } catch (PDOException $e) {
     $badge_my_tasks = 0;
     $badge_all_tasks = 0;
@@ -91,6 +92,7 @@ try {
 ?>
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -103,7 +105,9 @@ try {
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
 
     <!-- FontAwesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -111,14 +115,14 @@ try {
     <!-- CSS Platform & Dashboard Pro -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard-pro.css">
-    <!-- Eventia Brand Design System -->
+    <!-- Tikéli Brand Design System -->
     <link rel="stylesheet" href="../css/eventia-brand.css">
     <!-- Responsive Professional CSS -->
     <link rel="stylesheet" href="../css/responsive-pro.css">
 
     <style>
         /* ==============================================================================
-           ADMINISTRATION CONTROL CENTER (SIDEBAR LATÉRALE EVENTIA BLEU NUIT)
+           ADMINISTRATION CONTROL CENTER (SIDEBAR LATÉRALE TIKÉLI BLEU NUIT)
            ============================================================================== */
         .sidebar {
             position: fixed;
@@ -147,6 +151,7 @@ try {
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             text-decoration: none;
         }
+
         .ctrl-brand-logo {
             display: flex;
             align-items: center;
@@ -157,6 +162,7 @@ try {
             letter-spacing: -0.2px;
             font-family: var(--font-heading, 'Outfit', sans-serif);
         }
+
         :root {
             --tikeli-orange: #FF4A0D;
             --tikeli-black: #000000;
@@ -183,6 +189,7 @@ try {
             font-weight: 600 !important;
             box-shadow: 0 4px 14px rgba(255, 74, 13, 0.3) !important;
         }
+
         .dash-btn-action.btn-primary:hover,
         .btn-submit:hover {
             background: #E03E08 !important;
@@ -193,7 +200,7 @@ try {
         .ctrl-brand-icon {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, var(--tikeli-orange, #FF4A0D), #E03E08);
+            background: var(--tikeli-orange, #FF4A0D);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -202,6 +209,7 @@ try {
             font-size: 1.05rem;
             box-shadow: 0 4px 12px rgba(255, 74, 13, 0.35);
         }
+
         .ctrl-badge-admin {
             background: rgba(255, 74, 13, 0.18);
             color: var(--tikeli-orange, #FF4A0D);
@@ -227,10 +235,12 @@ try {
             text-decoration: none;
             transition: all 0.2s ease;
         }
+
         .ctrl-user-card:hover {
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 255, 255, 0.15);
         }
+
         .ctrl-avatar {
             width: 36px;
             height: 36px;
@@ -245,6 +255,7 @@ try {
             justify-content: center;
             flex-shrink: 0;
         }
+
         .ctrl-user-name {
             color: #ffffff;
             font-size: 0.82rem;
@@ -254,6 +265,7 @@ try {
             text-overflow: ellipsis;
             display: block;
         }
+
         .ctrl-user-role {
             font-size: 0.7rem;
             color: #737373;
@@ -273,17 +285,21 @@ try {
             padding-right: 4px;
             margin-bottom: 0.75rem;
         }
+
         .ctrl-nav-scroll::-webkit-scrollbar {
             width: 5px;
             display: block;
         }
+
         .ctrl-nav-scroll::-webkit-scrollbar-track {
             background: transparent;
         }
+
         .ctrl-nav-scroll::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.25);
             border-radius: 999px;
         }
+
         .ctrl-nav-scroll::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.45);
         }
@@ -306,9 +322,11 @@ try {
             flex-direction: column;
             gap: 3px;
         }
+
         .ctrl-menu li {
             margin: 0;
         }
+
         .ctrl-menu a {
             display: flex;
             align-items: center;
@@ -322,6 +340,7 @@ try {
             transition: all 0.18s ease;
             position: relative;
         }
+
         .ctrl-menu a i {
             font-size: 0.95rem;
             width: 18px;
@@ -329,16 +348,18 @@ try {
             color: #737373;
             transition: all 0.18s ease;
         }
+
         .ctrl-menu a:hover {
             color: #ffffff;
             background: rgba(255, 255, 255, 0.06);
             transform: translateX(3px);
         }
+
         .ctrl-menu a:hover i {
             color: #F5F5F5;
         }
 
-        /* ÉLÉMENT ACTIF DANS LE SLIDE LATÉRAL : SOBRE & ÉLÉGANT EVENTIA */
+        /* ÉLÉMENT ACTIF DANS LE SLIDE LATÉRAL : SOBRE & ÉLÉGANT TIKÉLI */
         .ctrl-menu a.active {
             color: #ffffff !important;
             background: rgba(255, 255, 255, 0.12) !important;
@@ -347,10 +368,12 @@ try {
             border: none !important;
             box-shadow: none !important;
         }
+
         .ctrl-menu a.active i {
             color: var(--tikeli-orange, #FF4A0D) !important;
             filter: none !important;
         }
+
         .ctrl-active-dot {
             margin-left: auto;
             color: var(--tikeli-orange, #FF4A0D);
@@ -377,6 +400,7 @@ try {
             flex-direction: column;
             gap: 6px;
         }
+
         .ctrl-btn-site {
             display: flex;
             align-items: center;
@@ -392,11 +416,13 @@ try {
             text-decoration: none;
             transition: all 0.2s ease;
         }
+
         .ctrl-btn-site:hover {
             background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
             border-color: rgba(255, 74, 13, 0.4);
         }
+
         .ctrl-btn-logout {
             display: flex;
             align-items: center;
@@ -404,15 +430,20 @@ try {
             gap: 6px;
             padding: 0.5rem;
             border-radius: 8px;
-            color: #000000;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
             font-size: 0.78rem;
             font-weight: 700;
             text-decoration: none;
             transition: all 0.2s ease;
         }
+
         .ctrl-btn-logout:hover {
-            background: rgba(239, 68, 68, 0.12);
-            color: #E5E5E5;
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
         }
 
         /* Barre mobile et overlay coulissant */
@@ -427,6 +458,7 @@ try {
             justify-content: space-between;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
+
         .ctrl-slide-overlay {
             display: none;
             position: fixed;
@@ -435,15 +467,18 @@ try {
             backdrop-filter: blur(4px);
             z-index: 99;
         }
+
         @media (max-width: 991px) {
             .dash-pro-layout .main-content {
                 margin-left: 0 !important;
                 width: 100% !important;
                 max-width: 100vw !important;
             }
+
             .ctrl-mobile-topbar {
                 display: flex;
             }
+
             .sidebar {
                 transform: translateX(-100%);
                 z-index: 1000;
@@ -451,13 +486,16 @@ try {
                 height: 100dvh;
                 max-height: 100dvh;
             }
+
             .sidebar.show-slide {
                 transform: translateX(0);
                 box-shadow: 10px 0 35px rgba(0, 0, 0, 0.5);
             }
+
             .ctrl-slide-overlay.active {
                 display: block;
             }
+
             .ctrl-close-slide-btn {
                 display: inline-flex !important;
                 align-items: center;
@@ -551,7 +589,7 @@ try {
                 margin-bottom: 0 !important;
             }
 
-            body.sidebar-collapsed .ctrl-brand-logo > div:not(.ctrl-brand-icon),
+            body.sidebar-collapsed .ctrl-brand-logo>div:not(.ctrl-brand-icon),
             body.sidebar-collapsed .ctrl-badge-admin,
             body.sidebar-collapsed .ctrl-badge-pro {
                 display: none !important;
@@ -582,9 +620,9 @@ try {
                 justify-content: center !important;
             }
 
-            body.sidebar-collapsed .ctrl-user-card > div:not(.ctrl-avatar),
+            body.sidebar-collapsed .ctrl-user-card>div:not(.ctrl-avatar),
             body.sidebar-collapsed .ctrl-user-info,
-            body.sidebar-collapsed .ctrl-user-card > i.fa-chevron-right {
+            body.sidebar-collapsed .ctrl-user-card>i.fa-chevron-right {
                 display: none !important;
             }
 
@@ -635,7 +673,7 @@ try {
         }
 
         /* ==============================================================================
-           EVENTIA MINI TOOLTIP BUBBLE (PETITE BULLE DU TITRE DU BOUTON)
+           TIKÉLI MINI TOOLTIP BUBBLE (PETITE BULLE DU TITRE DU BOUTON)
            ============================================================================== */
         .eventia-mini-tooltip {
             position: fixed;
@@ -660,6 +698,7 @@ try {
             align-items: center;
             gap: 6px;
         }
+
         .eventia-mini-tooltip::before {
             content: '';
             position: absolute;
@@ -670,6 +709,7 @@ try {
             border-style: solid;
             border-color: transparent rgba(255, 177, 46, 0.6) transparent transparent;
         }
+
         .eventia-mini-tooltip.is-visible {
             opacity: 1;
             visibility: visible;
@@ -680,6 +720,7 @@ try {
             .ctrl-topbar-desktop {
                 display: none !important;
             }
+
             .eventia-mini-tooltip {
                 display: none !important;
             }
@@ -701,14 +742,18 @@ try {
     </script>
     <!-- Barre Mobile avec bouton d'ouverture du slide sur le côté -->
     <div class="ctrl-mobile-topbar">
-        <div style="display: flex; align-items: center; gap: 8px; color: #ffffff; font-weight: 800; font-size: 1rem; overflow: hidden; min-width: 0;">
-            <a href="dashboard.php" style="display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0;">
-                <img src="../images/logo.png" alt="Tikéli" style="height: 26px; width: auto; max-width: 95px; object-fit: contain;">
+        <div
+            style="display: flex; align-items: center; gap: 8px; color: #ffffff; font-weight: 800; font-size: 1rem; overflow: hidden; min-width: 0;">
+            <a href="dashboard.php"
+                style="display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0;">
+                <img src="../images/logo.png" alt="Tikéli"
+                    style="height: 26px; width: auto; max-width: 95px; object-fit: contain;">
             </a>
             <span style="font-size: 0.8rem; color: #737373; font-weight: 600;">• Admin</span>
         </div>
 
-        <button type="button" onclick="toggleAdminSidebar(true)" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+        <button type="button" onclick="toggleAdminSidebar(true)"
+            style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); color: #ffffff; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
             <i class="fa-solid fa-bars-staggered"></i> Menu Admin
         </button>
     </div>
@@ -723,15 +768,20 @@ try {
         <aside class="sidebar" id="ctrlAdminSidebar">
             <!-- 1. Marque & Titre -->
             <div class="ctrl-brand">
-                <a href="dashboard.php" class="ctrl-brand-logo" style="text-decoration: none; display: flex; align-items: center;">
-                    <img src="../images/logo.png" alt="Tikéli" style="height: 34px; width: auto; max-width: 140px; object-fit: contain;">
+                <a href="dashboard.php" class="ctrl-brand-logo"
+                    style="text-decoration: none; display: flex; align-items: center;">
+                    <img src="../images/logo.png" alt="Tikéli"
+                        style="height: 34px; width: auto; max-width: 140px; object-fit: contain;">
                 </a>
-                
+
                 <div style="display: flex; align-items: center; gap: 6px;">
-                    <button type="button" class="ctrl-collapse-btn" onclick="toggleSidebarCollapse()" title="Réduire / Agrandir la barre latérale (Ctrl+B)">
+                    <button type="button" class="ctrl-collapse-btn" onclick="toggleSidebarCollapse()"
+                        title="Réduire / Agrandir la barre latérale (Ctrl+B)">
                         <i class="fa-solid fa-angles-left"></i>
                     </button>
-                    <button type="button" onclick="toggleAdminSidebar(false)" style="background: transparent; border: 0; color: #737373; font-size: 1.1rem; cursor: pointer; display: none;" class="ctrl-close-slide-btn">&times;</button>
+                    <button type="button" onclick="toggleAdminSidebar(false)"
+                        style="background: transparent; border: 0; color: #737373; font-size: 1.1rem; cursor: pointer; display: none;"
+                        class="ctrl-close-slide-btn">&times;</button>
                 </div>
             </div>
 
@@ -739,7 +789,8 @@ try {
             <div class="ctrl-user-card">
                 <div class="ctrl-avatar"><?php echo htmlspecialchars($admin_initiales); ?></div>
                 <div style="overflow: hidden; flex: 1;">
-                    <span class="ctrl-user-name" title="<?php echo htmlspecialchars($admin_fullname); ?>"><?php echo htmlspecialchars($admin_fullname); ?></span>
+                    <span class="ctrl-user-name"
+                        title="<?php echo htmlspecialchars($admin_fullname); ?>"><?php echo htmlspecialchars($admin_fullname); ?></span>
                     <span class="ctrl-user-role">
                         <i class="fa-solid fa-shield" style="font-size: 0.55rem; color: #FF4A0D;"></i> Administrateur
                     </span>
@@ -752,52 +803,81 @@ try {
                 <span class="ctrl-section-label">Supervision & Billetterie</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="dashboard.php" class="<?php echo $current_page === 'dashboard.php' ? 'active' : ''; ?>" data-title="Dashboard Global" data-desc="Vue d'ensemble des statistiques, ventes globales, revenus et jauges en direct." data-category="Supervision">
+                        <a href="dashboard.php" class="<?php echo $current_page === 'dashboard.php' ? 'active' : ''; ?>"
+                            data-title="Dashboard Global"
+                            data-desc="Vue d'ensemble des statistiques, ventes globales, revenus et jauges en direct."
+                            data-category="Supervision">
                             <i class="fa-solid fa-chart-line"></i>
                             <span>Dashboard Global</span>
-                            <?php if ($current_page === 'dashboard.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'dashboard.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="evenements.php" class="<?php echo in_array($current_page, ['evenements.php', 'creer-evenement.php', 'modifier-evenement.php'], true) ? 'active' : ''; ?>" data-title="Tous les Événements" data-desc="Superviser, valider, modifier ou suspendre les événements publiés sur la plateforme." data-category="Billetterie">
+                        <a href="evenements.php"
+                            class="<?php echo in_array($current_page, ['evenements.php', 'creer-evenement.php', 'modifier-evenement.php'], true) ? 'active' : ''; ?>"
+                            data-title="Tous les Événements"
+                            data-desc="Superviser, valider, modifier ou suspendre les événements publiés sur la plateforme."
+                            data-category="Billetterie">
                             <i class="fa-solid fa-calendar-days"></i>
                             <span>Tous les Événements</span>
-                            <?php if (in_array($current_page, ['evenements.php', 'creer-evenement.php', 'modifier-evenement.php'], true)): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if (in_array($current_page, ['evenements.php', 'creer-evenement.php', 'modifier-evenement.php'], true)): ?><span
+                                    class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="salles.php" class="<?php echo $current_page === 'salles.php' ? 'active' : ''; ?>" data-title="Salles & Complexes" data-desc="Créer et configurer les salles de spectacle, jauges, zones tarifaires et équipements." data-category="Infrastructures">
+                        <a href="salles.php" class="<?php echo $current_page === 'salles.php' ? 'active' : ''; ?>"
+                            data-title="Salles & Complexes"
+                            data-desc="Créer et configurer les salles de spectacle, jauges, zones tarifaires et équipements."
+                            data-category="Infrastructures">
                             <i class="fa-solid fa-landmark"></i>
                             <span>Salles & Espaces</span>
-                            <?php if ($current_page === 'salles.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'salles.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="votes.php" class="<?php echo $current_page === 'votes.php' ? 'active' : ''; ?>" data-title="Votes & Concours" data-desc="Gestion des concours, candidats, sessions de vote payantes et classements." data-category="Engagement">
+                        <a href="votes.php" class="<?php echo $current_page === 'votes.php' ? 'active' : ''; ?>"
+                            data-title="Votes & Concours"
+                            data-desc="Gestion des concours, candidats, sessions de vote payantes et classements."
+                            data-category="Engagement">
                             <i class="fa-solid fa-ranking-star"></i>
                             <span>Votes & Concours</span>
-                            <?php if ($current_page === 'votes.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'votes.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="tickets.php" class="<?php echo $current_page === 'tickets.php' ? 'active' : ''; ?>" data-title="Gestion des Billets" data-desc="Consulter l'ensemble des billets émis, catégories de places et statuts." data-category="Billetterie">
+                        <a href="tickets.php" class="<?php echo $current_page === 'tickets.php' ? 'active' : ''; ?>"
+                            data-title="Gestion des Billets"
+                            data-desc="Consulter l'ensemble des billets émis, catégories de places et statuts."
+                            data-category="Billetterie">
                             <i class="fa-solid fa-ticket"></i>
                             <span>Gestion des Billets</span>
-                            <?php if ($current_page === 'tickets.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'tickets.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="commandes.php" class="<?php echo $current_page === 'commandes.php' ? 'active' : ''; ?>" data-title="Commandes Clients" data-desc="Historique des transactions d'achat, paniers validés et reçus électroniques." data-category="Ventes">
+                        <a href="commandes.php" class="<?php echo $current_page === 'commandes.php' ? 'active' : ''; ?>"
+                            data-title="Commandes Clients"
+                            data-desc="Historique des transactions d'achat, paniers validés et reçus électroniques."
+                            data-category="Ventes">
                             <i class="fa-solid fa-cart-shopping"></i>
                             <span>Commandes Clients</span>
-                            <?php if ($current_page === 'commandes.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'commandes.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="paiements.php" class="<?php echo $current_page === 'paiements.php' ? 'active' : ''; ?>" data-title="Paiements Mobile Money" data-desc="Suivi des transactions Wave, Orange, MTN, Moov et cartes bancaires." data-category="Finances">
+                        <a href="paiements.php" class="<?php echo $current_page === 'paiements.php' ? 'active' : ''; ?>"
+                            data-title="Paiements Mobile Money"
+                            data-desc="Suivi des transactions Wave, Orange, MTN, Moov et cartes bancaires."
+                            data-category="Finances">
                             <i class="fa-solid fa-credit-card"></i>
                             <span>Paiements Mobile Money</span>
-                            <?php if ($current_page === 'paiements.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'paiements.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                 </ul>
@@ -806,23 +886,32 @@ try {
                 <span class="ctrl-section-label">Validation & Demandes</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="demandes.php" class="<?php echo $current_page === 'demandes.php' ? 'active' : ''; ?>" data-title="Demandes d'Événements" data-desc="Examiner, approuver ou refuser les nouveaux événements soumis par les promoteurs." data-category="Validation">
+                        <a href="demandes.php" class="<?php echo $current_page === 'demandes.php' ? 'active' : ''; ?>"
+                            data-title="Demandes d'Événements"
+                            data-desc="Examiner, approuver ou refuser les nouveaux événements soumis par les promoteurs."
+                            data-category="Validation">
                             <i class="fa-solid fa-inbox"></i>
                             <span>Demandes d'Événements</span>
                             <?php if ($badge_demandes_all > 0): ?>
                                 <span class="badge-count"><?php echo $badge_demandes_all; ?></span>
                             <?php endif; ?>
-                            <?php if ($current_page === 'demandes.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'demandes.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="demandes-promoteurs.php" class="<?php echo $current_page === 'demandes-promoteurs.php' ? 'active' : ''; ?>" data-title="Dossiers Promoteurs" data-desc="Vérifier les pièces justificatives et octroyer les droits d'organisateur officiel." data-category="Validation">
+                        <a href="demandes-promoteurs.php"
+                            class="<?php echo $current_page === 'demandes-promoteurs.php' ? 'active' : ''; ?>"
+                            data-title="Dossiers Promoteurs"
+                            data-desc="Vérifier les pièces justificatives et octroyer les droits d'organisateur officiel."
+                            data-category="Validation">
                             <i class="fa-solid fa-id-card"></i>
                             <span>Dossiers Promoteurs</span>
                             <?php if ($badge_promoter_reqs > 0): ?>
                                 <span class="badge-count"><?php echo $badge_promoter_reqs; ?></span>
                             <?php endif; ?>
-                            <?php if ($current_page === 'demandes-promoteurs.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'demandes-promoteurs.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                 </ul>
@@ -831,20 +920,29 @@ try {
                 <span class="ctrl-section-label">Trésorerie & Opérations</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="cotisations.php" class="<?php echo $current_page === 'cotisations.php' ? 'active' : ''; ?>" data-title="Campagnes de Cotisation" data-desc="Supervision des cagnottes, tontines et collectes de fonds solidaires." data-category="Trésorerie">
+                        <a href="cotisations.php"
+                            class="<?php echo $current_page === 'cotisations.php' ? 'active' : ''; ?>"
+                            data-title="Campagnes de Cotisation"
+                            data-desc="Supervision des cagnottes, tontines et collectes de fonds solidaires."
+                            data-category="Trésorerie">
                             <i class="fa-solid fa-hand-holding-heart"></i>
                             <span>Campagnes de Cotisation</span>
-                            <?php if ($current_page === 'cotisations.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'cotisations.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="retraits.php" class="<?php echo $current_page === 'retraits.php' ? 'active' : ''; ?>" data-title="Retraits Promoteurs" data-desc="Validation et décaissement des gains des organisateurs après leurs événements." data-category="Trésorerie">
+                        <a href="retraits.php" class="<?php echo $current_page === 'retraits.php' ? 'active' : ''; ?>"
+                            data-title="Retraits Promoteurs"
+                            data-desc="Validation et décaissement des gains des organisateurs après leurs événements."
+                            data-category="Trésorerie">
                             <i class="fa-solid fa-money-bill-transfer"></i>
                             <span>Retraits Promoteurs</span>
                             <?php if ($badge_withdrawals > 0): ?>
                                 <span class="badge-count"><?php echo $badge_withdrawals; ?></span>
                             <?php endif; ?>
-                            <?php if ($current_page === 'retraits.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'retraits.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                 </ul>
@@ -853,41 +951,65 @@ try {
                 <span class="ctrl-section-label">Utilisateurs & Sécurité</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="utilisateurs.php" class="<?php echo $current_page === 'utilisateurs.php' ? 'active' : ''; ?>" data-title="Gestion des Comptes" data-desc="Administrer les profils utilisateurs, suspendre ou réactiver des comptes." data-category="Sécurité">
+                        <a href="utilisateurs.php"
+                            class="<?php echo $current_page === 'utilisateurs.php' ? 'active' : ''; ?>"
+                            data-title="Gestion des Comptes"
+                            data-desc="Administrer les profils utilisateurs, suspendre ou réactiver des comptes."
+                            data-category="Sécurité">
                             <i class="fa-solid fa-users"></i>
                             <span>Gestion des Comptes</span>
-                            <?php if ($current_page === 'utilisateurs.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'utilisateurs.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="profils.php" class="<?php echo $current_page === 'profils.php' ? 'active' : ''; ?>" data-title="Profils & Permissions" data-desc="Configuration des rôles personnalisés et matrice des privilèges d'accès." data-category="Sécurité">
+                        <a href="profils.php" class="<?php echo $current_page === 'profils.php' ? 'active' : ''; ?>"
+                            data-title="Profils & Permissions"
+                            data-desc="Configuration des rôles personnalisés et matrice des privilèges d'accès."
+                            data-category="Sécurité">
                             <i class="fa-solid fa-user-shield"></i>
                             <span>Profils & Permissions</span>
-                            <?php if ($current_page === 'profils.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'profils.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="promoteurs.php" class="<?php echo $current_page === 'promoteurs.php' ? 'active' : ''; ?>" data-title="Comptes Promoteurs" data-desc="Annuaire des organisateurs vérifiés, commissions et volumes de ventes." data-category="Partenaires">
+                        <a href="promoteurs.php"
+                            class="<?php echo $current_page === 'promoteurs.php' ? 'active' : ''; ?>"
+                            data-title="Comptes Promoteurs"
+                            data-desc="Annuaire des organisateurs vérifiés, commissions et volumes de ventes."
+                            data-category="Partenaires">
                             <i class="fa-solid fa-user-tie"></i>
                             <span>Comptes Promoteurs</span>
-                            <?php if ($current_page === 'promoteurs.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'promoteurs.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="verification.php" class="<?php echo $current_page === 'verification.php' ? 'active' : ''; ?>" data-title="Vérification Billets" data-desc="Outil de contrôle d'accès universel pour tester et scanner les QR codes." data-category="Terrain">
+                        <a href="verification.php"
+                            class="<?php echo $current_page === 'verification.php' ? 'active' : ''; ?>"
+                            data-title="Vérification Billets"
+                            data-desc="Outil de contrôle d'accès universel pour tester et scanner les QR codes."
+                            data-category="Terrain">
                             <i class="fa-solid fa-qrcode"></i>
                             <span>Vérification Billets</span>
-                            <?php if ($current_page === 'verification.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'verification.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="reclamations.php" class="<?php echo $current_page === 'reclamations.php' ? 'active' : ''; ?>" data-title="Support & Réclamations" data-desc="Gestion des signalements, litiges et demandes d'assistance des utilisateurs." data-category="Support">
+                        <a href="reclamations.php"
+                            class="<?php echo $current_page === 'reclamations.php' ? 'active' : ''; ?>"
+                            data-title="Support & Réclamations"
+                            data-desc="Gestion des signalements, litiges et demandes d'assistance des utilisateurs."
+                            data-category="Support">
                             <i class="fa-solid fa-headset"></i>
                             <span>Support & Tickets</span>
                             <?php if ($badge_claims > 0): ?>
                                 <span class="badge-count" style="background: #FF4A0D;"><?php echo $badge_claims; ?></span>
                             <?php endif; ?>
-                            <?php if ($current_page === 'reclamations.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'reclamations.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                 </ul>
@@ -896,30 +1018,44 @@ try {
                 <span class="ctrl-section-label">Organisation & Audit</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="taches.php" class="<?php echo $current_page === 'taches.php' ? 'active' : ''; ?>" data-title="Toutes les Tâches" data-desc="Suivi de la feuille de route, assignation des tâches et to-do list d'équipe." data-category="Organisation">
+                        <a href="taches.php" class="<?php echo $current_page === 'taches.php' ? 'active' : ''; ?>"
+                            data-title="Toutes les Tâches"
+                            data-desc="Suivi de la feuille de route, assignation des tâches et to-do list d'équipe."
+                            data-category="Organisation">
                             <i class="fa-solid fa-list-check"></i>
                             <span>Toutes les Tâches</span>
                             <?php if ($badge_all_tasks > 0): ?>
-                                <span class="badge-count" style="background: var(--accent);"><?php echo $badge_all_tasks; ?></span>
+                                <span class="badge-count"
+                                    style="background: var(--accent);"><?php echo $badge_all_tasks; ?></span>
                             <?php endif; ?>
-                            <?php if ($current_page === 'taches.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'taches.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="mes-taches.php" class="<?php echo $current_page === 'mes-taches.php' ? 'active' : ''; ?>" data-title="Mes Tâches Personnelles" data-desc="Consulter et marquer comme terminées vos tâches administratives assignées." data-category="Organisation">
+                        <a href="mes-taches.php"
+                            class="<?php echo $current_page === 'mes-taches.php' ? 'active' : ''; ?>"
+                            data-title="Mes Tâches Personnelles"
+                            data-desc="Consulter et marquer comme terminées vos tâches administratives assignées."
+                            data-category="Organisation">
                             <i class="fa-solid fa-thumbtack"></i>
                             <span>Mes Tâches</span>
                             <?php if ($badge_my_tasks > 0): ?>
                                 <span class="badge-count" style="background: #FF4A0D;"><?php echo $badge_my_tasks; ?></span>
                             <?php endif; ?>
-                            <?php if ($current_page === 'mes-taches.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'mes-taches.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
-                        <a href="activite.php" class="<?php echo $current_page === 'activite.php' ? 'active' : ''; ?>" data-title="Journal d'Activité" data-desc="Historique en temps réel des connexions, modifications et validations." data-category="Audit">
+                        <a href="activite.php" class="<?php echo $current_page === 'activite.php' ? 'active' : ''; ?>"
+                            data-title="Journal d'Activité"
+                            data-desc="Historique en temps réel des connexions, modifications et validations."
+                            data-category="Audit">
                             <i class="fa-solid fa-clock-rotate-left"></i>
                             <span>Journal d'Activité</span>
-                            <?php if ($current_page === 'activite.php'): ?><span class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                            <?php if ($current_page === 'activite.php'): ?><span class="ctrl-active-dot"><i
+                                        class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                 </ul>
@@ -927,11 +1063,15 @@ try {
 
             <!-- 4. Pied de Page Sidebar -->
             <div class="ctrl-footer">
-                <a href="../client/accueil.php" target="_blank" class="ctrl-btn-site" data-title="Voir le Site Public" data-desc="Consulter la vitrine publique Eventia et les événements en ligne." data-category="Raccourci">
+                <a href="../client/accueil.php" target="_blank" class="ctrl-btn-site" data-title="Voir le Site Public"
+                    data-desc="Consulter la vitrine publique Tikéli et les événements en ligne."
+                    data-category="Raccourci">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     <span>Voir le Site Public</span>
                 </a>
-                <a href="../deconnexion.php" class="ctrl-btn-logout" data-title="Déconnexion" data-desc="Fermer votre session administrateur en toute sécurité." data-category="Sécurité" onclick="return confirm('Voulez-vous vous déconnecter de l\'administration ?');">
+                <a href="../deconnexion.php" class="ctrl-btn-logout" data-title="Déconnexion"
+                    data-desc="Fermer votre session administrateur en toute sécurité." data-category="Sécurité"
+                    onclick="return confirm('Voulez-vous vous déconnecter de l\'administration ?');">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     <span>Déconnexion</span>
                 </a>
@@ -942,70 +1082,70 @@ try {
         <div id="eventiaMiniTooltip" class="eventia-mini-tooltip"></div>
 
         <script>
-        function toggleSidebarCollapse() {
-            const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
-            localStorage.setItem('eventia_sidebar_collapsed', isCollapsed ? '1' : '0');
-        }
-
-        // Raccourci clavier Ctrl+B / Cmd+B pour rétracter ou agrandir
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
-                e.preventDefault();
-                toggleSidebarCollapse();
+            function toggleSidebarCollapse() {
+                const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('eventia_sidebar_collapsed', isCollapsed ? '1' : '0');
             }
-        });
 
-        function toggleAdminSidebar(force) {
-            const sidebar = document.getElementById('ctrlAdminSidebar');
-            const overlay = document.getElementById('ctrlAdminOverlay');
-            if (!sidebar) return;
+            // Raccourci clavier Ctrl+B / Cmd+B pour rétracter ou agrandir
+            document.addEventListener('keydown', function (e) {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+                    e.preventDefault();
+                    toggleSidebarCollapse();
+                }
+            });
 
-            const isShown = sidebar.classList.contains('show-slide');
-            const shouldShow = (typeof force === 'boolean') ? force : !isShown;
+            function toggleAdminSidebar(force) {
+                const sidebar = document.getElementById('ctrlAdminSidebar');
+                const overlay = document.getElementById('ctrlAdminOverlay');
+                if (!sidebar) return;
 
-            if (shouldShow) {
-                sidebar.classList.add('show-slide');
-                if (overlay) overlay.classList.add('active');
-            } else {
-                sidebar.classList.remove('show-slide');
-                if (overlay) overlay.classList.remove('active');
+                const isShown = sidebar.classList.contains('show-slide');
+                const shouldShow = (typeof force === 'boolean') ? force : !isShown;
+
+                if (shouldShow) {
+                    sidebar.classList.add('show-slide');
+                    if (overlay) overlay.classList.add('active');
+                } else {
+                    sidebar.classList.remove('show-slide');
+                    if (overlay) overlay.classList.remove('active');
+                }
             }
-        }
 
-        // Affichage de la bulle de titre au survol des boutons
-        document.addEventListener('DOMContentLoaded', function() {
-            const tooltip = document.getElementById('eventiaMiniTooltip');
-            if (!tooltip) return;
+            // Affichage de la bulle de titre au survol des boutons
+            document.addEventListener('DOMContentLoaded', function () {
+                const tooltip = document.getElementById('eventiaMiniTooltip');
+                if (!tooltip) return;
 
-            const targets = document.querySelectorAll('.ctrl-menu a, .ctrl-footer a, .ctrl-user-card, .ctrl-collapse-btn');
+                const targets = document.querySelectorAll('.ctrl-menu a, .ctrl-footer a, .ctrl-user-card, .ctrl-collapse-btn');
 
-            targets.forEach(el => {
-                el.addEventListener('mouseenter', function() {
-                    if (window.innerWidth < 992) return;
+                targets.forEach(el => {
+                    el.addEventListener('mouseenter', function () {
+                        if (window.innerWidth < 992) return;
 
-                    const title = this.getAttribute('data-title') || this.getAttribute('title') || this.innerText.trim();
-                    if (!title) return;
+                        const title = this.getAttribute('data-title') || this.getAttribute('title') || this.innerText.trim();
+                        if (!title) return;
 
-                    tooltip.textContent = title;
+                        tooltip.textContent = title;
 
-                    const rect = this.getBoundingClientRect();
-                    const ttHeight = tooltip.offsetHeight || 26;
-                    let topPos = rect.top + (rect.height / 2) - (ttHeight / 2);
-                    if (topPos < 10) topPos = 10;
-                    if (topPos + 40 > window.innerHeight) topPos = window.innerHeight - 45;
+                        const rect = this.getBoundingClientRect();
+                        const ttHeight = tooltip.offsetHeight || 26;
+                        let topPos = rect.top + (rect.height / 2) - (ttHeight / 2);
+                        if (topPos < 10) topPos = 10;
+                        if (topPos + 40 > window.innerHeight) topPos = window.innerHeight - 45;
 
-                    const leftPos = rect.right + 10;
+                        const leftPos = rect.right + 10;
 
-                    tooltip.style.top = topPos + 'px';
-                    tooltip.style.left = leftPos + 'px';
-                    tooltip.classList.add('is-visible');
-                });
+                        tooltip.style.top = topPos + 'px';
+                        tooltip.style.left = leftPos + 'px';
+                        tooltip.classList.add('is-visible');
+                    });
 
-                el.addEventListener('mouseleave', function() {
-                    tooltip.classList.remove('is-visible');
+                    el.addEventListener('mouseleave', function () {
+                        tooltip.classList.remove('is-visible');
+                    });
                 });
             });
-        });
         </script>
 
         <!-- ==============================================================================

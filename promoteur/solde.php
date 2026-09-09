@@ -55,19 +55,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['demande_retrait'])) {
                 throw new Exception("Solde insuffisant ou transaction simultanée détectée.");
             }
 
-            // B. Intégration API Feexpay Payout
-            $feexpay_token = "test_Hg7Kjl3ZAM63UuIUpuudD9nKuu3ZAM67Kjl3Uuhn";
-            $feexpay_shop_id = "80hxOfqxlIDOZJi";
+            // B. Intégration API Feexpay / Payout
             $ref_feexpay = 'PAY-FEEXPAY-' . strtoupper(bin2hex(random_bytes(3)));
             $txn_feexpay = 'TXN-' . date('YmdHis') . '-' . random_int(1000, 9999);
 
-            // Appel API Feexpay Payout / Cashout en environnement sécurisé
+            // Appel API Feexpay Payout en environnement sécurisé
             $clean_phone = preg_replace('/[^0-9]/', '', $telephone);
             $op_code = strtoupper(str_replace('_money', '', $methode));
 
             $payout_data = [
-                'token'       => $feexpay_token,
-                'id'          => $feexpay_shop_id,
+                'token'       => 'test_Hg7Kjl3ZAM63UuIUpuudD9nKuu3ZAM67Kjl3Uuhn',
+                'id'          => '80hxOfqxlIDOZJi',
                 'amount'      => (int)$montant,
                 'phone'       => $clean_phone,
                 'operator'    => $op_code,
@@ -80,10 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['demande_retrait'])) {
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_POST, true);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payout_data));
-                curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                    'Content-Type: application/json',
-                    'Authorization: Bearer ' . $feexpay_token
-                ]);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
                 curl_setopt($ch, CURLOPT_TIMEOUT, 5);
                 @curl_exec($ch);
                 curl_close($ch);
@@ -348,7 +343,7 @@ function render_momo_icon($methode, $size = 36) {
     padding: 0.95rem 1.6rem !important;
     font-size: clamp(0.9rem, 2.5vw, 1.02rem) !important;
     font-weight: 800 !important;
-    background: linear-gradient(135deg, var(--tikeli-orange, #FF4A0D) 0%, #E03E08 100%) !important;
+    background: var(--tikeli-orange, #FF4A0D) !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 12px !important;
@@ -366,8 +361,8 @@ function render_momo_icon($methode, $size = 36) {
 
 .btn-submit-retrait:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.45) !important;
-    background: linear-gradient(135deg, #FF4A0D 0%, #FF4A0D 100%) !important;
+    box-shadow: 0 8px 20px rgba(224, 62, 8, 0.4) !important;
+    background: #E03E08 !important;
 }
 
 .btn-submit-retrait:active {

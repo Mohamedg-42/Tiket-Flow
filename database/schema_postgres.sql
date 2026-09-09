@@ -1,5 +1,5 @@
 -- =====================================================================
--- EVENTIA PLATFORM — SCHEMA POSTGRESQL COMPLET
+-- TIKÉLI PLATFORM — SCHEMA POSTGRESQL COMPLET
 -- Généré le 2026-09-03 00:41:21
 -- =====================================================================
 
@@ -373,6 +373,7 @@ CREATE TABLE "promoters" (
     "reseaux_sociaux" VARCHAR(255) NULL,
     "statut" VARCHAR(50) NOT NULL DEFAULT 'approuve',
     "solde" NUMERIC(12,2) NOT NULL DEFAULT 0.00,
+    "commission_rate" NUMERIC(5,2) NOT NULL DEFAULT 5.00,
     "created_at" TIMESTAMP WITHOUT TIME ZONE NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP WITHOUT TIME ZONE NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "pk_promoters" PRIMARY KEY ("id")
@@ -427,3 +428,31 @@ CREATE TABLE "withdrawals" (
     CONSTRAINT "pk_withdrawals" PRIMARY KEY ("id")
 );
 
+-- ==============================================================================
+-- INDEX DE PERFORMANCE (Optimisation des requêtes & élimination des Seq Scans)
+-- ==============================================================================
+CREATE INDEX IF NOT EXISTS idx_places_ticket_type_id ON places(ticket_type_id);
+CREATE INDEX IF NOT EXISTS idx_places_statut ON places(statut);
+CREATE INDEX IF NOT EXISTS idx_places_type_statut ON places(ticket_type_id, statut);
+CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON tickets(user_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_order_id ON tickets(order_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_event_id ON tickets(event_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_ticket_type_id ON tickets(ticket_type_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_code_unique ON tickets(code_unique);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_statut ON orders(statut);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_promoter_trans_promoter ON promoter_transactions(promoter_id);
+CREATE INDEX IF NOT EXISTS idx_events_statut_date ON events(statut, date_evenement);
+CREATE INDEX IF NOT EXISTS idx_events_user_id ON events(user_id);
+CREATE INDEX IF NOT EXISTS idx_events_categorie ON events(categorie);
+CREATE INDEX IF NOT EXISTS idx_ticket_types_event_id ON ticket_types(event_id);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_promoters_user_id ON promoters(user_id);
+CREATE INDEX IF NOT EXISTS idx_event_votes_event_id ON event_votes(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_candidats_event ON event_candidats(event_id);
+CREATE INDEX IF NOT EXISTS idx_cotisations_campagne ON cotisations(campagne_id);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created ON activity_logs(created_at DESC);

@@ -104,7 +104,7 @@ if (!function_exists('smtp_send')) {
             return $r;
         };
 
-        $cmd('EHLO eventia.local');
+        $cmd('EHLO tikeli.local');
         if (!$ok) {
             fclose($conn);
             return ['ok' => false, 'error' => 'EHLO refusé : ' . $errline];
@@ -122,7 +122,7 @@ if (!function_exists('smtp_send')) {
                 fclose($conn);
                 return ['ok' => false, 'error' => 'Échec du handshake STARTTLS'];
             }
-            $cmd('EHLO eventia.local');
+            $cmd('EHLO tikeli.local');
             if (!$ok) {
                 fclose($conn);
                 return ['ok' => false, 'error' => 'EHLO après STARTTLS refusé : ' . $errline];

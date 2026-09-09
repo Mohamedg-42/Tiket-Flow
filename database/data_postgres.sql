@@ -1,5 +1,5 @@
 -- =====================================================================
--- EVENTIA PLATFORM — DONNEES POSTGRESQL
+-- TIKÉLI PLATFORM — DONNEES POSTGRESQL
 -- Généré le 2026-09-03 00:41:21
 -- =====================================================================
 
@@ -17,7 +17,7 @@ INSERT INTO "users" ("id", "nom", "prenom", "email", "telephone", "password", "r
 SELECT setval(pg_get_serial_sequence('"users"', 'id'), COALESCE((SELECT MAX("id") FROM "users"), 1), true);
 
 -- Données pour la table "profiles" (4 lignes)
-INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (1, 'Administrateur', 'Accès complet et supervision totale de la plateforme Eventia.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');
+INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (1, 'Administrateur', 'Accès complet et supervision totale de la plateforme Tikéli.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');
 INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (2, 'Gestionnaire d''événements', 'Gestion opérationnelle des événements, modération et configuration des salles.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');
 INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (3, 'Vérificateur', 'Contrôle des accès, vérification des billets et scan aux entrées.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');
 INSERT INTO "profiles" ("id", "nom", "description", "is_system", "created_at", "updated_at") VALUES (4, 'Comptable', 'Suivi financier, ventes, paiements, commissions et validation des retraits.', 1, '2026-09-02 10:34:20', '2026-09-02 10:34:20');

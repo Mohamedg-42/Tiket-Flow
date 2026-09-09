@@ -428,7 +428,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
          3. KPI CARDS : SYNTHÈSE CALCULÉE EN DIRECT (AU-DESSOUS DU FILTRE)
          ============================================================================== -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
-        <div class="eventia-kpi-card" style="border-left: 4px solid var(--tikeli-orange, #FF4A0D); display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="eventia-kpi-card" style="display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; width: 100%;">
                     <span style="font-size: 0.8rem; font-weight: 700; color: var(--tikeli-orange, #FF4A0D); text-transform: uppercase; letter-spacing: 0.3px;">Concours Filtrés</span>
@@ -461,7 +461,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
             <small style="color: var(--eventia-muted, #737373); font-size: 0.75rem; margin-top: 2px;">Participants en lice</small>
         </div>
 
-        <div class="eventia-kpi-card" style="border-left: 4px solid var(--tikeli-orange, #FF4A0D); display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="eventia-kpi-card" style="display: flex; flex-direction: column; justify-content: space-between;">
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; width: 100%;">
                     <span style="font-size: 0.8rem; font-weight: 700; color: var(--tikeli-orange, #FF4A0D); text-transform: uppercase; letter-spacing: 0.3px;">Recettes des Votes</span>
@@ -541,6 +541,12 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                 </strong>
                             </div>
 
+                            <button type="button" onclick="openPromoterShare(<?php echo (int) $ev['id']; ?>, '<?php echo htmlspecialchars(addslashes($ev['nom'])); ?>')"
+                                class="dash-btn-action"
+                                style="padding: 0.45rem 0.85rem; font-size: 0.8rem; background: #FFF2ED; color: #EA580C; border: 1px solid #FFEDD5; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-share-nodes"></i> Partager le lien public
+                            </button>
+
                             <button type="button" onclick="openAddCandidatModal(<?php echo $ev['id']; ?>)"
                                 class="dash-btn-action"
                                 style="padding: 0.45rem 0.85rem; font-size: 0.8rem; background: var(--dash-primary); color: #ffffff;">
@@ -565,7 +571,9 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                 $nb_v = (int) $c['nb_votes'];
                                 $pct = $total_votes_event > 0 ? round(($nb_v / $total_votes_event) * 100, 1) : 0;
                                 $rank_class = ($rank === 1) ? 'rank-1' : (($rank === 2) ? 'rank-2' : (($rank === 3) ? 'rank-3' : 'rank-other'));
-                                $photo_url = !empty($c['photo']) ? '../uploads/candidats/' . htmlspecialchars($c['photo']) : '../images/default-avatar.png';
+                                $photo_url = !empty($c['photo']) 
+                                    ? ((strpos($c['photo'], 'http://') === 0 || strpos($c['photo'], 'https://') === 0) ? htmlspecialchars($c['photo']) : '../uploads/candidats/' . htmlspecialchars($c['photo'])) 
+                                    : '../images/default-avatar.png';
                                 ?>
                                 <div class="candidat-card">
                                     <div class="candidat-card-left">
@@ -621,8 +629,14 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                             </div>
                                         <?php endif; ?>
 
-                                        <!-- Boutons Modifier / Supprimer -->
+                                        <!-- Boutons Partager / Modifier / Supprimer -->
                                         <div style="display: flex; gap: 5px; margin-left: auto;">
+                                            <button type="button" class="dash-btn-action"
+                                                style="padding: 0.35rem 0.65rem; font-size: 0.74rem; color: #EA580C; background: #FFF2ED; border: 1px solid #FFEDD5; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;"
+                                                onclick="openPromoterShareCandidate(<?php echo (int) $ev['id']; ?>, '<?php echo htmlspecialchars(addslashes($ev['nom'])); ?>', <?php echo (int) $c['id']; ?>, '<?php echo htmlspecialchars(addslashes($c['nom'])); ?>')"
+                                                title="Partager le lien direct de ce candidat">
+                                                <i class="fa-solid fa-share-nodes"></i> Partager
+                                            </button>
                                             <button type="button" class="dash-btn-action"
                                                 style="padding: 0.35rem 0.65rem; font-size: 0.74rem;"
                                                 onclick="openEditCandidatModal(<?php echo htmlspecialchars(json_encode($c)); ?>)"
@@ -810,6 +824,44 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
     </div>
 </div>
 
+<!-- Modal Partage Public Promoteur -->
+<div id="modalPromoterShare" class="dash-modal" style="display: none;">
+    <div class="dash-modal-backdrop" onclick="closePromoterShareModal()"></div>
+    <div class="dash-modal-dialog" style="max-width: 500px; z-index: 10001;">
+        <div class="dash-modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dash-border); padding: 1rem 1.25rem;">
+            <h3 style="margin: 0; font-size: 1.15rem; color: var(--dash-text); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-share-nodes" style="color: #FF4A0D;"></i> Partager le lien du vote
+            </h3>
+            <button type="button" onclick="closePromoterShareModal()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: var(--dash-muted);">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="dash-modal-body" style="padding: 1.25rem;">
+            <p id="promoterShareTitle" style="font-weight: 700; color: var(--dash-text); margin: 0 0 0.5rem; font-size: 0.95rem;"></p>
+            <p style="color: var(--dash-muted); font-size: 0.84rem; margin: 0 0 1rem; line-height: 1.45;">
+                Diffusez ce lien public sur vos réseaux sociaux, affiches, ou envoyez-le directement par WhatsApp pour récolter un maximum de votes.
+            </p>
+
+            <div style="background: #F8FAFC; border: 1px solid var(--dash-border); border-radius: 8px; padding: 0.5rem; display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1.25rem;">
+                <input type="text" id="promoterShareUrl" readonly style="flex: 1; border: none; background: transparent; font-family: 'Space Mono', monospace; font-size: 0.84rem; color: var(--dash-text); outline: none; padding: 0.35rem 0.5rem;">
+                <button type="button" id="btnCopyPromoterLink" onclick="copyPromoterShareUrl()" class="dash-btn-action" style="background: #0F172A; color: #ffffff; padding: 0.45rem 0.85rem; font-size: 0.8rem; border-radius: 6px; white-space: nowrap;">
+                    <i class="fa-regular fa-copy"></i> Copier
+                </button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <a id="btnPromoterWa" href="#" target="_blank" rel="noopener" class="dash-btn-action" style="justify-content: center; background: #25D366; color: #ffffff; text-decoration: none; padding: 0.65rem 1rem; font-size: 0.85rem; border-radius: 8px; font-weight: 700; border: none;">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                </a>
+                <a id="btnPromoterPreview" href="#" target="_blank" class="dash-btn-action" style="justify-content: center; background: #F1F5F9; color: var(--dash-text); text-decoration: none; padding: 0.65rem 1rem; font-size: 0.85rem; border-radius: 8px; font-weight: 700; border: 1px solid var(--dash-border);">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Tester la page
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     function openAddCandidatModal(eventId) {
         if (eventId) {
@@ -831,11 +883,73 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
         document.getElementById('modalEditCandidat').style.display = 'none';
     }
 
+    // Gestion du Partage Promoteur
+    let currentPromoterShareUrl = '';
+    let currentPromoterShareMsg = '';
+
+    function openPromoterShare(eventId, eventTitle) {
+        const loc = window.location;
+        const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/accueil.php');
+        const url = base + '?onglet=voter&vote_id=' + eventId;
+        const msg = "🗳️ Votez dès maintenant pour « " + eventTitle + " » sur Tikéli ! Cliquez ici : " + url;
+        
+        currentPromoterShareUrl = url;
+        currentPromoterShareMsg = msg;
+
+        document.getElementById('promoterShareTitle').textContent = "Concours : " + eventTitle;
+        document.getElementById('promoterShareUrl').value = url;
+        document.getElementById('btnPromoterWa').href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msg);
+        document.getElementById('btnPromoterPreview').href = url;
+
+        document.getElementById('modalPromoterShare').style.display = 'flex';
+    }
+
+    function openPromoterShareCandidate(eventId, eventTitle, candId, candNom) {
+        const loc = window.location;
+        const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/accueil.php');
+        const url = base + '?onglet=voter&vote_id=' + eventId + '&candidat_id=' + candId;
+        const msg = "🗳️ Soutenez et votez pour " + candNom + " dans « " + eventTitle + " » sur Tikéli ! Cliquez ici : " + url;
+        
+        currentPromoterShareUrl = url;
+        currentPromoterShareMsg = msg;
+
+        document.getElementById('promoterShareTitle').textContent = "Candidat : " + candNom + " (" + eventTitle + ")";
+        document.getElementById('promoterShareUrl').value = url;
+        document.getElementById('btnPromoterWa').href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msg);
+        document.getElementById('btnPromoterPreview').href = url;
+
+        document.getElementById('modalPromoterShare').style.display = 'flex';
+    }
+
+    function closePromoterShareModal() {
+        document.getElementById('modalPromoterShare').style.display = 'none';
+    }
+
+    function copyPromoterShareUrl() {
+        const input = document.getElementById('promoterShareUrl');
+        const btn = document.getElementById('btnCopyPromoterLink');
+        if (!input) return;
+
+        navigator.clipboard.writeText(input.value).then(() => {
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Copié !';
+            btn.style.background = '#10B981';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copier';
+                btn.style.background = '#0F172A';
+            }, 2500);
+        }).catch(() => {
+            input.select();
+            document.execCommand('copy');
+        });
+    }
+
     window.addEventListener('click', function (e) {
         const m1 = document.getElementById('modalAddCandidat');
         const m2 = document.getElementById('modalEditCandidat');
+        const m3 = document.getElementById('modalPromoterShare');
         if (e.target === m1) closeAddCandidatModal();
         if (e.target === m2) closeEditCandidatModal();
+        if (e.target === m3) closePromoterShareModal();
     });
 </script>
 

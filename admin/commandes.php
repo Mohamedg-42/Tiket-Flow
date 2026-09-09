@@ -112,363 +112,399 @@ if (isset($_GET['resend_tickets'])) {
 ?>
 
 <style>
-/* ==============================================================================
+    /* ==============================================================================
    RESPONSIVE DESIGN & CADRAGE SUISSE : GESTION DES COMMANDES (admin/commandes.php)
    ============================================================================== */
-.dash-container {
-    padding: clamp(0.85rem, 2.5vw, 1.75rem);
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.commandes-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-}
-.commandes-header .dash-title-box h1 {
-    font-size: clamp(1.25rem, 3.2vw, 1.75rem);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin: 0 0 0.35rem 0;
-}
-.commandes-header .dash-title-box p {
-    color: var(--dash-muted, #737373);
-    font-size: 0.88rem;
-    margin: 0;
-}
-.commandes-header-actions {
-    display: flex;
-    gap: 0.65rem;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-/* 2. Barre de filtres avec onglets défilables */
-.commandes-filter-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-    background: #ffffff;
-    padding: 0.65rem 0.85rem;
-    border-radius: 12px;
-    border: 1px solid var(--dash-border, #E5E5E5);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    flex-wrap: wrap;
-}
-.commandes-pills-nav {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 2px;
-}
-.commandes-pills-nav::-webkit-scrollbar {
-    display: none;
-}
-.commandes-pill {
-    text-decoration: none;
-    border-radius: 9px;
-    padding: 0.45rem 0.95rem;
-    font-size: 0.82rem;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-.commandes-search-form {
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-    margin: 0;
-    flex-wrap: wrap;
-}
-
-/* 3. KPIs de supervision */
-.commandes-kpis {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: clamp(0.6rem, 1.8vw, 1rem);
-    margin-bottom: 1.5rem;
-}
-.commandes-kpis .dash-kpi-card {
-    padding: 1.15rem;
-    border-radius: 12px;
-    background: #ffffff;
-    border: 1px solid var(--dash-border, #E5E5E5);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-/* 4. Tableau & Protections desktop */
-.commandes-table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    box-sizing: border-box;
-}
-.dash-table.commandes-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 0.85rem;
-}
-.dash-table.commandes-table th {
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: #737373;
-    letter-spacing: 0.05em;
-    padding: 0.75rem 0.85rem;
-    border-bottom: 1px solid var(--dash-border, #E5E5E5);
-    text-align: left;
-    background: #ffffff;
-    white-space: nowrap !important;
-}
-.dash-table.commandes-table td {
-    padding: 0.85rem 0.85rem;
-    border-bottom: 1px solid #F5F5F5;
-    vertical-align: middle;
-}
-
-.cell-amount {
-    color: #FF4A0D;
-    font-size: 0.95rem;
-    font-weight: 800;
-    white-space: nowrap !important;
-    word-break: keep-all !important;
-    font-variant-numeric: tabular-nums !important;
-}
-
-.desktop-badge {
-    display: inline-flex;
-}
-.mobile-badge {
-    display: none;
-}
-
-@media (min-width: 861px) {
-    .dash-table.commandes-table {
-        min-width: 900px !important;
-    }
-}
-
-@media (max-width: 1150px) {
-    .commandes-kpis {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-}
-
-/* ==============================================================================
-   5. TRANSFORMATION EN CARTES MOBILES (≤ 860px)
-   ============================================================================== */
-@media (max-width: 860px) {
     .dash-container {
-        padding: 0.75rem 0.5rem !important;
+        padding: clamp(0.85rem, 2.5vw, 1.75rem);
+        max-width: 100%;
+        box-sizing: border-box;
     }
+
     .commandes-header {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 0.75rem !important;
-    }
-    .commandes-header-actions {
-        width: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0.45rem !important;
-    }
-    .commandes-header-actions a {
-        width: 100% !important;
-        justify-content: center !important;
-        text-align: center !important;
-        box-sizing: border-box !important;
-    }
-    .commandes-filter-bar {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 0.75rem !important;
-        padding: 0.65rem !important;
-    }
-    .commandes-pills-nav {
-        width: 100% !important;
-    }
-    .commandes-search-form {
-        width: 100% !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 0.45rem !important;
-    }
-    .commandes-search-form input[type="text"],
-    .commandes-search-form button,
-    .commandes-search-form a {
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-        justify-content: center !important;
-        text-align: center !important;
-    }
-    .commandes-kpis {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.50rem !important;
-        margin-bottom: 1rem !important;
-    }
-    .commandes-kpis .dash-kpi-card {
-        padding: 0.75rem !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
     }
 
-    .dash-card {
-        padding: 0.65rem 0.5rem !important;
-        border-radius: 12px !important;
-        overflow: visible !important;
-        border: 1px solid var(--dash-border, #E5E5E5) !important;
-    }
-    .dash-card-head {
-        margin-bottom: 0.75rem !important;
-        padding: 0 0.25rem !important;
-    }
-    .dash-card-title {
-        font-size: 0.92rem !important;
-    }
-
-    .commandes-table-wrapper {
-        overflow: visible !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-    }
-    .dash-table.commandes-table {
-        display: block !important;
-        min-width: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        border: none !important;
-        box-sizing: border-box !important;
-    }
-    .dash-table.commandes-table thead {
-        display: none !important;
-    }
-    .dash-table.commandes-table tbody {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0.85rem !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-    }
-    .dash-table.commandes-table tr {
-        display: block !important;
-        background: #ffffff !important;
-        border: 1px solid var(--dash-border, #E5E5E5) !important;
-        border-radius: 12px !important;
-        padding: 0.85rem !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
-        box-sizing: border-box !important;
-        width: 100% !important;
-        max-width: 100% !important;
-    }
-    .dash-table.commandes-table tr:hover td {
-        background: transparent !important;
-    }
-    .dash-table.commandes-table td {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        gap: 0.5rem !important;
-        padding: 0.48rem 0 !important;
-        border-bottom: 1px dashed #E5E5E5 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        text-align: right !important;
-        font-size: 0.82rem !important;
-        box-sizing: border-box !important;
-    }
-    .dash-table.commandes-table td::before {
-        content: attr(data-label);
-        font-size: 0.68rem;
+    .commandes-header .dash-title-box h1 {
+        font-size: clamp(1.25rem, 3.2vw, 1.75rem);
         font-weight: 800;
-        text-transform: uppercase;
-        color: #737373;
-        letter-spacing: 0.04em;
-        text-align: left;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin: 0 0 0.35rem 0;
+    }
+
+    .commandes-header .dash-title-box p {
+        color: var(--dash-muted, #737373);
+        font-size: 0.88rem;
+        margin: 0;
+    }
+
+    .commandes-header-actions {
+        display: flex;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    /* 2. Barre de filtres avec onglets défilables */
+    .commandes-filter-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        background: #ffffff;
+        padding: 0.65rem 0.85rem;
+        border-radius: 12px;
+        border: 1px solid var(--dash-border, #E5E5E5);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        flex-wrap: wrap;
+    }
+
+    .commandes-pills-nav {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+
+    .commandes-pills-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .commandes-pill {
+        text-decoration: none;
+        border-radius: 9px;
+        padding: 0.45rem 0.95rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        transition: all 0.2s ease;
         flex-shrink: 0;
     }
 
-    .dash-table.commandes-table td.card-top {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        padding-top: 0 !important;
-        padding-bottom: 0.65rem !important;
-        border-bottom: 1px solid #E5E5E5 !important;
+    .commandes-search-form {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        margin: 0;
+        flex-wrap: wrap;
     }
-    .dash-table.commandes-table td.card-top::before {
-        display: none !important;
+
+    /* 3. KPIs de supervision */
+    .commandes-kpis {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: clamp(0.6rem, 1.8vw, 1rem);
+        margin-bottom: 1.5rem;
+    }
+
+    .commandes-kpis .dash-kpi-card {
+        padding: 1.15rem;
+        border-radius: 12px;
+        background: #ffffff;
+        border: 1px solid var(--dash-border, #E5E5E5);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    /* 4. Tableau & Protections desktop */
+    .commandes-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+    }
+
+    .dash-table.commandes-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.85rem;
+    }
+
+    .dash-table.commandes-table th {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #737373;
+        letter-spacing: 0.05em;
+        padding: 0.75rem 0.85rem;
+        border-bottom: 1px solid var(--dash-border, #E5E5E5);
+        text-align: left;
+        background: #ffffff;
+        white-space: nowrap !important;
+    }
+
+    .dash-table.commandes-table td {
+        padding: 0.85rem 0.85rem;
+        border-bottom: 1px solid #F5F5F5;
+        vertical-align: middle;
+    }
+
+    .cell-amount {
+        color: #FF4A0D;
+        font-size: 0.95rem;
+        font-weight: 800;
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+        font-variant-numeric: tabular-nums !important;
     }
 
     .desktop-badge {
-        display: none !important;
+        display: inline-flex;
     }
+
     .mobile-badge {
-        display: inline-flex !important;
-    }
-    .hide-on-mobile-card {
-        display: none !important;
+        display: none;
     }
 
-    .dash-table.commandes-table td.card-actions {
-        border-bottom: none !important;
-        padding-bottom: 0 !important;
-        padding-top: 0.65rem !important;
-        display: block !important;
+    @media (min-width: 861px) {
+        .dash-table.commandes-table {
+            min-width: 900px !important;
+        }
     }
-    .dash-table.commandes-table td.card-actions::before {
-        display: none !important;
-    }
-    .dash-table.commandes-table td.card-actions .cell-actions-group {
-        display: flex !important;
-        width: 100% !important;
-        gap: 0.45rem !important;
-        align-items: center !important;
-    }
-    .dash-table.commandes-table td.card-actions .cell-actions-group a {
-        flex: 1 1 0 !important;
-        text-align: center !important;
-        justify-content: center !important;
-        padding: 0.55rem 0.4rem !important;
-        font-size: 0.78rem !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 5px !important;
-        border-radius: 8px !important;
-        text-decoration: none !important;
-        box-sizing: border-box !important;
-        border: 1px solid var(--dash-border, #E5E5E5) !important;
-        background: #F5F5F5 !important;
-    }
-}
 
-@media (max-width: 420px) {
-    .commandes-kpis {
-        grid-template-columns: 1fr !important;
+    @media (max-width: 1150px) {
+        .commandes-kpis {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
     }
-}
+
+    /* ==============================================================================
+   5. TRANSFORMATION EN CARTES MOBILES (≤ 860px)
+   ============================================================================== */
+    @media (max-width: 860px) {
+        .dash-container {
+            padding: 0.75rem 0.5rem !important;
+        }
+
+        .commandes-header {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+        }
+
+        .commandes-header-actions {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0.45rem !important;
+        }
+
+        .commandes-header-actions a {
+            width: 100% !important;
+            justify-content: center !important;
+            text-align: center !important;
+            box-sizing: border-box !important;
+        }
+
+        .commandes-filter-bar {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+            padding: 0.65rem !important;
+        }
+
+        .commandes-pills-nav {
+            width: 100% !important;
+        }
+
+        .commandes-search-form {
+            width: 100% !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.45rem !important;
+        }
+
+        .commandes-search-form input[type="text"],
+        .commandes-search-form button,
+        .commandes-search-form a {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            justify-content: center !important;
+            text-align: center !important;
+        }
+
+        .commandes-kpis {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 0.50rem !important;
+            margin-bottom: 1rem !important;
+        }
+
+        .commandes-kpis .dash-kpi-card {
+            padding: 0.75rem !important;
+        }
+
+        .dash-card {
+            padding: 0.65rem 0.5rem !important;
+            border-radius: 12px !important;
+            overflow: visible !important;
+            border: 1px solid var(--dash-border, #E5E5E5) !important;
+        }
+
+        .dash-card-head {
+            margin-bottom: 0.75rem !important;
+            padding: 0 0.25rem !important;
+        }
+
+        .dash-card-title {
+            font-size: 0.92rem !important;
+        }
+
+        .commandes-table-wrapper {
+            overflow: visible !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        .dash-table.commandes-table {
+            display: block !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            border: none !important;
+            box-sizing: border-box !important;
+        }
+
+        .dash-table.commandes-table thead {
+            display: none !important;
+        }
+
+        .dash-table.commandes-table tbody {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0.85rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+
+        .dash-table.commandes-table tr {
+            display: block !important;
+            background: #ffffff !important;
+            border: 1px solid var(--dash-border, #E5E5E5) !important;
+            border-radius: 12px !important;
+            padding: 0.85rem !important;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .dash-table.commandes-table tr:hover td {
+            background: transparent !important;
+        }
+
+        .dash-table.commandes-table td {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            padding: 0.48rem 0 !important;
+            border-bottom: 1px dashed #E5E5E5 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            text-align: right !important;
+            font-size: 0.82rem !important;
+            box-sizing: border-box !important;
+        }
+
+        .dash-table.commandes-table td::before {
+            content: attr(data-label);
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #737373;
+            letter-spacing: 0.04em;
+            text-align: left;
+            flex-shrink: 0;
+        }
+
+        .dash-table.commandes-table td.card-top {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding-top: 0 !important;
+            padding-bottom: 0.65rem !important;
+            border-bottom: 1px solid #E5E5E5 !important;
+        }
+
+        .dash-table.commandes-table td.card-top::before {
+            display: none !important;
+        }
+
+        .desktop-badge {
+            display: none !important;
+        }
+
+        .mobile-badge {
+            display: inline-flex !important;
+        }
+
+        .hide-on-mobile-card {
+            display: none !important;
+        }
+
+        .dash-table.commandes-table td.card-actions {
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+            padding-top: 0.65rem !important;
+            display: block !important;
+        }
+
+        .dash-table.commandes-table td.card-actions::before {
+            display: none !important;
+        }
+
+        .dash-table.commandes-table td.card-actions .cell-actions-group {
+            display: flex !important;
+            width: 100% !important;
+            gap: 0.45rem !important;
+            align-items: center !important;
+        }
+
+        .dash-table.commandes-table td.card-actions .cell-actions-group a {
+            flex: 1 1 0 !important;
+            text-align: center !important;
+            justify-content: center !important;
+            padding: 0.55rem 0.4rem !important;
+            font-size: 0.78rem !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            border-radius: 8px !important;
+            text-decoration: none !important;
+            box-sizing: border-box !important;
+            border: 1px solid var(--dash-border, #E5E5E5) !important;
+            background: #F5F5F5 !important;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .commandes-kpis {
+            grid-template-columns: 1fr !important;
+        }
+    }
 </style>
 
 <div class="dash-container">
@@ -494,8 +530,10 @@ if (isset($_GET['resend_tickets'])) {
         </div>
 
         <div class="commandes-header-actions">
-            <a href="export.php?type=commandes&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action"
-                style="padding: 0.6rem 1.15rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;" title="Exporter les commandes sur Excel (CSV)">
+            <a href="export.php?type=commandes&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>"
+                class="dash-btn-action"
+                style="padding: 0.6rem 1.15rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;"
+                title="Exporter les commandes sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
             <a href="paiements.php" class="dash-btn-action btn-primary"
@@ -555,8 +593,11 @@ if (isset($_GET['resend_tickets'])) {
     <div class="commandes-kpis">
         <div class="dash-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Commandes Payées</span>
-                <span style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-circle-check"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Commandes
+                    Payées</span>
+                <span
+                    style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
+                        class="fa-solid fa-circle-check"></i></span>
             </div>
             <div style="font-size: 1.65rem; font-weight: 800; color: #FF4A0D; font-variant-numeric: tabular-nums;">
                 <?php echo str_replace(' ', '&nbsp;', number_format($tot_payees, 0, ',', ' ')); ?>
@@ -566,8 +607,11 @@ if (isset($_GET['resend_tickets'])) {
 
         <div class="dash-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Volume Financier</span>
-                <span style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-sack-dollar"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Volume
+                    Financier</span>
+                <span
+                    style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
+                        class="fa-solid fa-sack-dollar"></i></span>
             </div>
             <div style="font-size: 1.65rem; font-weight: 800; color: #FF4A0D; font-variant-numeric: tabular-nums;">
                 <?php echo str_replace(' ', '&nbsp;', number_format($tot_ca, 0, ',', ' ')); ?>&nbsp;F
@@ -577,8 +621,11 @@ if (isset($_GET['resend_tickets'])) {
 
         <div class="dash-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Panier Moyen</span>
-                <span style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-receipt"></i></span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #FF4A0D; text-transform: uppercase;">Panier
+                    Moyen</span>
+                <span
+                    style="background: #FFF2ED; color: #FF4A0D; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
+                        class="fa-solid fa-receipt"></i></span>
             </div>
             <div style="font-size: 1.65rem; font-weight: 800; color: #FF4A0D; font-variant-numeric: tabular-nums;">
                 <?php echo str_replace(' ', '&nbsp;', number_format($panier_moyen, 0, ',', ' ')); ?>&nbsp;F
@@ -588,10 +635,15 @@ if (isset($_GET['resend_tickets'])) {
 
         <div class="dash-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 700; color: var(--dash-muted); text-transform: uppercase;">Total Commandes</span>
-                <span style="background: #F5F5F5; color: var(--dash-muted); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-cart-shopping"></i></span>
+                <span
+                    style="font-size: 0.8rem; font-weight: 700; color: var(--dash-muted); text-transform: uppercase;">Total
+                    Commandes</span>
+                <span
+                    style="background: #F5F5F5; color: var(--dash-muted); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i
+                        class="fa-solid fa-cart-shopping"></i></span>
             </div>
-            <div style="font-size: 1.65rem; font-weight: 800; color: var(--dash-text); font-variant-numeric: tabular-nums;">
+            <div
+                style="font-size: 1.65rem; font-weight: 800; color: var(--dash-text); font-variant-numeric: tabular-nums;">
                 <?php echo str_replace(' ', '&nbsp;', number_format($tot_orders, 0, ',', ' ')); ?>
             </div>
             <small style="color: var(--dash-muted); font-size: 0.75rem;">Tous statuts confondus</small>
@@ -644,7 +696,8 @@ if (isset($_GET['resend_tickets'])) {
                             ?>
                             <tr>
                                 <td class="card-top" data-label="N° Commande">
-                                    <strong style="font-family: 'Space Mono', monospace; font-size: 0.90rem; color: var(--dash-primary);">
+                                    <strong
+                                        style="font-family: 'Space Mono', monospace; font-size: 0.90rem; color: var(--dash-primary);">
                                         #<?php echo htmlspecialchars($o['numero_commande']); ?>
                                     </strong>
                                     <span class="mobile-badge"><?php echo $badge_statut_html; ?></span>
@@ -658,7 +711,8 @@ if (isset($_GET['resend_tickets'])) {
                                     </small>
                                 </td>
                                 <td data-label="Billets">
-                                    <span style="font-weight: 700; font-size: 0.85rem; color: var(--dash-text); font-variant-numeric: tabular-nums;">
+                                    <span
+                                        style="font-weight: 700; font-size: 0.85rem; color: var(--dash-text); font-variant-numeric: tabular-nums;">
                                         <i class="fa-solid fa-ticket" style="color: var(--dash-muted); margin-right: 3px;"></i>
                                         <?php echo (int) $o['nb_billets']; ?> billet(s)
                                     </span>
@@ -672,7 +726,8 @@ if (isset($_GET['resend_tickets'])) {
                                     <span class="desktop-badge"><?php echo $badge_statut_html; ?></span>
                                 </td>
                                 <td data-label="Date">
-                                    <span style="font-size: 0.82rem; color: var(--dash-muted); font-variant-numeric: tabular-nums;">
+                                    <span
+                                        style="font-size: 0.82rem; color: var(--dash-muted); font-variant-numeric: tabular-nums;">
                                         <?php echo !empty($o['created_at']) ? date('d/m/Y H:i', strtotime($o['created_at'])) : '—'; ?>
                                     </span>
                                 </td>
@@ -691,7 +746,8 @@ if (isset($_GET['resend_tickets'])) {
                                                 class="dash-btn-action"
                                                 style="padding: 0.35rem 0.65rem; font-size: 0.76rem; background: #F5F5F5; color: var(--dash-primary); text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;"
                                                 title="Renvoyer l'e-mail des billets avec QR codes">
-                                                <i class="fa-solid fa-paper-plane" style="color: var(--dash-primary);"></i> <span>Renvoyer</span>
+                                                <i class="fa-solid fa-paper-plane" style="color: var(--dash-primary);"></i>
+                                                <span>Renvoyer</span>
                                             </a>
                                         <?php else: ?>
                                             <span style="color: #737373; font-size: 0.76rem;">—</span>

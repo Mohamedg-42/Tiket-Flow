@@ -303,7 +303,7 @@ if ($type === 'evenements') {
         $tot_recettes += $brut;
         $tot_comm += $comm;
 
-        $nom_pro = $r['nom_commercial'] ?: ($r['promoteur_nom'] ?: 'Plateforme Eventia');
+        $nom_pro = $r['nom_commercial'] ?: ($r['promoteur_nom'] ?: 'Plateforme Tikéli');
 
         output_csv_row($output, [
             '#EV-' . str_pad($r['id'], 4, '0', STR_PAD_LEFT),
@@ -535,7 +535,7 @@ if ($type === 'cotisations') {
         output_csv_row($output, [
             '#COT-' . str_pad($r['id'], 5, '0', STR_PAD_LEFT),
             $r['campagne_titre'],
-            $r['promoteur_nom'] ?: 'Plateforme Eventia',
+            $r['promoteur_nom'] ?: 'Plateforme Tikéli',
             $r['nom_donateur'] ?: 'Anonyme',
             $r['email_donateur'] ?: '-',
             $r['telephone_donateur'] ?: '-',
@@ -617,7 +617,7 @@ if ($type === 'votes') {
         output_csv_row($output, [
             '#VOTE-' . str_pad($r['id'], 5, '0', STR_PAD_LEFT),
             $r['event_nom'],
-            $r['promoteur_nom'] ?: 'Eventia',
+            $r['promoteur_nom'] ?: 'Tikéli',
             $r['candidat_nom'] ?: 'Événement Global',
             $r['votant_nom'] ?: 'Visiteur',
             $r['votant_email'] ?: '-',

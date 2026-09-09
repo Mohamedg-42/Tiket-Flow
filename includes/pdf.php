@@ -49,7 +49,7 @@ if (!function_exists('pdf_fetch_qr_jpeg')) {
      */
     function pdf_fetch_qr_jpeg(string $url): ?array
     {
-        $ctx = stream_context_create(['http' => ['timeout' => 8, 'user_agent' => 'Eventia/1.0']]);
+        $ctx = stream_context_create(['http' => ['timeout' => 8, 'user_agent' => 'Tikéli/1.0']]);
         $raw = @file_get_contents($url, false, $ctx);
         if ($raw === false || strlen($raw) < 100) {
             return null;
@@ -139,8 +139,8 @@ if (!function_exists('generateTicketsPdf')) {
         // Si la commande comporte plus d'un billet, page de garde récapitulative
         if (count($tickets) > 1) {
             $p = [];
-            $p[] = $rect(0, $H - 75, $W, 75, '0.05 0.58 0.53'); // Teal Eventia
-            $p[] = $text('EVENTIA', 45, $H - 45, 24, 'F2', '1 1 1');
+            $p[] = $rect(0, $H - 75, $W, 75, '0.05 0.58 0.53'); // Teal Tikéli
+            $p[] = $text('TIKÉLI', 45, $H - 45, 24, 'F2', '1 1 1');
             $p[] = $text('Billetterie 100% Securisee - e-Billets officiels', 45, $H - 65, 10, 'F1', '1 1 1');
             $p[] = $text('Commande #' . $orderNumber, 45, $H - 115, 16, 'F2', '0 0 0');
             $p[] = $text('Titulaire : ' . $clientName, 45, $H - 138, 11, 'F1', '0.39 0.45 0.55');
@@ -166,7 +166,7 @@ if (!function_exists('generateTicketsPdf')) {
 
             // En-tête discret de page
             $p[] = $text(date('d/m/Y H:i'), 38, $H - 40, 8.5, 'F1', '0.2 0.2 0.2');
-            $p[] = $text('e-Ticket Officiel - Eventia', $W / 2 - 50, $H - 40, 8.5, 'F1', '0.2 0.2 0.2');
+            $p[] = $text('e-Ticket Officiel - Tikéli', $W / 2 - 50, $H - 40, 8.5, 'F1', '0.2 0.2 0.2');
 
             // 1. Dimensions de la Carte Billet
             $cardX = 38.0;

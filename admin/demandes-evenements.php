@@ -6,6 +6,7 @@
 
 $admin_page_title = "Demandes d'Événements - Administration";
 include 'header.php';
+require_once '../includes/commission.php';
 
 $message = "";
 $msg_type = "";
@@ -30,8 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                 $pdo->beginTransaction();
 
                 // 1. Création de l'événement officiel dans 'events'
-                $sql_ev = "INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, statut) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')";
+                $salle_id = !empty($req['salle_id']) ? (int) $req['salle_id'] : null;
+                $sql_ev = "INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, salle_id, statut) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')";
                 $stmt_ev = $pdo->prepare($sql_ev);
                 $stmt_ev->execute([
                     $req['user_id'],
@@ -45,7 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                     (float) ($req['prix_vote'] ?? 0),
                     $req['type_vote'] ?? 'concours',
                     $req['vote_question'] ?? null,
-                    $commission_rate
+                    $commission_rate,
+                    $salle_id
                 ]);
 
                 $new_event_id = (int) $pdo->lastInsertId();
@@ -54,15 +57,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                 $ticket_types = json_decode($req['ticket_types_data'] ?? '[]', true);
                 if (!empty($ticket_types) && is_array($ticket_types)) {
                     require_once '../includes/places.php';
-                    $sql_tt = "INSERT INTO ticket_types (event_id, nom, prix, frais_place, quantite, quantite_vendue) VALUES (?, ?, ?, ?, ?, 0)";
+                    $sql_tt = "INSERT INTO ticket_types (event_id, nom, prix, frais_place, quantite, places_choisies, quantite_vendue) VALUES (?, ?, ?, ?, ?, ?, 0)";
                     $stmt_tt = $pdo->prepare($sql_tt);
                     foreach ($ticket_types as $tt) {
+                        $p_choisies = isset($tt['places_choisies']) ? max(0, (int) $tt['places_choisies']) : 0;
                         $stmt_tt->execute([
                             $new_event_id,
                             $tt['nom'],
                             (float) $tt['prix'],
                             (float) ($tt['frais_place'] ?? 0),
-                            (int) $tt['quantite']
+                            (int) $tt['quantite'],
+                            $p_choisies
                         ]);
                         // Génération automatique des places pour ce tarif
                         generer_places_type($pdo, (int) $pdo->lastInsertId(), (int) $tt['quantite']);
@@ -307,7 +312,22 @@ $requests = $stmt->fetchAll();
                             </p>
                         <?php endif; ?>
 
-                        <strong style="font-size: 0.9rem; color: var(--navy);">Grille tarifaire demandée :</strong>
+                        <?php
+                        $total_cap = 0;
+                        $total_rec = 0;
+                        if (!empty($tickets)) {
+                            foreach ($tickets as $tk) {
+                                $total_cap += (int)($tk['quantite'] ?? 0);
+                                $total_rec += ((int)($tk['quantite'] ?? 0) * (float)($tk['prix'] ?? 0));
+                            }
+                        }
+                        $tier_scale = get_event_scale_tier($total_cap, $total_rec);
+                        $sugg_rate = !empty($r['commission_rate']) ? (float)$r['commission_rate'] : (float)$tier_scale['rate'];
+                        ?>
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <strong style="font-size: 0.9rem; color: var(--navy);">Grille tarifaire demandée :</strong>
+                            <?php echo render_scale_badge_html($tier_scale); ?>
+                        </div>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
                             <?php if (!empty($tickets)): ?>
                                 <?php foreach ($tickets as $t): ?>
@@ -336,8 +356,9 @@ $requests = $stmt->fetchAll();
                                 <div>
                                     <label style="font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 4px;">Taux de
                                         commission (%)</label>
-                                    <input type="number" step="0.5" name="commission_rate" value="5.0" min="0" max="50"
-                                        style="width: 110px; padding: 0.55rem 0.75rem; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.85rem;">
+                                    <input type="number" step="0.5" name="commission_rate" value="<?php echo number_format($sugg_rate, 1, '.', ''); ?>" min="0" max="50"
+                                        style="width: 110px; padding: 0.55rem 0.75rem; border: 1.5px solid #FF4A0D; border-radius: 8px; font-size: 0.85rem; font-weight: 800; color: #FF4A0D; background: #FFF2ED;"
+                                        title="Taux suggéré pour <?php echo htmlspecialchars($tier_scale['name']); ?>">
                                 </div>
 
                                 <button type="submit" class="dash-btn-action btn-success"

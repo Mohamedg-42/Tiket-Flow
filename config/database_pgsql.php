@@ -3,11 +3,11 @@
 // FICHIER DE CONNEXION À LA BASE DE DONNÉES POSTGRESQL (PDO)
 // ==============================================================================
 
-$pg_host     = getenv('PGHOST') ?: 'localhost';
-$pg_port     = getenv('PGPORT') ?: '5432';
+$pg_host     = getenv('PGHOST') ?: '127.0.0.1';
+$pg_port     = getenv('PGPORT') ?: '5433';
 $pg_database = getenv('PGDATABASE') ?: 'ticket_platform';
 $pg_user     = getenv('PGUSER') ?: 'postgres';
-$pg_password = getenv('PGPASSWORD') ?: 'postgres';
+$pg_password = getenv('PGPASSWORD') ?: '123';
 
 $dsn = "pgsql:host={$pg_host};port={$pg_port};dbname={$pg_database};";
 

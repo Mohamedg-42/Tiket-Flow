@@ -25,10 +25,10 @@ if (!$event_id) {
 }
 
 // Coordonnées de l'acheteur (connecté ou invité)
-$client_nom       = trim($_POST['client_nom'] ?? ($_SESSION['user_nom'] ?? ''));
-$client_email     = trim($_POST['client_email'] ?? ($_SESSION['user_email'] ?? ''));
+$client_nom = trim($_POST['client_nom'] ?? ($_SESSION['user_nom'] ?? ''));
+$client_email = trim($_POST['client_email'] ?? ($_SESSION['user_email'] ?? ''));
 $client_telephone = trim($_POST['client_telephone'] ?? '');
-$user_id          = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+$user_id = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
 
 // Récupération du panier multi-tickets : array tickets[ticket_type_id] = quantite
 $tickets_input = $_POST['tickets'] ?? [];
@@ -38,8 +38,8 @@ $places_input = $_POST['places'] ?? [];
 
 // Rétrocompatibilité si un seul ticket_type était envoyé
 if (empty($tickets_input) && isset($_POST['ticket_type'])) {
-    $single_id = (int)$_POST['ticket_type'];
-    $single_qty = (int)($_POST['quantite'] ?? 1);
+    $single_id = (int) $_POST['ticket_type'];
+    $single_qty = (int) ($_POST['quantite'] ?? 1);
     if ($single_id > 0 && $single_qty > 0) {
         $tickets_input[$single_id] = $single_qty;
     }
@@ -77,9 +77,9 @@ $total_places_choisies = 0;
 $all_type_ids = array_unique(array_merge(array_keys($tickets_input), array_keys($places_input)));
 
 foreach ($all_type_ids as $ticket_type_id) {
-    $ticket_type_id = (int)$ticket_type_id;
+    $ticket_type_id = (int) $ticket_type_id;
     $seat_ids = array_map('intval', $places_input[$ticket_type_id] ?? []);
-    $qty = !empty($seat_ids) ? count($seat_ids) : (int)($tickets_input[$ticket_type_id] ?? 0);
+    $qty = !empty($seat_ids) ? count($seat_ids) : (int) ($tickets_input[$ticket_type_id] ?? 0);
 
     if ($qty <= 0) {
         continue;
@@ -95,25 +95,25 @@ foreach ($all_type_ids as $ticket_type_id) {
         exit();
     }
 
-    $stock_disponible = (int)$ticket['quantite'] - (int)$ticket['quantite_vendue'];
+    $stock_disponible = (int) $ticket['quantite'] - (int) $ticket['quantite_vendue'];
     if ($qty > $stock_disponible) {
         $_SESSION['order_message'] = "Stock insuffisant pour « " . htmlspecialchars($ticket['nom']) . " » (reste " . $stock_disponible . " place(s)).";
         header('Location: accueil.php');
         exit();
     }
 
-    $prix_unitaire = (float)$ticket['prix'];
+    $prix_unitaire = (float) $ticket['prix'];
 
     // ===== Validation des places choisies (supplément obligatoire pour choix de place) =====
-    $frais_place_unitaire = (float)(!empty($ticket['frais_place']) && (float)$ticket['frais_place'] > 0 ? $ticket['frais_place'] : 1000);
-    $places_numero        = null;
-    $frais_place_total    = 0;
-    $places_a_reserver    = [];
+    $frais_place_unitaire = (float) (!empty($ticket['frais_place']) && (float) $ticket['frais_place'] > 0 ? $ticket['frais_place'] : 1000);
+    $places_numero = null;
+    $frais_place_total = 0;
+    $places_a_reserver = [];
 
     if (!empty($seat_ids)) {
         $stmt_count_p = $pdo->prepare("SELECT COUNT(*) FROM places WHERE ticket_type_id = ?");
         $stmt_count_p->execute([$ticket_type_id]);
-        $has_db_places = (int)$stmt_count_p->fetchColumn();
+        $has_db_places = (int) $stmt_count_p->fetchColumn();
 
         if ($has_db_places > 0) {
             $in = implode(',', array_map('intval', $seat_ids));
@@ -128,12 +128,12 @@ foreach ($all_type_ids as $ticket_type_id) {
             }
 
             $places_a_reserver = array_column($valid_places, 'id');
-            $places_numero     = implode(', ', array_column($valid_places, 'numero'));
-            $qty               = count($valid_places);
+            $places_numero = implode(', ', array_column($valid_places, 'numero'));
+            $qty = count($valid_places);
         } else {
             // Places issues de la vue de scène 3D interactive
             $qty = count($seat_ids);
-            $places_numero = implode(', ', array_map(fn($id) => 'Siège ' . (int)$id, $seat_ids));
+            $places_numero = implode(', ', array_map(fn($id) => 'Siège ' . (int) $id, $seat_ids));
         }
 
         $frais_place_total = max(0, $frais_place_unitaire) * $qty;
@@ -143,13 +143,13 @@ foreach ($all_type_ids as $ticket_type_id) {
 
     $order_items_to_create[] = [
         'ticket_type_id' => $ticket_type_id,
-        'nom'            => $ticket['nom'],
-        'quantite'       => $qty,
-        'prix_unitaire'  => $prix_unitaire,
-        'sous_total'     => $sous_total,
-        'frais_place'    => $frais_place_total,
-        'places_numero'  => $places_numero,
-        'places_ids'     => $places_a_reserver
+        'nom' => $ticket['nom'],
+        'quantite' => $qty,
+        'prix_unitaire' => $prix_unitaire,
+        'sous_total' => $sous_total,
+        'frais_place' => $frais_place_total,
+        'places_numero' => $places_numero,
+        'places_ids' => $places_a_reserver
     ];
 
     $montant_total_commande += $sous_total;
@@ -180,7 +180,7 @@ try {
         $montant_total_commande
     ]);
 
-    $order_id = (int)$pdo->lastInsertId();
+    $order_id = (int) $pdo->lastInsertId();
 
     // 4. Enregistrement de chaque type de billet dans 'order_items' (avec places choisies)
     $sql_item = "INSERT INTO order_items (order_id, ticket_type_id, quantite, prix_unitaire, sous_total, frais_place, places_numero) VALUES (?, ?, ?, ?, ?, ?, ?)";

@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $existing_user = $st_check->fetch();
 
                 if ($existing_user) {
-                    throw new Exception("Cette adresse email est déjà associée à un compte Eventia. Veuillez vous connecter avant de soumettre votre dossier.");
+                    throw new Exception("Cette adresse email est déjà associée à un compte Tikéli. Veuillez vous connecter avant de soumettre votre dossier.");
                 }
 
                 $pass_hash = password_hash($password, PASSWORD_DEFAULT);
@@ -249,14 +249,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Devenir Promoteur Partenaire - Eventia</title>
+    <title>Devenir Promoteur Partenaire - Tikéli</title>
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- Style CSS & Eventia Brand -->
+    <!-- Style CSS & Tikéli Brand -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/eventia-brand.css">
     <link rel="stylesheet" href="../css/responsive-pro.css">
@@ -497,7 +497,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <span class="page-kicker" style="color: var(--accent, #FF4A0D); display: block; margin-bottom: 0.4rem;">
             <i class="fa-solid fa-bullhorn"></i> Partenariat Officiel
         </span>
-        <h1>Devenez Promoteur Officiel sur Eventia</h1>
+        <h1>Devenez Promoteur Officiel sur Tikéli</h1>
         <p>
             Vendez vos billets en ligne, gérez vos jauges et places interactives, et encaissez vos recettes
             instantanément par Mobile Money en toute sécurité.
@@ -662,7 +662,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="form-group">
                             <label for="password"><i class="fa-solid fa-lock"></i> Définir votre Mot de passe de connexion
                             </label>
-                            <input type="password" id="password" name="password" required placeholder="Minimum 6 caractères">
+                            <div style="position: relative; width: 100%;">
+                                <input type="password" id="password" name="password" required placeholder="Minimum 6 caractères"
+                                    style="width: 100%; box-sizing: border-box; padding-right: 2.5rem;">
+                                <button type="button" onclick="togglePassVisibility('password', this.querySelector('i'))" aria-label="Afficher le mot de passe"
+                                    style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted, #737373); cursor: pointer; padding: 6px; display: grid; place-items: center; font-size: 0.9rem;">
+                                    <i class="fa-solid fa-eye" id="togglePwdBtn"></i>
+                                </button>
+                            </div>
                             <small style="color: var(--muted); font-size: 0.78rem;">Conservez-le précieusement pour vous
                                 connecter une fois votre dossier approuvé.</small>
                         </div>
@@ -703,7 +710,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="form-group">
-                        <label for="description">Présentation de vos projets à venir sur Eventia</label>
+                        <label for="description">Présentation de vos projets à venir sur Tikéli</label>
                         <textarea id="description" name="description" rows="3" required
                             placeholder="Décrivez les prochains événements que vous prévoyez de mettre en vente..."><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
                     </div>
@@ -730,7 +737,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fa-solid fa-shield-halved" style="color: var(--primary, #000000); margin-right: 4px;"></i>
                         En soumettant ce dossier, vous certifiez l'exactitude des pièces fournies. L'accès aux
                         fonctionnalités de vente de billets, d'encaissement et de retrait est conditionné à la validation
-                        définitive par l'administration d'Eventia.
+                        définitive par l'administration de Tikéli.
                     </div>
 
                     <button type="submit" class="btn-submit-promo">
@@ -775,6 +782,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (repPrenom) repPrenom.required = false;
                 if (document.getElementById('lbl_nom')) document.getElementById('lbl_nom').textContent = "Nom";
                 if (document.getElementById('lbl_prenom')) document.getElementById('lbl_prenom').textContent = "Prénom(s)";
+            }
+        }
+
+        function togglePassVisibility(inputId, iconElem) {
+            const inp = document.getElementById(inputId);
+            if (!inp) return;
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                if (iconElem) {
+                    iconElem.classList.remove('fa-eye');
+                    iconElem.classList.add('fa-eye-slash');
+                }
+            } else {
+                inp.type = 'password';
+                if (iconElem) {
+                    iconElem.classList.remove('fa-eye-slash');
+                    iconElem.classList.add('fa-eye');
+                }
             }
         }
     </script>

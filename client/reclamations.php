@@ -9,18 +9,18 @@ require_once '../includes/auth.php';
 
 requireLogin('../connexion.php');
 
-$page_title = "Support & Réclamations - Eventia";
+$page_title = "Support & Réclamations - Tikéli";
 include 'header.php';
 
-$user_id = (int)$_SESSION['user_id'];
+$user_id = (int) $_SESSION['user_id'];
 $message = "";
 $msg_type = "";
 
 // 1. Dépôt d'une nouvelle réclamation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_claim'])) {
-    $sujet    = trim($_POST['sujet'] ?? '');
+    $sujet = trim($_POST['sujet'] ?? '');
     $order_id = filter_input(INPUT_POST, 'order_id', FILTER_VALIDATE_INT) ?: null;
-    $msg      = trim($_POST['message'] ?? '');
+    $msg = trim($_POST['message'] ?? '');
 
     if (empty($sujet) || empty($msg)) {
         $message = "Veuillez renseigner le sujet et le message de votre réclamation.";
@@ -72,114 +72,131 @@ $claims_list = $stmt_claims->fetchAll();
             </div>
         </div>
 
-    <?php if (!empty($message)): ?>
-        <div class="alert alert-<?php echo $msg_type; ?>" style="margin-bottom: 1.5rem;">
-            <i class="fa-solid <?php echo ($msg_type === 'success') ? 'fa-circle-check' : 'fa-circle-exclamation'; ?>"></i>
-            <?php echo htmlspecialchars($message); ?>
-        </div>
-    <?php endif; ?>
-
-    <div class="responsive-side-grid" style="display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 2rem; align-items: start;">
-        <!-- 1. Formulaire de nouvelle réclamation -->
-        <div class="content-section eventia-card" style="padding: 1.75rem;">
-            <div class="section-title" style="font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 1.15rem; font-weight: 700; color: var(--eventia-navy, #000000); margin-bottom: 1.25rem;">
-                <i class="fa-solid fa-pen" style="color: var(--eventia-amber-dark, #FF4A0D);"></i> Nouvelle Réclamation
+        <?php if (!empty($message)): ?>
+            <div class="alert alert-<?php echo $msg_type; ?>" style="margin-bottom: 1.5rem;">
+                <i
+                    class="fa-solid <?php echo ($msg_type === 'success') ? 'fa-circle-check' : 'fa-circle-exclamation'; ?>"></i>
+                <?php echo htmlspecialchars($message); ?>
             </div>
-            <form method="POST" class="eventia-form">
-                <input type="hidden" name="send_claim" value="1">
+        <?php endif; ?>
 
-                <div class="eventia-form-group">
-                    <label for="sujet" class="eventia-label">Sujet de votre demande *</label>
-                    <input type="text" id="sujet" name="sujet" class="eventia-input" required placeholder="Ex: Problème de paiement, QR code non reçu...">
+        <div class="responsive-side-grid"
+            style="display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 2rem; align-items: start;">
+            <!-- 1. Formulaire de nouvelle réclamation -->
+            <div class="content-section eventia-card" style="padding: 1.75rem;">
+                <div class="section-title"
+                    style="font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 1.15rem; font-weight: 700; color: var(--eventia-navy, #000000); margin-bottom: 1.25rem;">
+                    <i class="fa-solid fa-pen" style="color: var(--eventia-amber-dark, #FF4A0D);"></i> Nouvelle
+                    Réclamation
                 </div>
+                <form method="POST" class="eventia-form">
+                    <input type="hidden" name="send_claim" value="1">
 
-                <div class="eventia-form-group">
-                    <label for="order_id" class="eventia-label">Commande concernée (Optionnel)</label>
-                    <select name="order_id" id="order_id" class="eventia-select">
-                        <option value="">-- Aucune commande spécifique --</option>
-                        <?php foreach ($user_orders as $ord): ?>
-                            <option value="<?php echo $ord['id']; ?>">
-                                <?php echo htmlspecialchars($ord['numero_commande']); ?> (<?php echo number_format($ord['montant_total'], 0, ',', ' '); ?> F)
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
+                    <div class="eventia-form-group">
+                        <label for="sujet" class="eventia-label">Sujet de votre demande *</label>
+                        <input type="text" id="sujet" name="sujet" class="eventia-input" required
+                            placeholder="Ex: Problème de paiement, QR code non reçu...">
+                    </div>
 
-                <div class="eventia-form-group">
-                    <label for="message" class="eventia-label">Description détaillée *</label>
-                    <textarea id="message" name="message" rows="4" class="eventia-textarea" required placeholder="Expliquez clairement votre situation..."></textarea>
-                </div>
+                    <div class="eventia-form-group">
+                        <label for="order_id" class="eventia-label">Commande concernée (Optionnel)</label>
+                        <select name="order_id" id="order_id" class="eventia-select">
+                            <option value="">-- Aucune commande spécifique --</option>
+                            <?php foreach ($user_orders as $ord): ?>
+                                <option value="<?php echo $ord['id']; ?>">
+                                    <?php echo htmlspecialchars($ord['numero_commande']); ?>
+                                    (<?php echo number_format($ord['montant_total'], 0, ',', ' '); ?> F)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
-                <button type="submit" class="eventia-btn-primary" style="width: 100%; margin-top: 0.5rem;">
-                    <i class="fa-solid fa-paper-plane"></i> Envoyer ma réclamation
-                </button>
-            </form>
-        </div>
+                    <div class="eventia-form-group">
+                        <label for="message" class="eventia-label">Description détaillée *</label>
+                        <textarea id="message" name="message" rows="4" class="eventia-textarea" required
+                            placeholder="Expliquez clairement votre situation..."></textarea>
+                    </div>
 
-        <!-- 2. Historique et réponses de l'administration -->
-        <div class="content-section eventia-card" style="padding: 1.75rem;">
-            <div class="section-title" style="font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 1.15rem; font-weight: 700; color: var(--eventia-navy, #000000); margin-bottom: 1.25rem;">
-                <i class="fa-solid fa-clock-rotate-left" style="color: var(--eventia-navy-light, #000000);"></i> Mes Réclamations (<?php echo count($claims_list); ?>)
+                    <button type="submit" class="eventia-btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                        <i class="fa-solid fa-paper-plane"></i> Envoyer ma réclamation
+                    </button>
+                </form>
             </div>
 
-            <?php if (count($claims_list) > 0): ?>
-                <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                    <?php foreach ($claims_list as $cl): ?>
-                        <div style="background: #F5F5F5; border: 1px solid var(--eventia-border, #E5E5E5); border-radius: var(--eventia-radius-md, 10px); padding: 1.25rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                <h3 style="margin: 0; color: var(--eventia-navy, #000000); font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 1.05rem; font-weight: 700;">
-                                    <?php echo htmlspecialchars($cl['sujet']); ?>
-                                </h3>
-                                <span>
-                                    <?php if ($cl['statut'] === 'resolue'): ?>
-                                        <span class="eventia-badge eventia-badge-success">RÉSOLUE</span>
-                                    <?php elseif ($cl['statut'] === 'en_cours'): ?>
-                                        <span class="eventia-badge eventia-badge-amber">EN COURS</span>
-                                    <?php elseif ($cl['statut'] === 'fermee'): ?>
-                                        <span class="eventia-badge">FERMÉE</span>
-                                    <?php else: ?>
-                                        <span class="eventia-badge eventia-badge-warning">EN ATTENTE</span>
+            <!-- 2. Historique et réponses de l'administration -->
+            <div class="content-section eventia-card" style="padding: 1.75rem;">
+                <div class="section-title"
+                    style="font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 1.15rem; font-weight: 700; color: var(--eventia-navy, #000000); margin-bottom: 1.25rem;">
+                    <i class="fa-solid fa-clock-rotate-left" style="color: var(--eventia-navy-light, #000000);"></i> Mes
+                    Réclamations (<?php echo count($claims_list); ?>)
+                </div>
+
+                <?php if (count($claims_list) > 0): ?>
+                    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                        <?php foreach ($claims_list as $cl): ?>
+                            <div
+                                style="background: #F5F5F5; border: 1px solid var(--eventia-border, #E5E5E5); border-radius: var(--eventia-radius-md, 10px); padding: 1.25rem;">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <h3
+                                        style="margin: 0; color: var(--eventia-navy, #000000); font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 1.05rem; font-weight: 700;">
+                                        <?php echo htmlspecialchars($cl['sujet']); ?>
+                                    </h3>
+                                    <span>
+                                        <?php if ($cl['statut'] === 'resolue'): ?>
+                                            <span class="eventia-badge eventia-badge-success">RÉSOLUE</span>
+                                        <?php elseif ($cl['statut'] === 'en_cours'): ?>
+                                            <span class="eventia-badge eventia-badge-amber">EN COURS</span>
+                                        <?php elseif ($cl['statut'] === 'fermee'): ?>
+                                            <span class="eventia-badge">FERMÉE</span>
+                                        <?php else: ?>
+                                            <span class="eventia-badge eventia-badge-warning">EN ATTENTE</span>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+
+                                <div style="font-size: 0.8rem; color: var(--eventia-muted, #737373); margin-bottom: 0.75rem;">
+                                    Déposée le <?php echo date('d/m/Y à H:i', strtotime($cl['created_at'])); ?>
+                                    <?php if ($cl['numero_commande']): ?>
+                                        · Commande <strong>#<?php echo htmlspecialchars($cl['numero_commande']); ?></strong>
                                     <?php endif; ?>
-                                </span>
-                            </div>
+                                </div>
 
-                            <div style="font-size: 0.8rem; color: var(--eventia-muted, #737373); margin-bottom: 0.75rem;">
-                                Déposée le <?php echo date('d/m/Y à H:i', strtotime($cl['created_at'])); ?>
-                                <?php if ($cl['numero_commande']): ?>
-                                    · Commande <strong>#<?php echo htmlspecialchars($cl['numero_commande']); ?></strong>
+                                <p
+                                    style="background: #ffffff; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.9rem; margin: 0 0 0.75rem; color: var(--eventia-text, #000000); line-height: 1.5;">
+                                    <?php echo nl2br(htmlspecialchars($cl['message'])); ?>
+                                </p>
+
+                                <!-- Réponse de l'administrateur si disponible -->
+                                <?php if (!empty($cl['reponse_admin'])): ?>
+                                    <div
+                                        style="background: #FFF2ED; border-left: 4px solid var(--eventia-navy, #000000); padding: 0.85rem; border-radius: 0 8px 8px 0; margin-top: 0.5rem;">
+                                        <strong
+                                            style="color: var(--eventia-navy, #000000); font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">
+                                            <i class="fa-solid fa-reply"></i> Réponse de l'Administration :
+                                        </strong>
+                                        <p
+                                            style="margin: 0; font-size: 0.88rem; color: var(--eventia-text, #000000); line-height: 1.5;">
+                                            <?php echo nl2br(htmlspecialchars($cl['reponse_admin'])); ?>
+                                        </p>
+                                    </div>
+                                <?php else: ?>
+                                    <small style="color: var(--eventia-muted, #737373); font-style: italic;">
+                                        <i class="fa-solid fa-hourglass-half"></i> En attente de réponse du support...
+                                    </small>
                                 <?php endif; ?>
                             </div>
-
-                            <p style="background: #ffffff; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.9rem; margin: 0 0 0.75rem; color: var(--eventia-text, #000000); line-height: 1.5;">
-                                <?php echo nl2br(htmlspecialchars($cl['message'])); ?>
-                            </p>
-
-                            <!-- Réponse de l'administrateur si disponible -->
-                            <?php if (!empty($cl['reponse_admin'])): ?>
-                                <div style="background: #FFF2ED; border-left: 4px solid var(--eventia-navy, #000000); padding: 0.85rem; border-radius: 0 8px 8px 0; margin-top: 0.5rem;">
-                                    <strong style="color: var(--eventia-navy, #000000); font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">
-                                        <i class="fa-solid fa-reply"></i> Réponse de l'Administration :
-                                    </strong>
-                                    <p style="margin: 0; font-size: 0.88rem; color: var(--eventia-text, #000000); line-height: 1.5;">
-                                        <?php echo nl2br(htmlspecialchars($cl['reponse_admin'])); ?>
-                                    </p>
-                                </div>
-                            <?php else: ?>
-                                <small style="color: var(--eventia-muted, #737373); font-style: italic;">
-                                    <i class="fa-solid fa-hourglass-half"></i> En attente de réponse du support...
-                                </small>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <div class="eventia-empty-state" style="padding: 2.5rem 1rem;">
-                    <i class="fa-solid fa-circle-check eventia-empty-state-icon" style="color: var(--eventia-turquoise, #FF4A0D);"></i>
-                    <p class="eventia-empty-state-desc">Vous n'avez aucune réclamation en cours.</p>
-                </div>
-            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="eventia-empty-state" style="padding: 2.5rem 1rem;">
+                        <i class="fa-solid fa-circle-check eventia-empty-state-icon"
+                            style="color: var(--eventia-turquoise, #FF4A0D);"></i>
+                        <p class="eventia-empty-state-desc">Vous n'avez aucune réclamation en cours.</p>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
-    </div>
     </div> <!-- Fin de .swiss-wrap -->
 </main>
 

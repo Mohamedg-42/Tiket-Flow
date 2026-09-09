@@ -173,11 +173,11 @@ if ($statut_filter === 'actif') {
 }
 
 if ($periode === '7j') {
-    $sql .= " AND e.date_evenement >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+    $sql .= " AND e.date_evenement >= NOW() - INTERVAL '7 days'";
 } elseif ($periode === '30j') {
-    $sql .= " AND e.date_evenement >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+    $sql .= " AND e.date_evenement >= NOW() - INTERVAL '30 days'";
 } elseif ($periode === 'futur') {
-    $sql .= " AND e.date_evenement >= CURDATE()";
+    $sql .= " AND e.date_evenement >= CURRENT_DATE";
 }
 
 if (!empty($search)) {
@@ -853,10 +853,10 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
             <button type="button" class="dash-btn-action" onclick="window.print()">
-                <i class="fa-solid fa-print"></i> Imprimer Rapport
+                <i class="fa-solid fa-print"></i> Imprimer
             </button>
-            <a href="evenements.php" class="dash-btn-action btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-                <i class="fa-solid fa-calendar-days"></i> Voir les Événements
+            <a href="creer-evenement.php?onglet=vote" class="dash-btn-action btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+                <i class="fa-solid fa-plus"></i> Nouveau Vote / Concours
             </a>
         </div>
     </div>
@@ -942,7 +942,7 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
          3. CARTES KPIS DE SUPERVISION RESPONSIVES
          ============================================================================== -->
     <div class="votes-kpis">
-        <div class="eventia-kpi-card" style="border-left: 4px solid #FF4A0D;">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <span style="font-size: 0.8rem; font-weight: 800; color: #FF4A0D; text-transform: uppercase; letter-spacing: 0.03em;">Compétitions Actives</span>
                 <span style="background: #FFF2ED; color: #FF4A0D; width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-trophy"></i></span>
@@ -960,7 +960,7 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
             <small style="color: var(--dash-muted); font-size: 0.75rem;">Total des votes enregistrés</small>
         </div>
 
-        <div class="eventia-kpi-card" style="border-left: 4px solid #FF4A0D;">
+        <div class="eventia-kpi-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <span style="font-size: 0.8rem; font-weight: 800; color: #FF4A0D; text-transform: uppercase; letter-spacing: 0.03em;">Recettes Votes Payants</span>
                 <span style="background: #FFF2ED; color: #FF4A0D; width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; font-size: 0.85rem;"><i class="fa-solid fa-coins"></i></span>
@@ -1101,6 +1101,13 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
                                 </td>
                                 <td class="card-actions" data-label="Arbitrage">
                                     <div class="actions-group">
+                                        <button type="button" class="dash-btn-action"
+                                            style="border-radius: 8px; justify-content: center; background: #FFF2ED; border: 1px solid #FFEDD5; color: #EA580C; font-weight: 700; font-size: 0.78rem;"
+                                            title="Partager le lien public du vote"
+                                            onclick="openAdminShareVote(<?php echo (int) $ve['id']; ?>, '<?php echo htmlspecialchars(addslashes($ve['nom'])); ?>')">
+                                            <i class="fa-solid fa-share-nodes"></i> <span>Partager</span>
+                                        </button>
+
                                         <button type="button" class="dash-btn-action btn-edit"
                                             onclick="openEditVoteModal(<?php echo (int) $ve['id']; ?>, 'config')"
                                             title="Modifier la configuration du vote ou du concours">
@@ -1126,7 +1133,7 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
                                             </form>
                                         <?php endif; ?>
 
-                                        <a href="../client/vote-event.php?id=<?php echo (int)$ve['id']; ?>" target="_blank" class="dash-btn-action" style="border-radius: 8px; justify-content: center; background: #F5F5F5; border: 1px solid #E5E5E5; color: var(--dash-text); flex-shrink: 0;" title="Voir la page de vote publique">
+                                        <a href="../client/accueil.php?onglet=voter&vote_id=<?php echo (int)$ve['id']; ?>" target="_blank" class="dash-btn-action" style="border-radius: 8px; justify-content: center; background: #F5F5F5; border: 1px solid #E5E5E5; color: var(--dash-text); flex-shrink: 0;" title="Ouvrir la page de vote publique">
                                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                         </a>
                                     </div>
@@ -1226,6 +1233,24 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
                             </select>
                         </div>
 
+                        <!-- Lien direct vers la page de vote publique & Partage rapide -->
+                        <div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 10px; padding: 0.85rem; font-size: 0.82rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+                                <strong style="color: #EA580C; font-size: 0.82rem;">
+                                    <i class="fa-solid fa-share-nodes"></i> Lien public direct pour voter :
+                                </strong>
+                                <button type="button" class="dash-btn-action" onclick="copyAdminVoteLink()" style="background: #ffffff; border: 1px solid #FFEDD5; color: #EA580C; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">
+                                    <i class="fa-regular fa-copy"></i> <span id="adminCopyBtnText">Copier le lien</span>
+                                </button>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="text" id="admin_vote_permalink" readonly style="width: 100%; font-size: 0.8rem; background: #ffffff; border: 1px solid #FFEDD5; border-radius: 6px; padding: 0.45rem 0.65rem; color: var(--dash-text);" onclick="this.select()">
+                                <button type="button" onclick="shareAdminVoteWhatsApp()" class="dash-btn-action" style="background: #25D366; color: #ffffff; border: none; border-radius: 6px; padding: 0.45rem 0.8rem; font-size: 0.78rem; white-space: nowrap;">
+                                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Lien direct vers la fiche complète -->
                         <div style="background: #F5F5F5; border: 1px solid var(--dash-border, #E5E5E5); border-radius: 10px; padding: 0.85rem; font-size: 0.82rem; color: var(--dash-muted, #737373); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                             <span>Pour modifier l'affiche générale ou la billetterie :</span>
@@ -1313,6 +1338,52 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
                     <!-- Généré dynamiquement en JS -->
                 </div>
             </div>
+        </div>
+</div>
+
+<!-- MODALE DE PARTAGE DU VOTE ADMIN -->
+<div id="adminShareModal" class="dash-modal" style="display: none;">
+    <div class="dash-modal-backdrop" onclick="closeAdminShareModal()"></div>
+    <div class="dash-modal-dialog" style="max-width: 500px;">
+        <div class="dash-modal-header">
+            <h3>
+                <i class="fa-solid fa-share-nodes" style="color: #FF4A0D;"></i>
+                <span>Partager le lien du vote</span>
+            </h3>
+            <button type="button" class="dash-modal-close" onclick="closeAdminShareModal()">&times;</button>
+        </div>
+        <div class="dash-modal-body">
+            <p style="font-size: 0.85rem; color: var(--dash-muted); margin: 0 0 0.75rem;">
+                Diffusez ce lien pour permettre au public de voter en ligne en un clic :
+            </p>
+            <div style="background: #f8fafc; border: 1px solid var(--dash-border, #E5E5E5); border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
+                <strong id="adminShareEventTitle" style="color: var(--dash-text); font-size: 0.95rem; display: block;"></strong>
+                <small style="color: var(--dash-muted); font-size: 0.76rem;">Lien direct vers l'espace de vote officiel</small>
+            </div>
+            <label class="form-field-label">Lien public permanent :</label>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                <input type="text" id="adminShareDirectLink" readonly class="form-field-input" onclick="this.select()">
+                <button type="button" class="dash-btn-action btn-primary" onclick="copyAdminShareDirectLink()" style="white-space: nowrap; padding: 0.5rem 0.9rem;">
+                    <i class="fa-regular fa-copy"></i> <span id="adminShareCopyBtnText">Copier</span>
+                </button>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem;">
+                <button type="button" class="dash-btn-action" onclick="shareAdminWhatsAppDirect()" style="background: #25D366; color: #ffffff; border: none; justify-content: center; padding: 0.6rem;">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                </button>
+                <button type="button" class="dash-btn-action" onclick="shareAdminFacebookDirect()" style="background: #1877F2; color: #ffffff; border: none; justify-content: center; padding: 0.6rem;">
+                    <i class="fa-brands fa-facebook-f"></i> Facebook
+                </button>
+                <button type="button" class="dash-btn-action" onclick="shareAdminTwitterDirect()" style="background: #000000; color: #ffffff; border: none; justify-content: center; padding: 0.6rem;">
+                    <i class="fa-brands fa-x-twitter"></i> X (Twitter)
+                </button>
+                <a id="adminSharePreviewLink" href="#" target="_blank" class="dash-btn-action" style="background: #f1f5f9; color: var(--dash-text); border: 1px solid var(--dash-border, #E5E5E5); justify-content: center; padding: 0.6rem; text-decoration: none;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Tester le lien
+                </a>
+            </div>
+        </div>
+        <div class="dash-modal-footer">
+            <button type="button" class="dash-btn-action" onclick="closeAdminShareModal()">Fermer</button>
         </div>
     </div>
 </div>
@@ -1536,6 +1607,12 @@ function openEditVoteModal(evId, targetTab = 'config') {
     // Lien vers la modification avancée de l'événement
     document.getElementById('edit_vote_full_link').href = 'modifier-evenement.php?id=' + encodeURIComponent(ev.id);
 
+    // Lien permanent direct de vote
+    const baseVoteUrl = window.location.origin + window.location.pathname.replace('/admin/votes.php', '/client/accueil.php');
+    const directVoteLink = baseVoteUrl + '?onglet=voter&vote_id=' + ev.id;
+    const permalinkEl = document.getElementById('admin_vote_permalink');
+    if (permalinkEl) permalinkEl.value = directVoteLink;
+
     // Compteur & Liste des Candidats
     const cands = ev.candidats || [];
     document.getElementById('tabCountCands').textContent = cands.length;
@@ -1557,6 +1634,87 @@ function openEditVoteModal(evId, targetTab = 'config') {
     switchVoteModalTab(targetTab);
 }
 
+function copyAdminVoteLink() {
+    const input = document.getElementById('admin_vote_permalink');
+    if (!input) return;
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btnText = document.getElementById('adminCopyBtnText');
+        if (btnText) {
+            btnText.textContent = "Copié !";
+            setTimeout(() => { btnText.textContent = "Copier le lien"; }, 2000);
+        }
+    }).catch(() => {
+        document.execCommand('copy');
+    });
+}
+
+function shareAdminVoteWhatsApp() {
+    const input = document.getElementById('admin_vote_permalink');
+    const evTitle = document.getElementById('edit_vote_nom').value || 'ce concours';
+    if (!input) return;
+    const msg = "Participez et votez pour : " + evTitle + " sur Tikéli :\n" + input.value;
+    window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+}
+
+let activeAdminShareData = { id: 0, title: '', url: '' };
+
+function openAdminShareVote(evId, title) {
+    const baseVoteUrl = window.location.origin + window.location.pathname.replace('/admin/votes.php', '/client/accueil.php');
+    const directLink = baseVoteUrl + '?onglet=voter&vote_id=' + evId;
+    activeAdminShareData = { id: evId, title: title, url: directLink };
+
+    const titleEl = document.getElementById('adminShareEventTitle');
+    if (titleEl) titleEl.textContent = title;
+    const linkEl = document.getElementById('adminShareDirectLink');
+    if (linkEl) linkEl.value = directLink;
+    const previewEl = document.getElementById('adminSharePreviewLink');
+    if (previewEl) previewEl.href = directLink;
+
+    const modal = document.getElementById('adminShareModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeAdminShareModal() {
+    const modal = document.getElementById('adminShareModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    document.body.style.overflow = '';
+}
+
+function copyAdminShareDirectLink() {
+    const input = document.getElementById('adminShareDirectLink');
+    if (!input) return;
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btnText = document.getElementById('adminShareCopyBtnText');
+        if (btnText) {
+            btnText.textContent = "Copié !";
+            setTimeout(() => { btnText.textContent = "Copier"; }, 2000);
+        }
+    }).catch(() => {
+        document.execCommand('copy');
+    });
+}
+
+function shareAdminWhatsAppDirect() {
+    const msg = "Votez pour : " + activeAdminShareData.title + " sur Tikéli :\n" + activeAdminShareData.url;
+    window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function shareAdminFacebookDirect() {
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(activeAdminShareData.url), '_blank', 'width=600,height=450');
+}
+
+function shareAdminTwitterDirect() {
+    const tweet = "Participez au vote : " + activeAdminShareData.title + " sur Tikéli\n";
+    window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweet) + '&url=' + encodeURIComponent(activeAdminShareData.url), '_blank', 'width=600,height=450');
+}
+
 function closeEditVoteModal() {
     const modal = document.getElementById('editVoteModal');
     if (modal) {
@@ -1570,6 +1728,7 @@ function closeEditVoteModal() {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeEditVoteModal();
+        closeAdminShareModal();
     }
 });
 
