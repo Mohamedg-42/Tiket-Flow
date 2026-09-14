@@ -1,24 +1,50 @@
-# / .gitignore
+# .gitignore — Tikéli Platform
 
-# OS files
+# ─── Fichiers systèmes OS ───────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# IDEs
+# ─── IDEs ──────────────────────────────────────────────────────────────────────
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# Environment variables
+# ─── Variables d'environnement (NE JAMAIS COMMITTER) ───────────────────────────
 .env
+.env.local
+.env.production
+.env.staging
+# Conserver uniquement l'exemple sans credentials
+!.env.example
 
-# User uploads (Security/Privacy)
+# ─── Uploads utilisateurs (Sécurité/Confidentialité) ───────────────────────────
 uploads/ids/
-uploads/
+uploads/candidats/
+uploads/events/
+uploads/cotisations/
+# Garder le dossier avec un .gitkeep
+!uploads/.gitkeep
 
-# PHP/Web
+# ─── PHP / Composer ─────────────────────────────────────────────────────────────
 vendor/
+composer.lock
+
+# ─── Node / JS ──────────────────────────────────────────────────────────────────
 node_modules/
 .cache/
+dist/
 
-# Log files
+# ─── Logs & temporaires ─────────────────────────────────────────────────────────
 *.log
+logs/*.log
+*.tmp
+*.bak
+
+# ─── Fichiers de test dangereux (ne jamais committer en prod) ───────────────────
+_test_cmd.php
+*_test_*.php
+debug_*.php
+phpinfo.php

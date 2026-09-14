@@ -1,7 +1,7 @@
 <?php
 // ==============================================================================
 // GESTION DES COMPTES, RÔLES & PERMISSIONS (admin/utilisateurs.php)
-// Administration Tikéli — Supervision complète, profils métiers, suspensions et historique
+// Administration Tike WA — Supervision complète, profils métiers, suspensions et historique
 // ==============================================================================
 
 $admin_page_title = "Gestion des Comptes - Administration";
@@ -66,8 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_user'])) {
                     $nom_commercial = !empty($_POST['nom_commercial_promo']) ? trim($_POST['nom_commercial_promo']) : $full_name;
                     $numero_registre = !empty($_POST['numero_registre_promo']) ? trim($_POST['numero_registre_promo']) : null;
                     $rep_legal = !empty($_POST['representant_legal_promo']) ? trim($_POST['representant_legal_promo']) : $full_name;
-                    $promo_comm = isset($_POST['commission_rate_promo']) ? (float)str_replace(',', '.', trim($_POST['commission_rate_promo'])) : 5.00;
-                    if ($promo_comm < 0 || $promo_comm > 50) $promo_comm = 5.00;
+                    $promo_comm = isset($_POST['commission_rate_promo']) ? (float) str_replace(',', '.', trim($_POST['commission_rate_promo'])) : 5.00;
+                    if ($promo_comm < 0 || $promo_comm > 50)
+                        $promo_comm = 5.00;
 
                     $st_chk_p = $pdo->prepare("SELECT id FROM promoters WHERE user_id = ?");
                     $st_chk_p->execute([$new_user_id]);
@@ -171,8 +172,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
 
             // Si le compte est ou devient un promoteur, mise à jour ou initialisation du profil et du taux de commission
             if ($role === 'promoteur' && isset($_POST['commission_rate_promo_edit'])) {
-                $promo_comm = (float)str_replace(',', '.', trim($_POST['commission_rate_promo_edit']));
-                if ($promo_comm < 0 || $promo_comm > 50) $promo_comm = 5.00;
+                $promo_comm = (float) str_replace(',', '.', trim($_POST['commission_rate_promo_edit']));
+                if ($promo_comm < 0 || $promo_comm > 50)
+                    $promo_comm = 5.00;
 
                 $st_chk_p = $pdo->prepare("SELECT id, commission_rate FROM promoters WHERE user_id = ?");
                 $st_chk_p->execute([$user_id]);
@@ -181,8 +183,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
                 if ($existing_p) {
                     $st_up_p = $pdo->prepare("UPDATE promoters SET commission_rate = ? WHERE user_id = ?");
                     $st_up_p->execute([$promo_comm, $user_id]);
-                    if (abs((float)$existing_p['commission_rate'] - $promo_comm) > 0.001) {
-                        $changes[] = "Taux commission : " . number_format((float)$existing_p['commission_rate'], 2) . "% → " . number_format($promo_comm, 2) . "%";
+                    if (abs((float) $existing_p['commission_rate'] - $promo_comm) > 0.001) {
+                        $changes[] = "Taux commission : " . number_format((float) $existing_p['commission_rate'], 2) . "% → " . number_format($promo_comm, 2) . "%";
                     }
                 } else {
                     $full_name = trim("$prenom $nom");
@@ -366,273 +368,305 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
 ?>
 
 <style>
-/* ==============================================================================
+    /* ==============================================================================
    STYLES RESPONSIVE & SYSTÈME SUISSE - UTILISATEURS & RÔLES
    ============================================================================== */
-.users-header-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
-}
-.users-header-actions {
-    display: flex;
-    gap: 0.65rem;
-    align-items: center;
-    flex-wrap: wrap;
-}
-.users-filter-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-    background: #ffffff;
-    padding: 0.75rem 1rem;
-    border-radius: 12px;
-    border: 1px solid var(--dash-border, #E5E5E5);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-    flex-wrap: wrap;
-}
-.users-pills-row {
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    max-width: 100%;
-}
-.users-pills-row::-webkit-scrollbar {
-    display: none;
-}
-.users-pill-link {
-    text-decoration: none;
-    border-radius: 8px;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    font-weight: 700;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: all 0.15s ease;
-}
-
-.users-kpis-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.users-desktop-table {
-    display: block;
-}
-.users-mobile-list {
-    display: none;
-}
-
-/* Breakpoints Responsives */
-@media (max-width: 960px) {
-    .users-kpis-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-}
-
-@media (max-width: 860px) {
-    .dash-container {
-        padding: 0.75rem 0.5rem !important;
-    }
-    .dash-card {
-        padding: 0.75rem 0.5rem !important;
-        border-radius: 12px !important;
-        overflow: visible !important;
-    }
-    .dash-card-head {
-        margin-bottom: 0.75rem !important;
-        padding: 0 0.25rem !important;
-    }
-    .dash-card-title {
-        font-size: 0.95rem !important;
-    }
     .users-header-section {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.85rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
     }
+
     .users-header-actions {
-        width: 100%;
-        flex-direction: column;
-    }
-    .users-header-actions a,
-    .users-header-actions button {
-        width: 100%;
-        justify-content: center;
-        box-sizing: border-box;
-        text-align: center;
+        display: flex;
+        gap: 0.65rem;
+        align-items: center;
+        flex-wrap: wrap;
     }
 
     .users-filter-bar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
-    }
-    .users-pills-row {
-        width: 100%;
-    }
-    .users-search-form {
-        width: 100%;
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .users-search-form select,
-    .users-search-form input,
-    .users-search-form button {
-        width: 100% !important;
-        box-sizing: border-box;
-    }
-
-    /* Masquer le tableau large */
-    .users-desktop-table {
-        display: none !important;
-    }
-
-    /* Activer les cartes suisses mobiles */
-    .users-mobile-list {
-        display: flex !important;
-        flex-direction: column;
-        gap: 0.85rem;
-    }
-
-    .user-mobile-card {
-        background: #ffffff;
-        border: 1px solid var(--dash-border, #E5E5E5);
-        border-radius: 12px;
-        padding: 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-        display: flex;
-        flex-direction: column;
-        gap: 0.65rem;
-        box-sizing: border-box;
-    }
-    .umc-header {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    .umc-name {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 800;
-        color: var(--dash-text, #000000);
-        line-height: 1.3;
-    }
-    .umc-id {
-        font-family: 'Space Mono', monospace;
-        font-size: 0.72rem;
-        color: var(--dash-muted, #737373);
-    }
-    .umc-contact-info {
-        background: #F5F5F5;
-        border: 1px solid #F5F5F5;
-        border-radius: 8px;
-        padding: 0.6rem 0.75rem;
-        font-size: 0.8rem;
-        color: var(--dash-text, #000000);
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-    }
-    .umc-meta-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-        font-size: 0.78rem;
-    }
-    .umc-meta-item {
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
         background: #ffffff;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
         border: 1px solid var(--dash-border, #E5E5E5);
-        border-radius: 8px;
-        padding: 0.45rem 0.65rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        flex-wrap: wrap;
     }
-    .umc-meta-label {
-        font-size: 0.68rem;
-        text-transform: uppercase;
-        font-weight: 700;
-        color: var(--dash-muted, #737373);
-        display: block;
-        margin-bottom: 2px;
-    }
-    .umc-actions {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        border-top: 1px solid var(--dash-border, #E5E5E5);
-        padding-top: 0.65rem;
-    }
-    .umc-btn {
-        flex: 1;
-        padding: 0.5rem 0.5rem;
-        font-size: 0.78rem;
-        font-weight: 700;
-        border-radius: 6px;
-        border: 1px solid transparent;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        text-decoration: none;
-        cursor: pointer;
-        box-sizing: border-box;
-    }
-    .umc-btn-view {
-        background: #F5F5F5;
-        color: #000000;
-        border-color: #E5E5E5;
-    }
-    .umc-btn-edit {
-        background: #FFF2ED;
-        color: #FF4A0D;
-        border-color: #FFF2ED;
-    }
-    .umc-btn-suspend {
-        background: #FFF2ED;
-        color: #FF4A0D;
-        border-color: #E5E5E5;
-    }
-    .umc-btn-reactivate {
-        background: #FFF2ED;
-        color: #000000;
-        border-color: #FFF2ED;
-    }
-    .umc-btn-more {
-        flex: 0 0 36px;
-        background: #ffffff;
-        color: #737373;
-        border-color: #E5E5E5;
-    }
-}
 
-@media (max-width: 480px) {
+    .users-pills-row {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        max-width: 100%;
+    }
+
+    .users-pills-row::-webkit-scrollbar {
+        display: none;
+    }
+
+    .users-pill-link {
+        text-decoration: none;
+        border-radius: 8px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: all 0.15s ease;
+    }
+
     .users-kpis-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.65rem !important;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
-    .umc-meta-grid {
-        grid-template-columns: 1fr;
+
+    .users-desktop-table {
+        display: block;
     }
-    .dash-modal-dialog {
-        margin: 0.5rem;
+
+    .users-mobile-list {
+        display: none;
     }
-    .dash-modal-body div[style*="grid-template-columns"] {
-        grid-template-columns: 1fr !important;
+
+    /* Breakpoints Responsives */
+    @media (max-width: 960px) {
+        .users-kpis-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
     }
-}
+
+    @media (max-width: 860px) {
+        .dash-container {
+            padding: 0.75rem 0.5rem !important;
+        }
+
+        .dash-card {
+            padding: 0.75rem 0.5rem !important;
+            border-radius: 12px !important;
+            overflow: visible !important;
+        }
+
+        .dash-card-head {
+            margin-bottom: 0.75rem !important;
+            padding: 0 0.25rem !important;
+        }
+
+        .dash-card-title {
+            font-size: 0.95rem !important;
+        }
+
+        .users-header-section {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.85rem;
+        }
+
+        .users-header-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .users-header-actions a,
+        .users-header-actions button {
+            width: 100%;
+            justify-content: center;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .users-filter-bar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.75rem;
+        }
+
+        .users-pills-row {
+            width: 100%;
+        }
+
+        .users-search-form {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .users-search-form select,
+        .users-search-form input,
+        .users-search-form button {
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        /* Masquer le tableau large */
+        .users-desktop-table {
+            display: none !important;
+        }
+
+        /* Activer les cartes suisses mobiles */
+        .users-mobile-list {
+            display: flex !important;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .user-mobile-card {
+            background: #ffffff;
+            border: 1px solid var(--dash-border, #E5E5E5);
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            box-sizing: border-box;
+        }
+
+        .umc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .umc-name {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--dash-text, #000000);
+            line-height: 1.3;
+        }
+
+        .umc-id {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--dash-muted, #737373);
+        }
+
+        .umc-contact-info {
+            background: #F5F5F5;
+            border: 1px solid #F5F5F5;
+            border-radius: 8px;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.8rem;
+            color: var(--dash-text, #000000);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        .umc-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+        }
+
+        .umc-meta-item {
+            background: #ffffff;
+            border: 1px solid var(--dash-border, #E5E5E5);
+            border-radius: 8px;
+            padding: 0.45rem 0.65rem;
+        }
+
+        .umc-meta-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--dash-muted, #737373);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .umc-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            border-top: 1px solid var(--dash-border, #E5E5E5);
+            padding-top: 0.65rem;
+        }
+
+        .umc-btn {
+            flex: 1;
+            padding: 0.5rem 0.5rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .umc-btn-view {
+            background: #F5F5F5;
+            color: #000000;
+            border-color: #E5E5E5;
+        }
+
+        .umc-btn-edit {
+            background: #FFF2ED;
+            color: #FF4A0D;
+            border-color: #FFF2ED;
+        }
+
+        .umc-btn-suspend {
+            background: #FFF2ED;
+            color: #FF4A0D;
+            border-color: #E5E5E5;
+        }
+
+        .umc-btn-reactivate {
+            background: #FFF2ED;
+            color: #000000;
+            border-color: #FFF2ED;
+        }
+
+        .umc-btn-more {
+            flex: 0 0 36px;
+            background: #ffffff;
+            color: #737373;
+            border-color: #E5E5E5;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .users-kpis-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0.65rem !important;
+        }
+
+        .umc-meta-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dash-modal-dialog {
+            margin: 0.5rem;
+        }
+
+        .dash-modal-body div[style*="grid-template-columns"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
 </style>
 
 <div class="dash-container">
@@ -648,7 +682,8 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
         </div>
 
         <div class="users-header-actions">
-            <a href="export.php?type=utilisateurs" class="dash-btn-action" style="text-decoration: none;" title="Exporter tous les utilisateurs sur Excel (CSV)">
+            <a href="export.php?type=utilisateurs" class="dash-btn-action" style="text-decoration: none;"
+                title="Exporter tous les utilisateurs sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
             <a href="profils.php" class="dash-btn-action" style="text-decoration: none;">
@@ -685,7 +720,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                         class="fa-solid fa-users"></i></span>
             </div>
             <div style="font-size: 1.6rem; font-weight: 800; color: var(--navy);"><?php echo $tot_users; ?></div>
-            <small style="color: var(--muted); font-size: 0.74rem;">Inscrits sur Tikéli</small>
+            <small style="color: var(--muted); font-size: 0.74rem;">Inscrits sur Tike WA</small>
         </div>
 
         <div class="dash-kpi-card" style="padding: 1rem 1.15rem;">
@@ -722,7 +757,8 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                         class="fa-solid fa-shield-halved"></i></span>
             </div>
             <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent);">
-                <?php echo ($tot_admins + $tot_agents); ?></div>
+                <?php echo ($tot_admins + $tot_agents); ?>
+            </div>
             <small style="color: var(--muted); font-size: 0.74rem;"><?php echo $tot_admins; ?> Admins ·
                 <?php echo $tot_agents; ?> Agents</small>
         </div>
@@ -732,23 +768,28 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
     <div class="users-filter-bar">
         <!-- Filtres par Rôle -->
         <div class="users-pills-row">
-            <a href="?role=&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>" class="users-pill-link"
+            <a href="?role=&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>"
+                class="users-pill-link"
                 style="<?php echo $role_filter === '' ? 'background: var(--primary); color: #ffffff;' : 'background: #F5F5F5; color: var(--muted); border: 1px solid #E5E5E5;'; ?>">
                 Tous (<?php echo $tot_users; ?>)
             </a>
-            <a href="?role=client&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>" class="users-pill-link"
+            <a href="?role=client&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>"
+                class="users-pill-link"
                 style="<?php echo $role_filter === 'client' ? 'background: var(--primary); color: #ffffff;' : 'background: #F5F5F5; color: var(--muted); border: 1px solid #E5E5E5;'; ?>">
                 Clients
             </a>
-            <a href="?role=promoteur&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>" class="users-pill-link"
+            <a href="?role=promoteur&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>"
+                class="users-pill-link"
                 style="<?php echo $role_filter === 'promoteur' ? 'background: var(--primary); color: #ffffff;' : 'background: #F5F5F5; color: var(--muted); border: 1px solid #E5E5E5;'; ?>">
                 Promoteurs
             </a>
-            <a href="?role=agent&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>" class="users-pill-link"
+            <a href="?role=agent&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>"
+                class="users-pill-link"
                 style="<?php echo $role_filter === 'agent' ? 'background: var(--primary); color: #ffffff;' : 'background: #F5F5F5; color: var(--muted); border: 1px solid #E5E5E5;'; ?>">
                 Agents
             </a>
-            <a href="?role=admin&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>" class="users-pill-link"
+            <a href="?role=admin&statut=<?php echo urlencode($statut_filt); ?>&q=<?php echo urlencode($search); ?>"
+                class="users-pill-link"
                 style="<?php echo $role_filter === 'admin' ? 'background: var(--primary); color: #ffffff;' : 'background: #F5F5F5; color: var(--muted); border: 1px solid #E5E5E5;'; ?>">
                 Admins
             </a>
@@ -763,8 +804,10 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                 style="padding: 0.4rem 0.6rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.8rem; background: #ffffff;">
                 <option value="">Tous les statuts</option>
                 <option value="actif" <?php echo $statut_filt === 'actif' ? 'selected' : ''; ?>>Actif</option>
-                <option value="suspendu_temp" <?php echo $statut_filt === 'suspendu_temp' ? 'selected' : ''; ?>>Suspendu temporairement</option>
-                <option value="suspendu_def" <?php echo $statut_filt === 'suspendu_def' ? 'selected' : ''; ?>>Suspendu définitivement</option>
+                <option value="suspendu_temp" <?php echo $statut_filt === 'suspendu_temp' ? 'selected' : ''; ?>>Suspendu
+                    temporairement</option>
+                <option value="suspendu_def" <?php echo $statut_filt === 'suspendu_def' ? 'selected' : ''; ?>>Suspendu
+                    définitivement</option>
                 <option value="inactif" <?php echo $statut_filt === 'inactif' ? 'selected' : ''; ?>>Inactif</option>
             </select>
 
@@ -800,7 +843,8 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
             </div>
         <?php else: ?>
             <!-- Vue Table Desktop (> 860px) -->
-            <div class="dash-table-wrapper users-desktop-table" style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
+            <div class="dash-table-wrapper users-desktop-table"
+                style="overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch;">
                 <table class="dash-pro-table" style="min-width: 900px; width: 100%;">
                     <thead>
                         <tr>
@@ -862,14 +906,17 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
 
                                 <!-- Type de compte & Profil métier -->
                                 <td>
-                                    <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-bottom: 2px;">
+                                    <div
+                                        style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-bottom: 2px;">
                                         <span
                                             style="display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; <?php echo $r_style; ?>;">
                                             <?php echo $r_text; ?>
                                         </span>
                                         <?php if ($u['role'] === 'promoteur' && isset($u['promoter_commission_rate'])): ?>
-                                            <span style="display: inline-block; font-size: 0.7rem; font-family: monospace; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 4px;" title="Taux de commission Tikéli">
-                                                <?php echo number_format((float)$u['promoter_commission_rate'], 2); ?>%
+                                            <span
+                                                style="display: inline-block; font-size: 0.7rem; font-family: monospace; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 4px;"
+                                                title="Taux de commission Tike WA">
+                                                <?php echo number_format((float) $u['promoter_commission_rate'], 2); ?>%
                                             </span>
                                         <?php endif; ?>
                                     </div>
@@ -1022,15 +1069,19 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                                 <span class="umc-id">ID #<?php echo $u['id']; ?></span>
                             </div>
                             <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
-                                <span style="display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; <?php echo $r_style; ?>">
+                                <span
+                                    style="display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; <?php echo $r_style; ?>">
                                     <?php echo $r_text; ?>
                                 </span>
                                 <?php if ($u['role'] === 'promoteur' && isset($u['promoter_commission_rate'])): ?>
-                                    <span style="display: inline-block; font-size: 0.7rem; font-family: monospace; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 4px;">
-                                        <?php echo number_format((float)$u['promoter_commission_rate'], 2); ?>%
+                                    <span
+                                        style="display: inline-block; font-size: 0.7rem; font-family: monospace; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 5px; border-radius: 4px;">
+                                        <?php echo number_format((float) $u['promoter_commission_rate'], 2); ?>%
                                     </span>
                                 <?php endif; ?>
-                                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; <?php echo $s_style; ?>" title="<?php echo htmlspecialchars($u['suspension_reason'] ?? ''); ?>">
+                                <span
+                                    style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; <?php echo $s_style; ?>"
+                                    title="<?php echo htmlspecialchars($u['suspension_reason'] ?? ''); ?>">
                                     <i class="fa-solid <?php echo $s_ico; ?>" style="font-size: 0.65rem;"></i>
                                     <?php echo $s_text; ?>
                                 </span>
@@ -1040,12 +1091,14 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                         <div class="umc-contact-info">
                             <div>
                                 <i class="fa-regular fa-envelope" style="color: var(--dash-muted); width: 14px;"></i>
-                                <a href="mailto:<?php echo htmlspecialchars($u['email']); ?>" style="color: inherit; text-decoration: none; font-weight: 600;"><?php echo htmlspecialchars($u['email']); ?></a>
+                                <a href="mailto:<?php echo htmlspecialchars($u['email']); ?>"
+                                    style="color: inherit; text-decoration: none; font-weight: 600;"><?php echo htmlspecialchars($u['email']); ?></a>
                             </div>
                             <?php if (!empty($u['telephone'])): ?>
                                 <div>
                                     <i class="fa-solid fa-phone" style="color: var(--dash-muted); width: 14px;"></i>
-                                    <a href="tel:<?php echo htmlspecialchars($u['telephone']); ?>" style="color: inherit; text-decoration: none;"><?php echo htmlspecialchars($u['telephone']); ?></a>
+                                    <a href="tel:<?php echo htmlspecialchars($u['telephone']); ?>"
+                                        style="color: inherit; text-decoration: none;"><?php echo htmlspecialchars($u['telephone']); ?></a>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -1067,23 +1120,27 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
 
                         <!-- Actions Tactiles Directes -->
                         <div class="umc-actions">
-                            <button type="button" class="umc-btn umc-btn-view" onclick='openViewUserModal(<?php echo json_encode($u, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
+                            <button type="button" class="umc-btn umc-btn-view"
+                                onclick='openViewUserModal(<?php echo json_encode($u, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
                                 <i class="fa-regular fa-eye"></i> Fiche
                             </button>
 
                             <?php if (hasPermission('users.edit')): ?>
-                                <button type="button" class="umc-btn umc-btn-edit" onclick='openEditUserModal(<?php echo json_encode($u, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
-                                <i class="fa-solid fa-pen-to-square"></i> Modifier
+                                <button type="button" class="umc-btn umc-btn-edit"
+                                    onclick='openEditUserModal(<?php echo json_encode($u, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
+                                    <i class="fa-solid fa-pen-to-square"></i> Modifier
                                 </button>
                             <?php endif; ?>
 
                             <?php if (hasPermission('users.status') && $u['id'] !== (int) $_SESSION['user_id']): ?>
                                 <?php if (in_array($u['statut'] ?? '', ['suspendu_temp', 'suspendu_def', 'inactif'], true)): ?>
-                                    <a href="utilisateurs.php?reactivate=<?php echo $u['id']; ?>" class="umc-btn umc-btn-reactivate" onclick="return confirm('Voulez-vous réactiver immédiatement ce compte ?');">
+                                    <a href="utilisateurs.php?reactivate=<?php echo $u['id']; ?>" class="umc-btn umc-btn-reactivate"
+                                        onclick="return confirm('Voulez-vous réactiver immédiatement ce compte ?');">
                                         <i class="fa-solid fa-circle-check"></i> Réactiver
                                     </a>
                                 <?php else: ?>
-                                    <button type="button" class="umc-btn umc-btn-suspend" onclick='openSuspendUserModal(<?php echo json_encode($u, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
+                                    <button type="button" class="umc-btn umc-btn-suspend"
+                                        onclick='openSuspendUserModal(<?php echo json_encode($u, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
                                         <i class="fa-solid fa-user-slash"></i> Suspendre
                                     </button>
                                 <?php endif; ?>
@@ -1091,19 +1148,25 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
 
                             <!-- Actions secondaires -->
                             <div class="user-action-dropdown" style="position: relative;">
-                                <button type="button" class="umc-btn umc-btn-more" onclick="toggleActionMenu(event, 'menu-m-<?php echo $u['id']; ?>')">
+                                <button type="button" class="umc-btn umc-btn-more"
+                                    onclick="toggleActionMenu(event, 'menu-m-<?php echo $u['id']; ?>')">
                                     <i class="fa-solid fa-ellipsis"></i>
                                 </button>
-                                <div id="menu-m-<?php echo $u['id']; ?>" class="action-popover" style="display: none; position: absolute; right: 0; bottom: 100%; margin-bottom: 4px; background: #ffffff; border: 1px solid var(--dash-border); border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); width: 180px; z-index: 50; padding: 4px 0; text-align: left;">
-                                    <a href="taches.php?user_id=<?php echo $u['id']; ?>" class="action-item" style="color: var(--dash-text); text-decoration: none;">
+                                <div id="menu-m-<?php echo $u['id']; ?>" class="action-popover"
+                                    style="display: none; position: absolute; right: 0; bottom: 100%; margin-bottom: 4px; background: #ffffff; border: 1px solid var(--dash-border); border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); width: 180px; z-index: 50; padding: 4px 0; text-align: left;">
+                                    <a href="taches.php?user_id=<?php echo $u['id']; ?>" class="action-item"
+                                        style="color: var(--dash-text); text-decoration: none;">
                                         <i class="fa-solid fa-list-check" style="color: var(--accent);"></i> Tâches
                                     </a>
-                                    <a href="activite.php?user_id=<?php echo $u['id']; ?>" class="action-item" style="color: var(--dash-text); text-decoration: none;">
+                                    <a href="activite.php?user_id=<?php echo $u['id']; ?>" class="action-item"
+                                        style="color: var(--dash-text); text-decoration: none;">
                                         <i class="fa-solid fa-clock-rotate-left" style="color: #FF4A0D;"></i> Activité
                                     </a>
                                     <?php if (hasPermission('users.delete') && $u['id'] !== (int) $_SESSION['user_id']): ?>
                                         <div style="height: 1px; background: var(--dash-border-light); margin: 4px 0;"></div>
-                                        <a href="utilisateurs.php?delete=<?php echo $u['id']; ?>" class="action-item" style="color: #000000;" onclick="return confirm('Confirmez-vous la suppression irréversible de cet utilisateur ?');">
+                                        <a href="utilisateurs.php?delete=<?php echo $u['id']; ?>" class="action-item"
+                                            style="color: #000000;"
+                                            onclick="return confirm('Confirmez-vous la suppression irréversible de cet utilisateur ?');">
                                             <i class="fa-solid fa-trash"></i> Supprimer
                                         </a>
                                     <?php endif; ?>
@@ -1154,8 +1217,11 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                 <div class="form-group">
                     <label>Mot de passe initial *</label>
                     <div style="position: relative;">
-                        <input type="password" id="create_user_pass" name="password" required minlength="6" placeholder="Au moins 6 caractères" style="width: 100%; box-sizing: border-box; padding-right: 2.25rem;">
-                        <i class="fa-regular fa-eye" onclick="togglePassVisibility('create_user_pass', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--dash-muted, #737373); font-size: 0.85rem;"></i>
+                        <input type="password" id="create_user_pass" name="password" required minlength="6"
+                            placeholder="Au moins 6 caractères"
+                            style="width: 100%; box-sizing: border-box; padding-right: 2.25rem;">
+                        <i class="fa-regular fa-eye" onclick="togglePassVisibility('create_user_pass', this)"
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--dash-muted, #737373); font-size: 0.85rem;"></i>
                     </div>
                 </div>
 
@@ -1287,18 +1353,26 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                     </div>
                 </div>
 
-                <div id="edit_promoter_section" style="display: none; background: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; padding: 0.85rem;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                <div id="edit_promoter_section"
+                    style="display: none; background: #fff7ed; border: 1px solid #fdba74; border-radius: 8px; padding: 0.85rem;">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
                         <label style="font-weight: 700; color: #9a3412; font-size: 0.82rem; margin: 0;">
                             <i class="fa-solid fa-percent"></i> Taux de Commission Négocié (%)
                         </label>
-                        <span style="font-family: monospace; font-size: 0.72rem; color: #c2410c; background: #ffedd5; padding: 2px 6px; border-radius: 4px;">Défaut : 5.00%</span>
+                        <span
+                            style="font-family: monospace; font-size: 0.72rem; color: #c2410c; background: #ffedd5; padding: 2px 6px; border-radius: 4px;">Défaut
+                            : 5.00%</span>
                     </div>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <input type="number" step="0.1" min="0" max="50" name="commission_rate_promo_edit" id="edit_commission_rate" value="5.00" style="width: 110px; font-weight: 700; padding: 0.4rem 0.6rem; border: 1px solid #fdba74; border-radius: 6px;">
-                        <span style="font-size: 0.82rem; color: #78350f;">% prélevé par Tikéli sur chaque billet vendu</span>
+                        <input type="number" step="0.1" min="0" max="50" name="commission_rate_promo_edit"
+                            id="edit_commission_rate" value="5.00"
+                            style="width: 110px; font-weight: 700; padding: 0.4rem 0.6rem; border: 1px solid #fdba74; border-radius: 6px;">
+                        <span style="font-size: 0.82rem; color: #78350f;">% prélevé par Tike WA sur chaque billet
+                            vendu</span>
                     </div>
-                    <label style="display: flex; align-items: center; gap: 0.45rem; margin-top: 0.5rem; font-size: 0.78rem; color: #9a3412; cursor: pointer; user-select: none;">
+                    <label
+                        style="display: flex; align-items: center; gap: 0.45rem; margin-top: 0.5rem; font-size: 0.78rem; color: #9a3412; cursor: pointer; user-select: none;">
                         <input type="checkbox" name="update_active_events_edit" value="1">
                         <span>Appliquer aussi ce taux à tous ses événements actuellement actifs</span>
                     </label>
@@ -1307,8 +1381,11 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                 <div class="form-group" style="border-top: 1px solid var(--line); padding-top: 0.75rem;">
                     <label>Nouveau mot de passe (laisser vide pour ne pas changer)</label>
                     <div style="position: relative;">
-                        <input type="password" id="edit_user_pass" name="new_password" placeholder="Nouveau mot de passe (optionnel)" style="width: 100%; box-sizing: border-box; padding-right: 2.25rem;">
-                        <i class="fa-regular fa-eye" onclick="togglePassVisibility('edit_user_pass', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--dash-muted, #737373); font-size: 0.85rem;"></i>
+                        <input type="password" id="edit_user_pass" name="new_password"
+                            placeholder="Nouveau mot de passe (optionnel)"
+                            style="width: 100%; box-sizing: border-box; padding-right: 2.25rem;">
+                        <i class="fa-regular fa-eye" onclick="togglePassVisibility('edit_user_pass', this)"
+                            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--dash-muted, #737373); font-size: 0.85rem;"></i>
                     </div>
                 </div>
             </div>
@@ -1596,7 +1673,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
     // Bascule dynamique du champ commission lors d'un changement de rôle dans l'édition
     const editRoleEl = document.getElementById('edit_role');
     if (editRoleEl) {
-        editRoleEl.addEventListener('change', function() {
+        editRoleEl.addEventListener('change', function () {
             const promoSection = document.getElementById('edit_promoter_section');
             if (promoSection) {
                 promoSection.style.display = (this.value === 'promoteur') ? 'block' : 'none';

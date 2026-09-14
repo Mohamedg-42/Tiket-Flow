@@ -7,13 +7,13 @@
 $page_title = "Mes Ventes & Billetterie - Espace Organisateur";
 include 'header.php';
 
-$user_id = (int)$_SESSION['user_id'];
+$user_id = (int) $_SESSION['user_id'];
 
 // ── 1. PARAMÈTRES DE RECHERCHE ET FILTRES DYNAMIQUES ─────────────────────────
-$q             = trim($_GET['q'] ?? '');
-$filter_event  = filter_input(INPUT_GET, 'event_id', FILTER_VALIDATE_INT);
+$q = trim($_GET['q'] ?? '');
+$filter_event = filter_input(INPUT_GET, 'event_id', FILTER_VALIDATE_INT);
 $filter_status = trim($_GET['statut'] ?? '');
-$filter_type   = trim($_GET['type'] ?? '');
+$filter_type = trim($_GET['type'] ?? '');
 $filter_period = trim($_GET['period'] ?? '');
 
 // Liste de tous les événements du promoteur pour le sélecteur
@@ -199,25 +199,30 @@ $stmt_trend->execute($params_trend);
 $trend_rows = $stmt_trend->fetchAll();
 
 $trend_index = [];
-foreach ($trend_rows as $r) { $trend_index[$r['jour']] = $r; }
-$trend_labels = []; $trend_tickets = []; $trend_montant = [];
+foreach ($trend_rows as $r) {
+    $trend_index[$r['jour']] = $r;
+}
+$trend_labels = [];
+$trend_tickets = [];
+$trend_montant = [];
 for ($i = 13; $i >= 0; $i--) {
     $day = date('Y-m-d', strtotime("-$i days"));
-    $trend_labels[]  = date('d/m', strtotime($day));
-    $trend_tickets[] = isset($trend_index[$day]) ? (int)$trend_index[$day]['nb'] : 0;
-    $trend_montant[] = isset($trend_index[$day]) ? (float)$trend_index[$day]['montant'] : 0;
+    $trend_labels[] = date('d/m', strtotime($day));
+    $trend_tickets[] = isset($trend_index[$day]) ? (int) $trend_index[$day]['nb'] : 0;
+    $trend_montant[] = isset($trend_index[$day]) ? (float) $trend_index[$day]['montant'] : 0;
 }
 
 // ── 6. REMPLISSAGE PAR ÉVÉNEMENT (DONUT) ──────────────────────────────────────
 $donut_data = [];
 foreach ($stocks_summary as $stk) {
     $en = $stk['event_nom'];
-    if (!isset($donut_data[$en])) $donut_data[$en] = ['vendus' => 0, 'total' => 0];
-    $donut_data[$en]['vendus'] += (int)$stk['vendus'];
-    $donut_data[$en]['total']  += (int)$stk['total_places'];
+    if (!isset($donut_data[$en]))
+        $donut_data[$en] = ['vendus' => 0, 'total' => 0];
+    $donut_data[$en]['vendus'] += (int) $stk['vendus'];
+    $donut_data[$en]['total'] += (int) $stk['total_places'];
 }
 $donut_labels = array_keys($donut_data);
-$donut_pcts   = array_map(fn($d) => $d['total'] > 0 ? min(100, round(($d['vendus'] / $d['total']) * 100)) : 0, array_values($donut_data));
+$donut_pcts = array_map(fn($d) => $d['total'] > 0 ? min(100, round(($d['vendus'] / $d['total']) * 100)) : 0, array_values($donut_data));
 $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b', '#FF8A50', '#737373'];
 ?>
 
@@ -225,64 +230,74 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-.dash-kpi-card {
-    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.22s !important;
-    position: relative;
-    overflow: hidden;
-}
-.dash-kpi-card:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 14px 28px -6px rgba(255, 74, 13, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04) !important;
-    border-color: #E5E5E5 !important;
-}
-.dash-pro-table tbody tr {
-    transition: background-color 0.15s ease;
-}
-.dash-pro-table tbody tr:hover {
-    background-color: #F5F5F5;
-}
-.dash-filter-bar-bottom {
-    background: #F5F5F5;
-    border-top: 1px solid var(--dash-border);
-    border-bottom: 1px solid var(--dash-border);
-    padding: 0.85rem 1.25rem;
-}
-@media (max-width: 900px) {
-    .dash-header-section {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 0.75rem !important;
+    .dash-kpi-card {
+        transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.22s !important;
+        position: relative;
+        overflow: hidden;
     }
-    .dash-header-section > div:last-child {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 0.5rem !important;
-        width: 100% !important;
+
+    .dash-kpi-card:hover {
+        transform: translateY(-4px) !important;
+        box-shadow: 0 14px 28px -6px rgba(255, 74, 13, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04) !important;
+        border-color: #E5E5E5 !important;
     }
-    .dash-header-section .dash-btn-action {
-        width: 100% !important;
-        justify-content: center !important;
-        padding: 0.55rem 0.5rem !important;
-        box-sizing: border-box !important;
+
+    .dash-pro-table tbody tr {
+        transition: background-color 0.15s ease;
     }
-    .dash-filter-bar-bottom form {
-        flex-direction: column !important;
-        align-items: stretch !important;
+
+    .dash-pro-table tbody tr:hover {
+        background-color: #F5F5F5;
     }
-    .dash-filter-bar-bottom form > div,
-    .dash-filter-bar-bottom form input,
-    .dash-filter-bar-bottom form select,
-    .dash-filter-bar-bottom form button {
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
+
+    .dash-filter-bar-bottom {
+        background: #F5F5F5;
+        border-top: 1px solid var(--dash-border);
+        border-bottom: 1px solid var(--dash-border);
+        padding: 0.85rem 1.25rem;
     }
-}
-@media (max-width: 500px) {
-    .dash-header-section > div:last-child {
-        grid-template-columns: 1fr !important;
+
+    @media (max-width: 900px) {
+        .dash-header-section {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.75rem !important;
+        }
+
+        .dash-header-section>div:last-child {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.5rem !important;
+            width: 100% !important;
+        }
+
+        .dash-header-section .dash-btn-action {
+            width: 100% !important;
+            justify-content: center !important;
+            padding: 0.55rem 0.5rem !important;
+            box-sizing: border-box !important;
+        }
+
+        .dash-filter-bar-bottom form {
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+
+        .dash-filter-bar-bottom form>div,
+        .dash-filter-bar-bottom form input,
+        .dash-filter-bar-bottom form select,
+        .dash-filter-bar-bottom form button {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
     }
-}
+
+    @media (max-width: 500px) {
+        .dash-header-section>div:last-child {
+            grid-template-columns: 1fr !important;
+        }
+    }
 </style>
 
 <div class="dash-container">
@@ -300,19 +315,23 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
 
         <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
             <!-- Bouton d'accès direct au filtre en bas -->
-            <a href="#filtres-billets" class="dash-btn-action" style="padding: 0.55rem 0.95rem; text-decoration: none;" title="Aller aux filtres de recherche en bas">
+            <a href="#filtres-billets" class="dash-btn-action" style="padding: 0.55rem 0.95rem; text-decoration: none;"
+                title="Aller aux filtres de recherche en bas">
                 <i class="fa-solid fa-filter" style="color: var(--dash-primary);"></i>
                 <span>Filtrer les billets ↓</span>
             </a>
 
             <!-- Export Excel -->
-            <a href="export.php?type=ventes&event_id=<?php echo (int)$filter_event; ?>&type_nom=<?php echo urlencode($filter_type); ?>&statut=<?php echo urlencode($filter_status); ?>&period=<?php echo urlencode($filter_period); ?>&q=<?php echo urlencode($q); ?>" class="dash-btn-action" style="padding: 0.55rem 1.05rem; font-size: 0.82rem; text-decoration: none;" title="Télécharger la liste des ventes au format Excel (CSV)">
+            <a href="export.php?type=ventes&event_id=<?php echo (int) $filter_event; ?>&type_nom=<?php echo urlencode($filter_type); ?>&statut=<?php echo urlencode($filter_status); ?>&period=<?php echo urlencode($filter_period); ?>&q=<?php echo urlencode($q); ?>"
+                class="dash-btn-action" style="padding: 0.55rem 1.05rem; font-size: 0.82rem; text-decoration: none;"
+                title="Télécharger la liste des ventes au format Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
                 <span>Exporter Excel</span>
             </a>
 
             <!-- Imprimer -->
-            <button type="button" class="dash-btn-action" onclick="window.print()" title="Imprimer le bilan des ventes" style="padding: 0.55rem 1.05rem; font-size: 0.82rem;">
+            <button type="button" class="dash-btn-action" onclick="window.print()" title="Imprimer le bilan des ventes"
+                style="padding: 0.55rem 1.05rem; font-size: 0.82rem;">
                 <i class="fa-solid fa-print" style="color: #000000;"></i>
                 <span>Imprimer</span>
             </button>
@@ -324,7 +343,9 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
          ============================================================================== -->
     <div class="dash-kpi-grid-6">
         <!-- 1. Recettes Brutes -->
-        <a href="mes-ventes.php" class="dash-kpi-card" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Cliquez pour réinitialiser et voir toutes les recettes">
+        <a href="mes-ventes.php" class="dash-kpi-card"
+            style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+            title="Cliquez pour réinitialiser et voir toutes les recettes">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap purple">
                     <i class="fa-solid fa-coins"></i>
@@ -334,12 +355,16 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                 </span>
             </div>
             <div class="dash-kpi-title">Recettes Brutes</div>
-            <div class="dash-kpi-amount"><?php echo number_format($kpi['ventes_brutes'], 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
-            <div class="dash-kpi-sub">Total ventes encaissées <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-amount"><?php echo number_format($kpi['ventes_brutes'], 0, ',', ' '); ?> <small
+                    style="font-size: 0.72rem; font-weight: 700;">F</small></div>
+            <div class="dash-kpi-sub">Total ventes encaissées <i class="fa-solid fa-arrow-right"
+                    style="font-size: 0.65rem; margin-left: 2px;"></i></div>
         </a>
 
         <!-- 2. Revenu Net Promoteur -->
-        <a href="solde.php" class="dash-kpi-card" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Cliquez pour accéder à votre Solde et demander un retrait">
+        <a href="solde.php" class="dash-kpi-card"
+            style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+            title="Cliquez pour accéder à votre Solde et demander un retrait">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap green">
                     <i class="fa-solid fa-piggy-bank"></i>
@@ -349,12 +374,17 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                 </span>
             </div>
             <div class="dash-kpi-title">Revenu Net (Gains)</div>
-            <div class="dash-kpi-amount" style="color: #10b981;"><?php echo number_format($kpi['gains_nets'], 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
-            <div class="dash-kpi-sub">Voir mon solde disponible <i class="fa-solid fa-wallet" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-amount" style="color: #10b981;">
+                <?php echo number_format($kpi['gains_nets'], 0, ',', ' '); ?> <small
+                    style="font-size: 0.72rem; font-weight: 700;">F</small></div>
+            <div class="dash-kpi-sub">Voir mon solde disponible <i class="fa-solid fa-wallet"
+                    style="font-size: 0.65rem; margin-left: 2px;"></i></div>
         </a>
 
         <!-- 3. Frais & Commissions -->
-        <a href="solde.php" class="dash-kpi-card" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Cliquez pour voir le barème et l'historique des commissions">
+        <a href="solde.php" class="dash-kpi-card"
+            style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+            title="Cliquez pour voir le barème et l'historique des commissions">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap amber">
                     <i class="fa-solid fa-hand-holding-dollar"></i>
@@ -364,12 +394,17 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                 </span>
             </div>
             <div class="dash-kpi-title">Commissions Frais</div>
-            <div class="dash-kpi-amount" style="color: #d97706;"><?php echo number_format($kpi['total_commission'], 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
-            <div class="dash-kpi-sub">Détail des commissions <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-amount" style="color: #d97706;">
+                <?php echo number_format($kpi['total_commission'], 0, ',', ' '); ?> <small
+                    style="font-size: 0.72rem; font-weight: 700;">F</small></div>
+            <div class="dash-kpi-sub">Détail des commissions <i class="fa-solid fa-arrow-right"
+                    style="font-size: 0.65rem; margin-left: 2px;"></i></div>
         </a>
 
         <!-- 4. Billets Écoulés -->
-        <a href="#table-acheteurs" class="dash-kpi-card" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Cliquez pour voir la liste des billets achetés">
+        <a href="#table-acheteurs" class="dash-kpi-card"
+            style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+            title="Cliquez pour voir la liste des billets achetés">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap blue">
                     <i class="fa-solid fa-ticket"></i>
@@ -380,11 +415,14 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
             </div>
             <div class="dash-kpi-title">Billets Écoulés</div>
             <div class="dash-kpi-amount"><?php echo number_format($kpi['nb_vendus'], 0, ',', ' '); ?></div>
-            <div class="dash-kpi-sub">Voir les acheteurs <i class="fa-solid fa-users" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-sub">Voir les acheteurs <i class="fa-solid fa-users"
+                    style="font-size: 0.65rem; margin-left: 2px;"></i></div>
         </a>
 
         <!-- 5. Taux d'Entrée & Scans -->
-        <a href="mes-ventes.php?statut=utilise#table-acheteurs" class="dash-kpi-card" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Cliquez pour filtrer uniquement les billets scannés aux portes">
+        <a href="mes-ventes.php?statut=utilise#table-acheteurs" class="dash-kpi-card"
+            style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+            title="Cliquez pour filtrer uniquement les billets scannés aux portes">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap orange">
                     <i class="fa-solid fa-user-check"></i>
@@ -395,11 +433,14 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
             </div>
             <div class="dash-kpi-title">Check-in Effectués</div>
             <div class="dash-kpi-amount"><?php echo number_format($kpi['nb_utilises'], 0, ',', ' '); ?></div>
-            <div class="dash-kpi-sub">Filtrer les billets scannés <i class="fa-solid fa-filter" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-sub">Filtrer les billets scannés <i class="fa-solid fa-filter"
+                    style="font-size: 0.65rem; margin-left: 2px;"></i></div>
         </a>
 
         <!-- 6. Panier Moyen / Prix Moyen Billet -->
-        <a href="#section-stocks" class="dash-kpi-card" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" title="Cliquez pour voir les tarifs par formule">
+        <a href="#section-stocks" class="dash-kpi-card"
+            style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+            title="Cliquez pour voir les tarifs par formule">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap pink">
                     <i class="fa-solid fa-tags"></i>
@@ -409,15 +450,18 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                 </span>
             </div>
             <div class="dash-kpi-title">Prix Moyen Billet</div>
-            <div class="dash-kpi-amount" style="color: #FF4A0D;"><?php echo number_format($prix_moyen, 0, ',', ' '); ?> <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
-            <div class="dash-kpi-sub">Voir la grille des tarifs <i class="fa-solid fa-arrow-down" style="font-size: 0.65rem; margin-left: 2px;"></i></div>
+            <div class="dash-kpi-amount" style="color: #FF4A0D;"><?php echo number_format($prix_moyen, 0, ',', ' '); ?>
+                <small style="font-size: 0.72rem; font-weight: 700;">F</small></div>
+            <div class="dash-kpi-sub">Voir la grille des tarifs <i class="fa-solid fa-arrow-down"
+                    style="font-size: 0.65rem; margin-left: 2px;"></i></div>
         </a>
     </div>
 
     <!-- ==============================================================================
          3. SECTION GRAPHIQUES ANALYTIQUES (2 COLONNES ÉQUILIBRÉES)
          ============================================================================== -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: clamp(0.75rem, 2vw, 1.25rem); margin-bottom: 1.75rem; width: 100%;">
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: clamp(0.75rem, 2vw, 1.25rem); margin-bottom: 1.75rem; width: 100%;">
         <!-- 1. Tendance 14 jours (Courbe principale) -->
         <div class="dash-card">
             <div class="dash-card-head">
@@ -429,8 +473,10 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                     <div class="dash-card-subtitle">Évolution quotidienne des flux de billetterie</div>
                 </div>
                 <div class="dash-chart-tabs">
-                    <button type="button" class="dash-chart-tab active" onclick="switchTrendMode('revenue', this)">Recettes (F)</button>
-                    <button type="button" class="dash-chart-tab" onclick="switchTrendMode('tickets', this)">Billets</button>
+                    <button type="button" class="dash-chart-tab active"
+                        onclick="switchTrendMode('revenue', this)">Recettes (F)</button>
+                    <button type="button" class="dash-chart-tab"
+                        onclick="switchTrendMode('tickets', this)">Billets</button>
                 </div>
             </div>
             <div style="height: 250px; max-height: 250px; position: relative; width: 100%; overflow: hidden;">
@@ -456,21 +502,29 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                     <span style="font-size: 0.68rem;">Global</span>
                 </div>
             </div>
-            <div class="dash-donut-legend-list" style="margin-top: 0.75rem; gap: 0.4rem; max-height: 110px; overflow-y: auto;">
+            <div class="dash-donut-legend-list"
+                style="margin-top: 0.75rem; gap: 0.4rem; max-height: 110px; overflow-y: auto;">
                 <?php foreach ($donut_data as $en => $d): ?>
-                    <?php 
+                    <?php
                     $idx = array_search($en, $donut_labels);
                     $color = $donut_colors[$idx % count($donut_colors)];
                     $p = ($d['total'] > 0) ? min(100, round(($d['vendus'] / $d['total']) * 100)) : 0;
                     $matched_ev_id = '';
                     foreach ($my_events_list as $ev_check) {
-                        if ($ev_check['nom'] === $en) { $matched_ev_id = $ev_check['id']; break; }
+                        if ($ev_check['nom'] === $en) {
+                            $matched_ev_id = $ev_check['id'];
+                            break;
+                        }
                     }
                     ?>
-                    <a href="mes-ventes.php?event_id=<?php echo $matched_ev_id; ?>" class="dash-legend-entry" style="text-decoration: none; color: inherit; cursor: pointer; border-radius: 6px; padding: 3px 6px; transition: background 0.15s;" onmouseover="this.style.background='#F5F5F5'" onmouseout="this.style.background='transparent'" title="Filtrer cet événement">
+                    <a href="mes-ventes.php?event_id=<?php echo $matched_ev_id; ?>" class="dash-legend-entry"
+                        style="text-decoration: none; color: inherit; cursor: pointer; border-radius: 6px; padding: 3px 6px; transition: background 0.15s;"
+                        onmouseover="this.style.background='#F5F5F5'" onmouseout="this.style.background='transparent'"
+                        title="Filtrer cet événement">
                         <div class="dash-legend-name" style="min-width: 0;">
                             <span class="dash-legend-bullet" style="background: <?php echo $color; ?>;"></span>
-                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; font-size: 0.8rem; font-weight: 600;"><?php echo htmlspecialchars($en); ?></span>
+                            <span
+                                style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; font-size: 0.8rem; font-weight: 600;"><?php echo htmlspecialchars($en); ?></span>
                         </div>
                         <div class="dash-legend-details">
                             <span class="dash-legend-num"><?php echo $d['vendus']; ?>/<?php echo $d['total']; ?></span>
@@ -494,7 +548,8 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                 </h3>
                 <div class="dash-card-subtitle">Cliquez sur une catégorie pour filtrer</div>
             </div>
-            <span style="background: var(--dash-primary-light); color: var(--dash-primary); padding: 4px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 800;">
+            <span
+                style="background: var(--dash-primary-light); color: var(--dash-primary); padding: 4px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 800;">
                 <?php echo count($stocks_summary); ?> Catégorie(s)
             </span>
         </div>
@@ -514,56 +569,78 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                 <tbody>
                     <?php if (count($stocks_summary) > 0): ?>
                         <?php foreach ($stocks_summary as $stk): ?>
-                            <?php 
-                            $v = (int)$stk['vendus'];
-                            $tot = (int)$stk['total_places'];
+                            <?php
+                            $v = (int) $stk['vendus'];
+                            $tot = (int) $stk['total_places'];
                             $r = max(0, $tot - $v);
                             $pct = ($tot > 0) ? min(100, round(($v / $tot) * 100)) : 0;
                             $bar_color = ($pct >= 85) ? '#ef4444' : (($pct >= 50) ? '#f59e0b' : '#10b981');
                             ?>
                             <tr>
                                 <td data-label="Événement">
-                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>" style="color: var(--dash-text); text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Filtrer les ventes de cet événement">
+                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>"
+                                        style="color: var(--dash-text); text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"
+                                        title="Filtrer les ventes de cet événement">
                                         <span><?php echo htmlspecialchars($stk['event_nom']); ?></span>
                                         <i class="fa-solid fa-filter" style="font-size: 0.68rem; color: var(--dash-muted);"></i>
                                     </a>
                                 </td>
                                 <td data-label="Catégorie">
-                                    <a href="mes-ventes.php?type=<?php echo urlencode($stk['category_name']); ?>" style="text-decoration: none;" title="Filtrer toutes les ventes de catégorie <?php echo htmlspecialchars($stk['category_name']); ?>">
-                                        <span style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D); padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; display: inline-block; transition: background 0.15s;" onmouseover="this.style.background='rgba(255, 74, 13, 0.22)'" onmouseout="this.style.background='rgba(255, 74, 13, 0.12)'">
-                                            <i class="fa-solid fa-tag" style="font-size: 0.7rem; margin-right: 4px;"></i><?php echo htmlspecialchars($stk['category_name']); ?>
+                                    <a href="mes-ventes.php?type=<?php echo urlencode($stk['category_name']); ?>"
+                                        style="text-decoration: none;"
+                                        title="Filtrer toutes les ventes de catégorie <?php echo htmlspecialchars($stk['category_name']); ?>">
+                                        <span
+                                            style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D); padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; display: inline-block; transition: background 0.15s;"
+                                            onmouseover="this.style.background='rgba(255, 74, 13, 0.22)'"
+                                            onmouseout="this.style.background='rgba(255, 74, 13, 0.12)'">
+                                            <i class="fa-solid fa-tag"
+                                                style="font-size: 0.7rem; margin-right: 4px;"></i><?php echo htmlspecialchars($stk['category_name']); ?>
                                         </span>
                                     </a>
                                 </td>
                                 <td data-label="Prix Unitaire">
-                                    <strong style="color: var(--dash-text);"><?php echo number_format($stk['prix'], 0, ',', ' '); ?> F</strong>
+                                    <strong
+                                        style="color: var(--dash-text);"><?php echo number_format($stk['prix'], 0, ',', ' '); ?>
+                                        F</strong>
                                 </td>
                                 <td data-label="Billets Vendus">
-                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs" style="text-decoration: none; color: #10b981;" title="Voir les acheteurs de cette catégorie">
-                                        <strong style="font-size: 0.92rem; display: inline-flex; align-items: center; gap: 4px;">
-                                            <i class="fa-solid fa-circle-check"></i> <?php echo number_format($v, 0, ',', ' '); ?>
+                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs"
+                                        style="text-decoration: none; color: #10b981;"
+                                        title="Voir les acheteurs de cette catégorie">
+                                        <strong
+                                            style="font-size: 0.92rem; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                            <?php echo number_format($v, 0, ',', ' '); ?>
                                             <i class="fa-solid fa-arrow-down" style="font-size: 0.65rem;"></i>
                                         </strong>
                                     </a>
                                 </td>
                                 <td data-label="Billets Restants">
                                     <?php if ($r === 0 && $tot > 0): ?>
-                                        <span style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; padding: 3px 8px; font-weight: 800; font-size: 0.78rem;">
+                                        <span
+                                            style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; padding: 3px 8px; font-weight: 800; font-size: 0.78rem;">
                                             <i class="fa-solid fa-ban"></i> Épuisé
                                         </span>
                                     <?php else: ?>
-                                        <span style="background: #ecfdf5; color: #10b981; border: 1px solid #d1fae5; border-radius: 6px; padding: 3px 8px; font-weight: 800; font-size: 0.78rem;">
-                                            <i class="fa-solid fa-ticket"></i> <?php echo number_format($r, 0, ',', ' '); ?> restant(s)
+                                        <span
+                                            style="background: #ecfdf5; color: #10b981; border: 1px solid #d1fae5; border-radius: 6px; padding: 3px 8px; font-weight: 800; font-size: 0.78rem;">
+                                            <i class="fa-solid fa-ticket"></i> <?php echo number_format($r, 0, ',', ' '); ?>
+                                            restant(s)
                                         </span>
                                     <?php endif; ?>
                                 </td>
                                 <td data-label="Jauge & Quota Global">
-                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs" style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-wrap: nowrap;" title="Cliquez pour filtrer cette formule">
+                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs"
+                                        style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-wrap: nowrap;"
+                                        title="Cliquez pour filtrer cette formule">
                                         <span class="dash-gauge-track" style="width: clamp(60px, 8vw, 85px); flex-shrink: 0;">
-                                            <span class="dash-gauge-progress" style="width: <?php echo $pct; ?>%; background: <?php echo $bar_color; ?>; display: block;"></span>
+                                            <span class="dash-gauge-progress"
+                                                style="width: <?php echo $pct; ?>%; background: <?php echo $bar_color; ?>; display: block;"></span>
                                         </span>
-                                        <strong style="font-size: 0.78rem; color: var(--dash-text); white-space: nowrap;"><?php echo $pct; ?>%</strong>
-                                        <small style="color: var(--dash-muted); font-size: 0.74rem; white-space: nowrap;">(sur <?php echo $tot; ?>)</small>
+                                        <strong
+                                            style="font-size: 0.78rem; color: var(--dash-text); white-space: nowrap;"><?php echo $pct; ?>%</strong>
+                                        <small style="color: var(--dash-muted); font-size: 0.74rem; white-space: nowrap;">(sur
+                                            <?php echo $tot; ?>)</small>
                                     </a>
                                 </td>
                             </tr>
@@ -590,13 +667,15 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                     <i class="fa-solid fa-receipt" style="color: #FF4A0D;"></i>
                     Traçabilité & Historique des Billets Achetés
                 </h3>
-                <div class="dash-card-subtitle">Liste nominative de chaque billet vendu avec coordonnées et statut d'accès</div>
+                <div class="dash-card-subtitle">Liste nominative de chaque billet vendu avec coordonnées et statut
+                    d'accès</div>
             </div>
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                 <span style="font-size: 0.85rem; font-weight: 700; color: var(--dash-muted);">
                     <?php echo count($sales); ?> billet(s)
                 </span>
-                <span style="background: #FFF2ED; color: #FF4A0D; border: 1px solid #E5E5E5; border-radius: 8px; padding: 4px 10px; font-weight: 800; font-size: 0.82rem;">
+                <span
+                    style="background: #FFF2ED; color: #FF4A0D; border: 1px solid #E5E5E5; border-radius: 8px; padding: 4px 10px; font-weight: 800; font-size: 0.82rem;">
                     Recettes : <?php echo number_format($total_filtre, 0, ',', ' '); ?> F
                 </span>
             </div>
@@ -604,20 +683,25 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
 
         <!-- BARRE DE FILTRAGE DYNAMIQUE PLACÉE EN BAS (AU NIVEAU DU TABLEAU DES BILLETS) -->
         <div class="dash-filter-bar-bottom">
-            <form method="GET" action="mes-ventes.php#table-acheteurs" id="ventesFilterForm" style="display: flex; align-items: center; gap: 0.55rem; margin: 0; flex-wrap: wrap;">
+            <form method="GET" action="mes-ventes.php#table-acheteurs" id="ventesFilterForm"
+                style="display: flex; align-items: center; gap: 0.55rem; margin: 0; flex-wrap: wrap;">
                 <!-- Recherche libre (Nom, Email, Téléphone, Code billet) -->
                 <div style="position: relative; flex: 1; min-width: 200px;">
-                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--dash-muted); font-size: 0.8rem;"></i>
-                    <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>" placeholder="Code billet, acheteur, email, tel..." style="width: 100%; padding: 0.45rem 0.75rem 0.45rem 2rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.82rem; background: #ffffff; box-sizing: border-box;">
+                    <i class="fa-solid fa-magnifying-glass"
+                        style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--dash-muted); font-size: 0.8rem;"></i>
+                    <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>"
+                        placeholder="Code billet, acheteur, email, tel..."
+                        style="width: 100%; padding: 0.45rem 0.75rem 0.45rem 2rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.82rem; background: #ffffff; box-sizing: border-box;">
                 </div>
 
                 <!-- Filtre Événement -->
                 <div class="dash-control-select" style="padding: 0.45rem 0.75rem; background: #ffffff;">
                     <i class="fa-solid fa-calendar-days" style="color: var(--dash-primary); font-size: 0.8rem;"></i>
-                    <select name="event_id" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; max-width: 175px; font-size: 0.82rem;">
+                    <select name="event_id" onchange="document.getElementById('ventesFilterForm').submit();"
+                        style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; max-width: 175px; font-size: 0.82rem;">
                         <option value="">Tous mes événements</option>
                         <?php foreach ($my_events_list as $ev_item): ?>
-                            <option value="<?php echo $ev_item['id']; ?>" <?php echo $filter_event === (int)$ev_item['id'] ? 'selected' : ''; ?>>
+                            <option value="<?php echo $ev_item['id']; ?>" <?php echo $filter_event === (int) $ev_item['id'] ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars(mb_strimwidth($ev_item['nom'], 0, 24, '...')); ?>
                             </option>
                         <?php endforeach; ?>
@@ -627,7 +711,8 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                 <!-- Filtre Catégorie / Formule (VIP, Standard...) -->
                 <div class="dash-control-select" style="padding: 0.45rem 0.75rem; background: #ffffff;">
                     <i class="fa-solid fa-tag" style="color: #FF4A0D; font-size: 0.8rem;"></i>
-                    <select name="type" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem; max-width: 165px;">
+                    <select name="type" onchange="document.getElementById('ventesFilterForm').submit();"
+                        style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem; max-width: 165px;">
                         <option value="">Toutes catégories</option>
                         <?php foreach ($available_types as $t_item): ?>
                             <option value="<?php echo htmlspecialchars($t_item); ?>" <?php echo $filter_type === $t_item ? 'selected' : ''; ?>>
@@ -640,31 +725,42 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                 <!-- Filtre Statut d'accès -->
                 <div class="dash-control-select" style="padding: 0.45rem 0.75rem; background: #ffffff;">
                     <i class="fa-solid fa-qrcode" style="color: #FF4A0D; font-size: 0.8rem;"></i>
-                    <select name="statut" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem;">
+                    <select name="statut" onchange="document.getElementById('ventesFilterForm').submit();"
+                        style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem;">
                         <option value="">Tous statuts</option>
-                        <option value="vendu" <?php echo $filter_status === 'vendu' ? 'selected' : ''; ?>>Valide (Non scanné)</option>
-                        <option value="utilise" <?php echo $filter_status === 'utilise' ? 'selected' : ''; ?>>Entré (Scanné)</option>
+                        <option value="vendu" <?php echo $filter_status === 'vendu' ? 'selected' : ''; ?>>Valide (Non
+                            scanné)</option>
+                        <option value="utilise" <?php echo $filter_status === 'utilise' ? 'selected' : ''; ?>>Entré
+                            (Scanné)</option>
                     </select>
                 </div>
 
                 <!-- Filtre Période -->
                 <div class="dash-control-select" style="padding: 0.45rem 0.75rem; background: #ffffff;">
                     <i class="fa-regular fa-calendar" style="color: var(--dash-secondary); font-size: 0.8rem;"></i>
-                    <select name="period" onchange="document.getElementById('ventesFilterForm').submit();" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem;">
+                    <select name="period" onchange="document.getElementById('ventesFilterForm').submit();"
+                        style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; font-size: 0.82rem;">
                         <option value="" <?php echo empty($filter_period) ? 'selected' : ''; ?>>Toutes dates</option>
-                        <option value="today" <?php echo $filter_period === 'today' ? 'selected' : ''; ?>>Aujourd'hui</option>
-                        <option value="7d" <?php echo $filter_period === '7d' ? 'selected' : ''; ?>>7 derniers jours</option>
-                        <option value="30d" <?php echo $filter_period === '30d' ? 'selected' : ''; ?>>30 derniers jours</option>
-                        <option value="this_month" <?php echo $filter_period === 'this_month' ? 'selected' : ''; ?>>Ce mois-ci</option>
+                        <option value="today" <?php echo $filter_period === 'today' ? 'selected' : ''; ?>>Aujourd'hui
+                        </option>
+                        <option value="7d" <?php echo $filter_period === '7d' ? 'selected' : ''; ?>>7 derniers jours
+                        </option>
+                        <option value="30d" <?php echo $filter_period === '30d' ? 'selected' : ''; ?>>30 derniers jours
+                        </option>
+                        <option value="this_month" <?php echo $filter_period === 'this_month' ? 'selected' : ''; ?>>Ce
+                            mois-ci</option>
                     </select>
                 </div>
 
-                <button type="submit" class="dash-btn-action" style="padding: 0.45rem 0.95rem; font-size: 0.82rem; background: var(--dash-primary); color: #ffffff; border-radius: 8px;">
+                <button type="submit" class="dash-btn-action"
+                    style="padding: 0.45rem 0.95rem; font-size: 0.82rem; background: var(--dash-primary); color: #ffffff; border-radius: 8px;">
                     <i class="fa-solid fa-filter"></i> Filtrer
                 </button>
 
                 <?php if (!empty($filter_type) || $filter_event || !empty($filter_status) || !empty($filter_period) || !empty($q)): ?>
-                    <a href="mes-ventes.php#table-acheteurs" class="dash-btn-action" style="padding: 0.45rem 0.75rem; color: #000000; text-decoration: none;" title="Réinitialiser tous les filtres">
+                    <a href="mes-ventes.php#table-acheteurs" class="dash-btn-action"
+                        style="padding: 0.45rem 0.75rem; color: #000000; text-decoration: none;"
+                        title="Réinitialiser tous les filtres">
                         <i class="fa-solid fa-rotate-left"></i> Effacer
                     </a>
                 <?php endif; ?>
@@ -691,16 +787,22 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                             <tr>
                                 <td data-label="Code Unique">
                                     <div style="display: flex; align-items: center; gap: 6px;">
-                                        <strong style="font-family: monospace; font-size: 0.88rem; color: var(--dash-primary); background: #FFF2ED; border: 1px solid #FFF2ED; padding: 3px 7px; border-radius: 6px; letter-spacing: 0.5px;">
+                                        <strong
+                                            style="font-family: monospace; font-size: 0.88rem; color: var(--dash-primary); background: #FFF2ED; border: 1px solid #FFF2ED; padding: 3px 7px; border-radius: 6px; letter-spacing: 0.5px;">
                                             <?php echo htmlspecialchars($s['code_unique']); ?>
                                         </strong>
-                                        <button type="button" onclick="navigator.clipboard.writeText('<?php echo $s['code_unique']; ?>'); alert('Code copié : <?php echo $s['code_unique']; ?>');" style="background: none; border: none; color: var(--dash-muted); cursor: pointer; padding: 3px; font-size: 0.8rem; border-radius: 4px;" title="Copier le code billet">
+                                        <button type="button"
+                                            onclick="navigator.clipboard.writeText('<?php echo $s['code_unique']; ?>'); alert('Code copié : <?php echo $s['code_unique']; ?>');"
+                                            style="background: none; border: none; color: var(--dash-muted); cursor: pointer; padding: 3px; font-size: 0.8rem; border-radius: 4px;"
+                                            title="Copier le code billet">
                                             <i class="fa-regular fa-copy"></i>
                                         </button>
                                     </div>
                                 </td>
                                 <td data-label="Événement">
-                                    <a href="mes-ventes.php?event_id=<?php echo $s['event_id']; ?>" style="color: var(--dash-text); text-decoration: none; font-weight: 700; display: block;" title="Filtrer cet événement">
+                                    <a href="mes-ventes.php?event_id=<?php echo $s['event_id']; ?>"
+                                        style="color: var(--dash-text); text-decoration: none; font-weight: 700; display: block;"
+                                        title="Filtrer cet événement">
                                         <?php echo htmlspecialchars($s['event_name']); ?>
                                     </a>
                                     <?php if (!empty($s['date_evenement'])): ?>
@@ -710,59 +812,80 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                                     <?php endif; ?>
                                 </td>
                                 <td data-label="Catégorie">
-                                    <a href="mes-ventes.php?type=<?php echo urlencode($s['type_ticket']); ?>" style="text-decoration: none;" title="Filtrer par catégorie <?php echo htmlspecialchars($s['type_ticket']); ?>">
-                                        <span style="background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5; padding: 2px 8px; border-radius: 5px; font-weight: 700; font-size: 0.78rem; display: inline-block;">
+                                    <a href="mes-ventes.php?type=<?php echo urlencode($s['type_ticket']); ?>"
+                                        style="text-decoration: none;"
+                                        title="Filtrer par catégorie <?php echo htmlspecialchars($s['type_ticket']); ?>">
+                                        <span
+                                            style="background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5; padding: 2px 8px; border-radius: 5px; font-weight: 700; font-size: 0.78rem; display: inline-block;">
                                             <?php echo htmlspecialchars($s['type_ticket']); ?>
                                         </span>
                                     </a>
                                 </td>
                                 <td data-label="Prix Payé">
-                                    <strong style="color: var(--dash-primary); font-size: 0.92rem;"><?php echo number_format($s['prix'], 0, ',', ' '); ?> F</strong>
+                                    <strong
+                                        style="color: var(--dash-primary); font-size: 0.92rem;"><?php echo number_format($s['prix'], 0, ',', ' '); ?>
+                                        F</strong>
                                 </td>
                                 <td data-label="Acheteur & Contact">
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="width: 28px; height: 28px; border-radius: 50%; background: #FFF2ED; color: var(--dash-primary); display: grid; place-items: center; font-size: 0.72rem; font-weight: 800; flex-shrink: 0;">
+                                        <div
+                                            style="width: 28px; height: 28px; border-radius: 50%; background: #FFF2ED; color: var(--dash-primary); display: grid; place-items: center; font-size: 0.72rem; font-weight: 800; flex-shrink: 0;">
                                             <?php echo strtoupper(mb_substr($s['buyer_name'], 0, 1)); ?>
                                         </div>
                                         <div style="line-height: 1.25;">
-                                            <strong style="font-size: 0.84rem; color: var(--dash-text);"><?php echo htmlspecialchars($s['buyer_name']); ?></strong>
-                                            <div style="display: flex; gap: 8px; font-size: 0.74rem; color: var(--dash-muted); margin-top: 1px;">
-                                                <a href="mailto:<?php echo htmlspecialchars($s['buyer_email']); ?>" style="color: var(--dash-muted); text-decoration: none;" title="Envoyer un e-mail">
-                                                    <i class="fa-regular fa-envelope" style="font-size: 0.68rem;"></i> <?php echo htmlspecialchars($s['buyer_email']); ?>
+                                            <strong
+                                                style="font-size: 0.84rem; color: var(--dash-text);"><?php echo htmlspecialchars($s['buyer_name']); ?></strong>
+                                            <div
+                                                style="display: flex; gap: 8px; font-size: 0.74rem; color: var(--dash-muted); margin-top: 1px;">
+                                                <a href="mailto:<?php echo htmlspecialchars($s['buyer_email']); ?>"
+                                                    style="color: var(--dash-muted); text-decoration: none;"
+                                                    title="Envoyer un e-mail">
+                                                    <i class="fa-regular fa-envelope" style="font-size: 0.68rem;"></i>
+                                                    <?php echo htmlspecialchars($s['buyer_email']); ?>
                                                 </a>
                                                 <?php if (!empty($s['buyer_phone'])): ?>
-                                                    <a href="tel:<?php echo htmlspecialchars($s['buyer_phone']); ?>" style="color: #FF4A0D; text-decoration: none; font-weight: 600;" title="Appeler">
-                                                        <i class="fa-solid fa-phone" style="font-size: 0.68rem;"></i> <?php echo htmlspecialchars($s['buyer_phone']); ?>
+                                                    <a href="tel:<?php echo htmlspecialchars($s['buyer_phone']); ?>"
+                                                        style="color: #FF4A0D; text-decoration: none; font-weight: 600;"
+                                                        title="Appeler">
+                                                        <i class="fa-solid fa-phone" style="font-size: 0.68rem;"></i>
+                                                        <?php echo htmlspecialchars($s['buyer_phone']); ?>
                                                     </a>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td data-label="Date d'Achat" style="white-space: nowrap; font-size: 0.8rem; color: var(--dash-muted);">
+                                <td data-label="Date d'Achat"
+                                    style="white-space: nowrap; font-size: 0.8rem; color: var(--dash-muted);">
                                     <?php echo date('d/m/Y H:i', strtotime($s['date_achat'])); ?>
                                 </td>
                                 <td data-label="Statut aux Portes">
                                     <?php if ($s['statut'] === 'vendu'): ?>
-                                        <a href="mes-ventes.php?statut=vendu#table-acheteurs" style="text-decoration: none;" title="Filtrer tous les billets valides">
-                                            <span style="display: inline-flex; align-items: center; gap: 5px; background: #FFF2ED; color: #FF4A0D; border: 1px solid #FFF2ED; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+                                        <a href="mes-ventes.php?statut=vendu#table-acheteurs" style="text-decoration: none;"
+                                            title="Filtrer tous les billets valides">
+                                            <span
+                                                style="display: inline-flex; align-items: center; gap: 5px; background: #FFF2ED; color: #FF4A0D; border: 1px solid #FFF2ED; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
                                                 <i class="fa-solid fa-circle-check" style="font-size: 0.7rem;"></i> Valide
                                             </span>
                                         </a>
                                     <?php elseif ($s['statut'] === 'utilise'): ?>
-                                        <a href="mes-ventes.php?statut=utilise#table-acheteurs" style="text-decoration: none;" title="Filtrer tous les billets scannés">
-                                            <span style="display: inline-flex; align-items: center; gap: 5px; background: #FFF2ED; color: #FF4A0D; border: 1px solid #FFF2ED; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+                                        <a href="mes-ventes.php?statut=utilise#table-acheteurs" style="text-decoration: none;"
+                                            title="Filtrer tous les billets scannés">
+                                            <span
+                                                style="display: inline-flex; align-items: center; gap: 5px; background: #FFF2ED; color: #FF4A0D; border: 1px solid #FFF2ED; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
                                                 <i class="fa-solid fa-check-double" style="font-size: 0.7rem;"></i> Entré
                                             </span>
                                         </a>
                                         <?php if (!empty($s['date_utilisation']) || !empty($s['agent_nom'])): ?>
-                                            <small style="display: block; color: var(--dash-muted); font-size: 0.7rem; margin-top: 2px;">
+                                            <small
+                                                style="display: block; color: var(--dash-muted); font-size: 0.7rem; margin-top: 2px;">
                                                 <?php echo !empty($s['date_utilisation']) ? date('d/m H:i', strtotime($s['date_utilisation'])) : ''; ?>
                                                 <?php echo !empty($s['agent_nom']) ? 'par ' . htmlspecialchars($s['agent_nom']) : ''; ?>
                                             </small>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <span style="display: inline-flex; align-items: center; gap: 5px; background: #F5F5F5; color: #000000; border: 1px solid #E5E5E5; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
+                                        <span
+                                            style="display: inline-flex; align-items: center; gap: 5px; background: #F5F5F5; color: #000000; border: 1px solid #E5E5E5; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
                                             <?php echo ucfirst($s['statut']); ?>
                                         </span>
                                     <?php endif; ?>
@@ -772,7 +895,8 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                     <?php else: ?>
                         <tr>
                             <td colspan="7" style="text-align: center; color: var(--dash-muted); padding: 3rem 1rem;">
-                                <i class="fa-solid fa-inbox" style="font-size: 2rem; color: #E5E5E5; margin-bottom: 0.5rem; display: block;"></i>
+                                <i class="fa-solid fa-inbox"
+                                    style="font-size: 2rem; color: #E5E5E5; margin-bottom: 0.5rem; display: block;"></i>
                                 Aucun billet trouvé pour ces critères de recherche.
                             </td>
                         </tr>
@@ -785,14 +909,17 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
     <!-- ==============================================================================
          6. PIED DE PAGE & SYNCHRONISATION EN DIRECT
          ============================================================================== -->
-    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid var(--dash-border); font-size: 0.82rem; color: var(--dash-muted); flex-wrap: wrap; gap: 0.75rem;">
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; margin-top: 1.5rem; border-top: 1px solid var(--dash-border); font-size: 0.82rem; color: var(--dash-muted); flex-wrap: wrap; gap: 0.75rem;">
         <div>
-            <span><i class="fa-solid fa-shield-check" style="color: #FF4A0D;"></i> Données de billetterie synchronisées en temps réel</span>
+            <span><i class="fa-solid fa-shield-check" style="color: #FF4A0D;"></i> Données de billetterie synchronisées
+                en temps réel</span>
             <span style="margin: 0 8px;">•</span>
             <span>Dernière mise à jour : <strong><?php echo date('d/m/Y à H:i:s'); ?></strong></span>
         </div>
         <div>
-            <a href="mes-ventes.php" style="color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+            <a href="mes-ventes.php"
+                style="color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                 <i class="fa-solid fa-rotate"></i> Actualiser instantanément
             </a>
         </div>
@@ -800,141 +927,141 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
 </div>
 
 <script>
-// ── Chart.js Configurations avec dégradé et isolation ─────────────────────────
-const trendLabels   = <?php echo json_encode($trend_labels); ?>;
-const trendTickets  = <?php echo json_encode($trend_tickets); ?>;
-const trendRevenue  = <?php echo json_encode($trend_montant); ?>;
+    // ── Chart.js Configurations avec dégradé et isolation ─────────────────────────
+    const trendLabels = <?php echo json_encode($trend_labels); ?>;
+    const trendTickets = <?php echo json_encode($trend_tickets); ?>;
+    const trendRevenue = <?php echo json_encode($trend_montant); ?>;
 
-const ctxTrend = document.getElementById('mvChartTrend');
-let trendChartInstance = null;
+    const ctxTrend = document.getElementById('mvChartTrend');
+    let trendChartInstance = null;
 
-if (ctxTrend) {
-    const tCtx = ctxTrend.getContext('2d');
-    const gradRev = tCtx.createLinearGradient(0, 0, 0, 250);
-    gradRev.addColorStop(0, 'rgba(255, 74, 13, 0.32)');
-    gradRev.addColorStop(1, 'rgba(255, 74, 13, 0.01)');
+    if (ctxTrend) {
+        const tCtx = ctxTrend.getContext('2d');
+        const gradRev = tCtx.createLinearGradient(0, 0, 0, 250);
+        gradRev.addColorStop(0, 'rgba(255, 74, 13, 0.32)');
+        gradRev.addColorStop(1, 'rgba(255, 74, 13, 0.01)');
 
-    trendChartInstance = new Chart(ctxTrend, {
-        type: 'line',
-        data: {
-            labels: trendLabels,
-            datasets: [{
-                label: 'Recettes (FCFA)',
-                data: trendRevenue,
-                borderColor: '#FF4A0D',
-                borderWidth: 3,
-                fill: true,
-                backgroundColor: gradRev,
-                tension: 0.38,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#FF4A0D',
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            resizeDelay: 200,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#000000',
-                    padding: 10,
-                    cornerRadius: 8,
-                    callbacks: {
-                        label: function(ctx) {
-                            return ctx.parsed.y.toLocaleString('fr-FR') + ' FCFA';
-                        }
-                    }
-                }
+        trendChartInstance = new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'Recettes (FCFA)',
+                    data: trendRevenue,
+                    borderColor: '#FF4A0D',
+                    borderWidth: 3,
+                    fill: true,
+                    backgroundColor: gradRev,
+                    tension: 0.38,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#FF4A0D',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
             },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: '#737373', font: { size: 10, weight: '600' } } },
-                y: {
-                    grid: { color: '#F5F5F5', borderDash: [4, 4] },
-                    ticks: {
-                        color: '#737373',
-                        font: { size: 10 },
-                        callback: function(v) {
-                            if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
-                            if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
-                            return v;
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                resizeDelay: 200,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#000000',
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (ctx) {
+                                return ctx.parsed.y.toLocaleString('fr-FR') + ' FCFA';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#737373', font: { size: 10, weight: '600' } } },
+                    y: {
+                        grid: { color: '#F5F5F5', borderDash: [4, 4] },
+                        ticks: {
+                            color: '#737373',
+                            font: { size: 10 },
+                            callback: function (v) {
+                                if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
+                                if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
+                                return v;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
-}
-
-function switchTrendMode(mode, btn) {
-    document.querySelectorAll('.dash-chart-tabs .dash-chart-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    if (!trendChartInstance) return;
-
-    if (mode === 'revenue') {
-        trendChartInstance.data.datasets[0].label = 'Recettes (FCFA)';
-        trendChartInstance.data.datasets[0].data = trendRevenue;
-        trendChartInstance.data.datasets[0].borderColor = '#FF4A0D';
-        trendChartInstance.options.scales.y.ticks.callback = function(v) {
-            if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
-            if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
-            return v;
-        };
-        trendChartInstance.options.plugins.tooltip.callbacks.label = function(ctx) {
-            return ctx.parsed.y.toLocaleString('fr-FR') + ' FCFA';
-        };
-    } else {
-        trendChartInstance.data.datasets[0].label = 'Billets vendus';
-        trendChartInstance.data.datasets[0].data = trendTickets;
-        trendChartInstance.data.datasets[0].borderColor = '#FF4A0D';
-        trendChartInstance.options.scales.y.ticks.callback = function(v) { return v; };
-        trendChartInstance.options.plugins.tooltip.callbacks.label = function(ctx) {
-            return ctx.parsed.y + ' billet(s)';
-        };
+        });
     }
-    trendChartInstance.update();
-}
 
-// ── Donut Remplissage Événements ──────────────────────────────────────────────
-const ctxDonut = document.getElementById('mvChartDonut');
-if (ctxDonut) {
-    new Chart(ctxDonut, {
-        type: 'doughnut',
-        data: {
-            labels: <?php echo json_encode($donut_labels); ?>,
-            datasets: [{
-                data: <?php echo json_encode($donut_pcts); ?>,
-                backgroundColor: <?php echo json_encode(array_slice($donut_colors, 0, count($donut_labels))); ?>,
-                borderWidth: 3,
-                borderColor: '#ffffff',
-                hoverOffset: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            resizeDelay: 200,
-            cutout: '72%',
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#000000',
-                    padding: 10,
-                    cornerRadius: 8,
-                    callbacks: {
-                        label: function(ctx) {
-                            return ctx.label + ' : ' + ctx.parsed + '% de capacité';
+    function switchTrendMode(mode, btn) {
+        document.querySelectorAll('.dash-chart-tabs .dash-chart-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (!trendChartInstance) return;
+
+        if (mode === 'revenue') {
+            trendChartInstance.data.datasets[0].label = 'Recettes (FCFA)';
+            trendChartInstance.data.datasets[0].data = trendRevenue;
+            trendChartInstance.data.datasets[0].borderColor = '#FF4A0D';
+            trendChartInstance.options.scales.y.ticks.callback = function (v) {
+                if (v >= 1000000) return (v / 1000000).toFixed(0) + 'M';
+                if (v >= 1000) return (v / 1000).toFixed(0) + 'k';
+                return v;
+            };
+            trendChartInstance.options.plugins.tooltip.callbacks.label = function (ctx) {
+                return ctx.parsed.y.toLocaleString('fr-FR') + ' FCFA';
+            };
+        } else {
+            trendChartInstance.data.datasets[0].label = 'Billets vendus';
+            trendChartInstance.data.datasets[0].data = trendTickets;
+            trendChartInstance.data.datasets[0].borderColor = '#FF4A0D';
+            trendChartInstance.options.scales.y.ticks.callback = function (v) { return v; };
+            trendChartInstance.options.plugins.tooltip.callbacks.label = function (ctx) {
+                return ctx.parsed.y + ' billet(s)';
+            };
+        }
+        trendChartInstance.update();
+    }
+
+    // ── Donut Remplissage Événements ──────────────────────────────────────────────
+    const ctxDonut = document.getElementById('mvChartDonut');
+    if (ctxDonut) {
+        new Chart(ctxDonut, {
+            type: 'doughnut',
+            data: {
+                labels: <?php echo json_encode($donut_labels); ?>,
+                datasets: [{
+                    data: <?php echo json_encode($donut_pcts); ?>,
+                    backgroundColor: <?php echo json_encode(array_slice($donut_colors, 0, count($donut_labels))); ?>,
+                    borderWidth: 3,
+                    borderColor: '#ffffff',
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                resizeDelay: 200,
+                cutout: '72%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#000000',
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function (ctx) {
+                                return ctx.label + ' : ' + ctx.parsed + '% de capacité';
+                            }
                         }
                     }
                 }
             }
-        }
-    });
-}
+        });
+    }
 </script>
 
 <?php include 'footer.php'; ?>

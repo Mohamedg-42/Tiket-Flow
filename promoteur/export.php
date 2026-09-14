@@ -31,7 +31,7 @@ $date_now = date('Y-m-d_H-i');
 
 // Fonction helper pour échapper les valeurs CSV avec séparateur point-virgule (standard Excel FR)
 function output_csv_row($file_handle, $fields) {
-    fputcsv($file_handle, $fields, ';');
+    fputcsv($file_handle, $fields, ';', '"', "\\");
 }
 
 // ------------------------------------------------------------------------------
@@ -643,6 +643,183 @@ if ($type === 'votes') {
         '',
         '',
         number_format($total_votes_montant, 0, ',', ' ') . ' FCFA'
+    ]);
+
+    fclose($output);
+    exit();
+}
+
+// ------------------------------------------------------------------------------
+// 6.1. EXPORT DE LA LISTE D'INVITÉS (WHITELIST ÉVÉNEMENTS & VOTES)
+// ------------------------------------------------------------------------------
+if ($type === 'invites' || $type === 'whitelist') {
+    $event_id = filter_input(INPUT_GET, 'event_id', FILTER_VALIDATE_INT);
+    $event_nom = '';
+    if ($event_id) {
+        $stmt_ev = $pdo->prepare("SELECT nom FROM events WHERE id = ? AND user_id = ?");
+        $stmt_ev->execute([$event_id, $user_id]);
+        $event_nom = (string)$stmt_ev->fetchColumn();
+    }
+
+    $suffix = !empty($event_nom) ? '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $event_nom) : '';
+    $filename = "Export_Invites_Whitelist" . $suffix . "_{$date_now}.csv";
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    echo "\xEF\xBB\xBF";
+    $output = fopen('php://output', 'w');
+
+    $sql = "
+        SELECT w.*, e.nom AS event_nom, e.visibilite AS event_visibilite
+        FROM event_guest_whitelist w
+        JOIN events e ON w.event_id = e.id
+        WHERE e.user_id = ?
+    ";
+    $params = [$user_id];
+    if ($event_id) {
+        $sql .= " AND w.event_id = ?";
+        $params[] = $event_id;
+    }
+    $sql .= " ORDER BY e.nom ASC, w.created_at DESC";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    output_csv_row($output, [
+        'ID Invité',
+        'Événement',
+        'Visibilité',
+        'Nom',
+        'Prénom',
+        'Téléphone Autorisé',
+        'Email',
+        'Billets Autorisés',
+        'Billets Utilisés',
+        'Billets Restants',
+        'Date d\'Enregistrement'
+    ]);
+
+    $tot_autorises = 0;
+    $tot_utilises = 0;
+    foreach ($rows as $r) {
+        $auth = (int)$r['tickets_autorises'];
+        $used = (int)$r['tickets_utilises'];
+        $rest = max(0, $auth - $used);
+        $tot_autorises += $auth;
+        $tot_utilises += $used;
+
+        output_csv_row($output, [
+            '#INV-' . str_pad($r['id'], 5, '0', STR_PAD_LEFT),
+            $r['event_nom'],
+            ucfirst($r['event_visibilite'] ?? 'Prive'),
+            $r['nom'],
+            $r['prenom'] ?: '',
+            $r['telephone'],
+            $r['email'] ?: '-',
+            $auth,
+            $used,
+            $rest,
+            date('d/m/Y H:i', strtotime($r['created_at']))
+        ]);
+    }
+
+    output_csv_row($output, []);
+    output_csv_row($output, [
+        'TOTAL INVITÉS',
+        count($rows) . ' invité(s)',
+        '',
+        '',
+        '',
+        '',
+        'TOTAUX BILLETS :',
+        $tot_autorises,
+        $tot_utilises,
+        max(0, $tot_autorises - $tot_utilises),
+        ''
+    ]);
+
+    fclose($output);
+    exit();
+}
+
+// ------------------------------------------------------------------------------
+// 6.2. EXPORT DE LA LISTE D'INVITÉS POUR LES COTISATIONS
+// ------------------------------------------------------------------------------
+if ($type === 'invites_cotisation') {
+    $campagne_id = filter_input(INPUT_GET, 'campagne_id', FILTER_VALIDATE_INT);
+    $camp_titre = '';
+    if ($campagne_id) {
+        $stmt_cp = $pdo->prepare("SELECT titre FROM cotisation_campagnes WHERE id = ? AND user_id = ?");
+        $stmt_cp->execute([$campagne_id, $user_id]);
+        $camp_titre = (string)$stmt_cp->fetchColumn();
+    }
+
+    $suffix = !empty($camp_titre) ? '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $camp_titre) : '';
+    $filename = "Export_Invites_Cotisation" . $suffix . "_{$date_now}.csv";
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    echo "\xEF\xBB\xBF";
+    $output = fopen('php://output', 'w');
+
+    $sql = "
+        SELECT cw.*, c.titre AS campagne_titre
+        FROM cotisation_whitelist cw
+        JOIN cotisation_campagnes c ON cw.campagne_id = c.id
+        WHERE c.user_id = ?
+    ";
+    $params = [$user_id];
+    if ($campagne_id) {
+        $sql .= " AND cw.campagne_id = ?";
+        $params[] = $campagne_id;
+    }
+    $sql .= " ORDER BY c.titre ASC, cw.created_at DESC";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    output_csv_row($output, [
+        'ID Invité',
+        'Campagne de Cotisation',
+        'Nom',
+        'Prénom',
+        'Téléphone Autorisé',
+        'Email',
+        'Montant Promis (FCFA)',
+        'Date d\'Enregistrement'
+    ]);
+
+    foreach ($rows as $r) {
+        output_csv_row($output, [
+            '#PART-' . str_pad($r['id'], 5, '0', STR_PAD_LEFT),
+            $r['campagne_titre'],
+            $r['nom'],
+            $r['prenom'] ?: '',
+            $r['telephone'],
+            $r['email'] ?: '-',
+            $r['montant_promis'] ? number_format((float)$r['montant_promis'], 0, ',', ' ') : '-',
+            date('d/m/Y H:i', strtotime($r['created_at']))
+        ]);
+    }
+
+    output_csv_row($output, []);
+    output_csv_row($output, [
+        'TOTAL INVITÉS',
+        count($rows) . ' participant(s) autorisé(s)',
+        '',
+        '',
+        '',
+        '',
+        '',
+        ''
     ]);
 
     fclose($output);

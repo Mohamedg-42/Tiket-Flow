@@ -1,138 +1,131 @@
 <?php
 // ==============================================================================
 // SCRIPT DE MIGRATION — COMPTES, PROFILS, PERMISSIONS, TÂCHES & ACTIVITÉ
-// Exécutable en CLI ou via include
+// Version PostgreSQL (portée depuis l'ancienne version MySQL, incompatible avec
+// la base de production). Idempotent — safe à ré-exécuter à tout moment.
+// Exécutable en CLI : php migrate_comptes_roles_taches.php
 // ==============================================================================
 
 require_once __DIR__ . '/../config/database.php';
 
-echo "🚀 Démarrage de la migration de la base de données...\n";
+echo "🚀 Démarrage de la migration de la base de données (PostgreSQL)...\n";
+
+function pgColumnExists(PDO $pdo, string $table, string $column): bool {
+    $stmt = $pdo->prepare("SELECT 1 FROM information_schema.columns WHERE table_name = ? AND column_name = ?");
+    $stmt->execute([$table, $column]);
+    return (bool) $stmt->fetchColumn();
+}
+
+function pgAddColumnIfNotExists(PDO $pdo, string $table, string $column, string $definition): void {
+    if (!pgColumnExists($pdo, $table, $column)) {
+        $pdo->exec("ALTER TABLE \"$table\" ADD COLUMN \"$column\" $definition");
+        echo "  + Colonne `$column` ajoutée sur `$table`.\n";
+    } else {
+        echo "  = Colonne `$column` déjà présente sur `$table`.\n";
+    }
+}
 
 try {
 
     // 1. Évolution de la table `users`
     echo "1. Vérification et ajout des colonnes sur `users`...\n";
-    
-    // Vérifier les colonnes existantes
-    $userCols = $pdo->query("SHOW COLUMNS FROM `users`")->fetchAll(PDO::FETCH_COLUMN);
-
-    if (!in_array('prenom', $userCols, true)) {
-        $pdo->exec("ALTER TABLE `users` ADD COLUMN `prenom` VARCHAR(100) NULL AFTER `nom`");
-        echo "  + Colonne `prenom` ajoutée.\n";
-    }
-
-    if (!in_array('statut', $userCols, true)) {
-        $pdo->exec("ALTER TABLE `users` ADD COLUMN `statut` ENUM('actif', 'inactif', 'suspendu_temp', 'suspendu_def') NOT NULL DEFAULT 'actif' AFTER `est_verifie`");
-        echo "  + Colonne `statut` ajoutée.\n";
-    }
-
-    if (!in_array('profile_id', $userCols, true)) {
-        $pdo->exec("ALTER TABLE `users` ADD COLUMN `profile_id` INT NULL AFTER `statut`");
-        echo "  + Colonne `profile_id` ajoutée.\n";
-    }
-
-    if (!in_array('derniere_connexion', $userCols, true)) {
-        $pdo->exec("ALTER TABLE `users` ADD COLUMN `derniere_connexion` DATETIME NULL AFTER `updated_at`");
-        echo "  + Colonne `derniere_connexion` ajoutée.\n";
-    }
-
-    if (!in_array('suspended_from', $userCols, true)) {
-        $pdo->exec("ALTER TABLE `users` ADD COLUMN `suspended_from` DATE NULL AFTER `derniere_connexion`");
-        echo "  + Colonne `suspended_from` ajoutée.\n";
-    }
-
-    if (!in_array('suspended_until', $userCols, true)) {
-        $pdo->exec("ALTER TABLE `users` ADD COLUMN `suspended_until` DATE NULL AFTER `suspended_from`");
-        echo "  + Colonne `suspended_until` ajoutée.\n";
-    }
-
-    if (!in_array('suspension_reason', $userCols, true)) {
-        $pdo->exec("ALTER TABLE `users` ADD COLUMN `suspension_reason` TEXT NULL AFTER `suspended_until`");
-        echo "  + Colonne `suspension_reason` ajoutée.\n";
-    }
+    pgAddColumnIfNotExists($pdo, 'users', 'prenom', "VARCHAR(100) NULL");
+    pgAddColumnIfNotExists($pdo, 'users', 'statut', "VARCHAR(30) NOT NULL DEFAULT 'actif'");
+    pgAddColumnIfNotExists($pdo, 'users', 'profile_id', "INTEGER NULL");
+    pgAddColumnIfNotExists($pdo, 'users', 'derniere_connexion', "TIMESTAMP WITHOUT TIME ZONE NULL");
+    pgAddColumnIfNotExists($pdo, 'users', 'suspended_from', "DATE NULL");
+    pgAddColumnIfNotExists($pdo, 'users', 'suspended_until', "DATE NULL");
+    pgAddColumnIfNotExists($pdo, 'users', 'suspension_reason', "TEXT NULL");
 
     // 2. Création de la table `permissions`
     echo "2. Création de la table `permissions`...\n";
     $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `permissions` (
-            `id` INT AUTO_INCREMENT PRIMARY KEY,
-            `code` VARCHAR(60) NOT NULL UNIQUE,
-            `nom` VARCHAR(120) NOT NULL,
-            `categorie` VARCHAR(60) NOT NULL,
-            `description` TEXT NULL,
-            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        CREATE TABLE IF NOT EXISTS permissions (
+            id SERIAL PRIMARY KEY,
+            code VARCHAR(60) NOT NULL UNIQUE,
+            nom VARCHAR(120) NOT NULL,
+            categorie VARCHAR(60) NOT NULL,
+            description TEXT NULL,
+            created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )
     ");
 
     // 3. Création de la table `profiles`
     echo "3. Création de la table `profiles`...\n";
     $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `profiles` (
-            `id` INT AUTO_INCREMENT PRIMARY KEY,
-            `nom` VARCHAR(100) NOT NULL UNIQUE,
-            `description` TEXT NULL,
-            `is_system` TINYINT(1) NOT NULL DEFAULT 0,
-            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        CREATE TABLE IF NOT EXISTS profiles (
+            id SERIAL PRIMARY KEY,
+            nom VARCHAR(100) NOT NULL UNIQUE,
+            description TEXT NULL,
+            is_system SMALLINT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )
     ");
 
     // 4. Création de la table `profile_permissions`
     echo "4. Création de la table `profile_permissions`...\n";
     $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `profile_permissions` (
-            `profile_id` INT NOT NULL,
-            `permission_id` INT NOT NULL,
-            PRIMARY KEY (`profile_id`, `permission_id`),
-            INDEX (`profile_id`),
-            INDEX (`permission_id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        CREATE TABLE IF NOT EXISTS profile_permissions (
+            profile_id INTEGER NOT NULL,
+            permission_id INTEGER NOT NULL,
+            PRIMARY KEY (profile_id, permission_id)
+        )
     ");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_profile_permissions_profile ON profile_permissions(profile_id)");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_profile_permissions_permission ON profile_permissions(permission_id)");
 
     // 5. Création de la table `tasks`
     echo "5. Création de la table `tasks`...\n";
     $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `tasks` (
-            `id` INT AUTO_INCREMENT PRIMARY KEY,
-            `user_id` INT NOT NULL,
-            `created_by` INT NOT NULL,
-            `titre` VARCHAR(200) NOT NULL,
-            `description` TEXT NULL,
-            `priorite` ENUM('faible', 'normale', 'haute', 'urgente') NOT NULL DEFAULT 'normale',
-            `statut` ENUM('a_faire', 'en_cours', 'termine', 'annule') NOT NULL DEFAULT 'a_faire',
-            `date_debut` DATE NULL,
-            `date_limite` DATE NULL,
-            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX (`user_id`),
-            INDEX (`created_by`),
-            INDEX (`statut`),
-            INDEX (`priorite`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        CREATE TABLE IF NOT EXISTS tasks (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            created_by INTEGER NOT NULL,
+            titre VARCHAR(200) NOT NULL,
+            description TEXT NULL,
+            priorite VARCHAR(20) NOT NULL DEFAULT 'normale',
+            statut VARCHAR(20) NOT NULL DEFAULT 'a_faire',
+            date_debut DATE NULL,
+            date_limite DATE NULL,
+            created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )
     ");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id)");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_created_by ON tasks(created_by)");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_statut ON tasks(statut)");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tasks_priorite ON tasks(priorite)");
 
     // 6. Création de la table `activity_logs`
     echo "6. Création de la table `activity_logs`...\n";
     $pdo->exec("
-        CREATE TABLE IF NOT EXISTS `activity_logs` (
-            `id` INT AUTO_INCREMENT PRIMARY KEY,
-            `user_id` INT NULL,
-            `action` VARCHAR(100) NOT NULL,
-            `target_type` VARCHAR(60) NULL,
-            `target_id` INT NULL,
-            `details` TEXT NULL,
-            `ip_address` VARCHAR(45) NULL,
-            `user_agent` VARCHAR(255) NULL,
-            `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX (`user_id`),
-            INDEX (`action`),
-            INDEX (`target_type`),
-            INDEX (`target_id`),
-            INDEX (`created_at`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        CREATE TABLE IF NOT EXISTS activity_logs (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NULL,
+            action VARCHAR(100) NOT NULL,
+            target_type VARCHAR(60) NULL,
+            target_id INTEGER NULL,
+            details TEXT NULL,
+            ip_address VARCHAR(45) NULL,
+            user_agent VARCHAR(255) NULL,
+            created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )
     ");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id)");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_activity_logs_action ON activity_logs(action)");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_activity_logs_target_type ON activity_logs(target_type)");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_activity_logs_target_id ON activity_logs(target_id)");
+    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at)");
 
-    // 7. Remplissage des permissions standard
+    // 6.1 Contraintes d'unicité requises par les upserts ON CONFLICT ci-dessous.
+    // (les tables existaient déjà sans ces index sur cette base — les CREATE TABLE
+    // IF NOT EXISTS ci-dessus n'ont donc pas pu les poser eux-mêmes.)
+    echo "6.1 Vérification des index d'unicité (code, nom)...\n";
+    $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_permissions_code ON permissions(code)");
+    $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_nom ON profiles(nom)");
+
+    // 7. Remplissage / synchronisation des permissions standard
     echo "7. Enregistrement du catalogue standard des permissions...\n";
     $permissions_catalogue = [
         // Catégorie : Utilisateurs & Sécurité
@@ -183,12 +176,12 @@ try {
     ];
 
     $stmt_perm = $pdo->prepare("
-        INSERT INTO `permissions` (`code`, `nom`, `categorie`, `description`) 
+        INSERT INTO permissions (code, nom, categorie, description)
         VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE 
-            `nom` = VALUES(`nom`), 
-            `categorie` = VALUES(`categorie`), 
-            `description` = VALUES(`description`)
+        ON CONFLICT (code) DO UPDATE SET
+            nom = EXCLUDED.nom,
+            categorie = EXCLUDED.categorie,
+            description = EXCLUDED.description
     ");
 
     foreach ($permissions_catalogue as $p) {
@@ -197,19 +190,19 @@ try {
     echo "  + " . count($permissions_catalogue) . " permissions synchronisées.\n";
 
     // Récupérer la table de mapping [code => id]
-    $perm_map = $pdo->query("SELECT `code`, `id` FROM `permissions`")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $perm_map = $pdo->query("SELECT code, id FROM permissions")->fetchAll(PDO::FETCH_KEY_PAIR);
 
     // 8. Création des profils types
     echo "8. Enregistrement des profils types par défaut...\n";
     $default_profiles = [
         [
             'nom'         => 'Administrateur',
-            'description' => 'Accès complet et supervision totale de la plateforme Tikéli.',
+            'description' => 'Accès complet et supervision totale de la plateforme Tike WA.',
             'is_system'   => 1,
             'perms'       => array_keys($perm_map) // Toutes les permissions
         ],
         [
-            'nom'         => 'Gestionnaire d\'événements',
+            'nom'         => "Gestionnaire d'événements",
             'description' => 'Gestion opérationnelle des événements, modération et configuration des salles.',
             'is_system'   => 1,
             'perms'       => [
@@ -238,22 +231,27 @@ try {
     ];
 
     $stmt_prof = $pdo->prepare("
-        INSERT INTO `profiles` (`nom`, `description`, `is_system`) 
+        INSERT INTO profiles (nom, description, is_system)
         VALUES (?, ?, ?)
-        ON DUPLICATE KEY UPDATE `description` = VALUES(`description`), `is_system` = VALUES(`is_system`)
+        ON CONFLICT (nom) DO UPDATE SET
+            description = EXCLUDED.description,
+            is_system = EXCLUDED.is_system
     ");
 
+    $stmt_get_id = $pdo->prepare("SELECT id FROM profiles WHERE nom = ?");
+
     $stmt_link = $pdo->prepare("
-        INSERT IGNORE INTO `profile_permissions` (`profile_id`, `permission_id`) 
+        INSERT INTO profile_permissions (profile_id, permission_id)
         VALUES (?, ?)
+        ON CONFLICT (profile_id, permission_id) DO NOTHING
     ");
 
     foreach ($default_profiles as $dp) {
         $stmt_prof->execute([$dp['nom'], $dp['description'], $dp['is_system']]);
-        
-        // ID du profil
-        $prof_id = $pdo->query("SELECT `id` FROM `profiles` WHERE `nom` = " . $pdo->quote($dp['nom']))->fetchColumn();
-        
+
+        $stmt_get_id->execute([$dp['nom']]);
+        $prof_id = $stmt_get_id->fetchColumn();
+
         foreach ($dp['perms'] as $p_code) {
             if (isset($perm_map[$p_code])) {
                 $stmt_link->execute([$prof_id, $perm_map[$p_code]]);
@@ -263,9 +261,11 @@ try {
     echo "  + Profils de base créés et droits associés.\n";
 
     // 9. Association initiale des comptes admin au profil Administrateur
-    $admin_profile_id = (int)$pdo->query("SELECT `id` FROM `profiles` WHERE `nom` = 'Administrateur'")->fetchColumn();
+    $stmt_admin_id = $pdo->query("SELECT id FROM profiles WHERE nom = 'Administrateur'");
+    $admin_profile_id = (int) $stmt_admin_id->fetchColumn();
     if ($admin_profile_id) {
-        $pdo->exec("UPDATE `users` SET `profile_id` = $admin_profile_id WHERE `role` = 'admin' AND `profile_id` IS NULL");
+        $stmt_assign = $pdo->prepare("UPDATE users SET profile_id = ? WHERE role = 'admin' AND profile_id IS NULL");
+        $stmt_assign->execute([$admin_profile_id]);
         echo "  + Comptes administrateurs rattachés au profil 'Administrateur'.\n";
     }
 

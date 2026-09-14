@@ -9,7 +9,7 @@ require_once '../includes/auth.php';
 
 requireLogin('../connexion.php');
 
-$page_title = "Mes Commandes - Tikéli";
+$page_title = "Mes Commandes - Tike WA";
 $body_class = "client-page";
 include 'header.php';
 

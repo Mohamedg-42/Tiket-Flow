@@ -73,6 +73,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $prix_vote = (float) ($_POST['prix_vote'] ?? 0);
     $commission = (float) ($_POST['commission_rate'] ?? 5.0);
 
+    // Visibilité : génère un jeton d'accès à l'activation du mode privé (ou à la
+    // régénération explicite demandée depuis le formulaire), conserve l'existant sinon.
+    $visibilite = ($_POST['visibilite'] ?? 'public') === 'prive' ? 'prive' : 'public';
+    $regenerate_token = isset($_POST['regenerate_token']);
+    $access_token = $event['access_token'] ?? null;
+    if ($visibilite === 'prive' && (empty($access_token) || $regenerate_token)) {
+        $access_token = bin2hex(random_bytes(16));
+    }
+
     // Image upload si nouvelle image
     $image = $event['image'];
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
@@ -91,12 +100,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $sql = 'UPDATE events SET nom = ?, description = ?, categorie = ?, image = ?, date_evenement = ?, heure = ?, lieu = ?, type_vote = ?, vote_question = ?, prix_vote = ?, commission_rate = ?, statut = ? WHERE id = ?';
+        $sql = 'UPDATE events SET nom = ?, description = ?, categorie = ?, image = ?, date_evenement = ?, heure = ?, lieu = ?, type_vote = ?, vote_question = ?, prix_vote = ?, commission_rate = ?, statut = ?, visibilite = ?, access_token = ? WHERE id = ?';
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$nom, $description, $categorie, $image, $date, $heure, $lieu, $type_vote, $vote_question ?: null, $prix_vote, $commission, $statut, $id]);
+        $stmt->execute([$nom, $description, $categorie, $image, $date, $heure, $lieu, $type_vote, $vote_question ?: null, $prix_vote, $commission, $statut, $visibilite, $access_token, $id]);
 
         $message = "L'événement a été mis à jour avec succès !";
+        if ($visibilite === 'prive') {
+            $message .= " Lien d'accès privé : ../client/evenement.php?id=" . $id . "&token=" . $access_token;
+        }
         $msg_type = 'success';
+
+        // Rafraîchir $event pour que le formulaire affiche l'état à jour après sauvegarde
+        $event['visibilite'] = $visibilite;
+        $event['access_token'] = $access_token;
 
         // Rechargement des infos actualisées
         $stmt_r = $pdo->prepare('SELECT * FROM events WHERE id = ?');
@@ -366,6 +382,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </option>
                         <option value="en_attente" <?php echo ($event['statut'] === 'en_attente') ? 'selected' : ''; ?>>En attente</option>
                     </select>
+                </div>
+
+                <div>
+                    <label
+                        style="display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 4px; color: var(--dash-text);">Visibilité</label>
+                    <select name="visibilite"
+                        style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--dash-border); border-radius: 8px; font-size: 0.85rem; font-weight: 700; box-sizing: border-box; background: #ffffff;">
+                        <option value="public" <?php echo (($event['visibilite'] ?? 'public') === 'public') ? 'selected' : ''; ?>>🌐 Public</option>
+                        <option value="prive" <?php echo (($event['visibilite'] ?? 'public') === 'prive') ? 'selected' : ''; ?>>🔒 Privé (whitelist + lien direct)</option>
+                    </select>
+                    <?php if (($event['visibilite'] ?? 'public') === 'prive' && !empty($event['access_token'])): ?>
+                        <div style="margin-top: 6px; font-size: 0.72rem; color: #64748B; word-break: break-all;">
+                            Lien : <code>../client/evenement.php?id=<?php echo (int) $id; ?>&token=<?php echo htmlspecialchars($event['access_token']); ?></code>
+                            <label style="display: block; margin-top: 4px; font-weight: 600; cursor: pointer;">
+                                <input type="checkbox" name="regenerate_token" value="1"> Régénérer le lien (invalide l'ancien)
+                            </label>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <div>

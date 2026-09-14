@@ -6,11 +6,11 @@
  * ==============================================================================
  */
 
-class TikéliVenue3D {
+class Tike WAVenue3D {
     constructor(canvasId, options = {}) {
         this.canvas = typeof canvasId === 'string' ? document.getElementById(canvasId) : canvasId;
         if (!this.canvas) {
-            console.error('TikéliVenue3D: Canvas introuvable', canvasId);
+            console.error('Tike WAVenue3D: Canvas introuvable', canvasId);
             return;
         }
 
@@ -1028,12 +1028,12 @@ class TikéliVenue3D {
 }
 
 // Export global pour utilisation dans les scripts
-window.TikéliVenue3D = TikéliVenue3D;
-window.TikeliVenue3D = TikéliVenue3D;
-window.EventiaVenue3D = TikéliVenue3D;
+window.Tike WAVenue3D = Tike WAVenue3D;
+window.Tike WAVenue3D = Tike WAVenue3D;
+window.EventiaVenue3D = Tike WAVenue3D;
 if (typeof EventiaVenue3D === 'undefined') {
-    var EventiaVenue3D = TikéliVenue3D;
+    var EventiaVenue3D = Tike WAVenue3D;
 }
-if (typeof TikeliVenue3D === 'undefined') {
-    var TikeliVenue3D = TikéliVenue3D;
+if (typeof Tike WAVenue3D === 'undefined') {
+    var Tike WAVenue3D = Tike WAVenue3D;
 }

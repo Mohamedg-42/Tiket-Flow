@@ -49,9 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $dir = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
                 $reset_url = "{$scheme}://{$host}{$dir}/reinitialiser-mot-de-passe.php?token=" . urlencode($token) . "&email=" . urlencode($email);
 
-                // 5. Envoi de l'email via le service de messagerie Tikéli
+                // 5. Envoi de l'email via le service de messagerie Tike WA
                 $to_name = trim(($user['prenom'] ?? '') . ' ' . $user['nom']);
-                if (empty($to_name)) $to_name = "Utilisateur Tikéli";
+                if (empty($to_name)) $to_name = "Utilisateur Tike WA";
 
                 $mail_ok = sendPasswordResetEmail($user['email'], $to_name, $reset_url, 60);
 
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Message générique de confirmation (protection contre l'énumération des comptes)
             $email_sent = true;
-            $success_msg = "Si cette adresse est associée à un compte Tikéli, un email contenant les instructions et votre lien de réinitialisation vient de vous être envoyé. Pensez à vérifier vos courriers indésirables (spams).";
+            $success_msg = "Si cette adresse est associée à un compte Tike WA, un email contenant les instructions et votre lien de réinitialisation vient de vous être envoyé. Pensez à vérifier vos courriers indésirables (spams).";
         } catch (Throwable $e) {
             error_log("[Password Reset Error] " . $e->getMessage());
             $error = "Une erreur technique est survenue lors du traitement de votre demande. Veuillez réessayer dans quelques instants.";
@@ -83,7 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Mot de passe oublié - Tikéli</title>
+    <title>Mot de passe oublié - Tike WA</title>
+    <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo time(); ?>">
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         rel="stylesheet">
     <!-- FontAwesome 6 Pro Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Style Principal Tikéli -->
+    <!-- Style Principal Tike WA -->
     <link rel="stylesheet" href="Css/main.css">
     <style>
         :root {
@@ -179,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Logo & Titre -->
         <div style="text-align: center; margin-bottom: 1.75rem;">
             <a href="client/accueil.php" title="Retour à l'accueil" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-bottom: 0.5rem;">
-                <img src="images/logo.png" alt="Tikéli" style="height: 48px; width: auto; max-width: 170px; object-fit: contain;">
+                <img src="images/logo.png?v=<?php echo time(); ?>" alt="Tike WA" style="height: 52px; width: auto; max-width: 190px; object-fit: contain;">
             </a>
             <h1 style="font-size: 1.35rem; font-weight: 800; color: #000000; margin: 0.5rem 0 0.25rem; font-family: var(--font-heading);">
                 Mot de passe oublié ?

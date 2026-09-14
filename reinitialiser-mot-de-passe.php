@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
 
             // D. Envoi d'un email de confirmation de changement
             $to_name = trim(($user_record['prenom'] ?? '') . ' ' . $user_record['nom']);
-            if (empty($to_name)) $to_name = "Utilisateur Tikéli";
+            if (empty($to_name)) $to_name = "Utilisateur Tike WA";
             sendPasswordChangedConfirmationEmail($user_record['email'], $to_name);
 
             // E. Enregistrement dans le journal d'audit
@@ -107,7 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Nouveau mot de passe - Tikéli</title>
+    <title>Nouveau mot de passe - Tike WA</title>
+    <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo time(); ?>">
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
         rel="stylesheet">
     <!-- FontAwesome 6 Pro Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Style Principal Tikéli -->
+    <!-- Style Principal Tike WA -->
     <link rel="stylesheet" href="Css/main.css">
     <style>
         :root {
@@ -203,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
         <!-- Logo & Titre -->
         <div style="text-align: center; margin-bottom: 1.75rem;">
             <a href="client/accueil.php" title="Retour à l'accueil" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-bottom: 0.5rem;">
-                <img src="images/logo.png" alt="Tikéli" style="height: 48px; width: auto; max-width: 170px; object-fit: contain;">
+                <img src="images/logo.png?v=<?php echo time(); ?>" alt="Tike WA" style="height: 52px; width: auto; max-width: 190px; object-fit: contain;">
             </a>
             <h1 style="font-size: 1.35rem; font-weight: 800; color: #000000; margin: 0.5rem 0 0.25rem; font-family: var(--font-heading);">
                 Nouveau mot de passe

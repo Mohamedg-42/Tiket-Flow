@@ -1,13 +1,45 @@
 <?php
 // ==============================================================================
 // ASSISTANT D'INSTALLATION & CONNEXION POSTGRESQL (installer_postgres.php)
-// Configure automatiquement la base de données PostgreSQL pour Tikéli
+// Configure automatiquement la base de données PostgreSQL pour Tike WA
 // ==============================================================================
 
-// Verrou de sécurité : interdire l'accès à l'installateur sur un système opérationnel (SEC-003)
-if (file_exists(__DIR__ . '/config/database.php')) {
+// ======= VERROU DE SÉCURITÉ MULTICOUCHE (SEC-003) =======
+
+// Couche 1 : Accès limité au réseau local uniquement (localhost / 127.0.0.1 / ::1)
+$remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+$allowed_ips = ['127.0.0.1', '::1', '0:0:0:0:0:0:0:1', 'localhost'];
+if (!in_array($remote_ip, $allowed_ips, true)) {
     http_response_code(403);
-    die("<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><title>403 - Installateur Verrouillé</title><style>body{font-family:system-ui,sans-serif;padding:3rem;background:#f8fafc;color:#0f172a;text-align:center;}h1{color:#ef4444;}</style></head><body><h1>Installateur Verrouillé</h1><p>Pour des raisons de sécurité, l'assistant d'installation a été verrouillé car la plateforme Tikéli est déjà configurée.</p><p><a href='connexion.php'>Accéder à la connexion</a> · <a href='client/accueil.php'>Accueil</a></p></body></html>");
+    die("<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><title>403 - Accès Interdit</title><style>body{font-family:system-ui,sans-serif;padding:3rem;background:#f8fafc;color:#0f172a;text-align:center;}h1{color:#ef4444;}</style></head><body><h1>Accès Interdit</h1><p>L'installateur n'est accessible que depuis le serveur lui-même (localhost).</p></body></html>");
+}
+
+// Couche 2 : Clé secrète requise via GET pour éviter un accès accidentel
+// Usage : http://localhost/ticket-platform/installer_postgres.php?install_key=VOTRE_CLE
+$install_key_expected = getenv('INSTALL_KEY') ?: 'tikeli_install_2026';
+$install_key_provided = trim($_GET['install_key'] ?? '');
+if (empty($install_key_provided) || !hash_equals($install_key_expected, $install_key_provided)) {
+    http_response_code(403);
+    die("<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><title>403 - Clé Requise</title><style>body{font-family:system-ui,sans-serif;padding:3rem;background:#f8fafc;color:#0f172a;text-align:center;}h1{color:#ef4444;}code{background:#f1f5f9;padding:0.2em 0.5em;border-radius:4px;}</style></head><body><h1>Clé d'installation requise</h1><p>Ajoutez le paramètre <code>?install_key=VOTRE_CLE</code> pour accéder à cet installateur.</p><p><small>Définissez <code>INSTALL_KEY</code> dans votre fichier <code>.env</code> pour personnaliser la clé.</small></p></body></html>");
+}
+
+// Couche 3 : Bloqué si la plateforme est déjà configurée (database.php existe)
+if (file_exists(__DIR__ . '/config/database.php') && file_exists(__DIR__ . '/config/env.php')) {
+    // Vérifier si la connexion DB fonctionne réellement
+    try {
+        require_once __DIR__ . '/config/env.php';
+        $test_host = getenv('DB_HOST') ?: '127.0.0.1';
+        $test_port = getenv('DB_PORT') ?: '5433';
+        $test_db   = getenv('DB_NAME') ?: 'ticket_platform';
+        $test_user = getenv('DB_USER') ?: 'postgres';
+        $test_pass = getenv('DB_PASS') ?: '';
+        $pdo_test = new PDO("pgsql:host=$test_host;port=$test_port;dbname=$test_db", $test_user, $test_pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        // Connexion OK → Plateforme déjà opérationnelle
+        http_response_code(403);
+        die("<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><title>403 - Installateur Verrouillé</title><style>body{font-family:system-ui,sans-serif;padding:3rem;background:#f8fafc;color:#0f172a;text-align:center;}h1{color:#ef4444;}</style></head><body><h1>Installateur Verrouillé</h1><p>Pour des raisons de sécurité, l'assistant d'installation a été verrouillé car la plateforme Tike WA est déjà configurée et opérationnelle.</p><p><a href='connexion.php'>Accéder à la connexion</a> &middot; <a href='client/accueil.php'>Accueil</a></p></body></html>");
+    } catch (PDOException $e) {
+        // Connexion échouée : l'installation peut être relanceé
+    }
 }
 $msg_type = "";
 $step_completed = false;
@@ -59,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_connect'])) {
             $config_content = "<?php
 // ==============================================================================
 // FICHIER DE CONNEXION POSTGRESQL (config/database.php)
-// Généré automatiquement par l'Assistant Tikéli
+// Généré automatiquement par l'Assistant Tike WA
 // ==============================================================================
 
 \$host    = '" . addslashes($host) . "';
@@ -108,7 +140,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion PostgreSQL - Tikéli</title>
+    <title>Connexion PostgreSQL - Tike WA</title>
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -249,7 +281,7 @@ try {
         <?php if ($step_completed): ?>
             <div style="text-align: center; padding: 1rem 0;">
                 <a href="connexion.php" class="btn-submit" style="text-decoration: none; background: #0d9488; color: #ffffff;">
-                    <i class="fa-solid fa-arrow-right"></i> Accéder à Tikéli (Connexion)
+                    <i class="fa-solid fa-arrow-right"></i> Accéder à Tike WA (Connexion)
                 </a>
             </div>
         <?php else: ?>

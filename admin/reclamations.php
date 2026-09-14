@@ -261,7 +261,7 @@ $nb_total = (int) $pdo->query("SELECT COUNT(*) FROM claims")->fetchColumn();
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
                             <label style="font-size: 0.8rem; font-weight: 800; color: #000000; margin: 0;">
-                                <i class="fa-solid fa-reply"></i> Réponse officielle de la plateforme Tikéli :
+                                <i class="fa-solid fa-reply"></i> Réponse officielle de la plateforme Tike WA :
                             </label>
 
                             <div style="display: inline-flex; align-items: center; gap: 6px;">

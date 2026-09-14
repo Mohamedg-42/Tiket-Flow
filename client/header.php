@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$page_title = $page_title ?? 'Tikéli - Billetterie en ligne';
+$page_title = $page_title ?? 'Tike WA - Billetterie en ligne';
 $body_class = $body_class ?? 'client-page';
 $is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 $user_role = $_SESSION['user_role'] ?? 'client';
@@ -22,7 +22,7 @@ $user_role = $_SESSION['user_role'] ?? 'client';
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($page_title); ?></title>
-    <link rel="icon" type="image/png" href="../images/logo.png">
+    <link rel="icon" type="image/png" href="../images/favicon.png?v=<?php echo time(); ?>">
     <!-- Google Fonts: Outfit, Inter & Space Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -31,7 +31,7 @@ $user_role = $_SESSION['user_role'] ?? 'client';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Style CSS -->
     <link rel="stylesheet" href="../css/style.css?v=<?php echo time(); ?>">
-    <!-- Tikéli Brand Design System -->
+    <!-- Tike WA Brand Design System -->
     <link rel="stylesheet" href="../css/eventia-brand.css?v=<?php echo time(); ?>">
     <!-- Responsive Professional CSS -->
     <link rel="stylesheet" href="../css/responsive-pro.css?v=<?php echo time(); ?>">
@@ -40,7 +40,7 @@ $user_role = $_SESSION['user_role'] ?? 'client';
 
 <header class="client-header shared-client-header">
     <a href="accueil.php" class="client-brand" style="display: inline-flex; align-items: center; text-decoration: none; padding: 2px 0;">
-        <img src="../images/logo.png" alt="Tikéli" style="height: 40px; width: auto; max-width: 150px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));">
+        <img src="../images/logo.png?v=<?php echo time(); ?>" alt="Tike WA" style="height: 44px; width: auto; max-width: 170px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));">
     </a>
 
     <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Ouvrir le menu">

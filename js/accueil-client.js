@@ -221,13 +221,13 @@ function toggleSeatMap(ticketId, forcedEventId = null) {
 
     // Détermination robuste de l'ID événement
     const urlParams = new URLSearchParams(window.location.search);
-    const eventId = forcedEventId 
-                 || urlParams.get('id')
-                 || urlParams.get('event_id')
-                 || document.getElementById('clientModalEventId')?.value 
-                 || document.querySelector('input[name="event_id"]')?.value 
-                 || document.getElementById('event_id')?.value
-                 || (typeof window.EV_EVENT_ID !== 'undefined' ? window.EV_EVENT_ID : null);
+    const eventId = forcedEventId
+        || urlParams.get('id')
+        || urlParams.get('event_id')
+        || document.getElementById('clientModalEventId')?.value
+        || document.querySelector('input[name="event_id"]')?.value
+        || document.getElementById('event_id')?.value
+        || (typeof window.EV_EVENT_ID !== 'undefined' ? window.EV_EVENT_ID : null);
 
     if (opening) {
         // Mode "place au choix sur la vue de scène"
@@ -252,10 +252,10 @@ function toggleSeatMap(ticketId, forcedEventId = null) {
     syncTierSeats(ticketId);
     try {
         if (typeof updateMultiTicketTotal === 'function') updateMultiTicketTotal();
-    } catch (_) {}
+    } catch (_) { }
     try {
         if (typeof calculateEventTotal === 'function') calculateEventTotal();
-    } catch (_) {}
+    } catch (_) { }
 }
 
 /* ===== Choix Direct de Places Numérotées (Espaces Non Répertoriés) ===== */
@@ -418,8 +418,8 @@ function updateMultiTicketTotal() {
             if (!qtyInput || qtyInput.dataset.seatMode !== '1') return;
             const seats = selectedSeats[ticketId] || [];
             const prix = Number(qtyInput.dataset.prix) || Number(qtyInput.dataset.price) || 0;
-            const frais = Number(qtyInput.dataset.fraisPlace) > 0 ? Number(qtyInput.dataset.fraisPlace) : 
-                         (Number(qtyInput.dataset.fraisPlace) || 1000);
+            const frais = Number(qtyInput.dataset.fraisPlace) > 0 ? Number(qtyInput.dataset.fraisPlace) :
+                (Number(qtyInput.dataset.fraisPlace) || 1000);
             totalCount += seats.length;
             totalPrice += seats.length * (prix + frais);
         });
@@ -764,21 +764,21 @@ let currentEvent3DData = null;
 
 async function openClient3DSeating(targetTicketId = null, forcedEventId = null) {
     const urlParams = new URLSearchParams(window.location.search);
-    const eventId = forcedEventId 
-                 || urlParams.get('id')
-                 || urlParams.get('event_id')
-                 || document.getElementById('clientModalEventId')?.value 
-                 || document.querySelector('input[name="event_id"]')?.value 
-                 || document.getElementById('event_id')?.value
-                 || (typeof window.EV_EVENT_ID !== 'undefined' ? window.EV_EVENT_ID : null);
-    const eventName = document.getElementById('clientModalEventName')?.textContent 
-                    || document.querySelector('.event-title')?.textContent 
-                    || document.querySelector('h1')?.textContent 
-                    || 'Événement';
-    const eventPlace = document.getElementById('clientModalPlace')?.textContent 
-                    || document.querySelector('.event-metric-box strong[title]')?.textContent 
-                    || document.querySelector('.event-place-name')?.textContent
-                    || '';
+    const eventId = forcedEventId
+        || urlParams.get('id')
+        || urlParams.get('event_id')
+        || document.getElementById('clientModalEventId')?.value
+        || document.querySelector('input[name="event_id"]')?.value
+        || document.getElementById('event_id')?.value
+        || (typeof window.EV_EVENT_ID !== 'undefined' ? window.EV_EVENT_ID : null);
+    const eventName = document.getElementById('clientModalEventName')?.textContent
+        || document.querySelector('.event-title')?.textContent
+        || document.querySelector('h1')?.textContent
+        || 'Événement';
+    const eventPlace = document.getElementById('clientModalPlace')?.textContent
+        || document.querySelector('.event-metric-box strong[title]')?.textContent
+        || document.querySelector('.event-place-name')?.textContent
+        || '';
 
     if (!eventId) {
         console.warn('openClient3DSeating: Aucun ID événement trouvé');
@@ -800,9 +800,9 @@ async function openClient3DSeating(targetTicketId = null, forcedEventId = null) 
     document.body.classList.add('modal-open');
 
     const canvas = document.getElementById('client3DCanvas');
-    const EngineClass = window.TikéliVenue3D || window.TikeliVenue3D || window.EventiaVenue3D;
+    const EngineClass = window.Tike WAVenue3D || window.Tike WAVenue3D || window.EventiaVenue3D;
     if (!EngineClass) {
-        console.error('TikéliVenue3D introuvable dans window');
+        console.error('Tike WAVenue3D introuvable dans window');
         alert('Initialisation de la vue 3D en cours... Veuillez patienter.');
         return;
     }
@@ -1116,8 +1116,8 @@ function applyClient3DSelection() {
         syncTierSeats(tId);
     });
 
-    try { if (typeof updateMultiTicketTotal === 'function') updateMultiTicketTotal(); } catch (_) {}
-    try { if (typeof calculateEventTotal === 'function') calculateEventTotal(); } catch (_) {}
+    try { if (typeof updateMultiTicketTotal === 'function') updateMultiTicketTotal(); } catch (_) { }
+    try { if (typeof calculateEventTotal === 'function') calculateEventTotal(); } catch (_) { }
     closeClient3DSeating();
 }
 
@@ -1194,7 +1194,7 @@ function openEventDetailsModal(target) {
     let category = 'Événement';
     let image = '';
     let desc = '';
-    let promoter = 'Organisateur Tikéli';
+    let promoter = 'Organisateur Tike WA';
     let capacity = 0;
     let stock = 0;
     let tickets = [];
@@ -1217,7 +1217,7 @@ function openEventDetailsModal(target) {
         time = foundData.heure ? foundData.heure.substring(0, 5) : '';
         place = foundData.lieu || '';
         category = foundData.categorie || 'Événement';
-        image = foundData.image 
+        image = foundData.image
             ? (foundData.image.startsWith('http') ? foundData.image : ('../uploads/events/' + foundData.image))
             : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80';
         desc = foundData.description || '';
@@ -1226,8 +1226,8 @@ function openEventDetailsModal(target) {
             tickets = window.TICKETS_BY_EVENT[id];
         }
     } else {
-        let btn = (typeof target === 'string' || typeof target === 'number') 
-            ? document.querySelector(`button[data-event-id="${target}"]`) 
+        let btn = (typeof target === 'string' || typeof target === 'number')
+            ? document.querySelector(`button[data-event-id="${target}"]`)
             : target;
         if (!btn && typeof target === 'object' && target.nodeType) btn = target;
         if (btn) {
@@ -1286,7 +1286,7 @@ function openEventDetailsModal(target) {
         if (tickets.length === 0) {
             ticketsListEl.innerHTML = '<div style="color: var(--muted); font-size: 0.88rem; padding: 0.5rem 0;">Aucun billet spécifique répertorié pour le moment.</div>';
         } else {
-            tickets.forEach(function(tk, index) {
+            tickets.forEach(function (tk, index) {
                 const price = Number(tk.prix) || 0;
                 const qte = Number(tk.quantite) || 0;
                 const vendus = Number(tk.quantite_vendue) || 0;
@@ -1330,10 +1330,10 @@ function openEventDetailsModal(target) {
                 voteLink.href = 'vote.php?id=' + encodeURIComponent(id) + '#candidats';
             }
             let totalVotes = 0;
-            evCands.forEach(function(c) { totalVotes += Number(c.nb_votes_cand) || 0; });
+            evCands.forEach(function (c) { totalVotes += Number(c.nb_votes_cand) || 0; });
             const denom = Math.max(totalVotes, 1);
 
-            evCands.forEach(function(cand, idx) {
+            evCands.forEach(function (cand, idx) {
                 const cVotes = Number(cand.nb_votes_cand) || 0;
                 const cPct = Math.min(100, Math.round((cVotes / denom) * 1000) / 10);
                 let photo = cand.photo || '';
@@ -1373,7 +1373,7 @@ function openEventDetailsModal(target) {
     // Bouton Réserver
     const bookBtn = document.getElementById('detailEventBookBtn') || document.getElementById('btnEventDetailBook');
     if (bookBtn) {
-        bookBtn.onclick = function() {
+        bookBtn.onclick = function () {
             closeEventDetailsModal();
             const bookingTrigger = document.querySelector(`button[data-event-id="${id}"][data-ticket-options]`);
             if (bookingTrigger) {
@@ -1428,7 +1428,7 @@ function openCotisationDetailsModal(target) {
     if (foundData) {
         title = foundData.titre || 'Campagne de cotisation';
         desc = foundData.description || '';
-        image = foundData.image 
+        image = foundData.image
             ? (foundData.image.startsWith('http') ? foundData.image : ('../uploads/events/' + foundData.image))
             : 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80';
         objectif = Number(foundData.montant_objectif) || 0;
@@ -1438,8 +1438,8 @@ function openCotisationDetailsModal(target) {
         promoter = foundData.promoteur_nom || 'Porteur de projet';
         status = foundData.statut === 'terminee' ? 'Terminée' : 'Active';
     } else {
-        let btn = (typeof target === 'string' || typeof target === 'number') 
-            ? document.querySelector(`button[data-campagne-id="${target}"]`) 
+        let btn = (typeof target === 'string' || typeof target === 'number')
+            ? document.querySelector(`button[data-campagne-id="${target}"]`)
             : target;
         if (!btn && typeof target === 'object' && target.nodeType) btn = target;
         if (btn) {
@@ -1477,7 +1477,7 @@ function openCotisationDetailsModal(target) {
     const progressBar = document.getElementById('detailCampagneProgressBar') || document.getElementById('cotisationDetailBar');
     if (progressBar) {
         progressBar.style.width = '0%';
-        setTimeout(function() {
+        setTimeout(function () {
             progressBar.style.width = Math.min(100, percent) + '%';
         }, 80);
     }
@@ -1497,7 +1497,7 @@ function openCotisationDetailsModal(target) {
     // Bouton Contribuer
     const actionBtn = document.getElementById('detailCampagneActionBtn') || document.getElementById('btnCotisationDetailAction');
     if (actionBtn) {
-        actionBtn.onclick = function() {
+        actionBtn.onclick = function () {
             closeCotisationDetailsModal();
             const btnInCard = document.querySelector(`button[data-campagne-id="${id}"]`);
             if (btnInCard) {
@@ -1576,7 +1576,7 @@ function openVoteDetailsModal(target) {
 
     const tarifBadge = document.getElementById('voteDetailTarifBadge');
     if (tarifBadge) {
-        tarifBadge.innerHTML = prix > 0 
+        tarifBadge.innerHTML = prix > 0
             ? `<i class="fa-solid fa-coins" style="color: #FF4A0D; margin-right: 4px;"></i> ${prix.toLocaleString('fr-FR')} F / vote`
             : `<i class="fa-solid fa-gift" style="color: #10B981; margin-right: 4px;"></i> Vote Gratuit`;
     }
@@ -1630,7 +1630,7 @@ function openVoteDetailsModal(target) {
             `;
         } else {
             const isPayant = (prix > 0);
-            candidats.forEach(function(cand, idx) {
+            candidats.forEach(function (cand, idx) {
                 const cId = Number(cand.id);
                 const cVotes = Number(cand.nb_votes_cand || 0);
                 const cPct = (totalVotes > 0) ? Math.min(100, Math.round((cVotes / totalVotes) * 1000) / 10) : 0;
@@ -1642,11 +1642,13 @@ function openVoteDetailsModal(target) {
                 const card = document.createElement('article');
                 card.className = 'vote-cand-card';
                 card.id = 'cand-card-' + cId;
+                card.style.cursor = 'pointer';
+                card.title = `Voir le profil de ${safeNom}`;
+                card.onclick = function() { openCandidatDetailsModal(cId, id); };
 
                 card.innerHTML = `
-                    <div class="vote-cand-photo-wrap" onclick="openCandidatDetailsModal(${cId}, ${id})" title="Voir les détails de ${safeNom}">
+                    <div class="vote-cand-photo-wrap">
                         <img src="${cPhoto}" alt="${safeNom}" class="vote-cand-photo" loading="lazy">
-                        <span class="vote-cand-badge ${isTop1 ? 'top-1' : ''}">${isTop1 ? '★ #1' : '#' + rankNum}</span>
                     </div>
                     <div class="vote-cand-body">
                         <h4 class="vote-cand-nom" title="${safeNom}">${cand.nom}</h4>
@@ -1657,12 +1659,10 @@ function openVoteDetailsModal(target) {
                         <div class="vote-cand-gauge-bg">
                             <div class="vote-cand-gauge-fill" id="cand-gauge-${cId}" style="width: ${cPct}%;"></div>
                         </div>
-                        <div class="vote-cand-actions">
-                            <button type="button" class="btn-cand-detail" onclick="openCandidatDetailsModal(${cId}, ${id})" title="Voir le profil">
-                                <i class="fa-solid fa-eye"></i> Détails
-                            </button>
+                        <div class="vote-cand-actions" style="display: grid; grid-template-columns: 1fr; gap: 0;">
                             <button type="button" class="btn-cand-vote" id="btn-vote-cand-${cId}" 
-                                onclick="voteForCandidate(${id}, ${cId}, '${safeNom.replace(/'/g, "\\'")}', ${isPayant}, ${prix})" 
+                                style="width: 100%; justify-content: center; padding: 0.55rem 0.75rem; font-size: 0.82rem;"
+                                onclick="event.stopPropagation(); voteForCandidate(${id}, ${cId}, '${safeNom.replace(/'/g, "\\'")}', ${isPayant}, ${prix})" 
                                 title="Voter pour ${safeNom}">
                                 <i class="fa-solid ${isPayant ? 'fa-coins' : 'fa-thumbs-up'}"></i> Voter
                             </button>
@@ -1696,8 +1696,8 @@ function openCandidatDetailsModal(candId, eventId) {
     const cand = candsList.find(c => Number(c.id) === cId);
     if (!cand) return;
 
-    const eventObj = (window.VOTES_DATA && Array.isArray(window.VOTES_DATA)) 
-        ? window.VOTES_DATA.find(v => Number(v.id) === eId) 
+    const eventObj = (window.VOTES_DATA && Array.isArray(window.VOTES_DATA))
+        ? window.VOTES_DATA.find(v => Number(v.id) === eId)
         : null;
 
     const rankIdx = candsList.findIndex(c => Number(c.id) === cId);
@@ -1742,8 +1742,8 @@ function openCandidatDetailsModal(candId, eventId) {
 
     const bioEl = document.getElementById('candModalBio');
     if (bioEl) {
-        bioEl.textContent = cand.description && cand.description.trim() 
-            ? cand.description 
+        bioEl.textContent = cand.description && cand.description.trim()
+            ? cand.description
             : "Ce(tte) candidat(e) est en compétition officielle. Soutenez sa candidature en lui accordant vos votes !";
     }
 
@@ -1752,7 +1752,7 @@ function openCandidatDetailsModal(candId, eventId) {
     const voteBtnText = document.getElementById('candModalVoteBtnText');
     if (voteBtn && voteBtnText) {
         voteBtnText.textContent = isPayant ? `Voter pour elle (${prix.toLocaleString('fr-FR')} F)` : 'Voter pour elle';
-        voteBtn.onclick = function() {
+        voteBtn.onclick = function () {
             voteForCandidate(eId, cId, cand.nom, isPayant, prix);
         };
     }
@@ -1760,7 +1760,7 @@ function openCandidatDetailsModal(candId, eventId) {
     // Bouton Partager
     const shareBtn = document.getElementById('candModalShareBtn');
     if (shareBtn) {
-        shareBtn.onclick = function() {
+        shareBtn.onclick = function () {
             const evNom = eventObj ? eventObj.nom : 'Concours';
             openShareVoteCandidate(eId, evNom, cId, cand.nom);
         };
@@ -1826,8 +1826,8 @@ async function voteForCandidate(eventId, candId, candNom, isPayant, prix) {
         const voteBtn = document.getElementById('btn-vote-cand-' + candId);
         if (voteBtn) {
             voteBtn.classList.toggle('voted', data.voted);
-            voteBtn.innerHTML = data.voted 
-                ? '<i class="fa-solid fa-check"></i> Voté' 
+            voteBtn.innerHTML = data.voted
+                ? '<i class="fa-solid fa-check"></i> Voté'
                 : '<i class="fa-solid fa-thumbs-up"></i> Voter';
         }
 
@@ -1849,7 +1849,7 @@ async function voteForCandidate(eventId, candId, candNom, isPayant, prix) {
             }
             const totalVotesEl = document.getElementById('voteDetailTotalVotes');
             if (totalVotesEl) totalVotesEl.textContent = Number(data.votes).toLocaleString('fr-FR') + ' vote(s)';
-            
+
             // Recalcul des barres de progression
             recalculateCandidatGauges(eventId, data.votes);
 
@@ -1966,7 +1966,7 @@ function openShareModal(options) {
 
     const type = options.type || 'vote';
     const id = options.id;
-    const title = options.title || 'Découvrez cette publication sur Tikéli';
+    const title = options.title || 'Découvrez cette publication sur Tike WA';
 
     // Construction du lien permanent avec paramètres de deep-link
     const loc = window.location;
@@ -2004,7 +2004,7 @@ function openShareModal(options) {
         if (options.subtitle) {
             targetSub.textContent = options.subtitle;
         } else {
-            targetSub.textContent = (type === 'vote') 
+            targetSub.textContent = (type === 'vote')
                 ? 'Vote officiel en ligne • Partagez pour maximiser les suffrages'
                 : (type === 'cotisation' ? 'Campagne de cotisation solidaire' : 'Billetterie événementielle officielle');
         }
@@ -2021,11 +2021,11 @@ function openShareModal(options) {
     if (waBtn) {
         let msg = '';
         if (type === 'vote' && options.candNom) {
-            msg = "🗳️ Votez pour " + options.candNom + " dans « " + title + " » sur Tikéli ! Cliquez ici : " + permalink;
+            msg = "🗳️ Votez pour " + options.candNom + " dans « " + title + " » sur Tike WA ! Cliquez ici : " + permalink;
         } else if (type === 'vote') {
-            msg = "🗳️ Participez au vote « " + title + " » sur Tikéli ! Cliquez ici : " + permalink;
+            msg = "🗳️ Participez au vote « " + title + " » sur Tike WA ! Cliquez ici : " + permalink;
         } else {
-            msg = "🎟️ Découvrez « " + title + " » sur Tikéli ! Cliquez ici : " + permalink;
+            msg = "🎟️ Découvrez « " + title + " » sur Tike WA ! Cliquez ici : " + permalink;
         }
         waBtn.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msg);
     }
@@ -2078,7 +2078,7 @@ function copyShareLink() {
     }
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(onCopied).catch(function() {
+        navigator.clipboard.writeText(url).then(onCopied).catch(function () {
             input.select();
             document.execCommand('copy');
             onCopied();
@@ -2093,11 +2093,11 @@ function copyShareLink() {
 function shareViaWhatsApp() {
     let message = '';
     if (currentShareData.type === 'vote' && currentShareData.candNom) {
-        message = "🗳️ Soutenez et votez pour " + currentShareData.candNom + " sur Tikéli :\n" + currentShareData.url;
+        message = "🗳️ Soutenez et votez pour " + currentShareData.candNom + " sur Tike WA :\n" + currentShareData.url;
     } else if (currentShareData.type === 'vote') {
-        message = "🗳️ Participez au vote : " + currentShareData.title + " sur Tikéli :\n" + currentShareData.url;
+        message = "🗳️ Participez au vote : " + currentShareData.title + " sur Tike WA :\n" + currentShareData.url;
     } else {
-        message = "🎟️ Découvrez " + currentShareData.title + " sur Tikéli :\n" + currentShareData.url;
+        message = "🎟️ Découvrez " + currentShareData.title + " sur Tike WA :\n" + currentShareData.url;
     }
     window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(message), '_blank');
 }
@@ -2107,7 +2107,7 @@ function shareViaFacebook() {
 }
 
 function shareViaTwitter() {
-    const tweet = (currentShareData.candNom ? ("Votez pour " + currentShareData.candNom) : ("Participez au vote : " + currentShareData.title)) + " sur @TikeliCi\n";
+    const tweet = (currentShareData.candNom ? ("Votez pour " + currentShareData.candNom) : ("Participez au vote : " + currentShareData.title)) + " sur @Tike WACi\n";
     window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweet) + '&url=' + encodeURIComponent(currentShareData.url), '_blank', 'width=600,height=450');
 }
 
@@ -2127,7 +2127,7 @@ function triggerNativeShare() {
 }
 
 /* --- GESTION DU DEEP LINKING AU CHARGEMENT DE LA PAGE --- */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const params = new URLSearchParams(window.location.search);
     if (params.has('vote_id')) {
         const voteId = params.get('vote_id');
@@ -2255,3 +2255,114 @@ window.shareViaTwitter = shareViaTwitter;
 window.shareViaSMS = shareViaSMS;
 window.triggerNativeShare = triggerNativeShare;
 
+// ==========================================================================
+// INITIALISATION DES DROPDOWNS AVEC VRAIES ICÔNES FONT AWESOME
+// ==========================================================================
+function initFaCustomDropdowns() {
+    var selects = document.querySelectorAll('select.fa-enhanced-select');
+    if (!selects.length) return;
+
+    selects.forEach(function(select) {
+        if (select.dataset.faCustomInit === '1') return;
+        select.dataset.faCustomInit = '1';
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'fa-custom-dropdown';
+        select.parentNode.insertBefore(wrapper, select);
+        wrapper.appendChild(select);
+        select.style.display = 'none';
+
+        var trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'fa-custom-dropdown-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+
+        var content = document.createElement('span');
+        content.className = 'fa-dropdown-item-content';
+
+        var arrow = document.createElement('i');
+        arrow.className = 'fa-solid fa-chevron-down fa-dropdown-arrow';
+
+        trigger.appendChild(content);
+        trigger.appendChild(arrow);
+        wrapper.appendChild(trigger);
+
+        var menu = document.createElement('ul');
+        menu.className = 'fa-custom-dropdown-menu';
+        menu.setAttribute('role', 'listbox');
+        wrapper.appendChild(menu);
+
+        function updateTrigger() {
+            var selectedOpt = select.options[select.selectedIndex] || select.options[0];
+            if (!selectedOpt) return;
+            var iconClass = selectedOpt.getAttribute('data-icon') || '';
+            var text = (selectedOpt.text || '').trim();
+            content.innerHTML = (iconClass ? '<i class="' + iconClass + '"></i> ' : '') + '<span>' + text + '</span>';
+        }
+
+        Array.from(select.options).forEach(function(opt, idx) {
+            var li = document.createElement('li');
+            li.className = 'fa-custom-dropdown-item' + (opt.selected ? ' selected' : '');
+            li.setAttribute('role', 'option');
+            li.setAttribute('aria-selected', opt.selected ? 'true' : 'false');
+
+            var iconClass = opt.getAttribute('data-icon') || '';
+            var text = (opt.text || '').trim();
+            li.innerHTML = (iconClass ? '<i class="' + iconClass + '"></i> ' : '') + '<span>' + text + '</span>';
+
+            li.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                select.selectedIndex = idx;
+                updateTrigger();
+                menu.querySelectorAll('.fa-custom-dropdown-item').forEach(function(el) {
+                    el.classList.remove('selected');
+                    el.setAttribute('aria-selected', 'false');
+                });
+                li.classList.add('selected');
+                li.setAttribute('aria-selected', 'true');
+                wrapper.classList.remove('open');
+                trigger.setAttribute('aria-expanded', 'false');
+
+                // Déclencher le changement natif (exécute onchange="this.form.submit()")
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            menu.appendChild(li);
+        });
+
+        updateTrigger();
+
+        trigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var isOpen = wrapper.classList.contains('open');
+            document.querySelectorAll('.fa-custom-dropdown.open').forEach(function(d) {
+                d.classList.remove('open');
+                var t = d.querySelector('.fa-custom-dropdown-trigger');
+                if (t) t.setAttribute('aria-expanded', 'false');
+            });
+            if (!isOpen) {
+                wrapper.classList.add('open');
+                trigger.setAttribute('aria-expanded', 'true');
+            }
+        });
+    });
+
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.fa-custom-dropdown.open').forEach(function(d) {
+            d.classList.remove('open');
+            var t = d.querySelector('.fa-custom-dropdown-trigger');
+            if (t) t.setAttribute('aria-expanded', 'false');
+        });
+    });
+}
+
+window.initFaCustomDropdowns = initFaCustomDropdowns;
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFaCustomDropdowns);
+} else {
+    initFaCustomDropdowns();
+}

@@ -31,29 +31,49 @@ if (isset($_GET['id']) && isset($_GET['action'])) {
             $stmt_u = $pdo->prepare("UPDATE users SET role = 'promoteur', est_verifie = 1, statut = 'actif' WHERE id = ?");
             $stmt_u->execute([$user_id]);
 
-            $stmt_p = $pdo->prepare("
-                INSERT INTO promoters (user_id, type_entite, nom_commercial, numero_registre, representant_legal, telephone_contact, email_contact, ville, statut, solde)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approuve', 0.00)
-                ON DUPLICATE KEY UPDATE 
-                    statut = 'approuve',
-                    type_entite = VALUES(type_entite),
-                    nom_commercial = VALUES(nom_commercial),
-                    numero_registre = VALUES(numero_registre),
-                    representant_legal = VALUES(representant_legal),
-                    telephone_contact = VALUES(telephone_contact),
-                    email_contact = VALUES(email_contact),
-                    ville = VALUES(ville)
-            ");
-            $stmt_p->execute([
-                $user_id,
-                $type_entite,
-                $nom_commercial,
-                $req['numero_registre'] ?? null,
-                $req['representant_legal'] ?? null,
-                $req['telephone'] ?? null,
-                $req['email'] ?? null,
-                $req['ville'] ?? null
-            ]);
+            $stmt_chk_p = $pdo->prepare("SELECT id FROM promoters WHERE user_id = ?");
+            $stmt_chk_p->execute([$user_id]);
+            $existing_p = $stmt_chk_p->fetch();
+
+            if ($existing_p) {
+                $stmt_p = $pdo->prepare("
+                    UPDATE promoters SET
+                        statut = 'approuve',
+                        type_entite = ?,
+                        nom_commercial = ?,
+                        numero_registre = ?,
+                        representant_legal = ?,
+                        telephone_contact = ?,
+                        email_contact = ?,
+                        ville = ?
+                    WHERE user_id = ?
+                ");
+                $stmt_p->execute([
+                    $type_entite,
+                    $nom_commercial,
+                    $req['numero_registre'] ?? null,
+                    $req['representant_legal'] ?? null,
+                    $req['telephone'] ?? null,
+                    $req['email'] ?? null,
+                    $req['ville'] ?? null,
+                    $user_id
+                ]);
+            } else {
+                $stmt_p = $pdo->prepare("
+                    INSERT INTO promoters (user_id, type_entite, nom_commercial, numero_registre, representant_legal, telephone_contact, email_contact, ville, statut, solde)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approuve', 0.00)
+                ");
+                $stmt_p->execute([
+                    $user_id,
+                    $type_entite,
+                    $nom_commercial,
+                    $req['numero_registre'] ?? null,
+                    $req['representant_legal'] ?? null,
+                    $req['telephone'] ?? null,
+                    $req['email'] ?? null,
+                    $req['ville'] ?? null
+                ]);
+            }
 
             // Envoi de l'e-mail officiel d'activation au promoteur
             require_once __DIR__ . '/../includes/mailer.php';
@@ -708,6 +728,18 @@ $nb_total = (int) $pdo->query("SELECT COUNT(*) FROM promoter_requests")->fetchCo
                             <div class="dp-contact-meta">
                                 <span>Déclarant : <strong><?php echo htmlspecialchars($r['nom_complet']); ?></strong></span>
                                 <span>· Tél : <a href="tel:<?php echo htmlspecialchars($r['telephone']); ?>"><?php echo htmlspecialchars($r['telephone']); ?></a></span>
+                                <?php 
+                                $r_tel_clean = preg_replace('/[^0-9]/', '', $r['telephone'] ?? '');
+                                if (!empty($r_tel_clean)):
+                                    $r_wa_msg = "Bonjour " . ($r['nom_complet'] ?? 'Promoteur') . ", je vous contacte depuis l'administration de Tike WA concernant votre demande d'éligibilité.";
+                                    $r_wa_url = "https://api.whatsapp.com/send?phone=" . $r_tel_clean . "&text=" . urlencode($r_wa_msg);
+                                ?>
+                                    <a href="<?php echo htmlspecialchars($r_wa_url); ?>" target="_blank" rel="noopener noreferrer"
+                                       title="Échanger sur WhatsApp avec ce candidat"
+                                       style="display: inline-flex; align-items: center; gap: 4px; background: #25D366; color: #ffffff !important; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; text-decoration: none; margin-left: 4px;">
+                                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                                    </a>
+                                <?php endif; ?>
                                 <span>· Email : <a href="mailto:<?php echo htmlspecialchars($r['email']); ?>"><?php echo htmlspecialchars($r['email']); ?></a></span>
                                 <?php if (!empty($r['ville'])): ?>
                                     <span>· Ville : <strong><?php echo htmlspecialchars($r['ville']); ?></strong></span>
@@ -747,8 +779,7 @@ $nb_total = (int) $pdo->query("SELECT COUNT(*) FROM promoter_requests")->fetchCo
                     <?php if (!empty($r['description'])): ?>
                         <div class="dp-desc-box">
                             <strong
-                                style="color: var(--dash-text); display: block; margin-bottom: 4px; font-size: 0.78rem; text-transform: uppercase; font-family: 'Space Mono', monospace;">Projets
-                                d'événements :</strong>
+                                style="color: var(--dash-text); display: block; margin-bottom: 4px; font-size: 0.78rem; text-transform: uppercase; font-family: 'Space Mono', monospace;">Description des activités :</strong>
                             <?php echo nl2br(htmlspecialchars($r['description'])); ?>
                         </div>
                     <?php endif; ?>

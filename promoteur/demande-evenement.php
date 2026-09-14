@@ -211,35 +211,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ? (float)$prom_info['commission_rate'] 
                 : (float)$scale_info['rate'];
 
+            // Visibilité souhaitée par le promoteur (propagée lors de l'approbation admin)
+            $visibilite_ev = ($_POST['visibilite'] ?? 'public') === 'prive' ? 'prive' : 'public';
+
             try {
-                $sql = "INSERT INTO event_requests (
-                            user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote,
-                            infos_supplementaires, type_personne, nom_structure, numero_rccm,
-                            document_justificatif, document_autorisation, ticket_types_data, candidats_data, commission_rate, salle_id, statut
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente')";
+                // Ajout de la colonne visibilite si elle existe, sinon fallback silencieux
+                $has_vis_col = false;
+                try {
+                    $chk_col = $pdo->query("SELECT 1 FROM information_schema.columns WHERE table_name='event_requests' AND column_name='visibilite'");
+                    $has_vis_col = (bool)$chk_col->fetchColumn();
+                } catch(Exception $e) { $has_vis_col = false; }
+
+                if ($has_vis_col) {
+                    $sql = "INSERT INTO event_requests (
+                                user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote,
+                                infos_supplementaires, type_personne, nom_structure, numero_rccm,
+                                document_justificatif, document_autorisation, ticket_types_data, candidats_data, commission_rate, salle_id, visibilite, statut
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente')";
+                    $params_ev = [
+                        $_SESSION['user_id'], $nom, $description, $image_name, $categorie,
+                        $date_evenement, $heure, $lieu, $prix_vote, $infos_supp,
+                        $type_personne, $nom_structure, $numero_rccm,
+                        $doc_justificatif, $doc_autorisation,
+                        json_encode($tickets_data, JSON_UNESCAPED_UNICODE), $candidats_json,
+                        $commission_rate, $salle_id, $visibilite_ev
+                    ];
+                } else {
+                    $sql = "INSERT INTO event_requests (
+                                user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote,
+                                infos_supplementaires, type_personne, nom_structure, numero_rccm,
+                                document_justificatif, document_autorisation, ticket_types_data, candidats_data, commission_rate, salle_id, statut
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente')";
+                    $params_ev = [
+                        $_SESSION['user_id'], $nom, $description, $image_name, $categorie,
+                        $date_evenement, $heure, $lieu, $prix_vote, $infos_supp,
+                        $type_personne, $nom_structure, $numero_rccm,
+                        $doc_justificatif, $doc_autorisation,
+                        json_encode($tickets_data, JSON_UNESCAPED_UNICODE), $candidats_json,
+                        $commission_rate, $salle_id
+                    ];
+                }
 
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    $_SESSION['user_id'],
-                    $nom,
-                    $description,
-                    $image_name,
-                    $categorie,
-                    $date_evenement,
-                    $heure,
-                    $lieu,
-                    $prix_vote,
-                    $infos_supp,
-                    $type_personne,
-                    $nom_structure,
-                    $numero_rccm,
-                    $doc_justificatif,
-                    $doc_autorisation,
-                    json_encode($tickets_data, JSON_UNESCAPED_UNICODE),
-                    $candidats_json,
-                    $commission_rate,
-                    $salle_id
-                ]);
+                $stmt->execute($params_ev);
 
                 $message = "Votre proposition d'événement a été transmise à l'administrateur avec succès ! Vous pouvez suivre son approbation dans « Mes Événements ».";
                 $msg_type = "success";
@@ -276,17 +290,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creer
                 move_uploaded_file($_FILES['image']['tmp_name'], $upload_c . $image_c);
             }
         }
+        // Visibilité de la campagne
+        $vis_camp = ($_POST['visibilite_cotisation'] ?? 'public') === 'prive' ? 'prive' : 'public';
+        $token_camp = $vis_camp === 'prive' ? bin2hex(random_bytes(16)) : null;
+
         try {
-            $stmt_c = $pdo->prepare("INSERT INTO cotisation_campagnes (user_id, titre, description, image, montant_objectif, date_limite, statut) VALUES (?, ?, ?, ?, ?, ?, 'en_attente')");
-            $stmt_c->execute([
-                $_SESSION['user_id'],
-                $titre_c,
-                $description_c ?: null,
-                $image_c,
-                $objectif_c,
-                $date_limite_c ?: null
-            ]);
+            // Vérifier si colonne visibilite existe sur cotisation_campagnes
+            $has_vis_c = false;
+            try {
+                $chk_c = $pdo->query("SELECT 1 FROM information_schema.columns WHERE table_name='cotisation_campagnes' AND column_name='visibilite'");
+                $has_vis_c = (bool)$chk_c->fetchColumn();
+            } catch(Exception $e) { $has_vis_c = false; }
+
+            if ($has_vis_c) {
+                $stmt_c = $pdo->prepare("INSERT INTO cotisation_campagnes (user_id, titre, description, image, montant_objectif, date_limite, statut, visibilite, access_token) VALUES (?, ?, ?, ?, ?, ?, 'en_attente', ?, ?)");
+                $stmt_c->execute([$_SESSION['user_id'], $titre_c, $description_c ?: null, $image_c, $objectif_c, $date_limite_c ?: null, $vis_camp, $token_camp]);
+            } else {
+                $stmt_c = $pdo->prepare("INSERT INTO cotisation_campagnes (user_id, titre, description, image, montant_objectif, date_limite, statut) VALUES (?, ?, ?, ?, ?, ?, 'en_attente')");
+                $stmt_c->execute([$_SESSION['user_id'], $titre_c, $description_c ?: null, $image_c, $objectif_c, $date_limite_c ?: null]);
+            }
             $message = "La campagne de cotisation « " . htmlspecialchars($titre_c) . " » a été soumise avec succès ! Vous pouvez suivre son statut dans « Mes Demandes ».";
+            if ($vis_camp === 'prive') {
+                $message .= " Elle est marquée comme PRIVÉE — l'admin la gardera confidentielle.";
+            }
             $msg_type = "success";
         } catch (PDOException $e) {
             $message = "Erreur lors de la soumission de la campagne : " . $e->getMessage();
@@ -379,24 +405,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'propo
         $message = "Veuillez renseigner le nom du concours.";
         $msg_type = "error";
     } else {
+        // Visibilité du concours
+        $vis_co = ($_POST['visibilite_concours'] ?? 'public') === 'prive' ? 'prive' : 'public';
+
         try {
-            $stmt = $pdo->prepare("
-                INSERT INTO event_requests (
-                    user_id, nom, description, image, categorie, date_evenement, heure, lieu,
-                    prix_vote, type_vote, candidats_data, statut, type_personne
-                ) VALUES (?, ?, ?, ?, 'Concours', ?, ?, ?, ?, 'concours', ?, 'en_attente', 'physique')
-            ");
-            $stmt->execute([
-                $_SESSION['user_id'],
-                $nom,
-                $description ?: 'Concours officiel avec vote du public',
-                $image_event,
-                $date_evenement,
-                $heure,
-                $lieu,
-                $prix_vote,
-                !empty($candidats_data) ? json_encode($candidats_data, JSON_UNESCAPED_UNICODE) : null
-            ]);
+            // Vérifier si event_requests a la colonne visibilite
+            $has_vis_er = false;
+            try {
+                $chk_er = $pdo->query("SELECT 1 FROM information_schema.columns WHERE table_name='event_requests' AND column_name='visibilite'");
+                $has_vis_er = (bool)$chk_er->fetchColumn();
+            } catch(Exception $e) { $has_vis_er = false; }
+
+            if ($has_vis_er) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO event_requests (
+                        user_id, nom, description, image, categorie, date_evenement, heure, lieu,
+                        prix_vote, type_vote, candidats_data, visibilite, statut, type_personne
+                    ) VALUES (?, ?, ?, ?, 'Concours', ?, ?, ?, ?, 'concours', ?, ?, 'en_attente', 'physique')
+                ");
+                $stmt->execute([
+                    $_SESSION['user_id'], $nom,
+                    $description ?: 'Concours officiel avec vote du public',
+                    $image_event, $date_evenement, $heure, $lieu, $prix_vote,
+                    !empty($candidats_data) ? json_encode($candidats_data, JSON_UNESCAPED_UNICODE) : null,
+                    $vis_co
+                ]);
+            } else {
+                $stmt = $pdo->prepare("
+                    INSERT INTO event_requests (
+                        user_id, nom, description, image, categorie, date_evenement, heure, lieu,
+                        prix_vote, type_vote, candidats_data, statut, type_personne
+                    ) VALUES (?, ?, ?, ?, 'Concours', ?, ?, ?, ?, 'concours', ?, 'en_attente', 'physique')
+                ");
+                $stmt->execute([
+                    $_SESSION['user_id'], $nom,
+                    $description ?: 'Concours officiel avec vote du public',
+                    $image_event, $date_evenement, $heure, $lieu, $prix_vote,
+                    !empty($candidats_data) ? json_encode($candidats_data, JSON_UNESCAPED_UNICODE) : null
+                ]);
+            }
 
             $message = "La demande de concours « " . htmlspecialchars($nom) . " » avec " . count($candidats_data) . " participant(s) a été transmise à l'administrateur avec succès ! Vous pouvez suivre sa validation dans Mes Demandes.";
             $msg_type = "success";
@@ -434,24 +481,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'propo
         $message = "Veuillez renseigner le nom de l'événement et la question posée au public.";
         $msg_type = "error";
     } else {
+        // Visibilité du vote
+        $vis_rv = ($_POST['visibilite_realisation'] ?? 'public') === 'prive' ? 'prive' : 'public';
+
         try {
-            $stmt = $pdo->prepare("
-                INSERT INTO event_requests (
-                    user_id, nom, description, image, categorie, date_evenement, heure, lieu,
-                    prix_vote, type_vote, vote_question, statut, type_personne
-                ) VALUES (?, ?, ?, ?, 'Vote', ?, ?, ?, ?, 'realisation_evenement', ?, 'en_attente', 'physique')
-            ");
-            $stmt->execute([
-                $_SESSION['user_id'],
-                $nom,
-                $description ?: 'Projet soumis au vote du public pour confirmation de réalisation',
-                $image_event,
-                $date_evenement,
-                $heure,
-                $lieu,
-                $prix_vote,
-                $vote_question
-            ]);
+            // Vérifier si event_requests a la colonne visibilite
+            $has_vis_rv = false;
+            try {
+                $chk_rv = $pdo->query("SELECT 1 FROM information_schema.columns WHERE table_name='event_requests' AND column_name='visibilite'");
+                $has_vis_rv = (bool)$chk_rv->fetchColumn();
+            } catch(Exception $e) { $has_vis_rv = false; }
+
+            if ($has_vis_rv) {
+                $stmt = $pdo->prepare("
+                    INSERT INTO event_requests (
+                        user_id, nom, description, image, categorie, date_evenement, heure, lieu,
+                        prix_vote, type_vote, vote_question, visibilite, statut, type_personne
+                    ) VALUES (?, ?, ?, ?, 'Vote', ?, ?, ?, ?, 'realisation_evenement', ?, ?, 'en_attente', 'physique')
+                ");
+                $stmt->execute([
+                    $_SESSION['user_id'], $nom,
+                    $description ?: 'Projet soumis au vote du public pour confirmation de réalisation',
+                    $image_event, $date_evenement, $heure, $lieu, $prix_vote,
+                    $vote_question, $vis_rv
+                ]);
+            } else {
+                $stmt = $pdo->prepare("
+                    INSERT INTO event_requests (
+                        user_id, nom, description, image, categorie, date_evenement, heure, lieu,
+                        prix_vote, type_vote, vote_question, statut, type_personne
+                    ) VALUES (?, ?, ?, ?, 'Vote', ?, ?, ?, ?, 'realisation_evenement', ?, 'en_attente', 'physique')
+                ");
+                $stmt->execute([
+                    $_SESSION['user_id'], $nom,
+                    $description ?: 'Projet soumis au vote du public pour confirmation de réalisation',
+                    $image_event, $date_evenement, $heure, $lieu, $prix_vote, $vote_question
+                ]);
+            }
 
             $message = "Votre proposition de vote pour la réalisation de « " . htmlspecialchars($nom) . " » a été transmise à l'administrateur avec succès ! Vous pouvez suivre sa validation dans Mes Demandes.";
             $msg_type = "success";
@@ -1760,6 +1826,23 @@ try {
 
                 <input type="hidden" name="commission_rate" id="form_commission_rate" value="5.0">
 
+                <!-- Visibilité souhaitée -->
+                <div style="background: #F5F5F5; border: 1px solid var(--dash-border, #E5E5E5); border-radius: 12px; padding: 1rem 1.15rem; margin-top: 1rem; margin-bottom: 1rem;">
+                    <div style="font-size: 0.82rem; font-weight: 800; color: #000; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité souhaitée pour cet événement
+                    </div>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
+                            <input type="radio" name="visibilite" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public (visible sur la plateforme)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
+                            <input type="radio" name="visibilite" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct + invités uniquement)
+                        </label>
+                    </div>
+                    <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                        Un événement <strong>privé</strong> ne sera pas listé publiquement. L'admin le configurera en accès restreint lors de la validation.
+                    </small>
+                </div>
                 <!-- Bouton de Soumission -->
                 <button type="submit" class="dash-btn-action btn-primary btn-submit-large">
                     <i class="fa-solid fa-paper-plane"></i>
@@ -1821,6 +1904,24 @@ try {
                         <label for="camp_image"><i class="fa-solid fa-image" style="color: #FF4A0D;"></i> Affiche / Image
                             illustrative de la campagne</label>
                         <input type="file" id="camp_image" name="image" accept="image/*" style="padding: 0.5rem 0.75rem;">
+                    </div>
+
+                    <!-- Visibilité de la cotisation -->
+                    <div style="background: #F5F5F5; border: 1px solid var(--dash-border, #E5E5E5); border-radius: 12px; padding: 1rem 1.15rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+                        <div style="font-size: 0.82rem; font-weight: 800; color: #000; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité de la campagne
+                        </div>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
+                                <input type="radio" name="visibilite_cotisation" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Publique (listée sur la plateforme)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
+                                <input type="radio" name="visibilite_cotisation" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privée (confidentielle, lien direct)
+                            </label>
+                        </div>
+                        <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                            Une campagne <strong>privée</strong> ne sera pas affichée publiquement. Elle sera accessible uniquement via lien sécurisé.
+                        </small>
                     </div>
 
                     <button type="submit" class="dash-btn-action btn-primary btn-submit-large"
@@ -1958,6 +2059,22 @@ try {
                             </div>
                         </div>
 
+                        <!-- Visibilité du Concours -->
+                        <div style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1rem;">
+                            <div style="font-size: 0.8rem; font-weight: 800; color: #000; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
+                                <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du concours
+                            </div>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.83rem; padding: 0.5rem 0.9rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
+                                    <input type="radio" name="visibilite_concours" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.83rem; padding: 0.5rem 0.9rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
+                                    <input type="radio" name="visibilite_concours" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct)
+                                </label>
+                            </div>
+                            <small style="display: block; margin-top: 5px; color: #737373; font-size: 0.73rem;">Un concours privé ne sera pas listé publiquement. L'admin générera un lien sécurisé à la validation.</small>
+                        </div>
+
                         <button type="submit" class="dash-btn-action btn-primary btn-submit-large">
                             <i class="fa-solid fa-paper-plane"></i> Soumettre la Demande de Concours avec ses Candidats
                         </button>
@@ -2071,6 +2188,22 @@ try {
                             <i class="fa-solid fa-circle-info" style="margin-right: 5px;"></i>
                             <strong>Aucun candidat à enregistrer</strong> : En mode « Vote pour la réalisation », les
                             spectateurs votent pour valider ou encourager la tenue globale du projet.
+                        </div>
+
+                        <!-- Visibilité du Vote de Réalisation -->
+                        <div style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1rem;">
+                            <div style="font-size: 0.8rem; font-weight: 800; color: #000; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
+                                <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du vote
+                            </div>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.83rem; padding: 0.5rem 0.9rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
+                                    <input type="radio" name="visibilite_realisation" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.83rem; padding: 0.5rem 0.9rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
+                                    <input type="radio" name="visibilite_realisation" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct)
+                                </label>
+                            </div>
+                            <small style="display: block; margin-top: 5px; color: #737373; font-size: 0.73rem;">Un vote privé ne sera pas listé publiquement — seuls les invités via lien pourront y accéder.</small>
                         </div>
 
                         <button type="submit" class="dash-btn-action btn-primary btn-submit-large">

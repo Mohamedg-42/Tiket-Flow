@@ -2,7 +2,7 @@
 // ==============================================================================
 // GESTION DES SALLES & LIEUX DE SPECTACLE (admin/salles.php)
 // Administration complète des infrastructures, capacités, zones et équipements
-// Style Dashboard Pro & Swiss Grid System Tikéli
+// Style Dashboard Pro & Swiss Grid System Tike WA
 // ==============================================================================
 
 $admin_page_title = "Gestion des Salles & Lieux - Administration";
@@ -647,7 +647,7 @@ function get_type_salle_label($type) {
                             <?php if (!empty($s['contact_responsable']) || !empty($s['telephone_responsable'])): ?>
                                 <i class="fa-solid fa-user-tie"></i> <?php echo htmlspecialchars($s['contact_responsable'] ?: 'Contact'); ?> (<?php echo htmlspecialchars($s['telephone_responsable']); ?>)
                             <?php else: ?>
-                                <span style="font-style: italic;">Régie Tikéli</span>
+                                <span style="font-style: italic;">Régie Tike WA</span>
                             <?php endif; ?>
                         </div>
 
@@ -960,7 +960,7 @@ async function openStudio3D(salleId, salleNom) {
 
     const canvas = document.getElementById('studio3DCanvas');
     if (!admin3DEngine) {
-        admin3DEngine = new TikéliVenue3D(canvas, {
+        admin3DEngine = new Tike WAVenue3D(canvas, {
             readOnly: false,
             onSeatSelect: (seat) => {
                 document.getElementById('studioSeatDetails').innerHTML = `

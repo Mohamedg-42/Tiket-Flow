@@ -2,7 +2,7 @@
 // ==============================================================================
 // GESTION DU BARÈME DE COMMISSION SELON L'AMPLEUR DE L'ÉVÉNEMENT
 // (includes/commission.php)
-// Plateforme Tikéli — Barème dégressif par paliers de capacité & recette
+// Plateforme Tike WA — Barème dégressif par paliers de capacité & recette
 // ==============================================================================
 
 if (!function_exists('get_event_scale_tier')) {

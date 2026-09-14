@@ -181,7 +181,7 @@ if ($periode === '7j') {
 }
 
 if (!empty($search)) {
-    $sql .= " AND (e.nom LIKE ? OR u.nom LIKE ? OR p.nom_commercial LIKE ? OR e.vote_question LIKE ?)";
+    $sql .= " AND (e.nom ILIKE ? OR u.nom ILIKE ? OR p.nom_commercial ILIKE ? OR e.vote_question ILIKE ?)";
     $params[] = "%$search%";
     $params[] = "%$search%";
     $params[] = "%$search%";
@@ -1543,7 +1543,7 @@ function renderCandidatesList(cands, totalVotesEvent) {
         const rankNum = idx + 1;
 
         html += `
-            <div class="cand-card">
+            <div class="cand-card" style="cursor: pointer;" onclick="editCandidatInline(${c.id})" title="Cliquer pour afficher et modifier les informations de ${escapeHtml(c.nom)}">
                 <span style="font-size: 0.74rem; font-weight: 800; color: #737373; width: 22px; text-align: center;">#${rankNum}</span>
                 <img src="${photoUrl}" alt="Photo de ${escapeHtml(c.nom)}" class="cand-avatar" onerror="this.src='../images/default-avatar.png';">
                 
@@ -1560,7 +1560,7 @@ function renderCandidatesList(cands, totalVotesEvent) {
                     <small style="font-size: 0.72rem; font-weight: 700; color: #FF4A0D;">${pct}%</small>
                 </div>
 
-                <div class="cand-actions">
+                <div class="cand-actions" onclick="event.stopPropagation();">
                     <button type="button" class="dash-btn-action" onclick="editCandidatInline(${c.id})" style="padding: 0.35rem 0.55rem; font-size: 0.75rem;" title="Modifier les infos de ce candidat">
                         <i class="fa-solid fa-pen"></i>
                     </button>
@@ -1653,7 +1653,7 @@ function shareAdminVoteWhatsApp() {
     const input = document.getElementById('admin_vote_permalink');
     const evTitle = document.getElementById('edit_vote_nom').value || 'ce concours';
     if (!input) return;
-    const msg = "Participez et votez pour : " + evTitle + " sur Tikéli :\n" + input.value;
+    const msg = "Participez et votez pour : " + evTitle + " sur Tike WA :\n" + input.value;
     window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
 }
 
@@ -1702,7 +1702,7 @@ function copyAdminShareDirectLink() {
 }
 
 function shareAdminWhatsAppDirect() {
-    const msg = "Votez pour : " + activeAdminShareData.title + " sur Tikéli :\n" + activeAdminShareData.url;
+    const msg = "Votez pour : " + activeAdminShareData.title + " sur Tike WA :\n" + activeAdminShareData.url;
     window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
 }
 
@@ -1711,7 +1711,7 @@ function shareAdminFacebookDirect() {
 }
 
 function shareAdminTwitterDirect() {
-    const tweet = "Participez au vote : " + activeAdminShareData.title + " sur Tikéli\n";
+    const tweet = "Participez au vote : " + activeAdminShareData.title + " sur Tike WA\n";
     window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweet) + '&url=' + encodeURIComponent(activeAdminShareData.url), '_blank', 'width=600,height=450');
 }
 

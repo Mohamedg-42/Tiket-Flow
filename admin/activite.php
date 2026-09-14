@@ -397,7 +397,7 @@ $tot_suspensions = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE a
                 <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary); font-size: 1.55rem;"></i>
                 Journal d'Activité & Traçabilité (Audit Trail)
             </h1>
-            <p>Historique immuable de toutes les actions sensibles effectuées sur la plateforme Tikéli.</p>
+            <p>Historique immuable de toutes les actions sensibles effectuées sur la plateforme Tike WA.</p>
         </div>
 
         <div class="activite-header-actions">

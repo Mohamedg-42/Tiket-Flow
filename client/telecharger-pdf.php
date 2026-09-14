@@ -7,7 +7,9 @@ $code = trim($_GET['code'] ?? '');
 $order_id = filter_input(INPUT_GET, 'order_id', FILTER_VALIDATE_INT) ?: filter_var($_GET['order_id'] ?? null, FILTER_VALIDATE_INT);
 $ticket_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
 $token = trim($_GET['token'] ?? $_GET['order_token'] ?? '');
-$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
+// APP_SECRET_KEY est défini par config/env.php (chargé via config/database.php)
+// Ne jamais mettre de valeur par défaut hardcodée ici
+$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : null;
 
 $session_user_id = (int) ($_SESSION['user_id'] ?? 0);
 $is_admin = ($_SESSION['user_role'] ?? '') === 'admin';

@@ -39,8 +39,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->beginTransaction();
 
                 $salle_id = !empty($req['salle_id']) ? (int) $req['salle_id'] : null;
-                $stmt_ev = $pdo->prepare("INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, salle_id, statut) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')");
-                $stmt_ev->execute([$req['user_id'], $req['nom'], $req['description'], $req['image'], $req['categorie'], $req['date_evenement'], $req['heure'], $req['lieu'], (float) ($req['prix_vote'] ?? 0), $req['type_vote'] ?? 'aucun', $req['vote_question'] ?? null, $commission_rate, $salle_id]);
+                $visibilite = ($req['visibilite'] ?? 'public') === 'prive' ? 'prive' : 'public';
+                $access_token = ($visibilite === 'prive') ? bin2hex(random_bytes(16)) : null;
+
+                $stmt_ev = $pdo->prepare("INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, salle_id, statut, visibilite, access_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', ?, ?)");
+                $stmt_ev->execute([$req['user_id'], $req['nom'], $req['description'], $req['image'], $req['categorie'], $req['date_evenement'], $req['heure'], $req['lieu'], (float) ($req['prix_vote'] ?? 0), $req['type_vote'] ?? 'aucun', $req['vote_question'] ?? null, $commission_rate, $salle_id, $visibilite, $access_token]);
                 $new_event_id = (int) $pdo->lastInsertId();
 
                 $ticket_types = json_decode($req['ticket_types_data'] ?? '[]', true);

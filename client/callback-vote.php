@@ -11,7 +11,7 @@ session_start();
 $vote_paiement_id = filter_input(INPUT_GET, 'vote_paiement_id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'vote_paiement_id', FILTER_VALIDATE_INT);
 $methode          = $_GET['methode'] ?? $_POST['methode'] ?? '';
 $telephone        = trim($_POST['telephone_paiement'] ?? '');
-$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kadevpay', 'feexpay'];
+$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kadevpay', 'feexpay', 'bictorys'];
 
 if (!$vote_paiement_id || !in_array($methode, $methodes_autorisees, true)) {
     $_SESSION['vote_message'] = "Paiement non validé ou méthode non reconnue.";
@@ -20,9 +20,9 @@ if (!$vote_paiement_id || !in_array($methode, $methodes_autorisees, true)) {
     exit();
 }
 
-// 1. Récupération du paiement de vote en attente
+// 1. Récupération du paiement de vote
 $stmt = $pdo->prepare("
-    SELECT vp.*, e.nom AS event_nom
+    SELECT vp.*, e.nom AS event_nom, e.visibilite AS event_visibilite, e.access_token AS event_access_token
     FROM vote_paiements vp
     JOIN events e ON e.id = vp.event_id
     WHERE vp.id = ?
@@ -30,14 +30,21 @@ $stmt = $pdo->prepare("
 $stmt->execute([$vote_paiement_id]);
 $vote_pay = $stmt->fetch();
 
-if (!$vote_pay || $vote_pay['statut'] !== 'en_attente') {
-    $_SESSION['vote_message'] = 'Ce paiement de vote est introuvable ou a déjà été réglé.';
+if (!$vote_pay) {
+    $_SESSION['vote_message'] = 'Ce paiement de vote est introuvable.';
     header('Location: accueil.php?onglet=voter');
     exit();
 }
 
 // 1.1 Vérification de la signature cryptographique sécurisée anti-falsification (SEC-002)
-$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
+if (!defined('APP_SECRET_KEY')) {
+    error_log("Tike WA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
+    $_SESSION['vote_message'] = "Erreur de configuration serveur. Veuillez contacter l'administrateur.";
+    $_SESSION['vote_type'] = 'error';
+    header('Location: accueil.php?onglet=voter');
+    exit();
+}
+$pay_secret = APP_SECRET_KEY;
 $expected_token = hash_hmac('sha256', $vote_pay['id'] . '|' . $vote_pay['montant'] . '|' . $vote_pay['created_at'], $pay_secret);
 $vote_token = $_GET['vote_token'] ?? $_POST['vote_token'] ?? '';
 
@@ -48,10 +55,19 @@ if (empty($vote_token) || !hash_equals($expected_token, $vote_token)) {
     exit();
 }
 
-// Référence unique de paiement et ID de transaction FeexPay / Mobile Money
-$payment_ref = trim($_GET['reference'] ?? $_POST['reference'] ?? $_GET['transaction_id'] ?? '');
+$is_already_paid = in_array($vote_pay['statut'], ['paye', 'valide'], true);
+
+if (!$is_already_paid && $vote_pay['statut'] !== 'en_attente') {
+    $_SESSION['vote_message'] = 'Ce paiement de vote est introuvable ou a été annulé.';
+    header('Location: accueil.php?onglet=voter');
+    exit();
+}
+
+// Référence unique de paiement et ID de transaction
+$payment_ref = trim($_GET['reference'] ?? $_POST['reference'] ?? $_GET['transaction_id'] ?? $_GET['charge_id'] ?? $_GET['chargeId'] ?? '');
 if (!empty($payment_ref)) {
-    $reference = (stripos($payment_ref, 'VOTE-') === 0 || stripos($payment_ref, 'PAY-') === 0) ? $payment_ref : 'VOTE-FEEXPAY-' . $payment_ref;
+    $prefix = (strtoupper($methode) === 'BICTORYS') ? 'VOTE-BICTORYS-' : 'VOTE-FEEXPAY-';
+    $reference = (stripos($payment_ref, 'VOTE-') === 0 || stripos($payment_ref, 'PAY-') === 0) ? $payment_ref : ($prefix . $payment_ref);
     $transaction_api_id = $payment_ref;
 } else {
     $reference          = 'VOTE-' . strtoupper($methode) . '-' . strtoupper(substr(uniqid(), -6));
@@ -59,39 +75,37 @@ if (!empty($payment_ref)) {
 }
 
 try {
-    $pdo->beginTransaction();
+    if (!$is_already_paid) {
+        $pdo->beginTransaction();
 
-    // 2. Validation du paiement (statut 'paye' + référence + téléphone)
-    $stmt_pay = $pdo->prepare("
-        UPDATE vote_paiements
-        SET statut = 'paye', methode = ?, reference = ?, transaction_id_api = ?, telephone = ?
-        WHERE id = ? AND statut = 'en_attente'
-    ");
-    $stmt_pay->execute([$methode, $reference, $transaction_api_id, $telephone, $vote_paiement_id]);
-    if ($stmt_pay->rowCount() === 0) {
-        throw new Exception('Paiement déjà réglé ou introuvable.');
-    }
+        // 2. Validation du paiement (statut 'paye' + référence + téléphone)
+        $stmt_pay = $pdo->prepare("
+            UPDATE vote_paiements
+            SET statut = 'paye', methode = ?, reference = ?, transaction_id_api = ?, telephone = COALESCE(NULLIF(?, ''), telephone)
+            WHERE id = ? AND statut = 'en_attente'
+        ");
+        $stmt_pay->execute([$methode, $reference, $transaction_api_id, $telephone, $vote_paiement_id]);
 
-    // 3. Enregistrement du/des vote(s) (choix multiples supportés)
-    $cands_ids = [];
-    if (!empty($vote_pay['candidats_ids'])) {
-        $cands_ids = json_decode($vote_pay['candidats_ids'], true);
-    } elseif (!empty($vote_pay['candidat_id'])) {
-        $cands_ids = [(int)$vote_pay['candidat_id']];
-    }
-
-    if (!empty($cands_ids) && is_array($cands_ids)) {
-        $ins = $pdo->prepare("INSERT INTO event_votes (event_id, user_id, visitor_id, candidat_id) VALUES (?, ?, ?, ?)");
-        foreach ($cands_ids as $cid) {
-            $ins->execute([$vote_pay['event_id'], $vote_pay['user_id'], $vote_pay['visitor_id'], (int)$cid]);
+        // 3. Enregistrement du/des vote(s) (choix multiples supportés)
+        $cands_ids = [];
+        if (!empty($vote_pay['candidats_ids'])) {
+            $cands_ids = json_decode($vote_pay['candidats_ids'], true);
+        } elseif (!empty($vote_pay['candidat_id'])) {
+            $cands_ids = [(int)$vote_pay['candidat_id']];
         }
-    } else {
-        $ins = $pdo->prepare("INSERT INTO event_votes (event_id, user_id, visitor_id, candidat_id) VALUES (?, ?, ?, NULL)");
-        $ins->execute([$vote_pay['event_id'], $vote_pay['user_id'], $vote_pay['visitor_id']]);
+
+        if (!empty($cands_ids) && is_array($cands_ids)) {
+            $ins = $pdo->prepare("INSERT INTO event_votes (event_id, user_id, visitor_id, candidat_id, paiement_id, type_vote, date_vote) VALUES (?, ?, ?, ?, ?, 'payant', NOW())");
+            foreach ($cands_ids as $cid) {
+                $ins->execute([$vote_pay['event_id'], $vote_pay['user_id'], $vote_pay['visitor_id'], (int)$cid, $vote_paiement_id]);
+            }
+        } else {
+            $ins = $pdo->prepare("INSERT INTO event_votes (event_id, user_id, visitor_id, candidat_id, paiement_id, type_vote, date_vote) VALUES (?, ?, ?, NULL, ?, 'payant', NOW())");
+            $ins->execute([$vote_pay['event_id'], $vote_pay['user_id'], $vote_pay['visitor_id'], $vote_paiement_id]);
+        }
+
+        $pdo->commit();
     }
-
-    $pdo->commit();
-
 } catch (Exception $e) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
     $_SESSION['vote_message'] = "Erreur lors du paiement : " . $e->getMessage();
@@ -108,7 +122,7 @@ if (!empty($cands_ids) && is_array($cands_ids)) {
     }
 }
 
-$page_title = "Vote Confirmé - Tikéli";
+$page_title = "Vote Confirmé - Tike WA";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>
@@ -180,13 +194,19 @@ include 'header.php';
                 <small style="color: var(--muted); display: block; margin-top: 4px; font-size: 0.75rem;">Conservez cette référence comme preuve de votre vote.</small>
             </div>
 
-            <div style="display: flex; gap: 0.75rem;">
-                <a href="accueil.php?onglet=voter" class="btn-submit" style="flex: 1; text-decoration: none; text-align: center; background: transparent; color: var(--muted); border: 1px solid var(--line);">
-                    <i class="fa-solid fa-trophy"></i> Voir le classement
-                </a>
-                <a href="accueil.php" class="btn-submit" style="flex: 1; text-decoration: none; text-align: center;">
-                    <i class="fa-solid fa-house"></i> Retour à l'accueil
-                </a>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <?php if (($vote_pay['event_visibilite'] ?? 'public') === 'prive'): ?>
+                    <a href="vote.php?id=<?php echo (int)$vote_pay['event_id']; ?>&token=<?php echo urlencode($vote_pay['event_access_token'] ?? ''); ?>" class="btn-submit" style="flex: 1; text-decoration: none; text-align: center;">
+                        <i class="fa-solid fa-vote-yea"></i> Retourner au scrutin privé
+                    </a>
+                <?php else: ?>
+                    <a href="accueil.php?onglet=voter" class="btn-submit" style="flex: 1; text-decoration: none; text-align: center; background: transparent; color: var(--muted); border: 1px solid var(--line);">
+                        <i class="fa-solid fa-trophy"></i> Voir le classement
+                    </a>
+                    <a href="accueil.php" class="btn-submit" style="flex: 1; text-decoration: none; text-align: center;">
+                        <i class="fa-solid fa-house"></i> Retour à l'accueil
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </div>

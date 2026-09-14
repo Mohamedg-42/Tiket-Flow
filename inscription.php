@@ -72,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Créer un compte - Tikéli</title>
+    <title>Créer un compte - Tike WA</title>
+    <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo time(); ?>">
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- Style CSS & Tikéli Brand -->
+    <!-- Style CSS & Tike WA Brand -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/eventia-brand.css">
     <link rel="stylesheet" href="css/responsive-pro.css">
@@ -200,15 +201,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div style="text-align: center; margin-bottom: 1.75rem;">
             <a href="client/accueil.php"
                 style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; text-decoration: none;">
-                <img src="images/logo.png" alt="Tikéli"
-                    style="height: 52px; width: auto; max-width: 190px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
+                <img src="images/logo.png?v=<?php echo time(); ?>" alt="Tike WA"
+                    style="height: 56px; width: auto; max-width: 200px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
             </a>
             <h1
                 style="font-size: 1.35rem; font-weight: 800; color: var(--eventia-navy, #000000); margin: 0.35rem 0 0.25rem; font-family: var(--font-heading, 'Outfit', sans-serif);">
                 Créer un compte
             </h1>
             <p style="color: var(--eventia-muted, #737373); margin: 0; font-size: 0.88rem;">
-                Rejoignez Tikéli et réservez vos places en quelques clics
+                Rejoignez Tike WA et réservez vos places en quelques clics
             </p>
         </div>
 

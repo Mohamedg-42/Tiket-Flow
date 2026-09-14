@@ -1,21 +1,26 @@
 <?php
 // ==============================================================================
 // FICHIER DE CONNEXION POSTGRESQL (config/database.php)
-// Plateforme Tikéli — Connecté à PostgreSQL
+// Plateforme Tike WA — Connecté à PostgreSQL
+// Credentials chargés depuis .env via config/env.php (aucune donnée sensible ici)
 // ==============================================================================
 
-$host = '127.0.0.1';
-$port = '5433';
-$db = 'ticket_platform';
-$user = 'postgres';
-$pass = '123';
+// 1. Chargement des variables d'environnement (.env) — doit être le premier require
+require_once __DIR__ . '/env.php';
+
+// 2. Lecture des paramètres de connexion depuis l'environnement
+$host = getenv('DB_HOST') ?: '127.0.0.1';
+$port = getenv('DB_PORT') ?: '5433';
+$db   = getenv('DB_NAME') ?: 'ticket_platform';
+$user = getenv('DB_USER') ?: 'postgres';
+$pass = getenv('DB_PASS') ?: '';
 
 $dsn = "pgsql:host=$host;port=$port;dbname=$db;";
 
 $options = [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES => false,
+    PDO::ATTR_EMULATE_PREPARES   => false,
 ];
 
 try {
@@ -29,7 +34,7 @@ try {
             $pdo->exec("
                 UPDATE events 
                 SET statut = 'termine' 
-                WHERE statut = 'actif' 
+                WHERE statut = 'actif'
                   AND (
                       date_evenement < CURRENT_DATE 
                       OR (date_evenement = CURRENT_DATE AND heure <= CURRENT_TIME)
@@ -42,7 +47,14 @@ try {
     }
 
 } catch (\PDOException $e) {
-    die("❌ Erreur de connexion à PostgreSQL : " . $e->getMessage());
+    // En production, ne pas afficher le message d'erreur brut
+    $is_debug = (getenv('APP_DEBUG') === 'true' || getenv('APP_ENV') === 'development');
+    if ($is_debug) {
+        die("❌ Erreur de connexion à PostgreSQL : " . $e->getMessage());
+    } else {
+        error_log("Erreur PDO Tike WA: " . $e->getMessage());
+        die("❌ Impossible de se connecter à la base de données. Veuillez réessayer dans quelques instants.");
+    }
 }
 
 if (!function_exists('resolve_media_url')) {

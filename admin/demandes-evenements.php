@@ -32,8 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
 
                 // 1. Création de l'événement officiel dans 'events'
                 $salle_id = !empty($req['salle_id']) ? (int) $req['salle_id'] : null;
-                $sql_ev = "INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, salle_id, statut) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif')";
+                $visibilite = ($req['visibilite'] ?? 'public') === 'prive' ? 'prive' : 'public';
+                $access_token = ($visibilite === 'prive') ? bin2hex(random_bytes(16)) : null;
+
+                $sql_ev = "INSERT INTO events (user_id, nom, description, image, categorie, date_evenement, heure, lieu, prix_vote, type_vote, vote_question, commission_rate, salle_id, statut, visibilite, access_token) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'actif', ?, ?)";
                 $stmt_ev = $pdo->prepare($sql_ev);
                 $stmt_ev->execute([
                     $req['user_id'],
@@ -48,7 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                     $req['type_vote'] ?? 'concours',
                     $req['vote_question'] ?? null,
                     $commission_rate,
-                    $salle_id
+                    $salle_id,
+                    $visibilite,
+                    $access_token
                 ]);
 
                 $new_event_id = (int) $pdo->lastInsertId();

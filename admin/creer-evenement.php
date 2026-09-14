@@ -109,6 +109,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $statut_initial = in_array($_POST['statut'] ?? '', ['actif', 'en_attente', 'inactif'], true) ? $_POST['statut'] : 'actif';
         $commission_rate = (float)($_POST['commission_rate'] ?? 5.0);
 
+        // Visibilité : public (indexé partout) ou privé (accessible uniquement via lien direct + whitelist)
+        $visibilite = ($_POST['visibilite'] ?? 'public') === 'prive' ? 'prive' : 'public';
+        $access_token = $visibilite === 'prive' ? bin2hex(random_bytes(16)) : null;
+
         // Upload de l'affiche
         $image_name = 'default.jpg';
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
@@ -135,14 +139,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $stmt_ev = $pdo->prepare("
                     INSERT INTO events (
-                        user_id, nom, description, categorie, image, date_evenement, heure, lieu, 
-                        salle_id, statut, commission_rate, type_vote, prix_vote, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aucun', 0, NOW(), NOW())
+                        user_id, nom, description, categorie, image, date_evenement, heure, lieu,
+                        salle_id, statut, commission_rate, type_vote, prix_vote, visibilite, access_token, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aucun', 0, ?, ?, NOW(), NOW())
                     RETURNING id
                 ");
                 $stmt_ev->execute([
-                    $owner_user_id, $nom, $description, $categorie, $image_name, 
-                    $date_evenement, $heure, $lieu, $salle_id, $statut_initial, $commission_rate
+                    $owner_user_id, $nom, $description, $categorie, $image_name,
+                    $date_evenement, $heure, $lieu, $salle_id, $statut_initial, $commission_rate,
+                    $visibilite, $access_token
                 ]);
                 $new_event_id = $stmt_ev->fetchColumn();
 
@@ -171,6 +176,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->commit();
                 $created_id = $new_event_id;
                 $message = "L'événement « " . htmlspecialchars($nom) . " » a été créé et mis en ligne avec succès (" . $inserted_tickets . " catégorie(s) de billet(s) configurée(s)) !";
+                if ($visibilite === 'prive') {
+                    $private_link = '../client/evenement.php?id=' . $new_event_id . '&token=' . $access_token;
+                    $message .= " Événement PRIVÉ — lien d'accès unique à partager : " . $private_link
+                        . " — pensez à importer la liste d'invités autorisés dans « Liste d'invités ».";
+                }
                 $msg_type = "success";
                 $onglet = 'evenement';
             } catch (Exception $e) {
@@ -191,6 +201,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $date_limite = trim($_POST['date_limite'] ?? '');
         $statut_c = in_array($_POST['statut_campagne'] ?? '', ['active', 'en_attente'], true) ? $_POST['statut_campagne'] : 'active';
 
+        // Visibilité privée ou publique
+        $vis_c = ($_POST['visibilite_cotisation'] ?? 'public') === 'prive' ? 'prive' : 'public';
+        $token_c = $vis_c === 'prive' ? bin2hex(random_bytes(16)) : null;
+
         if (empty($titre) || !$montant_objectif || $montant_objectif < 1000) {
             $message = "Veuillez indiquer un titre et un montant objectif d'au moins 1 000 FCFA pour la campagne.";
             $msg_type = "error";
@@ -207,13 +221,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             try {
                 $stmt = $pdo->prepare("
-                    INSERT INTO cotisation_campagnes (user_id, titre, description, image, montant_objectif, date_limite, statut, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+                    INSERT INTO cotisation_campagnes (user_id, titre, description, image, montant_objectif, date_limite, statut, visibilite, access_token, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ");
                 $stmt->execute([
-                    $owner_user_id, $titre, $description ?: null, $image_c, $montant_objectif, $date_limite ?: null, $statut_c
+                    $owner_user_id, $titre, $description ?: null, $image_c, $montant_objectif, $date_limite ?: null, $statut_c, $vis_c, $token_c
                 ]);
                 $message = "La campagne de cotisation « " . htmlspecialchars($titre) . " » a été créée et mise en ligne avec succès !";
+                if ($vis_c === 'prive') {
+                    $new_camp_id = (int)$pdo->lastInsertId();
+                    // Pour PostgreSQL, récupérer l'id via currval
+                    try { $new_camp_id = (int)$pdo->query("SELECT currval(pg_get_serial_sequence('cotisation_campagnes','id'))")->fetchColumn(); } catch(Exception $e) {}
+                    $lien_prive = '../client/cotisation.php?id=' . $new_camp_id . '&token=' . $token_c;
+                    $message .= " Campagne PRIVÉE — lien d'accès unique : " . $lien_prive;
+                }
                 $msg_type = "success";
                 $onglet = 'cotisation';
             } catch (Exception $e) {
@@ -247,6 +268,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cands_nom = $_POST['cand_nom'] ?? [];
         $cands_desc = $_POST['cand_desc'] ?? [];
 
+        // Visibilité du concours
+        $vis_concours = ($_POST['visibilite_concours'] ?? 'public') === 'prive' ? 'prive' : 'public';
+        $token_concours = $vis_concours === 'prive' ? bin2hex(random_bytes(16)) : null;
+
         if (empty($nom)) {
             $message = "Veuillez renseigner le nom du concours.";
             $msg_type = "error";
@@ -258,11 +283,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt_v = $pdo->prepare("
                     INSERT INTO events (
                         user_id, nom, description, categorie, image, date_evenement, heure, lieu,
-                        type_vote, prix_vote, statut, created_at, updated_at
-                    ) VALUES (?, ?, ?, 'Concours', ?, ?, ?, ?, 'concours', ?, 'actif', NOW(), NOW())
+                        type_vote, prix_vote, statut, visibilite, access_token, created_at, updated_at
+                    ) VALUES (?, ?, ?, 'Concours', ?, ?, ?, ?, 'concours', ?, 'actif', ?, ?, NOW(), NOW())
                     RETURNING id
                 ");
-                $stmt_v->execute([$owner_user_id, $nom, $description, $image_concours, $date_evenement, $heure, $lieu, $prix_vote]);
+                $stmt_v->execute([$owner_user_id, $nom, $description, $image_concours, $date_evenement, $heure, $lieu, $prix_vote, $vis_concours, $token_concours]);
                 $event_vote_id = $stmt_v->fetchColumn();
 
                 // Enregistrement des candidats
@@ -295,6 +320,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $pdo->commit();
                 $message = "Le concours « " . htmlspecialchars($nom) . " » a été créé et activé avec " . $nb_cands . " candidat(s) enregistré(s) !";
+                if ($vis_concours === 'prive') {
+                    $lien_concours_prive = '../client/evenement.php?id=' . $event_vote_id . '&token=' . $token_concours;
+                    $message .= " Concours PRIVÉ — lien d'accès unique : " . $lien_concours_prive;
+                }
                 $msg_type = "success";
                 $onglet = 'vote';
             } catch (Exception $e) {
@@ -318,6 +347,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $lieu = trim($_POST['lieu'] ?? 'Abidjan');
         $prix_vote = max(0, (float)($_POST['prix_vote'] ?? 0));
 
+        // Visibilité du vote de réalisation
+        $vis_real = ($_POST['visibilite_realisation'] ?? 'public') === 'prive' ? 'prive' : 'public';
+        $token_real = $vis_real === 'prive' ? bin2hex(random_bytes(16)) : null;
+
         $image_realisation = 'default.jpg';
         if (isset($_FILES['image_realisation']) && $_FILES['image_realisation']['error'] === UPLOAD_ERR_OK) {
             $ext = strtolower(pathinfo($_FILES['image_realisation']['name'], PATHINFO_EXTENSION));
@@ -336,14 +369,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("
                     INSERT INTO events (
                         user_id, nom, description, categorie, image, date_evenement, heure, lieu,
-                        type_vote, vote_question, prix_vote, statut, created_at, updated_at
-                    ) VALUES (?, ?, ?, 'Vote', ?, ?, ?, ?, 'realisation_evenement', ?, ?, 'actif', NOW(), NOW())
+                        type_vote, vote_question, prix_vote, statut, visibilite, access_token, created_at, updated_at
+                    ) VALUES (?, ?, ?, 'Vote', ?, ?, ?, ?, 'realisation_evenement', ?, ?, 'actif', ?, ?, NOW(), NOW())
+                    RETURNING id
                 ");
                 $stmt->execute([
                     $owner_user_id, $nom, $description ?: null, $image_realisation,
-                    $date_evenement, $heure, $lieu, $vote_question, $prix_vote
+                    $date_evenement, $heure, $lieu, $vote_question, $prix_vote, $vis_real, $token_real
                 ]);
-                $message = "Le vote de réalisation « " . htmlspecialchars($nom) . " » a été créé et ouvert au public avec succès !";
+                $new_real_id = (int)$stmt->fetchColumn();
+                $message = "Le vote de réalisation « " . htmlspecialchars($nom) . " » a été créé et ouvert avec succès !";
+                if ($vis_real === 'prive') {
+                    $lien_real_prive = '../client/evenement.php?id=' . $new_real_id . '&token=' . $token_real;
+                    $message .= " Vote PRIVÉ — lien d'accès unique : " . $lien_real_prive;
+                }
                 $msg_type = "success";
                 $onglet = 'vote';
             } catch (Exception $e) {
@@ -878,7 +917,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fa-solid fa-user-shield" style="color: #FF4A0D;"></i> Porteur / Organisateur officiel de l'événement *
                     </label>
                     <select name="organisateur_user_id" id="organisateur_user_id" style="font-weight: 700;">
-                        <option value="<?php echo (int)$_SESSION['user_id']; ?>" selected>👑 Administration Plateforme (Officiel Tikéli)</option>
+                        <option value="<?php echo (int)$_SESSION['user_id']; ?>" selected>👑 Administration Plateforme (Officiel Tike WA)</option>
                         <?php foreach ($db_promoters as $dp): ?>
                             <option value="<?php echo (int)$dp['user_id']; ?>">
                                 🏢 Promoteur : <?php echo htmlspecialchars($dp['nom_commercial'] ?: ($dp['prenom'] . ' ' . $dp['nom'])); ?> (<?php echo htmlspecialchars($dp['email']); ?>)
@@ -1243,7 +1282,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </select>
                     </div>
 
-                    <div style="text-align: right; padding-top: 1.4rem;">
+                    <div class="dash-form-group" style="margin: 0;">
+                        <label for="visibilite_evenement" style="font-weight: 700;"><i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité *</label>
+                        <select name="visibilite" id="visibilite_evenement" style="font-weight: 700;">
+                            <option value="public" selected>🌐 Public (recherche, accueil, recommandations)</option>
+                            <option value="prive">🔒 Privé (lien direct + liste d'invités uniquement)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row-2col" style="align-items: center;">
+                    <div style="font-size: 0.8rem; color: #64748B; line-height: 1.5;">
+                        <i class="fa-solid fa-circle-info"></i> Un événement <strong>privé</strong> n'apparaît dans aucun résultat
+                        de recherche ni flux public. Un lien d'accès unique sera généré après enregistrement — gérez ensuite la
+                        liste des invités autorisés depuis « Liste d'invités » dans le menu.
+                    </div>
+                    <div style="text-align: right; padding-top: 0.4rem;">
                         <button type="submit" class="dash-btn-action btn-primary" style="padding: 0.85rem 1.75rem; font-size: 0.95rem; width: 100%; justify-content: center;">
                             <i class="fa-solid fa-calendar-check"></i> Enregistrer et Mettre en Ligne l'Événement
                         </button>
@@ -1279,7 +1333,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fa-solid fa-user-shield" style="color: #FF4A0D;"></i> Porteur ou Bénéficiaire de la Campagne *
                     </label>
                     <select name="organisateur_user_id" id="cotis_user_id" style="font-weight: 700;">
-                        <option value="<?php echo (int)$_SESSION['user_id']; ?>" selected>👑 Administration Plateforme (Campagne Officielle Tikéli)</option>
+                        <option value="<?php echo (int)$_SESSION['user_id']; ?>" selected>👑 Administration Plateforme (Campagne Officielle Tike WA)</option>
                         <?php foreach ($db_promoters as $dp): ?>
                             <option value="<?php echo (int)$dp['user_id']; ?>">
                                 🏢 Promoteur / Asso : <?php echo htmlspecialchars($dp['nom_commercial'] ?: ($dp['prenom'] . ' ' . $dp['nom'])); ?> (<?php echo htmlspecialchars($dp['email']); ?>)
@@ -1326,6 +1380,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <textarea id="description_cotisation" name="description" rows="4" required placeholder="Expliquez la destination des fonds collectés, l'impact pour la communauté et les paliers d'avancement..."></textarea>
                 </div>
 
+                <!-- Visibilité Cotisation -->
+                <div class="dash-form-group" style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-top: 0.25rem;">
+                    <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 800;">
+                        <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité de la Campagne *
+                    </label>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
+                            <input type="radio" name="visibilite_cotisation" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Publique (listée sur la plateforme)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
+                            <input type="radio" name="visibilite_cotisation" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privée (lien direct uniquement)
+                        </label>
+                    </div>
+                    <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                        Une campagne <strong>privée</strong> n'apparaît dans aucune liste publique. Un lien d'accès sécurisé est généré automatiquement après création.
+                    </small>
+                </div>
+
                 <div style="border-top: 1px solid #F5F5F5; padding-top: 1.25rem; text-align: right;">
                     <button type="submit" class="dash-btn-action btn-primary" style="padding: 0.85rem 1.75rem; font-size: 0.95rem;">
                         <i class="fa-solid fa-paper-plane"></i> Publier et Lancer la Campagne de Cotisation
@@ -1369,7 +1441,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <i class="fa-solid fa-user-shield" style="color: #FF4A0D;"></i> Organisateur du Concours *
                         </label>
                         <select name="organisateur_user_id" id="vote_user_id" style="font-weight: 700;">
-                            <option value="<?php echo (int)$_SESSION['user_id']; ?>" selected>👑 Administration Plateforme (Concours Officiel Tikéli)</option>
+                            <option value="<?php echo (int)$_SESSION['user_id']; ?>" selected>👑 Administration Plateforme (Concours Officiel Tike WA)</option>
                             <?php foreach ($db_promoters as $dp): ?>
                                 <option value="<?php echo (int)$dp['user_id']; ?>">
                                     🏢 Promoteur : <?php echo htmlspecialchars($dp['nom_commercial'] ?: ($dp['prenom'] . ' ' . $dp['nom'])); ?>
@@ -1457,6 +1529,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
+                    <!-- Visibilité Concours -->
+                    <div class="dash-form-group" style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-top: 0.25rem;">
+                        <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 800;">
+                            <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du Concours *
+                        </label>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
+                                <input type="radio" name="visibilite_concours" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public (affiché sur la plateforme)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
+                                <input type="radio" name="visibilite_concours" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct + whitelist uniquement)
+                            </label>
+                        </div>
+                        <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                            Un concours <strong>privé</strong> n'est pas référencé publiquement. Un lien unique sécurisé sera généré à la création.
+                        </small>
+                    </div>
+
                     <div style="border-top: 1px solid #F5F5F5; padding-top: 1.25rem; text-align: right;">
                         <button type="submit" class="dash-btn-action btn-primary" style="padding: 0.85rem 1.75rem; font-size: 0.95rem;">
                             <i class="fa-solid fa-trophy"></i> Publier et Lancer le Concours avec ses Candidats
@@ -1529,6 +1619,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="dash-form-group">
                         <label for="realisation_desc"><i class="fa-solid fa-align-left" style="color: #737373;"></i> Présentation du Projet & Enjeux</label>
                         <textarea id="realisation_desc" name="description" rows="3" placeholder="Présentez les conditions de concrétisation du spectacle pour inciter le public à se mobiliser..."></textarea>
+                    </div>
+
+                    <!-- Visibilité Vote Réalisation -->
+                    <div class="dash-form-group" style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-top: 0.25rem;">
+                        <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 800;">
+                            <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du Vote *
+                        </label>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
+                                <input type="radio" name="visibilite_realisation" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public (ouvert à tous)
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
+                                <input type="radio" name="visibilite_realisation" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct uniquement)
+                            </label>
+                        </div>
+                        <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                            Un vote <strong>privé</strong> n'est pas listé publiquement. Partagez le lien unique généré avec les participants concernés.
+                        </small>
                     </div>
 
                     <div style="border-top: 1px solid #F5F5F5; padding-top: 1.25rem; text-align: right;">

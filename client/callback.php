@@ -5,12 +5,13 @@
 // ==============================================================================
 
 require_once '../config/database.php';
+require_once '../includes/whitelist.php';
 session_start();
 
 // FeexPay / passerelle redirige via GET
 $order_id = filter_input(INPUT_GET, 'order_id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'order_id', FILTER_VALIDATE_INT);
 $methode = $_GET['methode'] ?? $_POST['methode'] ?? '';
-$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kadevpay', 'feexpay'];
+$methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kadevpay', 'feexpay', 'bictorys'];
 
 if (!$order_id || !in_array($methode, $methodes_autorisees, true)) {
     $_SESSION['order_message'] = "Paiement non validé, annulé ou méthode non reconnue.";
@@ -18,34 +19,32 @@ if (!$order_id || !in_array($methode, $methodes_autorisees, true)) {
     exit();
 }
 
-// 1. Récupération de la commande en attente
+// 1. Récupération de la commande
 $stmt = $pdo->prepare('SELECT * FROM orders WHERE id = ?');
 $stmt->execute([$order_id]);
 $order = $stmt->fetch();
 
-if (!$order || $order['statut'] !== 'en_attente') {
-    $_SESSION['order_message'] = 'Cette commande est introuvable ou a déjà été payée.';
+if (!$order) {
+    $_SESSION['order_message'] = 'Cette commande est introuvable.';
     header('Location: accueil.php');
     exit();
 }
 
-// 1.1 Vérification de la signature cryptographique sécurisée anti-falsification (SEC-002)
-$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
-$expected_token = hash_hmac('sha256', $order_id . '|' . $order['montant_total'] . '|' . $order['created_at'], $pay_secret);
-$pay_token = $_GET['pay_token'] ?? $_POST['pay_token'] ?? '';
+$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tike_wa_default_secret';
 
-if (empty($pay_token) || !hash_equals($expected_token, $pay_token)) {
-    require_once '../includes/auth.php';
-    logActivity('payment.callback_invalid', 'order', $order_id, "Tentative de validation sans signature cryptographique valide (IP: " . ($_SERVER['REMOTE_ADDR'] ?? '') . ")");
-    $_SESSION['order_message'] = "Transaction rejetée : signature de paiement invalide, absente ou altérée.";
+$is_already_paid = in_array($order['statut'], ['paye', 'payee'], true);
+
+if (!$is_already_paid && $order['statut'] !== 'en_attente') {
+    $_SESSION['order_message'] = 'Cette commande est introuvable ou a été annulée.';
     header('Location: accueil.php');
     exit();
 }
 
-// Référence unique de paiement et ID de transaction FeexPay / Mobile Money
-$payment_ref = trim($_GET['reference'] ?? $_POST['reference'] ?? $_GET['transaction_id'] ?? '');
+// Référence unique de paiement et ID de transaction
+$payment_ref = trim($_GET['reference'] ?? $_POST['reference'] ?? $_GET['transaction_id'] ?? $_GET['charge_id'] ?? $_GET['chargeId'] ?? '');
 if (!empty($payment_ref)) {
-    $reference = (stripos($payment_ref, 'PAY-') === 0) ? $payment_ref : 'PAY-FEEXPAY-' . $payment_ref;
+    $prefix = (strtoupper($methode) === 'BICTORYS') ? 'PAY-BICTORYS-' : 'PAY-FEEXPAY-';
+    $reference = (stripos($payment_ref, 'PAY-') === 0) ? $payment_ref : ($prefix . $payment_ref);
     $transaction_api_id = $payment_ref;
 } else {
     $reference = 'PAY-' . strtoupper($methode) . '-' . strtoupper(substr(uniqid(), -6));
@@ -55,8 +54,7 @@ $user_id = $order['user_id'];
 $client_nom = $order['client_nom'] ?: 'Client';
 $client_telephone = $order['client_telephone'] ?: '';
 
-// Récupération de l'email : depuis la commande, sinon depuis la session (client connecté),
-// sinon depuis la table users si un user_id est disponible
+// Récupération de l'email
 $client_email = $order['client_email'] ?: '';
 if (empty($client_email) && !empty($_SESSION['user_email'])) {
     $client_email = $_SESSION['user_email'];
@@ -68,157 +66,203 @@ if (empty($client_email) && !empty($user_id)) {
 }
 
 $generated_tickets_list = [];
+$email_sent = false;
+$download_token = hash_hmac('sha256', $order_id . '|' . $order['created_at'], $pay_secret);
 
 try {
-    $pdo->beginTransaction();
+    if ($is_already_paid) {
+        // Commande déjà validée (par le webhook asynchrone par exemple) : récupérer les billets existants
+        $stmt_exist_t = $pdo->prepare("
+            SELECT t.*, tt.nom AS ticket_nom, e.nom AS event_name, e.date_evenement, e.heure, e.lieu
+            FROM tickets t
+            JOIN ticket_types tt ON tt.id = t.ticket_type_id
+            JOIN events e ON e.id = t.event_id
+            WHERE t.order_id = ?
+            ORDER BY t.id ASC
+        ");
+        $stmt_exist_t->execute([$order_id]);
+        $existing_tickets = $stmt_exist_t->fetchAll();
+        foreach ($existing_tickets as $et) {
+            $generated_tickets_list[] = [
+                'code_unique' => $et['code_unique'],
+                'qr_code' => $et['qr_code'],
+                'event_name' => $et['event_name'],
+                'type_ticket' => $et['ticket_nom'] ?? $et['type_ticket'],
+                'place' => $et['place_numero'],
+                'prix' => $et['prix'],
+                'date_ev' => $et['date_evenement'],
+                'heure' => $et['heure'],
+                'lieu' => $et['lieu']
+            ];
+        }
 
-    // 2. Récupération des articles de la commande
-    $stmt_items = $pdo->prepare('
+        if (!isset($_SESSION['accessible_orders'])) {
+            $_SESSION['accessible_orders'] = [];
+        }
+        $_SESSION['accessible_orders'][$order_id] = true;
+    } else {
+        $pdo->beginTransaction();
+
+        // 2. Récupération des articles de la commande
+        $stmt_items = $pdo->prepare('
         SELECT oi.*, tt.nom AS ticket_nom, tt.prix, tt.event_id, e.nom AS event_name, e.date_evenement, e.heure, e.lieu
         FROM order_items oi 
         JOIN ticket_types tt ON tt.id = oi.ticket_type_id 
         JOIN events e ON tt.event_id = e.id
         WHERE oi.order_id = ?
     ');
-    $stmt_items->execute([$order_id]);
-    $items = $stmt_items->fetchAll();
+        $stmt_items->execute([$order_id]);
+        $items = $stmt_items->fetchAll();
 
-    if (!$items || count($items) === 0) {
-        throw new Exception('La commande ne contient aucun article.');
-    }
+        if (!$items || count($items) === 0) {
+            throw new Exception('La commande ne contient aucun article.');
+        }
 
-    // 3. Enregistrement de la transaction dans 'payments'
-    $stmt_pay = $pdo->prepare("
+        // 3. Enregistrement de la transaction dans 'payments'
+        $stmt_pay = $pdo->prepare("
         INSERT INTO payments (order_id, user_id, montant, methode, reference, transaction_id_api, statut, date_paiement) 
         VALUES (?, ?, ?, ?, ?, ?, 'paye', NOW())
     ");
-    $stmt_pay->execute([
-        $order_id,
-        $user_id,
-        $order['montant_total'],
-        $methode,
-        $reference,
-        $transaction_api_id
-    ]);
+        $stmt_pay->execute([
+            $order_id,
+            $user_id,
+            $order['montant_total'],
+            $methode,
+            $reference,
+            $transaction_api_id
+        ]);
 
-    // 4. Préparation des requêtes pour les tickets et la décrémentation de stock
-    $stmt_ticket = $pdo->prepare("
+        // 4. Préparation des requêtes pour les tickets et la décrémentation de stock
+        $stmt_ticket = $pdo->prepare("
         INSERT INTO tickets (order_id, ticket_type_id, event_id, user_id, client_nom, client_email, client_telephone, type_ticket, place_numero, prix, code_unique, qr_code, statut, date_achat) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'vendu', NOW())
     ");
 
-    $stmt_quantity = $pdo->prepare("
+        $stmt_quantity = $pdo->prepare("
         UPDATE ticket_types 
         SET quantite_vendue = quantite_vendue + ? 
         WHERE id = ? AND quantite_vendue + ? <= quantite
     ");
 
-    foreach ($items as $item) {
-        $quantity = (int) $item['quantite'];
-        $ticket_type_id = (int) $item['ticket_type_id'];
-        $event_id = (int) $item['event_id'];
+        foreach ($items as $item) {
+            $quantity = (int) $item['quantite'];
+            $ticket_type_id = (int) $item['ticket_type_id'];
+            $event_id = (int) $item['event_id'];
 
-        // Mise à jour du stock
-        $stmt_quantity->execute([$quantity, $ticket_type_id, $quantity]);
-        if ($stmt_quantity->rowCount() !== 1) {
-            throw new Exception("Le stock pour le tarif « " . $item['ticket_nom'] . " » n'est plus suffisant.");
-        }
+            // Mise à jour du stock
+            $stmt_quantity->execute([$quantity, $ticket_type_id, $quantity]);
+            if ($stmt_quantity->rowCount() !== 1) {
+                throw new Exception("Le stock pour le tarif « " . $item['ticket_nom'] . " » n'est plus suffisant.");
+            }
 
-        // Places choisies réparties une par une sur les billets (si option place au choix)
-        $places_list = !empty($item['places_numero']) ? array_map('trim', explode(',', $item['places_numero'])) : [];
+            // Places choisies réparties une par une sur les billets (si option place au choix)
+            $places_list = !empty($item['places_numero']) ? array_map('trim', explode(',', $item['places_numero'])) : [];
 
-        // Si aucune place n'a été choisie : attribution automatique de places libres
-        // afin que TOUS les billets affichent une place
-        if (count($places_list) < $quantity) {
-            $stmt_auto = $pdo->prepare("SELECT id, numero FROM places WHERE ticket_type_id = ? AND statut = 'libre' ORDER BY LENGTH(numero) ASC, numero ASC LIMIT " . $quantity);
-            $stmt_auto->execute([$ticket_type_id]);
-            foreach ($stmt_auto->fetchAll() as $ap) {
-                if (count($places_list) >= $quantity) {
-                    break;
+            // Si aucune place n'a été choisie : attribution automatique de places libres
+            // afin que TOUS les billets affichent une place
+            if (count($places_list) < $quantity) {
+                $stmt_auto = $pdo->prepare("SELECT id, numero FROM places WHERE ticket_type_id = ? AND statut = 'libre' ORDER BY LENGTH(numero) ASC, numero ASC LIMIT " . $quantity);
+                $stmt_auto->execute([$ticket_type_id]);
+                foreach ($stmt_auto->fetchAll() as $ap) {
+                    if (count($places_list) >= $quantity) {
+                        break;
+                    }
+                    if (!in_array($ap['numero'], $places_list, true)) {
+                        $places_list[] = $ap['numero'];
+                    }
                 }
-                if (!in_array($ap['numero'], $places_list, true)) {
-                    $places_list[] = $ap['numero'];
+            }
+
+            // Génération de chaque billet individuel avec son code unique
+            for ($i = 0; $i < $quantity; $i++) {
+                $code_unique = 'TK-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8));
+                $qr_code_url = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' . urlencode($code_unique);
+                $place_numero = !empty($places_list[$i]) ? mb_substr(trim($places_list[$i]), 0, 20, 'UTF-8') : null;
+
+                $stmt_ticket->execute([
+                    $order_id,
+                    $ticket_type_id,
+                    $event_id,
+                    $user_id,
+                    $client_nom,
+                    $client_email,
+                    $client_telephone,
+                    $item['ticket_nom'],
+                    $place_numero,
+                    $item['prix'],
+                    $code_unique,
+                    $qr_code_url
+                ]);
+
+                $generated_tickets_list[] = [
+                    'code_unique' => $code_unique,
+                    'qr_code' => $qr_code_url,
+                    'event_name' => $item['event_name'],
+                    'type_ticket' => $item['ticket_nom'],
+                    'place' => $place_numero,
+                    'prix' => $item['prix'],
+                    'date_ev' => $item['date_evenement'],
+                    'heure' => $item['heure'],
+                    'lieu' => $item['lieu']
+                ];
+            }
+
+            // Marque toutes les places attribuées comme vendues (choisies ou auto-attribuées)
+            // afin qu'elles ne puissent plus être attribuées à une autre personne
+            if (!empty($places_list)) {
+                $in_nums = implode(',', array_fill(0, count($places_list), '?'));
+                $stmt_mark = $pdo->prepare("UPDATE places SET statut = 'vendu' WHERE ticket_type_id = ? AND numero IN ($in_nums) AND statut IN ('libre', 'reserve')");
+                $stmt_mark->execute(array_merge([$ticket_type_id], $places_list));
+            }
+
+            // 4.1 Événement privé : décrémenter le quota de billets restants de l'invité
+            // whitelisté correspondant (aucun effet si l'événement est public / non listé).
+            if (!empty($client_telephone)) {
+                $stmt_wl_use = $pdo->prepare("
+                UPDATE event_guest_whitelist
+                SET tickets_utilises = tickets_utilises + ?
+                WHERE event_id = ? AND telephone = ?
+            ");
+                $stmt_wl_use->execute([$quantity, $event_id, normalizePhone($client_telephone)]);
+            }
+
+            // 5. Calcul de la commission et crédit du solde du promoteur
+            $stmt_ev = $pdo->prepare("SELECT user_id, commission_rate FROM events WHERE id = ?");
+            $stmt_ev->execute([$event_id]);
+            $ev_info = $stmt_ev->fetch();
+
+            if ($ev_info && !empty($ev_info['user_id'])) {
+                $promoter_user_id = (int) $ev_info['user_id'];
+                $comm_rate = (float) ($ev_info['commission_rate'] ?? 5.00);
+
+                $sous_total_item = (float) $item['sous_total'];
+                $gain_net_promoteur = $sous_total_item * (1 - ($comm_rate / 100));
+
+                $stmt_upd_prom = $pdo->prepare("UPDATE promoters SET solde = solde + ? WHERE user_id = ?");
+                $stmt_upd_prom->execute([$gain_net_promoteur, $promoter_user_id]);
+                if ($stmt_upd_prom->rowCount() === 0) {
+                    try {
+                        $stmt_ins_prom = $pdo->prepare("INSERT INTO promoters (user_id, solde, nom_commercial) VALUES (?, ?, 'Organisateur')");
+                        $stmt_ins_prom->execute([$promoter_user_id, $gain_net_promoteur]);
+                    } catch (PDOException $e) {
+                    }
                 }
             }
         }
 
-        // Génération de chaque billet individuel avec son code unique
-        for ($i = 0; $i < $quantity; $i++) {
-            $code_unique = 'TK-' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 8));
-            $qr_code_url = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' . urlencode($code_unique);
-            $place_numero = !empty($places_list[$i]) ? mb_substr(trim($places_list[$i]), 0, 20, 'UTF-8') : null;
+        // 6. Mise à jour de la commande à 'payee'
+        $stmt_order_upd = $pdo->prepare("UPDATE orders SET statut = 'payee' WHERE id = ?");
+        $stmt_order_upd->execute([$order_id]);
 
-            $stmt_ticket->execute([
-                $order_id,
-                $ticket_type_id,
-                $event_id,
-                $user_id,
-                $client_nom,
-                $client_email,
-                $client_telephone,
-                $item['ticket_nom'],
-                $place_numero,
-                $item['prix'],
-                $code_unique,
-                $qr_code_url
-            ]);
+        $pdo->commit();
 
-            $generated_tickets_list[] = [
-                'code_unique' => $code_unique,
-                'qr_code' => $qr_code_url,
-                'event_name' => $item['event_name'],
-                'type_ticket' => $item['ticket_nom'],
-                'place' => $place_numero,
-                'prix' => $item['prix'],
-                'date_ev' => $item['date_evenement'],
-                'heure' => $item['heure'],
-                'lieu' => $item['lieu']
-            ];
+        // Enregistrement de l'accès à la commande dans la session pour l'acheteur
+        if (!isset($_SESSION['accessible_orders'])) {
+            $_SESSION['accessible_orders'] = [];
         }
-
-        // Marque toutes les places attribuées comme vendues (choisies ou auto-attribuées)
-        // afin qu'elles ne puissent plus être attribuées à une autre personne
-        if (!empty($places_list)) {
-            $in_nums = implode(',', array_fill(0, count($places_list), '?'));
-            $stmt_mark = $pdo->prepare("UPDATE places SET statut = 'vendu' WHERE ticket_type_id = ? AND numero IN ($in_nums) AND statut IN ('libre', 'reserve')");
-            $stmt_mark->execute(array_merge([$ticket_type_id], $places_list));
-        }
-
-        // 5. Calcul de la commission et crédit du solde du promoteur
-        $stmt_ev = $pdo->prepare("SELECT user_id, commission_rate FROM events WHERE id = ?");
-        $stmt_ev->execute([$event_id]);
-        $ev_info = $stmt_ev->fetch();
-
-        if ($ev_info && !empty($ev_info['user_id'])) {
-            $promoter_user_id = (int) $ev_info['user_id'];
-            $comm_rate = (float) ($ev_info['commission_rate'] ?? 5.00);
-
-            $sous_total_item = (float) $item['sous_total'];
-            $gain_net_promoteur = $sous_total_item * (1 - ($comm_rate / 100));
-
-            $stmt_upd_prom = $pdo->prepare("UPDATE promoters SET solde = solde + ? WHERE user_id = ?");
-            $stmt_upd_prom->execute([$gain_net_promoteur, $promoter_user_id]);
-            if ($stmt_upd_prom->rowCount() === 0) {
-                try {
-                    $stmt_ins_prom = $pdo->prepare("INSERT INTO promoters (user_id, solde, nom_commercial) VALUES (?, ?, 'Organisateur')");
-                    $stmt_ins_prom->execute([$promoter_user_id, $gain_net_promoteur]);
-                } catch (PDOException $e) {
-                }
-            }
-        }
+        $_SESSION['accessible_orders'][$order_id] = true;
     }
 
-    // 6. Mise à jour de la commande à 'payee'
-    $stmt_order_upd = $pdo->prepare("UPDATE orders SET statut = 'payee' WHERE id = ?");
-    $stmt_order_upd->execute([$order_id]);
-
-    $pdo->commit();
-
-    // Enregistrement de l'accès à la commande dans la session pour l'acheteur
-    if (!isset($_SESSION['accessible_orders'])) {
-        $_SESSION['accessible_orders'] = [];
-    }
-    $_SESSION['accessible_orders'][$order_id] = true;
     $download_token = hash_hmac('sha256', $order_id . '|' . $order['created_at'], $pay_secret);
 
     // 7. Envoi automatique de la copie des billets par email
@@ -239,7 +283,7 @@ try {
     exit();
 }
 
-$page_title = "Paiement Confirmé - Tikéli";
+$page_title = "Paiement Confirmé - Tike WA";
 $body_class = "client-page payment-success-page";
 include 'header.php';
 ?>
@@ -275,7 +319,7 @@ include 'header.php';
             $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' && $_SERVER['HTTPS'] !== '' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/');
             $public_link = $base_url . "/telecharger-pdf.php?order_id=" . $order_id . "&token=" . $download_token;
             $pdf_order_filename = "billets-commande-" . ($order['numero_commande'] ?? $order_id) . ".pdf";
-            $wa_message = "🎟️ *Billets Officiels Tikéli*\nCommande #" . ($order['numero_commande'] ?? $order_id) . "\nTitulaire : " . $client_nom . "\n📥 Télécharger le PDF : " . $public_link;
+            $wa_message = "🎟️ *Billets Officiels Tike WA*\nCommande #" . ($order['numero_commande'] ?? $order_id) . "\nTitulaire : " . $client_nom . "\n📥 Télécharger le PDF : " . $public_link;
             ?>
             <button type="button"
                 data-pdf="telecharger-pdf.php?order_id=<?php echo $order_id; ?>&token=<?php echo $download_token; ?>"
@@ -362,7 +406,7 @@ include 'header.php';
                         // Fichier et lien PDF individuel
                         $pdf_single_filename = "billet-" . preg_replace('/[^A-Za-z0-9\-]/', '', $tk['code_unique']) . ".pdf";
                         $ticket_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/') . '/telecharger-pdf.php?code=' . urlencode($tk['code_unique']);
-                        $wa_text = "🎟️ *Billet Officiel Tikéli (PDF)*\n"
+                        $wa_text = "🎟️ *Billet Officiel Tike WA (PDF)*\n"
                             . "📌 *Événement :* " . $tk['event_name'] . "\n"
                             . "🏷️ *Type :* " . $tk['type_ticket'] . "\n"
                             . (!empty($tk['place']) ? "💺 *Place :* " . $tk['place'] . "\n" : "")

@@ -1,4 +1,299 @@
-/* Grille modulaire désactivée */
-.guides, #gridToggleBtn, .grid-toggle-float {
-    display: none !important;
+/* ==============================================================================
+   GRILLE MODULAIRE MÜLLER-BROCKMANN — Tikéli Platform (Css/muller-grid.css)
+   International Typographic Style — 12 colonnes, baseline 8px, subgrid
+   Overlay interactif activable via touche G ou bouton #gridToggleBtn
+   ============================================================================== */
+
+/* ─── 1. SOURCE UNIQUE DE VÉRITÉ : variables CSS ─────────────────────────────── */
+:root {
+    /* Grille */
+    --cols:    12;
+    --gutter:  24px;        /* gouttière entre colonnes */
+    --margin:  clamp(16px, 4vw, 64px);  /* marges latérales */
+    --bl:      8px;         /* baseline lock (unité de rythme vertical) */
+    --lh:      24px;        /* hauteur de ligne = 3 × 8px */
+
+    /* Overlay couleur */
+    --grid-col-color:    rgba(228, 0, 43, 0.08);   /* rouge suisse, ultra-transparent */
+    --grid-line-color:   rgba(228, 0, 43, 0.18);   /* trait de gouttière */
+    --grid-base-color:   rgba(13, 148, 136, 0.06); /* émeraude, lignes de base */
+    --grid-z:            9000;                      /* z-index de l'overlay */
+}
+
+/* ─── 2. CONTENEUR PRINCIPAL (wrap) ──────────────────────────────────────────── */
+.wrap,
+.swiss-wrap {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    gap: 0 var(--gutter);
+    padding-inline: var(--margin);
+    position: relative; /* indispensable pour l'overlay positionné en absolu */
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1440px;
+    margin-inline: auto;
+}
+
+/* ─── 3. BANDES SUBGRID (.band) ──────────────────────────────────────────────── */
+.band,
+.swiss-band {
+    grid-column: 1 / -1;
+    display: grid;
+    /* subgrid natif avec fallback pour navigateurs < 2023 */
+    grid-template-columns: subgrid;
+    /* Fallback : */
+    /* grid-template-columns: repeat(var(--cols), 1fr); */
+    gap: 0 var(--gutter);
+}
+
+/* ─── 4. UTILITAIRES DE PLACEMENT DE COLONNES ────────────────────────────────── */
+/* Raccourcis : col-start / col-end sur 12 colonnes */
+.col-1  { grid-column: 1; }
+.col-2  { grid-column: 2; }
+.col-3  { grid-column: 3; }
+.col-4  { grid-column: 4; }
+.col-5  { grid-column: 5; }
+.col-6  { grid-column: 6; }
+.col-7  { grid-column: 7; }
+.col-8  { grid-column: 8; }
+.col-9  { grid-column: 9; }
+.col-10 { grid-column: 10; }
+.col-11 { grid-column: 11; }
+.col-12 { grid-column: 12; }
+.col-full { grid-column: 1 / -1; }
+
+/* Spans (largeur sur N colonnes) */
+.span-1  { grid-column: span 1; }
+.span-2  { grid-column: span 2; }
+.span-3  { grid-column: span 3; }
+.span-4  { grid-column: span 4; }
+.span-5  { grid-column: span 5; }
+.span-6  { grid-column: span 6; }
+.span-7  { grid-column: span 7; }
+.span-8  { grid-column: span 8; }
+.span-9  { grid-column: span 9; }
+.span-10 { grid-column: span 10; }
+.span-11 { grid-column: span 11; }
+.span-12 { grid-column: span 12; }
+
+/* ─── 5. RYTHME VERTICAL — BASELINE 8px ──────────────────────────────────────── */
+/* Tous les spacings sont des multiples entiers de 8px */
+.mb-1  { margin-bottom: calc(1 * var(--bl)); }   /* 8px  */
+.mb-2  { margin-bottom: calc(2 * var(--bl)); }   /* 16px */
+.mb-3  { margin-bottom: calc(3 * var(--bl)); }   /* 24px */
+.mb-4  { margin-bottom: calc(4 * var(--bl)); }   /* 32px */
+.mb-6  { margin-bottom: calc(6 * var(--bl)); }   /* 48px */
+.mb-8  { margin-bottom: calc(8 * var(--bl)); }   /* 64px */
+
+.mt-1  { margin-top: calc(1 * var(--bl)); }
+.mt-2  { margin-top: calc(2 * var(--bl)); }
+.mt-3  { margin-top: calc(3 * var(--bl)); }
+.mt-4  { margin-top: calc(4 * var(--bl)); }
+.mt-6  { margin-top: calc(6 * var(--bl)); }
+.mt-8  { margin-top: calc(8 * var(--bl)); }
+
+.pt-3  { padding-top:    calc(3 * var(--bl)); }
+.pb-3  { padding-bottom: calc(3 * var(--bl)); }
+.pt-6  { padding-top:    calc(6 * var(--bl)); }
+.pb-6  { padding-bottom: calc(6 * var(--bl)); }
+
+/* ─── 6. TYPOGRAPHIE SUISSE (Swiss Grotesque) ────────────────────────────────── */
+/* Titres : flush-left, ragged-right, Inter */
+.swiss-h1 {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, sans-serif;
+    font-weight: 900;
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    line-height: calc(7 * var(--bl));   /* 56px */
+    letter-spacing: -0.03em;
+    text-align: left;
+    color: #0f172a;
+    margin: 0 0 calc(3 * var(--bl)) 0;
+}
+
+.swiss-h2 {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    line-height: calc(5 * var(--bl));   /* 40px */
+    letter-spacing: -0.02em;
+    text-align: left;
+    color: #0f172a;
+    margin: 0 0 calc(2 * var(--bl)) 0;
+}
+
+.swiss-h3 {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+    line-height: calc(4 * var(--bl));   /* 32px */
+    letter-spacing: -0.015em;
+    text-align: left;
+    color: #0f172a;
+    margin: 0 0 calc(2 * var(--bl)) 0;
+}
+
+/* Corps de texte */
+.swiss-body {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, sans-serif;
+    font-weight: 400;
+    font-size: 1rem;         /* 16px */
+    line-height: var(--lh);  /* 24px = 3 × 8px */
+    text-align: left;
+    color: #334155;
+}
+
+/* Métadonnées / kickers / badges : Space Mono */
+.swiss-mono,
+.swiss-kicker,
+.swiss-badge,
+.swiss-date,
+.swiss-folio {
+    font-family: 'Space Mono', 'Courier New', monospace;
+    font-size: 0.75rem;     /* 12px */
+    line-height: var(--lh); /* 24px */
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+/* Grands chiffres (prix, stats) */
+.swiss-figure {
+    font-family: 'Inter', 'Helvetica Neue', Helvetica, sans-serif;
+    font-weight: 900;
+    font-size: clamp(2rem, 5vw, 4rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: #0f172a;
+}
+
+/* ─── 7. PALETTE SUISSE ──────────────────────────────────────────────────────── */
+/* Blanc papier + Encre sombre + Accents ciblés */
+.swiss-bg-white  { background-color: #ffffff; }
+.swiss-bg-light  { background-color: #f8fafc; }
+.swiss-text-ink  { color: #0f172a; }
+.swiss-text-muted{ color: #64748b; }
+
+/* Accent rouge suisse */
+.swiss-accent    { color: #e4002b; }
+.swiss-bg-accent { background-color: #e4002b; color: #ffffff; }
+
+/* Accent émeraude */
+.swiss-teal      { color: #0d9488; }
+.swiss-bg-teal   { background-color: #0d9488; color: #ffffff; }
+
+/* Hairlines */
+.swiss-rule {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: calc(3 * var(--bl)) 0;
+}
+
+/* ─── 8. OVERLAY DE GRILLE INTERACTIF ────────────────────────────────────────── */
+/* Activé par la classe .grid-on sur <body> ou <html> */
+
+/* Colonnes */
+body.grid-on .wrap::before,
+body.grid-on .swiss-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: var(--grid-z);
+
+    /* Générée via JS pour un vrai subgrid de colonnes */
+    background-image: var(--grid-col-bg, none);
+    background-size: var(--grid-col-size, 0);
+    background-position: var(--margin) 0;
+    background-repeat: repeat;
+    opacity: 1;
+}
+
+/* Lignes de base (8px) */
+body.grid-on .wrap::after,
+body.grid-on .swiss-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: calc(var(--grid-z) - 1);
+    background-image: repeating-linear-gradient(
+        to bottom,
+        var(--grid-base-color) 0px,
+        var(--grid-base-color) 1px,
+        transparent 1px,
+        transparent var(--bl)
+    );
+}
+
+/* ─── 9. BOUTON FLOTTANT DE BASCULE ──────────────────────────────────────────── */
+#gridToggleBtn {
+    position: fixed;
+    bottom: calc(4 * var(--bl));   /* 32px */
+    right:  calc(4 * var(--bl));   /* 32px */
+    z-index: calc(var(--grid-z) + 10);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #0f172a;
+    color: #ffffff;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    transition: background 0.15s ease, transform 0.1s ease;
+    user-select: none;
+}
+
+#gridToggleBtn:hover {
+    background: #e4002b;
+    transform: translateY(-1px);
+}
+
+#gridToggleBtn.is-active {
+    background: #e4002b;
+}
+
+#gridToggleBtn .grid-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+    font-size: 0.65rem;
+}
+
+/* ─── 10. RESPONSIVE ─────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    :root {
+        --cols:   12;
+        --gutter: 16px;
+        --margin: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    :root {
+        --cols:   4;    /* passer à 4 colonnes sur mobile */
+        --gutter: 12px;
+        --margin: 16px;
+    }
+
+    .span-3, .span-4, .span-6 { grid-column: span 4; }  /* full width mobile */
+    .span-8, .span-9, .span-10, .span-11, .span-12 { grid-column: span 4; }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --cols:   2;
+        --gutter: 8px;
+        --margin: 12px;
+    }
 }

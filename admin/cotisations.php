@@ -67,6 +67,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = "Le statut de la contribution a été mis à jour.";
                 $msg_type = "success";
             }
+
+        } elseif ($action === 'changer_visibilite') {
+            $campagne_id = (int)($_POST['campagne_id'] ?? 0);
+            $new_vis = ($_POST['visibilite'] ?? 'public') === 'prive' ? 'prive' : 'public';
+            if ($campagne_id > 0) {
+                $new_token = $new_vis === 'prive' ? bin2hex(random_bytes(16)) : null;
+                // Conserver le token existant si déjà privé
+                $cur = $pdo->prepare("SELECT visibilite, access_token FROM cotisation_campagnes WHERE id = ?");
+                $cur->execute([$campagne_id]);
+                $cur_row = $cur->fetch();
+                if ($new_vis === 'prive' && !empty($cur_row['access_token'])) {
+                    $new_token = $cur_row['access_token'];
+                }
+                $stmt = $pdo->prepare("UPDATE cotisation_campagnes SET visibilite = ?, access_token = ? WHERE id = ?");
+                $stmt->execute([$new_vis, $new_token, $campagne_id]);
+                $message = "Visibilité de la campagne passée en « " . ($new_vis === 'prive' ? '🔒 Privée' : '🌐 Publique') . " » avec succès.";
+                $msg_type = "success";
+            }
         }
     } catch (PDOException $e) {
         $message = "Erreur base de données : " . $e->getMessage();
@@ -103,7 +121,7 @@ try {
     }
 
     if (!empty($search)) {
-        $sql_c .= " AND (c.titre LIKE ? OR u.nom LIKE ?)";
+        $sql_c .= " AND (c.titre ILIKE ? OR u.nom ILIKE ?)";
         $params_c[] = "%$search%";
         $params_c[] = "%$search%";
     }
@@ -540,6 +558,7 @@ try {
                             <th>Collecté / Objectif</th>
                             <th>Avancement</th>
                             <th>Statut</th>
+                            <th>Visibilité</th>
                             <th style="text-align: right;">Actions Admin</th>
                         </tr>
                     </thead>
@@ -591,8 +610,18 @@ try {
                                         <span class="cell-status-badge" style="background: #F5F5F5; color: #000000; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.74rem; display: inline-flex; align-items: center; white-space: nowrap;">Annulée</span>
                                     <?php endif; ?>
                                 </td>
+                                <td data-label="Visibilité" style="white-space: nowrap;">
+                                    <?php $vis_c = $camp['visibilite'] ?? 'public'; ?>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.74rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: <?php echo $vis_c === 'prive' ? '#FFF2ED' : '#F0FDF4'; ?>; color: <?php echo $vis_c === 'prive' ? '#FF4A0D' : '#166534'; ?>; white-space: nowrap;">
+                                        <i class="fa-solid <?php echo $vis_c === 'prive' ? 'fa-lock' : 'fa-globe'; ?>"></i>
+                                        <?php echo $vis_c === 'prive' ? 'Privée' : 'Publique'; ?>
+                                    </span>
+                                    <?php if ($vis_c === 'prive' && !empty($camp['access_token'])): ?>
+                                        <br><a href="../client/cotisation.php?id=<?php echo (int)$camp['id']; ?>&token=<?php echo htmlspecialchars($camp['access_token']); ?>" target="_blank" style="font-size: 0.68rem; color: #FF4A0D; text-decoration: underline;" title="Lien privé"><i class="fa-solid fa-link"></i> Lien</a>
+                                    <?php endif; ?>
+                                </td>
                                 <td data-label="Actions" style="text-align: right; white-space: nowrap;">
-                                    <form method="POST" action="cotisations.php" style="display: inline-flex; gap: 4px; margin: 0;">
+                                    <form method="POST" action="cotisations.php" style="display: inline-flex; gap: 4px; margin: 0; flex-wrap: wrap; justify-content: flex-end;">
                                         <input type="hidden" name="action" value="changer_statut">
                                         <input type="hidden" name="campagne_id" value="<?php echo (int)$camp['id']; ?>">
                                         <?php if ($camp['statut'] !== 'active'): ?>
@@ -610,6 +639,17 @@ try {
                                                 <i class="fa-solid fa-ban"></i>
                                             </button>
                                         <?php endif; ?>
+                                    </form>
+                                    <!-- Toggle visibilité -->
+                                    <form method="POST" action="cotisations.php" style="display: inline-flex; margin: 0; margin-top: 3px;">
+                                        <input type="hidden" name="action" value="changer_visibilite">
+                                        <input type="hidden" name="campagne_id" value="<?php echo (int)$camp['id']; ?>">
+                                        <?php $vis_c = $camp['visibilite'] ?? 'public'; ?>
+                                        <input type="hidden" name="visibilite" value="<?php echo $vis_c === 'prive' ? 'public' : 'prive'; ?>">
+                                        <button type="submit" class="dash-btn-action" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; background: <?php echo $vis_c === 'prive' ? '#F0FDF4' : '#FFF2ED'; ?>; color: <?php echo $vis_c === 'prive' ? '#166534' : '#FF4A0D'; ?>; white-space: nowrap;" title="Basculer visibilité">
+                                            <i class="fa-solid <?php echo $vis_c === 'prive' ? 'fa-globe' : 'fa-lock'; ?>"></i>
+                                            <?php echo $vis_c === 'prive' ? 'Rendre public' : 'Rendre privé'; ?>
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
@@ -649,9 +689,16 @@ try {
                                     </span>
                                 </div>
                             </div>
-                            <span class="cmc-badge" style="background: <?php echo $st_bg; ?>; color: <?php echo $st_fg; ?>;">
-                                <?php echo $st_label; ?>
-                            </span>
+                            <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                                <span class="cmc-badge" style="background: <?php echo $st_bg; ?>; color: <?php echo $st_fg; ?>;">
+                                    <?php echo $st_label; ?>
+                                </span>
+                                <?php $vis_m = $camp['visibilite'] ?? 'public'; ?>
+                                <span style="font-size: 0.68rem; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: <?php echo $vis_m === 'prive' ? '#FFF2ED' : '#F0FDF4'; ?>; color: <?php echo $vis_m === 'prive' ? '#FF4A0D' : '#166534'; ?>; display: inline-flex; align-items: center; gap: 3px;">
+                                    <i class="fa-solid <?php echo $vis_m === 'prive' ? 'fa-lock' : 'fa-globe'; ?>"></i>
+                                    <?php echo $vis_m === 'prive' ? 'Privée' : 'Publique'; ?>
+                                </span>
+                            </div>
                         </div>
 
                         <!-- Jauge financière & progression -->

@@ -5,6 +5,7 @@
 // ==============================================================================
 
 require_once '../config/database.php';
+require_once '../includes/whitelist.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -58,7 +59,7 @@ if (empty($client_nom) || empty($client_email)) {
 }
 
 // 1. Vérification que l'événement est actif
-$stmt = $pdo->prepare("SELECT id, nom FROM events WHERE id = ? AND statut = 'actif'");
+$stmt = $pdo->prepare("SELECT id, nom, visibilite FROM events WHERE id = ? AND statut = 'actif'");
 $stmt->execute([$event_id]);
 $event = $stmt->fetch();
 
@@ -66,6 +67,32 @@ if (!$event) {
     $_SESSION['order_message'] = "Cet événement n'est plus disponible à la réservation.";
     header('Location: accueil.php');
     exit();
+}
+
+// 1.1 Événement privé/restreint : le paiement ne peut être débloqué que pour un
+// téléphone whitelisté ayant validé son code OTP (voir evenement.php + ajax/otp_*.php).
+// Contrôle serveur indépendant de ce qui a été fait côté client (défense en profondeur).
+$whitelist_guest = null;
+if (($event['visibilite'] ?? 'public') === 'prive') {
+    $verified = $_SESSION['whitelist_verified'][$event_id] ?? null;
+    $verified_ok = $verified
+        && !empty($verified['telephone'])
+        && (int) ($verified['expires'] ?? 0) >= time()
+        && normalizePhone($client_telephone) === $verified['telephone'];
+
+    if (!$verified_ok) {
+        $_SESSION['order_message'] = "Veuillez d'abord vérifier votre éligibilité (téléphone + code SMS) pour cet événement privé.";
+        header('Location: evenement.php?id=' . $event_id);
+        exit();
+    }
+
+    $eligibility = checkWhitelistEligibility($pdo, $event_id, $client_telephone);
+    if (!$eligibility['eligible']) {
+        $_SESSION['order_message'] = $eligibility['message'];
+        header('Location: evenement.php?id=' . $event_id);
+        exit();
+    }
+    $whitelist_guest = $eligibility;
 }
 
 // 2. Validation de chaque type de billet et vérification des stocks
@@ -159,6 +186,12 @@ foreach ($all_type_ids as $ticket_type_id) {
 if ($total_places_choisies <= 0 || empty($order_items_to_create)) {
     $_SESSION['order_message'] = "Veuillez sélectionner au moins un billet pour continuer.";
     header('Location: accueil.php');
+    exit();
+}
+
+if ($whitelist_guest !== null && $total_places_choisies > (int) $whitelist_guest['remaining']) {
+    $_SESSION['order_message'] = "Vous ne pouvez commander que " . (int) $whitelist_guest['remaining'] . " billet(s) au maximum pour cet événement (quota d'invitation).";
+    header('Location: evenement.php?id=' . $event_id);
     exit();
 }
 

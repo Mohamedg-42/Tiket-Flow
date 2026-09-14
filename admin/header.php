@@ -12,7 +12,7 @@ require_once '../includes/auth.php';
 checkRole('admin', '../connexion.php');
 
 $current_page = basename($_SERVER['PHP_SELF']);
-$admin_page_title = $admin_page_title ?? 'Administration Control Center - Tikéli';
+$admin_page_title = $admin_page_title ?? 'Administration Control Center - Tike WA';
 
 // Informations admin connecté (Prénom & Nom)
 $admin_prenom = trim($_SESSION['user_prenom'] ?? ($_SESSION['prenom'] ?? ''));
@@ -100,7 +100,7 @@ try {
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($admin_page_title); ?></title>
-    <link rel="icon" type="image/png" href="../images/logo.png">
+    <link rel="icon" type="image/png" href="../images/favicon.png?v=<?php echo time(); ?>">
 
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -115,7 +115,7 @@ try {
     <!-- CSS Platform & Dashboard Pro -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard-pro.css">
-    <!-- Tikéli Brand Design System -->
+    <!-- Tike WA Brand Design System -->
     <link rel="stylesheet" href="../css/eventia-brand.css">
     <!-- Responsive Professional CSS -->
     <link rel="stylesheet" href="../css/responsive-pro.css">
@@ -746,8 +746,8 @@ try {
             style="display: flex; align-items: center; gap: 8px; color: #ffffff; font-weight: 800; font-size: 1rem; overflow: hidden; min-width: 0;">
             <a href="dashboard.php"
                 style="display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0;">
-                <img src="../images/logo.png" alt="Tikéli"
-                    style="height: 26px; width: auto; max-width: 95px; object-fit: contain;">
+                <img src="../images/logo.png?v=<?php echo time(); ?>" alt="Tike WA"
+                    style="height: 28px; width: auto; max-width: 110px; object-fit: contain;">
             </a>
             <span style="font-size: 0.8rem; color: #737373; font-weight: 600;">• Admin</span>
         </div>
@@ -770,8 +770,8 @@ try {
             <div class="ctrl-brand">
                 <a href="dashboard.php" class="ctrl-brand-logo"
                     style="text-decoration: none; display: flex; align-items: center;">
-                    <img src="../images/logo.png" alt="Tikéli"
-                        style="height: 34px; width: auto; max-width: 140px; object-fit: contain;">
+                    <img src="../images/logo.png?v=<?php echo time(); ?>" alt="Tike WA"
+                        style="height: 40px; width: auto; max-width: 160px; object-fit: contain;">
                 </a>
 
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -834,6 +834,17 @@ try {
                             <span>Salles & Espaces</span>
                             <?php if ($current_page === 'salles.php'): ?><span class="ctrl-active-dot"><i
                                         class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="gares.php" class="<?php echo in_array($current_page, ['gares.php', 'gares-ventes.php'], true) ? 'active' : ''; ?>"
+                            data-title="Gares Routières"
+                            data-desc="Gérer les points de vente physiques, activer/suspendre/stopper leurs flux, agents et clôtures de caisse."
+                            data-category="Infrastructures">
+                            <i class="fa-solid fa-bus"></i>
+                            <span>Gares Routières</span>
+                            <?php if (in_array($current_page, ['gares.php', 'gares-ventes.php'], true)): ?><span
+                                    class="ctrl-active-dot"><i class="fa-solid fa-chevron-right"></i></span><?php endif; ?>
                         </a>
                     </li>
                     <li>
@@ -1064,7 +1075,7 @@ try {
             <!-- 4. Pied de Page Sidebar -->
             <div class="ctrl-footer">
                 <a href="../client/accueil.php" target="_blank" class="ctrl-btn-site" data-title="Voir le Site Public"
-                    data-desc="Consulter la vitrine publique Tikéli et les événements en ligne."
+                    data-desc="Consulter la vitrine publique Tike WA et les événements en ligne."
                     data-category="Raccourci">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     <span>Voir le Site Public</span>

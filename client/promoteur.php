@@ -64,8 +64,8 @@ $stmt_evs = $pdo->prepare("
            (SELECT COALESCE(SUM(tt.quantite_vendue), 0) FROM ticket_types tt WHERE tt.event_id = e.id) AS tickets_vendus,
            (SELECT COALESCE(SUM(tt.quantite), 0) FROM ticket_types tt WHERE tt.event_id = e.id) AS total_places,
            (SELECT MIN(tt.prix) FROM ticket_types tt WHERE tt.event_id = e.id) AS prix_min
-    FROM events e 
-    WHERE e.user_id = ? AND e.statut IN ('actif', 'approuve') 
+    FROM events e
+    WHERE e.user_id = ? AND e.statut IN ('actif', 'approuve') AND e.visibilite = 'public'
     ORDER BY e.date_evenement ASC
 ");
 $stmt_evs->execute([$promoter_user_id]);

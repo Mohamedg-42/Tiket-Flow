@@ -1,7 +1,7 @@
 <?php
 // ==============================================================================
 // GESTION DE L'AUTHENTIFICATION, DES RÔLES, PERMISSIONS & ACTIVITÉ (includes/auth.php)
-// Sécurisation granulaire côté serveur pour Tikéli
+// Sécurisation granulaire côté serveur pour Tike WA
 // ==============================================================================
 
 // En-têtes HTTP de sécurité globaux (SEC-008)
@@ -10,6 +10,19 @@ if (!headers_sent()) {
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: geolocation=(), microphone=(), camera=(self)');
+    // Content-Security-Policy : autorise uniquement les sources connues et approuvées (SEC-009)
+    header(
+        "Content-Security-Policy: " .
+        "default-src 'self'; " .
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " .
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " .
+        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " .
+        "img-src 'self' data: blob: https:; " .
+        "connect-src 'self'; " .
+        "frame-src 'none'; " .
+        "object-src 'none'; " .
+        "base-uri 'self';"
+    );
 }
 
 // 1. Démarrage sécurisé de la session avec protection des cookies (SEC-006)
@@ -166,7 +179,7 @@ function checkAccountStatus($user_or_id) {
     if ($statut === 'en_attente' || ($role === 'promoteur' && $est_verifie === 0)) {
         return [
             'allowed' => false,
-            'message' => "Votre dossier de promoteur est actuellement en cours d'examen par l'administration de Tikéli. Vous recevrez une notification par e-mail dès validation de votre compte, après quoi vous pourrez vous connecter.",
+            'message' => "Votre dossier de promoteur est actuellement en cours d'examen par l'administration de Tike WA. Vous recevrez une notification par e-mail dès validation de votre compte, après quoi vous pourrez vous connecter.",
             'statut'  => 'en_attente'
         ];
     }
@@ -319,7 +332,7 @@ function requirePermission($permission_code, $redirect_url = null) {
             exit();
         }
 
-        // Affichage d'un écran 403 propre et professionnel Tikéli
+        // Affichage d'un écran 403 propre et professionnel Tike WA
         http_response_code(403);
         ?>
         <!DOCTYPE html>
@@ -327,7 +340,7 @@ function requirePermission($permission_code, $redirect_url = null) {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>403 - Accès Non Autorisé | Tikéli</title>
+            <title>403 - Accès Non Autorisé | Tike WA</title>
             <link rel="stylesheet" href="../Css/style.css">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
             <style>

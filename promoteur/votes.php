@@ -128,6 +128,35 @@ if (isset($_GET['delete_candidat'])) {
         $msg_type = "success";
     }
 }
+// ------------------------------------------------------------------------------
+// 3.1. Traitement : Basculer la visibilité d'un concours / vote (Public <-> Privé)
+// ------------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_toggle_visibilite'])) {
+    $toggle_ev_id = filter_input(INPUT_POST, 'event_id', FILTER_VALIDATE_INT);
+    $stmt_chk_v = $pdo->prepare("SELECT id, nom, visibilite, access_token FROM events WHERE id = ? AND user_id = ?");
+    $stmt_chk_v->execute([$toggle_ev_id, $user_id]);
+    $ev_to_toggle = $stmt_chk_v->fetch(PDO::FETCH_ASSOC);
+
+    if ($ev_to_toggle) {
+        $cur_vis = $ev_to_toggle['visibilite'] ?? 'public';
+        $new_vis = ($cur_vis === 'prive') ? 'public' : 'prive';
+        $new_token = $ev_to_toggle['access_token'];
+
+        if ($new_vis === 'prive' && empty($new_token)) {
+            $new_token = bin2hex(random_bytes(16));
+        }
+
+        $stmt_upd_v = $pdo->prepare("UPDATE events SET visibilite = ?, access_token = ? WHERE id = ? AND user_id = ?");
+        $stmt_upd_v->execute([$new_vis, $new_token, $toggle_ev_id, $user_id]);
+
+        if ($new_vis === 'prive') {
+            $message = "Le vote « " . htmlspecialchars($ev_to_toggle['nom']) . " » est désormais PRIVÉ. Il est masqué de l'accueil public et n'est accessible que par lien direct pour vos invités autorisés.";
+        } else {
+            $message = "Le vote « " . htmlspecialchars($ev_to_toggle['nom']) . " » est désormais PUBLIC et visible sur la vitrine.";
+        }
+        $msg_type = "success";
+    }
+}
 
 // ------------------------------------------------------------------------------
 // 4. Filtres Avancés (Typologie, Concours, Statut, Période, Recherche)
@@ -241,12 +270,14 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
         border-radius: 12px;
         margin-bottom: 0.75rem;
         transition: all 0.2s ease;
+        cursor: pointer;
     }
 
     .candidat-card:hover {
         background: #ffffff;
         border-color: var(--dash-primary);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
     }
 
     .candidat-card-left {
@@ -506,6 +537,11 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                     style="background: <?php echo $type_vote === 'concours' ? '#fef9c3' : '#e0f2fe'; ?>; color: <?php echo $type_vote === 'concours' ? '#ca8a04' : '#0284c7'; ?>; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; text-transform: uppercase;">
                                     <?php echo $type_vote === 'concours' ? 'Concours de Talents' : 'Vote Réalisation'; ?>
                                 </span>
+                                <?php $is_ev_prive = ($ev['visibilite'] ?? 'public') === 'prive'; ?>
+                                <span style="background: <?php echo $is_ev_prive ? '#FFF2ED' : '#F0FDF4'; ?>; color: <?php echo $is_ev_prive ? '#FF4A0D' : '#166534'; ?>; padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid <?php echo $is_ev_prive ? 'fa-lock' : 'fa-globe'; ?>"></i>
+                                    <?php echo $is_ev_prive ? 'Vote Privé (Lien secret)' : 'Vote Public'; ?>
+                                </span>
                                 <span style="color: var(--dash-muted); font-size: 0.78rem;">
                                     <i class="fa-regular fa-calendar"></i>
                                     <?php echo date('d/m/Y', strtotime($ev['date_evenement'])); ?>
@@ -525,7 +561,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                             <?php endif; ?>
                         </div>
 
-                        <div style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                             <div style="text-align: right;">
                                 <span style="font-size: 0.75rem; color: var(--dash-muted); display: block;">Prix du Vote</span>
                                 <strong style="font-size: 1.05rem; color: var(--dash-text);">
@@ -533,18 +569,48 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                 </strong>
                             </div>
 
-                            <div style="text-align: right; border-left: 1px solid var(--dash-border); padding-left: 1.25rem;">
-                                <span style="font-size: 0.75rem; color: var(--dash-muted); display: block;">Total
-                                    Recettes</span>
+                            <div style="text-align: right; border-left: 1px solid var(--dash-border); padding-left: 0.75rem;">
+                                <span style="font-size: 0.75rem; color: var(--dash-muted); display: block;">Total Recettes</span>
                                 <strong style="font-size: 1.2rem; color: #059669; font-weight: 800;">
                                     <?php echo number_format((float) $ev['recettes_votes'], 0, ',', ' '); ?> F
                                 </strong>
                             </div>
 
-                            <button type="button" onclick="openPromoterShare(<?php echo (int) $ev['id']; ?>, '<?php echo htmlspecialchars(addslashes($ev['nom'])); ?>')"
+                            <?php if ($is_ev_prive): ?>
+                                <?php 
+                                    $vote_link_prive = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . rtrim(dirname(dirname($_SERVER['PHP_SELF'])), '/\\') . '/client/vote.php?id=' . (int)$ev['id'] . '&token=' . urlencode($ev['access_token'] ?? '');
+                                ?>
+                                <button type="button" onclick="copyVotePrivateLink('<?php echo htmlspecialchars($vote_link_prive, ENT_QUOTES); ?>', this)"
+                                    class="dash-btn-action"
+                                    style="padding: 0.45rem 0.85rem; font-size: 0.8rem; background: #FFF2ED; color: #FF4A0D; border: 1px solid #FFD8CC; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;"
+                                    title="Copier le lien secret d'accès direct au vote pour vos invités">
+                                    <i class="fa-solid fa-link"></i> Copier le lien privé
+                                </button>
+                                <a href="liste-invites.php?event_id=<?php echo (int)$ev['id']; ?>"
+                                    class="dash-btn-action"
+                                    style="padding: 0.45rem 0.85rem; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"
+                                    title="Gérer les bénéficiaires autorisés à voter">
+                                    <i class="fa-solid fa-user-shield" style="color: #FF4A0D;"></i> Invités
+                                </a>
+                            <?php endif; ?>
+
+                            <form method="POST" action="votes.php" style="margin: 0; display: inline;">
+                                <input type="hidden" name="action_toggle_visibilite" value="1">
+                                <input type="hidden" name="event_id" value="<?php echo (int)$ev['id']; ?>">
+                                <button type="submit" 
+                                    class="dash-btn-action" 
+                                    style="padding: 0.45rem 0.75rem; font-size: 0.78rem;" 
+                                    onclick="return confirm('Voulez-vous vraiment changer la visibilité de ce vote en <?php echo $is_ev_prive ? 'PUBLIC' : 'PRIVÉ'; ?> ?');"
+                                    title="<?php echo $is_ev_prive ? 'Rendre ce vote public et visible sur l\'accueil' : 'Rendre ce vote privé (masqué de l\'accueil, réservé aux invités)'; ?>">
+                                    <i class="fa-solid <?php echo $is_ev_prive ? 'fa-globe' : 'fa-lock'; ?>"></i>
+                                    <?php echo $is_ev_prive ? 'Rendre Public' : 'Rendre Privé'; ?>
+                                </button>
+                            </form>
+
+                            <button type="button" onclick="openPromoterShare(<?php echo (int) $ev['id']; ?>, '<?php echo htmlspecialchars(addslashes($ev['nom'])); ?>', '<?php echo htmlspecialchars($ev['access_token'] ?? ''); ?>')"
                                 class="dash-btn-action"
-                                style="padding: 0.45rem 0.85rem; font-size: 0.8rem; background: #FFF2ED; color: #EA580C; border: 1px solid #FFEDD5; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-share-nodes"></i> Partager le lien public
+                                style="padding: 0.45rem 0.85rem; font-size: 0.8rem; background: #F8FAFC; color: #0F172A; border: 1px solid var(--dash-border); font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-share-nodes"></i> Partager
                             </button>
 
                             <button type="button" onclick="openAddCandidatModal(<?php echo $ev['id']; ?>)"
@@ -575,7 +641,23 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                     ? ((strpos($c['photo'], 'http://') === 0 || strpos($c['photo'], 'https://') === 0) ? htmlspecialchars($c['photo']) : '../uploads/candidats/' . htmlspecialchars($c['photo'])) 
                                     : '../images/default-avatar.png';
                                 ?>
-                                <div class="candidat-card">
+                                <?php
+                                $cand_detail = [
+                                    'id'          => $c['id'],
+                                    'nom'         => $c['nom'],
+                                    'description' => $c['description'] ?? '',
+                                    'photo'       => $photo_url,
+                                    'nb_votes'    => $nb_v,
+                                    'pct'         => $pct,
+                                    'recette'     => (float)$c['recettes_candidat'],
+                                    'rank'        => $rank,
+                                    'event_nom'   => $ev['nom'],
+                                    'event_id'    => $ev['id'],
+                                    'prix_vote'   => $prix_vote,
+                                    'created_at'  => $c['created_at'] ?? '',
+                                ];
+                                ?>
+                                <div class="candidat-card" data-candidat="<?php echo htmlspecialchars(base64_encode(json_encode($cand_detail, JSON_UNESCAPED_UNICODE)), ENT_QUOTES); ?>">
                                     <div class="candidat-card-left">
                                         <!-- Rang -->
                                         <div class="rank-badge <?php echo $rank_class; ?>">
@@ -630,7 +712,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                         <?php endif; ?>
 
                                         <!-- Boutons Partager / Modifier / Supprimer -->
-                                        <div style="display: flex; gap: 5px; margin-left: auto;">
+                                        <div class="candidat-actions" style="display: flex; gap: 5px; margin-left: auto;">
                                             <button type="button" class="dash-btn-action"
                                                 style="padding: 0.35rem 0.65rem; font-size: 0.74rem; color: #EA580C; background: #FFF2ED; border: 1px solid #FFEDD5; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;"
                                                 onclick="openPromoterShareCandidate(<?php echo (int) $ev['id']; ?>, '<?php echo htmlspecialchars(addslashes($ev['nom'])); ?>', <?php echo (int) $c['id']; ?>, '<?php echo htmlspecialchars(addslashes($c['nom'])); ?>')"
@@ -639,7 +721,8 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                             </button>
                                             <button type="button" class="dash-btn-action"
                                                 style="padding: 0.35rem 0.65rem; font-size: 0.74rem;"
-                                                onclick="openEditCandidatModal(<?php echo htmlspecialchars(json_encode($c)); ?>)"
+                                                data-cand="<?php echo htmlspecialchars(base64_encode(json_encode(['id'=>$c['id'],'nom'=>$c['nom'],'description'=>$c['description']??''], JSON_UNESCAPED_UNICODE)), ENT_QUOTES); ?>"
+                                                onclick="openEditCandidatModal(JSON.parse(atob(this.dataset.cand)))"
                                                 title="Modifier ce candidat">
                                                 <i class="fa-solid fa-pen"></i>
                                             </button>
@@ -862,6 +945,98 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
     </div>
 </div>
 
+<!-- ==============================================================================
+     MODAL : FICHE DÉTAIL CANDIDAT
+     ============================================================================== -->
+<div id="modalCandidatDetail"
+    style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); z-index: 1100; align-items: center; justify-content: center; padding: 1rem;"
+    onclick="if(event.target===this)closeCandidatDetail()">
+    <div id="candidatDetailPanel"
+        style="background: #ffffff; width: 100%; max-width: 520px; max-height: 88vh; max-height: 88dvh; display: flex; flex-direction: column; border-radius: 20px; box-shadow: 0 24px 48px -8px rgba(0,0,0,0.28); overflow: hidden; animation: slideUpPanel .22s cubic-bezier(.22,1,.36,1); margin: auto;">
+
+        <!-- Header -->
+        <div style="position: relative; background: #0F172A; padding: 1.5rem 1.25rem 1rem; flex-shrink: 0;">
+            <button type="button" onclick="closeCandidatDetail()"
+                style="position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,.12); border: none; color: #fff; width: 32px; height: 32px; border-radius: 8px; font-size: 1.1rem; cursor: pointer; display: grid; place-items: center;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div id="cdPhotoWrap" style="position: relative; flex-shrink: 0;">
+                    <img id="cdPhoto" src="" alt="Photo candidat"
+                        style="width: 80px; height: 80px; border-radius: 14px; object-fit: cover; border: 3px solid rgba(255,255,255,.2); background: #1E293B;"
+                        onerror="this.src='../images/default-avatar.png'">
+                    <span id="cdRankBadge"
+                        style="position: absolute; bottom: -6px; right: -6px; width: 26px; height: 26px; border-radius: 7px; font-size: 0.8rem; font-weight: 900; display: grid; place-items: center; background: #FF4A0D; color: #fff; border: 2px solid #fff;"></span>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <p id="cdEventNom" style="margin: 0 0 4px; font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,.55); text-transform: uppercase; letter-spacing: .6px; font-family: 'Space Mono', monospace;"></p>
+                    <h2 id="cdNom" style="margin: 0; font-size: 1.25rem; font-weight: 900; color: #ffffff; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding: 1.25rem; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1 1 auto; min-height: 0;">
+
+            <!-- Stats -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.25rem;">
+                <div style="background: #F8FAFC; border: 1px solid #E5E5E5; border-radius: 12px; padding: 0.85rem; text-align: center;">
+                    <div id="cdVotes" style="font-size: 1.55rem; font-weight: 900; color: #0F172A; line-height: 1;"></div>
+                    <div style="font-size: 0.7rem; color: #737373; font-weight: 700; margin-top: 3px; text-transform: uppercase; letter-spacing: .4px;">Votes</div>
+                </div>
+                <div style="background: #FFF7ED; border: 1px solid #FFEDD5; border-radius: 12px; padding: 0.85rem; text-align: center;">
+                    <div id="cdPct" style="font-size: 1.55rem; font-weight: 900; color: #EA580C; line-height: 1;"></div>
+                    <div style="font-size: 0.7rem; color: #EA580C; font-weight: 700; margin-top: 3px; text-transform: uppercase; letter-spacing: .4px;">Des voix</div>
+                </div>
+                <div id="cdRecetteBox" style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 0.85rem; text-align: center;">
+                    <div id="cdRecette" style="font-size: 1.15rem; font-weight: 900; color: #059669; line-height: 1;"></div>
+                    <div style="font-size: 0.7rem; color: #059669; font-weight: 700; margin-top: 3px; text-transform: uppercase; letter-spacing: .4px;">Recette</div>
+                </div>
+            </div>
+
+            <!-- Barre de progression -->
+            <div style="margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 0.78rem; font-weight: 700; color: #64748B;">Part des suffrages</span>
+                    <span id="cdPctLabel" style="font-size: 0.78rem; font-weight: 800; color: #0F172A;"></span>
+                </div>
+                <div style="background: #E5E5E5; height: 10px; border-radius: 999px; overflow: hidden;">
+                    <div id="cdProgressBar" style="height: 100%; border-radius: 999px; background: linear-gradient(90deg, #FF4A0D, #f59e0b); transition: width .5s ease;"></div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div id="cdDescBox" style="display: none; background: #F8FAFC; border: 1px solid #E5E5E5; border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem; max-height: 140px; overflow-y: auto;">
+                <p style="margin: 0 0 4px; font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: .5px;">Biographie / Description</p>
+                <p id="cdDesc" style="margin: 0; font-size: 0.875rem; color: #0F172A; line-height: 1.55;"></p>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                <button type="button" id="cdBtnEdit"
+                    style="flex: 1; min-width: 130px; padding: 0.65rem 1rem; background: #0F172A; color: #fff; border: none; border-radius: 10px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="fa-solid fa-pen"></i> Modifier
+                </button>
+                <button type="button" id="cdBtnShare"
+                    style="flex: 1; min-width: 130px; padding: 0.65rem 1rem; background: #FFF2ED; color: #EA580C; border: 1px solid #FFEDD5; border-radius: 10px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="fa-solid fa-share-nodes"></i> Partager
+                </button>
+                <a id="cdBtnDelete" href="#"
+                    style="flex: 1; min-width: 130px; padding: 0.65rem 1rem; background: #FFF1F2; color: #BE123C; border: 1px solid #FCE7E7; border-radius: 10px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none;">
+                    <i class="fa-solid fa-trash"></i> Retirer
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes slideUpPanel {
+    from { opacity: 0; transform: translateY(24px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+</style>
+
 <script>
     function openAddCandidatModal(eventId) {
         if (eventId) {
@@ -883,15 +1058,38 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
         document.getElementById('modalEditCandidat').style.display = 'none';
     }
 
+    // Gestion de la Copie du Lien Privé de Vote
+    function copyVotePrivateLink(url, btn) {
+        if (!navigator.clipboard) {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        } else {
+            navigator.clipboard.writeText(url);
+        }
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #10B981;"></i> Lien Copié !';
+        setTimeout(() => { btn.innerHTML = origHtml; }, 2500);
+    }
+
     // Gestion du Partage Promoteur
     let currentPromoterShareUrl = '';
     let currentPromoterShareMsg = '';
 
-    function openPromoterShare(eventId, eventTitle) {
+    function openPromoterShare(eventId, eventTitle, token) {
         const loc = window.location;
-        const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/accueil.php');
-        const url = base + '?onglet=voter&vote_id=' + eventId;
-        const msg = "🗳️ Votez dès maintenant pour « " + eventTitle + " » sur Tikéli ! Cliquez ici : " + url;
+        let url;
+        if (token && token.trim() !== '') {
+            const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/vote.php');
+            url = base + '?id=' + eventId + '&token=' + encodeURIComponent(token);
+        } else {
+            const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/vote.php');
+            url = base + '?id=' + eventId;
+        }
+        const msg = "🗳️ Votez dès maintenant pour « " + eventTitle + " » sur Tike WA ! Cliquez ici : " + url;
         
         currentPromoterShareUrl = url;
         currentPromoterShareMsg = msg;
@@ -904,11 +1102,17 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
         document.getElementById('modalPromoterShare').style.display = 'flex';
     }
 
-    function openPromoterShareCandidate(eventId, eventTitle, candId, candNom) {
+    function openPromoterShareCandidate(eventId, eventTitle, candId, candNom, token) {
         const loc = window.location;
-        const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/accueil.php');
-        const url = base + '?onglet=voter&vote_id=' + eventId + '&candidat_id=' + candId;
-        const msg = "🗳️ Soutenez et votez pour " + candNom + " dans « " + eventTitle + " » sur Tikéli ! Cliquez ici : " + url;
+        let url;
+        if (token && token.trim() !== '') {
+            const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/vote.php');
+            url = base + '?id=' + eventId + '&token=' + encodeURIComponent(token) + '&candidat_id=' + candId;
+        } else {
+            const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/vote.php');
+            url = base + '?id=' + eventId + '&candidat_id=' + candId;
+        }
+        const msg = "🗳️ Soutenez et votez pour " + candNom + " dans « " + eventTitle + " » sur Tike WA ! Cliquez ici : " + url;
         
         currentPromoterShareUrl = url;
         currentPromoterShareMsg = msg;
@@ -943,6 +1147,105 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
         });
     }
 
+    // -----------------------------------------------------------------------
+    // Fiche Détail Candidat — délégation robuste
+    // -----------------------------------------------------------------------
+    let _cdCurrent = null;
+
+    // Délégation : on écoute tous les clics sur le document
+    document.addEventListener('click', function(e) {
+        // Si le clic vient d'un bouton d'action → ne pas ouvrir le modal
+        if (e.target.closest('.candidat-actions')) return;
+
+        // Chercher la carte la plus proche
+        const card = e.target.closest('.candidat-card');
+        if (!card || !card.dataset.candidat) return;
+
+        let cand;
+        try {
+            const raw = atob(card.dataset.candidat);
+            const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+            const decoded = new TextDecoder('utf-8').decode(bytes);
+            cand = JSON.parse(decoded);
+        } catch(err) {
+            try {
+                cand = JSON.parse(atob(card.dataset.candidat));
+            } catch(err2) {
+                console.error('Erreur décodage candidat :', err, err2);
+                return;
+            }
+        }
+        openCandidatDetail(cand);
+    });
+
+    function openCandidatDetail(cand) {
+        _cdCurrent = cand;
+
+        // Photo
+        document.getElementById('cdPhoto').src = cand.photo || '../images/default-avatar.png';
+
+        // Rang
+        const rankEl = document.getElementById('cdRankBadge');
+        const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
+        rankEl.textContent = medals[cand.rank] || '#' + cand.rank;
+        rankEl.style.background = cand.rank <= 3 ? '#FF4A0D' : '#64748B';
+        rankEl.style.fontSize = cand.rank <= 3 ? '1rem' : '0.72rem';
+
+        // Textes
+        document.getElementById('cdEventNom').textContent = cand.event_nom;
+        document.getElementById('cdNom').textContent = cand.nom;
+        document.getElementById('cdVotes').textContent = Number(cand.nb_votes).toLocaleString('fr-FR');
+        document.getElementById('cdPct').textContent = cand.pct + '%';
+        document.getElementById('cdPctLabel').textContent = cand.pct + '%';
+        document.getElementById('cdProgressBar').style.width = cand.pct + '%';
+
+        // Recette
+        const recBox = document.getElementById('cdRecetteBox');
+        if (cand.prix_vote > 0) {
+            recBox.style.display = '';
+            document.getElementById('cdRecette').textContent =
+                Number(cand.recette).toLocaleString('fr-FR') + ' F';
+        } else {
+            recBox.style.display = 'none';
+        }
+
+        // Description
+        const descBox = document.getElementById('cdDescBox');
+        if (cand.description && cand.description.trim() !== '') {
+            descBox.style.display = '';
+            document.getElementById('cdDesc').textContent = cand.description;
+        } else {
+            descBox.style.display = 'none';
+        }
+
+        // Boutons action
+        document.getElementById('cdBtnEdit').onclick = function () {
+            closeCandidatDetail();
+            // On reconstruit un objet compatible avec openEditCandidatModal
+            openEditCandidatModal({ id: cand.id, nom: cand.nom, description: cand.description });
+        };
+        document.getElementById('cdBtnShare').onclick = function () {
+            closeCandidatDetail();
+            openPromoterShareCandidate(cand.event_id, cand.event_nom, cand.id, cand.nom);
+        };
+        document.getElementById('cdBtnDelete').href =
+            'votes.php?delete_candidat=' + cand.id;
+        document.getElementById('cdBtnDelete').onclick = function () {
+            return confirm('Confirmez-vous le retrait de « ' + cand.nom + ' » du concours ?');
+        };
+
+        document.getElementById('modalCandidatDetail').style.display = 'flex';
+        // Animer la barre après affichage
+        setTimeout(() => {
+            document.getElementById('cdProgressBar').style.width = cand.pct + '%';
+        }, 50);
+    }
+
+    function closeCandidatDetail() {
+        document.getElementById('modalCandidatDetail').style.display = 'none';
+        _cdCurrent = null;
+    }
+
     window.addEventListener('click', function (e) {
         const m1 = document.getElementById('modalAddCandidat');
         const m2 = document.getElementById('modalEditCandidat');
@@ -950,6 +1253,16 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
         if (e.target === m1) closeAddCandidatModal();
         if (e.target === m2) closeEditCandidatModal();
         if (e.target === m3) closePromoterShareModal();
+    });
+
+    // Fermer detail avec Echap
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeCandidatDetail();
+            closeAddCandidatModal();
+            closeEditCandidatModal();
+            closePromoterShareModal();
+        }
     });
 </script>
 

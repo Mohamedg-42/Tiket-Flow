@@ -1,7 +1,7 @@
 <?php
 // ==============================================================================
 // VÉRIFICATION DES BILLETS PAR L'AGENT (agent/verification.php)
-// Interface de contrôle d'accès simple, rapide et aux couleurs Tikéli
+// Interface de contrôle d'accès simple, rapide et aux couleurs Tike WA
 // ==============================================================================
 
 $page_title = "Contrôle d'Accès - Espace Agent";

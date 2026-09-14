@@ -27,8 +27,8 @@ if (!$event_id) {
     exit();
 }
 
-// Vérifier que l'événement existe et est actif (+ prix du vote éventuel)
-$stmt = $pdo->prepare("SELECT id, nom, prix_vote FROM events WHERE id = ? AND statut = 'actif'");
+// Vérifier que l'événement existe et est actif (+ visibilité et prix du vote)
+$stmt = $pdo->prepare("SELECT id, nom, prix_vote, visibilite, access_token, type_vote, vote_question FROM events WHERE id = ? AND statut = 'actif'");
 $stmt->execute([$event_id]);
 $event = $stmt->fetch();
 if (!$event) {
@@ -47,6 +47,45 @@ if ($user_id && in_array($_SESSION['user_role'] ?? '', ['promoteur', 'admin'], t
     http_response_code(403);
     echo json_encode(['error' => 'Action réservée aux clients : votre compte ' . ($_SESSION['user_role'] ?? '') . ' ne peut pas voter.']);
     exit();
+}
+
+// CONTRÔLE D'ACCÈS ET WHITELIST POUR LES SCRUTINS PRIVÉS
+$is_private_event = ($event['visibilite'] ?? 'public') === 'prive';
+$verified_tel_clean = null;
+if ($is_private_event) {
+    $token_req = trim($_POST['token'] ?? ($_GET['token'] ?? ''));
+    $expected_token = (string)($event['access_token'] ?? '');
+    if (empty($token_req) || !hash_equals($expected_token, $token_req)) {
+        http_response_code(403);
+        echo json_encode(['error' => "Action non autorisée : Jeton d'accès privé manquant ou invalide."]);
+        exit();
+    }
+
+    require_once __DIR__ . '/../includes/whitelist.php';
+    $tel_input = trim($_POST['telephone'] ?? '');
+    if (empty($tel_input) && $user_id) {
+        $stmt_tel = $pdo->prepare("SELECT telephone FROM users WHERE id = ?");
+        $stmt_tel->execute([$user_id]);
+        $tel_input = (string) $stmt_tel->fetchColumn();
+    }
+
+    $verified_tel_clean = normalizePhone($tel_input);
+    if (empty($verified_tel_clean)) {
+        http_response_code(403);
+        echo json_encode(['error' => "Ce scrutin est privé. Votre numéro de téléphone enregistré auprès de l'organisateur est requis pour voter.", 'requires_phone' => true]);
+        exit();
+    }
+
+    // Vérifier l'enregistrement préalable dans la liste des invités de l'événement
+    $stmt_wl = $pdo->prepare("SELECT id, nom, prenom FROM event_guest_whitelist WHERE event_id = ? AND telephone = ?");
+    $stmt_wl->execute([$event_id, $verified_tel_clean]);
+    $guest_wl = $stmt_wl->fetch(PDO::FETCH_ASSOC);
+
+    if (!$guest_wl) {
+        http_response_code(403);
+        echo json_encode(['error' => "Action refusée : Le numéro " . htmlspecialchars($tel_input) . " ne figure pas sur la liste des participants autorisés pour ce scrutin privé."]);
+        exit();
+    }
 }
 
 // Vérifie si le visiteur/client a déjà voté pour cet événement
@@ -120,12 +159,13 @@ try {
 
         $reference = 'VOTE-' . strtoupper(substr(uniqid(), -6));
         $stmt_ins = $pdo->prepare("
-            INSERT INTO vote_paiements (event_id, candidat_id, candidats_ids, user_id, visitor_id, montant, methode, reference, statut)
-            VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 'en_attente')
+            INSERT INTO vote_paiements (event_id, candidat_id, candidats_ids, user_id, visitor_id, telephone, montant, methode, reference, statut)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, 'en_attente')
         ");
-        $stmt_ins->execute([$event_id, $primary_cand, $cands_json, $user_id, $visitor_id, $montant_total, $reference]);
+        $stmt_ins->execute([$event_id, $primary_cand, $cands_json, $user_id, $visitor_id, $verified_tel_clean, $montant_total, $reference]);
 
-        echo json_encode(['redirect' => 'paiement-vote.php?id=' . $pdo->lastInsertId()]);
+        $redir = 'paiement-vote.php?id=' . $pdo->lastInsertId() . ($is_private_event ? ('&token=' . urlencode($token_req)) : '');
+        echo json_encode(['redirect' => $redir]);
         exit();
     }
 

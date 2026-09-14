@@ -11,7 +11,7 @@ require_once '../includes/auth.php';
 checkRole(['agent', 'admin'], '../connexion.php');
 
 $current_page = basename($_SERVER['PHP_SELF']);
-$page_title = $page_title ?? 'Espace Agent - Tikéli';
+$page_title = $page_title ?? 'Espace Agent - Tike WA';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -23,6 +23,7 @@ $page_title = $page_title ?? 'Espace Agent - Tikéli';
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($page_title); ?></title>
+    <link rel="icon" type="image/png" href="../images/favicon.png?v=<?php echo time(); ?>">
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,7 +34,7 @@ $page_title = $page_title ?? 'Espace Agent - Tikéli';
     <link rel="stylesheet" href="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.css">
     <!-- Style CSS -->
     <link rel="stylesheet" href="../css/style.css">
-    <!-- Tikéli Brand Design System -->
+    <!-- Tike WA Brand Design System -->
     <link rel="stylesheet" href="../css/eventia-brand.css">
     <!-- Responsive Professional CSS -->
     <link rel="stylesheet" href="../css/responsive-pro.css">
@@ -85,7 +86,7 @@ $page_title = $page_title ?? 'Espace Agent - Tikéli';
     <header class="client-header shared-client-header"
         style="background: var(--tikeli-black, #000000); color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0.85rem clamp(1rem, 4vw, 2.5rem); display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.12);">
         <a href="verification.php" class="client-brand" style="text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
-            <img src="../images/logo.png" alt="Tikéli" style="height: 34px; width: auto; max-width: 120px; object-fit: contain;">
+            <img src="../images/logo.png?v=<?php echo time(); ?>" alt="Tike WA" style="height: 38px; width: auto; max-width: 140px; object-fit: contain;">
             <span style="font-size: 0.72rem; font-weight: 800; background: rgba(255, 74, 13, 0.18); color: var(--tikeli-orange, #FF4A0D); border: 1px solid rgba(255, 74, 13, 0.35); padding: 2px 7px; border-radius: 6px; letter-spacing: 0.5px;">AGENT</span>
         </a>
 

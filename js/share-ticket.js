@@ -33,7 +33,7 @@ async function shareTicketPdfWhatsApp(arg1, arg2, arg3, arg4) {
     }
 
     // Préparation de l'URL WhatsApp universelle
-    const defaultMsg = fallbackMsg || ('🎟️ *Billet Officiel Tikéli*\n📥 Télécharger mon billet en PDF : ' + fullPdfUrl);
+    const defaultMsg = fallbackMsg || ('🎟️ *Billet Officiel Tike WA*\n📥 Télécharger mon billet en PDF : ' + fullPdfUrl);
     const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(defaultMsg);
 
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
@@ -93,7 +93,7 @@ async function shareTicketPdfWhatsApp(arg1, arg2, arg3, arg4) {
                     await navigator.share({
                         files: [pdfFile],
                         title: filename.replace('.pdf', ''),
-                        text: fallbackMsg || ('🎟️ Voici mon billet Tikéli officiel en pièce jointe (PDF).\n📥 Lien de secours : ' + fullPdfUrl)
+                        text: fallbackMsg || ('🎟️ Voici mon billet Tike WA officiel en pièce jointe (PDF).\n📥 Lien de secours : ' + fullPdfUrl)
                     });
                     shared = true;
                 }
