@@ -1,12 +1,16 @@
 <?php
 // ==============================================================================
 // PAIEMENT MOBILE MONEY D'UN VOTE PAYANT (client/paiement-vote.php)
+// Saisie, sélection d'opérateur & confirmation des informations de vote
 // Passerelle de paiement officielle : BICTORYS (Wave, Orange, MTN, Moov, Cartes)
+// Style : Grille Modulaire Suisse Müller-Brockmann & Modale Harmonisée
 // ==============================================================================
 
 require_once '../config/database.php';
 require_once '../config/bictorys.php';
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 require_once '../includes/secure_token.php';
 
@@ -37,7 +41,7 @@ if (!empty($token)) {
 
 $is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 
-// Téléphone du client connecté (pré-rempli comme pour l'achat de billets)
+// Téléphone du client connecté
 $user_telephone = '';
 if ($is_logged_in) {
     try {
@@ -71,18 +75,25 @@ $back_url = $is_event_prive
     ? 'vote.php?id=' . (int) $vote_pay['event_id'] . (!empty($event_token) ? '&token=' . urlencode($event_token) : '')
     : 'accueil.php?onglet=voter';
 
-$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
+if (!defined('APP_SECRET_KEY')) {
+    error_log("TikeWA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
+    $_SESSION['vote_message'] = "Erreur de configuration serveur. Veuillez contacter l'administrateur.";
+    header('Location: accueil.php?onglet=voter');
+    exit();
+}
+$pay_secret = APP_SECRET_KEY;
 $vote_token = hash_hmac('sha256', $vote_pay['id'] . '|' . $vote_pay['montant'] . '|' . $vote_pay['created_at'], $pay_secret);
-$cur_vote_token = get_or_create_resource_token($pdo, 'vote_payment', (int) $vote_pay['id']);
+$cur_vote_token = $token ?: get_or_create_resource_token($pdo, 'vote_payment', (int) $vote_pay['id']);
 
 $error_msg = null;
 if (isset($_GET['error'])) {
-    $error_msg = "Le paiement du vote a été interrompu ou a échoué. Vous pouvez réessayer avec votre moyen de paiement ci-dessous.";
+    $error_msg = "Le paiement du vote a été interrompu ou a échoué. Vous pouvez réessayer ci-dessous.";
 }
 
-// Initialisation Bictorys
+// Téléphone par défaut
 $vote_phone = $vote_pay['telephone'] ?: ($user_telephone ?: ($_SESSION['user_phone'] ?? ''));
 
+// Traitement de l'initialisation du paiement Bictorys
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement_vote'])) {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'];
@@ -98,8 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement_vote
         try {
             $pdo->prepare("UPDATE vote_paiements SET telephone = ? WHERE id = ?")->execute([$phone_submitted, $vote_pay['id']]);
             $vote_pay['telephone'] = $phone_submitted;
-        } catch (\Throwable $t) {
-        }
+        } catch (\Throwable $t) {}
     }
 
     $chargeParams = [
@@ -124,12 +134,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement_vote
     }
 
     $charge = bictorys_create_charge($chargeParams);
+
+    // Réponse AJAX pour la modale intégrée
+    if (!empty($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+        header('Content-Type: application/json; charset=utf-8');
+        if ($charge['success'] && !empty($charge['redirectUrl'])) {
+            $txId = $charge['transactionId'] ?? '';
+            $finalCallback = $callbackUrl . '&transaction_id=' . urlencode($txId);
+            echo json_encode([
+                'success' => true,
+                'transactionId' => $txId,
+                'redirectUrl' => $charge['redirectUrl'],
+                'callbackUrl' => $finalCallback,
+                'amount' => (int) round($vote_pay['montant']),
+                'amount_formatted' => number_format($vote_pay['montant'], 0, ',', ' '),
+                'currency' => 'FCFA',
+                'eventNom' => $vote_pay['event_nom'] ?? 'Scrutin Officiel',
+                'clientNom' => $_SESSION['user_nom'] ?? 'Électeur',
+                'clientPhone' => $phone_submitted,
+                'provider' => $selected_provider ?: 'wave_money',
+                'is_simulator' => (strpos($charge['redirectUrl'], '/simulator/') !== false)
+            ]);
+            exit();
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => $charge['error'] ?? "Impossible d'initialiser la session de paiement de vote sécurisée Bictorys."
+            ]);
+            exit();
+        }
+    }
+
     if ($charge['success'] && !empty($charge['redirectUrl'])) {
         header('Location: ' . $charge['redirectUrl']);
         exit();
     } else {
         $error_msg = $charge['error'] ?? "Impossible d'initialiser la session de paiement de vote via Bictorys.";
     }
+}
+
+// Confirmation de la simulation Bictorys via requête AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmer_simulation_bictorys'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $txId = trim($_POST['transaction_id'] ?? '');
+    if (!empty($txId)) {
+        $confirmUrl = 'https://api.test.bictorys.com/simulator/v1/confirm?transaction_id=' . urlencode($txId);
+        $ch = curl_init($confirmUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_SSL_VERIFYPEER => false
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
+    }
+    echo json_encode([
+        'success' => true,
+        'message' => 'Paiement du vote confirmé avec succès',
+        'transactionId' => $txId
+    ]);
+    exit();
 }
 
 // Récupération des candidats sélectionnés avec leurs photos et descriptions
@@ -147,16 +212,15 @@ if (!empty($cands_ids) && is_array($cands_ids)) {
     }
 }
 
-$page_title = "Paiement de votre Vote - Tike WA";
+$page_title = "Paiement de votre Vote - TikeWA";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>
-<div class="payment-container"
-    style="max-width: 620px; margin: 2rem auto 3.5rem; padding: 0 clamp(0.75rem, 2vw, 1rem);">
-    <a href="<?php echo htmlspecialchars($back_url); ?>" class="back-link"
+
+<div class="payment-container">
+    <a href="<?php echo $back_url; ?>" class="back-link"
         style="margin-bottom: 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; color: var(--eventia-muted, #737373); text-decoration: none; font-weight: 600; font-size: 0.9rem;">
-        <i class="fa-solid fa-arrow-left"></i>
-        <?php echo $is_event_prive ? 'Annuler et retourner au scrutin privé' : 'Annuler et retourner au classement'; ?>
+        <i class="fa-solid fa-arrow-left"></i> Annuler et retourner au vote
     </a>
 
     <?php if (!empty($error_msg)): ?>
@@ -170,133 +234,136 @@ include 'header.php';
         </div>
     <?php endif; ?>
 
-    <div class="payment-card eventia-card"
-        style="padding: 0; overflow: hidden; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 12px 24px -4px rgba(16, 24, 40, 0.08); background: #ffffff;">
-        <div class="payment-heading" style="background: #0f172a; color: #ffffff; padding: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="payment-icon"
-                    style="width: 48px; height: 48px; background: rgba(255, 74, 13, 0.18); border: 1px solid rgba(255, 74, 13, 0.35); border-radius: 12px; display: grid; place-items: center; font-size: 1.3rem; margin-bottom: 1rem; color: var(--tikeli-orange, #FF4A0D);">
+    <div class="payment-card eventia-card">
+
+        <!-- En-tête Swiss Style -->
+        <div class="payment-heading">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                <div class="payment-icon">
                     <i class="fa-solid fa-check-to-slot"></i>
                 </div>
-                <span
-                    style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-family: 'Space Mono', monospace; font-size: 0.75rem; padding: 0.35rem 0.65rem; border-radius: 6px; text-transform: uppercase;">
+                <span class="secure-badge">
                     Bictorys Secure Pay
                 </span>
             </div>
-            <span class="page-kicker"
-                style="color: var(--tikeli-orange, #FF4A0D); font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; font-family: 'Space Mono', monospace;">Session
-                de vote #<?php echo (int) $vote_pay['id']; ?></span>
-            <h1
-                style="color: #ffffff; margin: 0.3rem 0 0.5rem; font-size: 1.7rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; line-height: 1.2;">
-                Régler vos Voix</h1>
-            <p style="color: #94a3b8; font-size: 0.92rem; margin: 0;">
-                Compétition :
-                <strong style="color: #f1f5f9;"><?php echo htmlspecialchars($vote_pay['event_nom']); ?></strong>
+            <span class="page-kicker">
+                Scrutin Officiel
+            </span>
+            <h1 class="payment-title">
+                <?php echo htmlspecialchars($vote_pay['event_nom']); ?>
+            </h1>
+            <p style="color: #94a3b8; font-size: 0.92rem; margin: 0; word-break: break-word;">
+                Électeur :
+                <strong
+                    style="color: #f1f5f9;"><?php echo htmlspecialchars($_SESSION['user_nom'] ?? 'Électeur certifié'); ?></strong>
+                <?php if (!empty($_SESSION['user_email'])): ?>
+                    · <?php echo htmlspecialchars($_SESSION['user_email']); ?>
+                <?php endif; ?>
             </p>
         </div>
 
+        <!-- Candidat(s) sélectionné(s) -->
         <?php if (!empty($candidats_choisis)): ?>
-            <div style="padding: 1.25rem 2rem; background: #fafafa; border-bottom: 1px solid #E2E8F0;">
-                <span
-                    style="display: block; font-size: 0.82rem; text-transform: uppercase; font-weight: 700; color: var(--eventia-muted, #737373); letter-spacing: 0.05em; margin-bottom: 0.75rem; font-family: 'Space Mono', monospace;">
-                    Candidat(s) soutenu(s) (<?php echo count($candidats_choisis); ?>) :
+            <div class="payment-candidats-section">
+                <span style="font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.65rem;">
+                    <i class="fa-solid fa-trophy" style="color: var(--tikeli-orange, #FF4A0D); margin-right: 4px;"></i> Candidat(s) sélectionné(s) :
                 </span>
-                <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-                    <?php foreach ($candidats_choisis as $c): ?>
-                        <div
-                            style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #E2E8F0;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <?php if (!empty($c['photo'])): ?>
-                                    <img src="../<?php echo htmlspecialchars($c['photo']); ?>" alt=""
-                                        style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;">
-                                <?php else: ?>
-                                    <div
-                                        style="width: 36px; height: 36px; border-radius: 50%; background: #eee; display: grid; place-items: center; font-size: 0.8rem; color: #777;">
-                                        <i class="fa-solid fa-user"></i>
-                                    </div>
+                <div style="display: flex; flex-direction: column; gap: 0.65rem; width: 100%;">
+                    <?php foreach ($candidats_choisis as $cc): ?>
+                        <?php
+                        $default_cand_photo = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
+                        $p_img = $default_cand_photo;
+                        if (!empty($cc['photo'])) {
+                            $raw_p = trim($cc['photo']);
+                            if (strpos($raw_p, 'http') === 0) {
+                                $p_img = htmlspecialchars($raw_p);
+                            } elseif (file_exists(__DIR__ . '/../uploads/candidats/' . $raw_p)) {
+                                $p_img = '../uploads/candidats/' . htmlspecialchars($raw_p);
+                            } elseif (file_exists(__DIR__ . '/../' . ltrim($raw_p, '/'))) {
+                                $p_img = '../' . ltrim(htmlspecialchars($raw_p), '/');
+                            }
+                        }
+                        ?>
+                        <div class="candidate-row">
+                            <img src="<?php echo $p_img; ?>" alt="<?php echo htmlspecialchars($cc['nom']); ?>"
+                                class="candidate-row-avatar" loading="lazy" decoding="async"
+                                onerror="this.onerror=null; this.src='<?php echo $default_cand_photo; ?>';">
+                            <div class="candidate-row-content">
+                                <strong class="candidate-row-nom"><?php echo htmlspecialchars($cc['nom']); ?></strong>
+                                <?php if (!empty($cc['description'])): ?>
+                                    <small class="candidate-row-desc">
+                                        <?php echo htmlspecialchars($cc['description']); ?>
+                                    </small>
                                 <?php endif; ?>
-                                <div>
-                                    <strong
-                                        style="font-size: 0.92rem; color: var(--eventia-navy, #0f172a); display: block;"><?php echo htmlspecialchars($c['nom']); ?></strong>
-                                    <?php if (!empty($c['numero_candidat'])): ?>
-                                        <small
-                                            style="color: var(--eventia-muted, #737373); font-size: 0.75rem; font-family: 'Space Mono', monospace;">N°
-                                            <?php echo htmlspecialchars($c['numero_candidat']); ?></small>
-                                    <?php endif; ?>
-                                </div>
                             </div>
-                            <span style="color: #10B981; font-size: 1.1rem;"><i class="fa-solid fa-circle-check"></i></span>
+                            <span class="candidate-row-badge">
+                                +1 Vote
+                            </span>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
         <?php endif; ?>
 
-        <div class="payment-amount"
-            style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 1.25rem 2rem; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <span
-                    style="color: var(--eventia-navy, #0f172a); font-weight: 700; font-size: 0.95rem; display: block;">Montant
-                    total du vote :</span>
-                <?php if (!empty($candidats_choisis)): ?>
-                    <small
-                        style="color: var(--eventia-muted, #737373); font-size: 0.8rem;"><?php echo count($candidats_choisis); ?>
-                        choix ×
-                        <?php echo number_format((float) ($vote_pay['montant'] / count($candidats_choisis)), 0, ',', ' '); ?>
-                        FCFA</small>
-                <?php endif; ?>
-            </div>
+        <!-- Montant Total à régler -->
+        <div class="payment-amount">
+            <span style="color: #0f172a; font-weight: 700; font-size: 0.95rem;">Montant du Vote :</span>
             <strong class="swiss-numeral"
-                style="color: var(--eventia-navy, #0f172a); font-size: 1.85rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 900;"><?php echo number_format((float) $vote_pay['montant'], 0, ',', ' '); ?>
+                style="color: #0f172a; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 900;"><?php echo number_format($vote_pay['montant'], 0, ',', ' '); ?>
                 <span
                     style="font-family: 'Space Mono', monospace; font-size: 0.95rem; color: var(--eventia-muted, #737373); font-weight: 700;">FCFA</span></strong>
         </div>
 
-        <form method="POST" action="paiement-vote.php?token=<?php echo urlencode($cur_vote_token); ?>" id="bictorys-vote-form"
-            style="padding: 2rem;">
+        <!-- Formulaire de Paiement Harmonisé -->
+        <form method="POST" action="paiement-vote.php?token=<?php echo urlencode($cur_vote_token); ?>" id="bictorys-pay-form"
+            class="payment-form">
             <input type="hidden" name="initier_paiement_vote" value="1">
-            <input type="hidden" name="provider" id="selected_provider_vote" value="wave_money">
+            <input type="hidden" name="provider" id="selected_provider" value="wave_money">
 
-            <!-- 1. Sélection opérateur -->
+            <!-- 1. Sélection du moyen de paiement -->
             <div style="margin-bottom: 1.5rem;">
                 <label
                     style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Mono', monospace;">
                     1. Choisissez votre moyen de paiement
                 </label>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
-                    <button type="button" class="provider-vote-card active" data-provider="wave_money"
-                        style="background: #ffffff; border: 2px solid #1ba0e2; border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;">
+
+                <div class="provider-grid" id="provider-selector">
+                    <!-- Wave -->
+                    <button type="button" class="provider-card active" data-provider="wave_money">
                         <span
-                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #1ba0e2;"></span>
-                        <strong style="color: #0f172a; font-size: 0.95rem;">Wave</strong>
+                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #1ba0e2; flex-shrink: 0;"></span>
+                        <strong style="color: #0f172a; font-size: 0.92rem;">Wave</strong>
                         <small style="color: #64748b; font-size: 0.72rem;">Sans frais</small>
                     </button>
-                    <button type="button" class="provider-vote-card" data-provider="orange_money"
-                        style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;">
+
+                    <!-- Orange Money -->
+                    <button type="button" class="provider-card" data-provider="orange_money">
                         <span
-                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #ff7900;"></span>
-                        <strong style="color: #0f172a; font-size: 0.95rem;">Orange</strong>
-                        <small style="color: #64748b; font-size: 0.72rem;">Code #144*82#</small>
+                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #ff7900; flex-shrink: 0;"></span>
+                        <strong style="color: #0f172a; font-size: 0.92rem;">Orange</strong>
+                        <small style="color: #64748b; font-size: 0.72rem;">#144*82#</small>
                     </button>
-                    <button type="button" class="provider-vote-card" data-provider="mtn_money"
-                        style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;">
+
+                    <!-- MTN MoMo -->
+                    <button type="button" class="provider-card" data-provider="mtn_money">
                         <span
-                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #ffcc00;"></span>
-                        <strong style="color: #0f172a; font-size: 0.95rem;">MTN MoMo</strong>
-                        <small style="color: #64748b; font-size: 0.72rem;">Prompt USSD</small>
+                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #ffcc00; flex-shrink: 0;"></span>
+                        <strong style="color: #0f172a; font-size: 0.92rem;">MTN MoMo</strong>
+                        <small style="color: #64748b; font-size: 0.72rem;">USSD</small>
                     </button>
-                    <button type="button" class="provider-vote-card" data-provider="card"
-                        style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;">
+
+                    <!-- Carte Bancaire -->
+                    <button type="button" class="provider-card" data-provider="card">
                         <i class="fa-regular fa-credit-card" style="color: #3b82f6; font-size: 1rem;"></i>
-                        <strong style="color: #0f172a; font-size: 0.95rem;">Carte Visa/CB</strong>
-                        <small style="color: #64748b; font-size: 0.72rem;">Chiffré 3DS</small>
+                        <strong style="color: #0f172a; font-size: 0.92rem;">Carte Visa/CB</strong>
+                        <small style="color: #64748b; font-size: 0.72rem;">3D-Secure</small>
                     </button>
                 </div>
             </div>
 
-            <!-- 2. Saisie téléphone -->
+            <!-- 2. Saisie du numéro de téléphone -->
             <div style="margin-bottom: 1.5rem;">
-                <label for="phone_input_vote"
+                <label for="phone_input"
                     style="display: block; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Space Mono', monospace;">
                     2. Numéro de compte Mobile Money
                 </label>
@@ -305,34 +372,35 @@ include 'header.php';
                         style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b; font-family: 'Space Mono', monospace; font-size: 0.95rem;">
                         <i class="fa-solid fa-phone" style="margin-right: 4px; font-size: 0.85rem;"></i>
                     </span>
-                    <input type="tel" name="phone" id="phone_input_vote"
+                    <input type="tel" name="phone" id="phone_input"
                         value="<?php echo htmlspecialchars($vote_phone); ?>" required
                         placeholder="Ex: 0701020304 ou +225..."
                         style="width: 100%; box-sizing: border-box; padding: 0.85rem 1rem 0.85rem 2.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; font-family: 'Space Mono', monospace; font-weight: 600; color: #0f172a; background: #ffffff;">
                 </div>
                 <small style="color: #64748b; font-size: 0.78rem; margin-top: 0.35rem; display: block;">
-                    Le compte qui autorise le paiement de vos voix.
+                    Le compte qui recevra l'autorisation de débit pour valider vos votes.
                 </small>
             </div>
 
             <!-- Champ OTP conditionnel pour Orange Money CI -->
-            <div id="orange-otp-block-vote"
+            <div id="orange-otp-block"
                 style="display: none; margin-bottom: 1.5rem; background: #FFF7ED; border: 1px solid #FFEDD5; padding: 1rem; border-radius: 8px;">
-                <label for="otp_input_vote"
+                <label for="otp_input"
                     style="display: block; font-size: 0.82rem; font-weight: 700; color: #9A3412; margin-bottom: 0.4rem; font-family: 'Space Mono', monospace;">
                     Code d'autorisation Orange Money (#144*82#)
                 </label>
-                <input type="text" name="otp" id="otp_input_vote" placeholder="Entrez le code à 4 ou 6 chiffres généré"
+                <input type="text" name="otp" id="otp_input" placeholder="Entrez le code à 4 ou 6 chiffres généré"
                     style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border: 1px solid #FDBA74; border-radius: 6px; font-size: 0.95rem; font-family: 'Space Mono', monospace;">
                 <small style="color: #C2410C; font-size: 0.75rem; margin-top: 0.35rem; display: block;">
-                    Composez <strong>#144*82#</strong> pour obtenir votre code temporaire, puis validez.
+                    Sur votre téléphone Orange, composez <strong>#144*82#</strong> pour obtenir votre code temporaire,
+                    puis validez.
                 </small>
             </div>
 
-            <!-- Instructions dynamiques -->
-            <div id="provider-instructions-vote"
-                style="background: #F1F5F9; border-left: 4px solid #1ba0e2; padding: 0.85rem 1rem; border-radius: 4px; margin-bottom: 1.5rem; font-size: 0.85rem; color: #334155;">
-                <span id="instruction-text-vote">
+            <!-- Bloc d'instructions dynamiques adaptées à l'opérateur -->
+            <div id="provider-instructions"
+                style="background: #F1F5F9; border-left: 4px solid #1ba0e2; padding: 0.85rem 1rem; border-radius: 4px; margin-bottom: 1.5rem; font-size: 0.85rem; color: #334155; word-break: break-word;">
+                <span id="instruction-text">
                     <i class="fa-solid fa-info-circle" style="color: #1ba0e2; margin-right: 6px;"></i>
                     <strong>Sur smartphone</strong> : votre application Wave s'ouvrira directement pour valider en 1
                     clic sans scanner.<br>
@@ -341,15 +409,17 @@ include 'header.php';
                 </span>
             </div>
 
-            <button type="submit" id="btn-submit-vote"
-                style="width: 100%; background: var(--tikeli-orange, #FF4A0D); color: #ffffff; border: none; padding: 1.05rem 1.5rem; border-radius: 10px; font-size: 1.05rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.65rem; transition: background 0.2s ease, transform 0.1s ease; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);">
+            <!-- Bouton de validation d'action -->
+            <button type="submit" id="btn-submit-pay" class="btn-submit-pay">
                 <i class="fa-solid fa-lock"></i>
-                <span id="btn-vote-label">Valider et payer mes voix avec Wave</span>
+                <span id="btn-pay-label">Payer <?php echo number_format($vote_pay['montant'], 0, ',', ' '); ?> FCFA
+                    avec Wave</span>
                 <i class="fa-solid fa-arrow-right"></i>
             </button>
 
+            <!-- Option passerelle multi-opérateurs de repli -->
             <div style="margin-top: 1rem; text-align: center;">
-                <button type="button" id="btn-toggle-all-vote"
+                <button type="button" id="btn-toggle-all"
                     style="background: none; border: none; color: #64748b; font-size: 0.8rem; cursor: pointer; text-decoration: underline;">
                     Ou ouvrir le portail multi-moyens Bictorys
                 </button>
@@ -357,50 +427,538 @@ include 'header.php';
 
             <div style="margin-top: 1.5rem; text-align: center; border-top: 1px solid #E2E8F0; padding-top: 1.25rem;">
                 <p
-                    style="margin: 0; color: var(--eventia-muted, #737373); font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.45rem;">
+                    style="margin: 0; color: var(--eventia-muted, #737373); font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.45rem; flex-wrap: wrap;">
                     <i class="fa-solid fa-shield-check" style="color: #10B981;"></i>
-                    Paiement chiffré 256-bit certifié PCI-DSS
+                    Transaction sécurisée et chiffrée certifiée PCI-DSS
                 </p>
-                <small style="color: #94a3b8; font-size: 0.75rem; margin-top: 0.3rem; display: block;">
-                    Vos voix seront enregistrées instantanément dès la confirmation de débit.
-                </small>
             </div>
         </form>
     </div>
 </div>
 
+<!-- ============================================================================== -->
+<!-- MODALE DE PAIEMENT HARMONISÉE (SIMULATION & AUTORISATION BICTORYS)             -->
+<!-- Vue 1: Order Details & Total Payment Amount | Vue 2: Payment Processed Success -->
+<!-- ============================================================================== -->
+<div id="pay-modal-backdrop" class="pay-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-main-title">
+    <div class="pay-modal-card">
+        <!-- En-tête de la modale -->
+        <div class="pay-modal-header">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255, 74, 13, 0.2); border: 1px solid rgba(255, 74, 13, 0.4); display: grid; place-items: center; color: var(--tikeli-orange, #FF4A0D); font-size: 0.95rem;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3 id="modal-main-title" style="margin: 0; font-size: 1.05rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #ffffff;">
+                    Autorisation de Vote Sécurisé
+                </h3>
+            </div>
+            <button type="button" class="pay-modal-close" id="btn-modal-close" aria-label="Fermer la modale">&times;</button>
+        </div>
+
+        <div class="pay-modal-body">
+            <!-- VUE 1 : DÉTAILS DU VOTE -->
+            <div id="modal-view-details">
+                <span style="font-family: 'Space Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tikeli-orange, #FF4A0D); font-weight: 700; display: block; margin-bottom: 0.25rem;">
+                    Bictorys Secure Checkout
+                </span>
+                <h4 style="margin: 0 0 1.25rem; font-size: 1.35rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #0f172a;">
+                    Vote Order Details
+                </h4>
+
+                <!-- Récapitulatif harmonisé -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; text-align: left; font-size: 0.9rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #EDF2F7;">
+                        <span style="color: #64748b; font-size: 0.8rem; font-family: 'Space Mono', monospace; text-transform: uppercase;">Événement</span>
+                        <strong style="color: #0f172a; font-family: 'Outfit', sans-serif; font-size: 0.92rem; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <?php echo htmlspecialchars($vote_pay['event_nom']); ?>
+                        </strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #EDF2F7;">
+                        <span style="color: #64748b; font-size: 0.8rem; font-family: 'Space Mono', monospace; text-transform: uppercase;">Opérateur</span>
+                        <span id="modal-operator-badge" style="display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; color: #0f172a;">
+                            <span id="modal-operator-dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #1ba0e2;"></span>
+                            <span id="modal-operator-name">Wave</span>
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #64748b; font-size: 0.8rem; font-family: 'Space Mono', monospace; text-transform: uppercase;">Compte Débité</span>
+                        <strong id="modal-client-phone" style="color: #0f172a; font-family: 'Space Mono', monospace; font-size: 0.88rem;">+225 ...</strong>
+                    </div>
+                </div>
+
+                <!-- Montant Total Harmonisé -->
+                <div style="background: #0f172a; color: #ffffff; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
+                    <span style="font-family: 'Space Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; display: block; margin-bottom: 4px;">
+                        Total Payment Amount
+                    </span>
+                    <div style="font-family: 'Outfit', 'Inter', sans-serif; font-size: 2.1rem; font-weight: 900; line-height: 1.1; color: #ffffff;">
+                        <span id="modal-total-amount"><?php echo number_format($vote_pay['montant'], 0, ',', ' '); ?></span>
+                        <span style="font-family: 'Space Mono', monospace; font-size: 1rem; color: #cbd5e1; font-weight: 700;">FCFA</span>
+                    </div>
+                    <small style="color: #94a3b8; font-size: 0.76rem; margin-top: 6px; display: block;">
+                        Débit instantané sécurisé par autorisation bancaire
+                    </small>
+                </div>
+
+                <!-- Boutons d'Action CANCEL & CONFIRM harmonisés -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <button type="button" id="btn-modal-cancel" class="btn-modal-cancel">
+                        <i class="fa-solid fa-xmark"></i> CANCEL
+                    </button>
+                    <button type="button" id="btn-modal-confirm" class="btn-modal-confirm">
+                        <i class="fa-solid fa-check"></i> CONFIRM
+                    </button>
+                </div>
+            </div>
+
+            <!-- VUE 2 : PAIEMENT VALIDÉ AVEC SUCCÈS -->
+            <div id="modal-view-success" style="display: none;">
+                <div class="success-check-icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+
+                <h4 style="margin: 0 0 0.5rem; font-size: 1.35rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #065F46;">
+                    Your payment has been successfully proceed!
+                </h4>
+                <p style="margin: 0 0 1.25rem; font-size: 0.88rem; color: #047857;">
+                    Votre vote officiel a été accepté et validé par la passerelle Bictorys.
+                </p>
+
+                <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem; text-align: left;">
+                    <div style="margin-bottom: 0.75rem;">
+                        <span style="font-family: 'Space Mono', monospace; font-size: 0.72rem; text-transform: uppercase; color: #166534; font-weight: 700; display: block; margin-bottom: 2px;">
+                            Total Payment Amount
+                        </span>
+                        <strong id="modal-success-amount" style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; color: #15803D; font-weight: 800;">
+                            <?php echo number_format($vote_pay['montant'], 0, ',', ' '); ?> FCFA
+                        </strong>
+                    </div>
+                    <div>
+                        <span style="font-family: 'Space Mono', monospace; font-size: 0.72rem; text-transform: uppercase; color: #166534; font-weight: 700; display: block; margin-bottom: 2px;">
+                            Payment Message
+                        </span>
+                        <span id="modal-success-msg" style="font-family: 'Space Mono', monospace; font-size: 0.82rem; color: #166534; font-weight: 700; word-break: break-all;">
+                            PAYMENT PROCESSED: <span id="modal-success-txid">...</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Animation & Redirection Automatique -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1rem; text-align: center;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #334155; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-spinner fa-spin" style="color: #059669;"></i>
+                        Validation et enregistrement de votre vote...
+                    </span>
+                    <div class="pay-progress-bar">
+                        <div id="pay-progress-fill" class="pay-progress-fill"></div>
+                    </div>
+                    <small style="color: #64748b; font-size: 0.75rem; margin-top: 0.5rem; display: block;">
+                        Redirection vers votre confirmation de vote...
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* MISE EN PAGE RESPONSIVE & STYLE SUISSE MÜLLER-BROCKMANN */
+.payment-container {
+    max-width: 620px;
+    margin: 1.5rem auto 3.5rem;
+    padding: 0 clamp(0.75rem, 3.5vw, 1.25rem);
+    box-sizing: border-box;
+    width: 100%;
+}
+.payment-card {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    box-shadow: 0 12px 24px -4px rgba(16, 24, 40, 0.08);
+    background: #ffffff;
+    width: 100%;
+    box-sizing: border-box;
+}
+.payment-heading {
+    background: #0f172a;
+    color: #ffffff;
+    padding: clamp(1.25rem, 4vw, 2rem);
+    box-sizing: border-box;
+    width: 100%;
+}
+.payment-icon {
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 74, 13, 0.15);
+    border: 1px solid rgba(255, 74, 13, 0.3);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+    margin-bottom: 0.85rem;
+    color: var(--tikeli-orange, #FF4A0D);
+    flex-shrink: 0;
+}
+.secure-badge {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.page-kicker {
+    color: var(--tikeli-orange, #FF4A0D);
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'Space Mono', monospace;
+    display: block;
+}
+.payment-title {
+    color: #ffffff;
+    margin: 0.25rem 0 0.5rem;
+    font-size: clamp(1.25rem, 4vw, 1.7rem);
+    font-family: var(--font-heading, 'Outfit', sans-serif);
+    font-weight: 800;
+    line-height: 1.22;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+.payment-candidats-section {
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    padding: clamp(0.9rem, 3vw, 1.25rem) clamp(1rem, 4vw, 2rem);
+    box-sizing: border-box;
+    width: 100%;
+}
+.candidate-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.8rem;
+    background: #ffffff;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+.candidate-row-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center top;
+    border: 2px solid var(--tikeli-orange, #FF4A0D);
+    flex-shrink: 0;
+}
+.candidate-row-content {
+    flex: 1 1 0%;
+    min-width: 0;
+    overflow: hidden;
+}
+.candidate-row-nom {
+    color: #0f172a;
+    font-size: 0.92rem;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.candidate-row-desc {
+    color: #64748b;
+    font-size: 0.75rem;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin-top: 1px;
+}
+.candidate-row-badge {
+    background: rgba(255, 74, 13, 0.12);
+    color: var(--tikeli-orange, #FF4A0D);
+    font-size: 0.74rem;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 74, 13, 0.25);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.payment-amount {
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    padding: clamp(0.9rem, 3vw, 1.25rem) clamp(1rem, 4vw, 2rem);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    width: 100%;
+}
+.swiss-numeral {
+    font-size: clamp(1.4rem, 4.5vw, 1.85rem);
+    white-space: nowrap;
+}
+.payment-form {
+    padding: clamp(1rem, 4vw, 2rem);
+    box-sizing: border-box;
+    width: 100%;
+}
+.provider-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+@media (min-width: 520px) {
+    .provider-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+.provider-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.75rem 0.4rem;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+.provider-card.active {
+    border: 2px solid #1ba0e2;
+    background: #F8FAFC;
+}
+.btn-submit-pay {
+    width: 100%;
+    background: var(--tikeli-orange, #FF4A0D);
+    color: #ffffff;
+    border: none;
+    padding: 0.95rem 1.25rem;
+    border-radius: 10px;
+    font-size: clamp(0.92rem, 2.8vw, 1.05rem);
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    transition: background 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);
+    box-sizing: border-box;
+}
+
+/* MODALE DE PAIEMENT HARMONISÉE */
+.pay-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(0.5rem, 3vw, 1rem);
+    z-index: 100000;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    box-sizing: border-box;
+}
+.pay-modal-backdrop.is-open {
+    opacity: 1;
+}
+.pay-modal-card {
+    background: #ffffff;
+    width: 100%;
+    max-width: 420px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    transform: translateY(20px) scale(0.96);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    margin: auto;
+}
+.pay-modal-backdrop.is-open .pay-modal-card {
+    transform: translateY(0) scale(1);
+}
+.pay-modal-header {
+    background: #0f172a;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
+}
+.pay-modal-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+.pay-modal-close:hover {
+    color: #ffffff;
+}
+.pay-modal-body {
+    padding: clamp(1rem, 3.5vw, 1.5rem);
+    text-align: center;
+    box-sizing: border-box;
+}
+.btn-modal-cancel {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #475569;
+    padding: 0.8rem 0.85rem;
+    border-radius: 8px;
+    font-size: clamp(0.78rem, 2.5vw, 0.88rem);
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+.btn-modal-cancel:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
+}
+.btn-modal-confirm {
+    background: #2563eb;
+    border: 1.5px solid #2563eb;
+    color: #ffffff;
+    padding: 0.8rem 0.85rem;
+    border-radius: 8px;
+    font-size: clamp(0.78rem, 2.5vw, 0.88rem);
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+.btn-modal-confirm:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+.success-check-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #D1FAE5;
+    color: #059669;
+    display: grid;
+    place-items: center;
+    font-size: 1.85rem;
+    margin: 0 auto 1rem;
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.15);
+    animation: bounceIn 0.4s ease-out;
+}
+.pay-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #E2E8F0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 0.85rem;
+}
+.pay-progress-fill {
+    height: 100%;
+    background: #10B981;
+    width: 0%;
+    border-radius: 999px;
+    transition: width 1.5s linear;
+}
+@keyframes bounceIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const providerInput = document.getElementById('selected_provider_vote');
-        const cards = document.querySelectorAll('.provider-vote-card');
-        const instructions = document.getElementById('provider-instructions-vote');
-        const instructionText = document.getElementById('instruction-text-vote');
-        const orangeBlock = document.getElementById('orange-otp-block-vote');
-        const btnLabel = document.getElementById('btn-vote-label');
-        const btnAll = document.getElementById('btn-toggle-all-vote');
-        const form = document.getElementById('bictorys-vote-form');
-        const submitBtn = document.getElementById('btn-submit-vote');
+        const providerInput = document.getElementById('selected_provider');
+        const cards = document.querySelectorAll('.provider-card');
+        const instructions = document.getElementById('provider-instructions');
+        const instructionText = document.getElementById('instruction-text');
+        const orangeBlock = document.getElementById('orange-otp-block');
+        const btnLabel = document.getElementById('btn-pay-label');
+        const btnAll = document.getElementById('btn-toggle-all');
+        const form = document.getElementById('bictorys-pay-form');
+        const submitBtn = document.getElementById('btn-submit-pay');
+
+        // Éléments de la Modale
+        const modalBackdrop = document.getElementById('pay-modal-backdrop');
+        const modalCloseBtn = document.getElementById('btn-modal-close');
+        const btnModalCancel = document.getElementById('btn-modal-cancel');
+        const btnModalConfirm = document.getElementById('btn-modal-confirm');
+        const modalViewDetails = document.getElementById('modal-view-details');
+        const modalViewSuccess = document.getElementById('modal-view-success');
+        const modalOperatorDot = document.getElementById('modal-operator-dot');
+        const modalOperatorName = document.getElementById('modal-operator-name');
+        const modalClientPhone = document.getElementById('modal-client-phone');
+        const modalTotalAmount = document.getElementById('modal-total-amount');
+        const modalSuccessAmount = document.getElementById('modal-success-amount');
+        const modalSuccessTxId = document.getElementById('modal-success-txid');
+        const payProgressFill = document.getElementById('pay-progress-fill');
+
+        let currentTxId = '';
+        let currentCallbackUrl = '';
+
+        const totalAmount = "<?php echo number_format($vote_pay['montant'], 0, ',', ' '); ?> FCFA";
 
         const config = {
             'wave_money': {
                 name: 'Wave',
                 color: '#1ba0e2',
-                text: '<i class="fa-solid fa-info-circle" style="color: #1ba0e2; margin-right: 6px;"></i> <strong>Sur smartphone</strong> : l’application Wave s’ouvre directement pour valider en 1 clic.<br><strong>Sur PC</strong> : scannez le QR code officiel ou confirmez sur votre application.'
+                text: '<i class="fa-solid fa-info-circle" style="color: #1ba0e2; margin-right: 6px;"></i> <strong>Sur smartphone</strong> : l’application Wave s’ouvre directement pour valider en 1 clic.<br><strong>Sur ordinateur</strong> : scannez le QR code officiel ou confirmez sur votre application.'
             },
             'orange_money': {
                 name: 'Orange Money',
                 color: '#ff7900',
-                text: '<i class="fa-solid fa-info-circle" style="color: #ff7900; margin-right: 6px;"></i> <strong>Orange Money CI</strong> : composez <strong>#144*82#</strong> pour générer votre code d’autorisation temporaire.'
+                text: '<i class="fa-solid fa-info-circle" style="color: #ff7900; margin-right: 6px;"></i> <strong>Orange Money CI</strong> : composez <strong>#144*82#</strong> pour obtenir votre code d’autorisation, ou confirmez le prompt USSD reçu sur votre écran.'
             },
             'mtn_money': {
                 name: 'MTN MoMo',
                 color: '#ffcc00',
-                text: '<i class="fa-solid fa-info-circle" style="color: #eab308; margin-right: 6px;"></i> <strong>MTN Mobile Money</strong> : une invite USSD s’affichera sur votre écran. Validez avec votre code PIN.'
+                text: '<i class="fa-solid fa-info-circle" style="color: #eab308; margin-right: 6px;"></i> <strong>MTN Mobile Money</strong> : une demande de débit s’affichera sur votre téléphone. Validez avec votre code PIN secret.'
             },
             'card': {
                 name: 'Carte Bancaire',
                 color: '#3b82f6',
-                text: '<i class="fa-solid fa-shield-check" style="color: #3b82f6; margin-right: 6px;"></i> <strong>Carte Visa / Mastercard</strong> : redirection chiffrée avec protection 3D-Secure.'
+                text: '<i class="fa-solid fa-shield-check" style="color: #3b82f6; margin-right: 6px;"></i> <strong>Carte Visa / Mastercard</strong> : redirection sécurisée vers la saisie chiffrée avec protection 3D-Secure de votre banque.'
             }
         };
 
@@ -425,11 +983,11 @@ include 'header.php';
             if (config[prov]) {
                 instructions.style.borderLeftColor = config[prov].color;
                 instructionText.innerHTML = config[prov].text;
-                btnLabel.innerText = "Valider et payer avec " + config[prov].name;
+                btnLabel.innerText = "Payer " + totalAmount + " avec " + config[prov].name;
             } else {
                 instructions.style.borderLeftColor = '#64748b';
-                instructionText.innerHTML = '<i class="fa-solid fa-info-circle"></i> Redirection vers le portail officiel Bictorys.';
-                btnLabel.innerText = "Continuer vers le paiement sécurisé";
+                instructionText.innerHTML = '<i class="fa-solid fa-info-circle"></i> Redirection vers le portail officiel pour choisir parmi tous les opérateurs.';
+                btnLabel.innerText = "Continuer vers le paiement sécurisé (" + totalAmount + ")";
             }
         }
 
@@ -445,14 +1003,111 @@ include 'header.php';
             });
         }
 
+        function closeModal() {
+            modalBackdrop.classList.remove('is-open');
+            setTimeout(() => {
+                modalBackdrop.style.display = 'none';
+            }, 200);
+            if (submitBtn) {
+                submitBtn.style.pointerEvents = 'auto';
+                submitBtn.style.opacity = '1';
+                submitBtn.disabled = false;
+                const prov = providerInput.value;
+                submitBtn.innerHTML = '<i class="fa-solid fa-lock"></i> <span id="btn-pay-label">Payer ' + totalAmount + ' avec ' + (config[prov] ? config[prov].name : 'Wave') + '</span> <i class="fa-solid fa-arrow-right"></i>';
+            }
+        }
+
+        if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+        if (btnModalCancel) btnModalCancel.addEventListener('click', closeModal);
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalBackdrop.classList.contains('is-open') && modalViewSuccess.style.display !== 'block') {
+                closeModal();
+            }
+        });
+
         if (form && submitBtn) {
-            form.addEventListener('submit', function () {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
                 submitBtn.style.pointerEvents = 'none';
                 submitBtn.style.opacity = '0.75';
                 submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Connexion sécurisée en cours...</span>';
-                setTimeout(function () {
-                    submitBtn.disabled = true;
-                }, 50);
+
+                const formData = new FormData(form);
+                formData.append('ajax', '1');
+
+                fetch(form.getAttribute('action') || window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.transactionId) {
+                        currentTxId = data.transactionId;
+                        currentCallbackUrl = data.callbackUrl;
+
+                        const prov = data.provider || 'wave_money';
+                        const provConf = config[prov] || { name: 'Mobile Money', color: '#FF4A0D' };
+                        modalOperatorDot.style.background = provConf.color;
+                        modalOperatorName.innerText = provConf.name;
+                        modalClientPhone.innerText = data.clientPhone || '<?php echo htmlspecialchars($vote_phone); ?>';
+                        modalTotalAmount.innerText = data.amount_formatted || '<?php echo number_format($vote_pay['montant'], 0, ',', ' '); ?>';
+
+                        modalViewDetails.style.display = 'block';
+                        modalViewSuccess.style.display = 'none';
+
+                        modalBackdrop.style.display = 'flex';
+                        setTimeout(() => {
+                            modalBackdrop.classList.add('is-open');
+                        }, 10);
+                    } else {
+                        alert(data.error || "Impossible d'initialiser le paiement sécurisé du vote.");
+                        closeModal();
+                    }
+                })
+                .catch(err => {
+                    console.error("Erreur AJAX paiement vote:", err);
+                    form.submit();
+                });
+            });
+        }
+
+        if (btnModalConfirm) {
+            btnModalConfirm.addEventListener('click', function () {
+                btnModalConfirm.disabled = true;
+                btnModalConfirm.style.pointerEvents = 'none';
+                btnModalConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement...';
+
+                const confirmData = new FormData();
+                confirmData.append('confirmer_simulation_bictorys', '1');
+                confirmData.append('transaction_id', currentTxId);
+
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: confirmData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    modalViewDetails.style.display = 'none';
+                    modalViewSuccess.style.display = 'block';
+
+                    modalSuccessAmount.innerText = modalTotalAmount.innerText + ' FCFA';
+                    modalSuccessTxId.innerText = currentTxId;
+
+                    setTimeout(() => {
+                        payProgressFill.style.width = '100%';
+                    }, 50);
+
+                    setTimeout(() => {
+                        window.location.href = currentCallbackUrl;
+                    }, 1500);
+                })
+                .catch(err => {
+                    console.error("Erreur confirmation vote:", err);
+                    window.location.href = currentCallbackUrl;
+                });
             });
         }
     });

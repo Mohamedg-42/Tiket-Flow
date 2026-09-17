@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Créer un compte - Tike WA</title>
+    <title>Créer un compte - TikeWA</title>
     <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- Style CSS & Tike WA Brand -->
+    <!-- Style CSS & TikeWA Brand -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/eventia-brand.css">
     <link rel="stylesheet" href="css/responsive-pro.css">
@@ -197,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div style="text-align: center; margin-bottom: 1.75rem;">
             <a href="client/accueil.php"
                 style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; text-decoration: none;">
-                <img src="images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA"
+                <img src="images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA"
                     style="height: 56px; width: auto; max-width: 200px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
             </a>
             <h1
@@ -205,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 Créer un compte
             </h1>
             <p style="color: var(--eventia-muted, #737373); margin: 0; font-size: 0.88rem;">
-                Rejoignez Tike WA et réservez vos places en quelques clics
+                Rejoignez TikeWA et réservez vos places en quelques clics
             </p>
         </div>
 

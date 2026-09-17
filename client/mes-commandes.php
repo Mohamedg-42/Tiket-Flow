@@ -10,7 +10,7 @@ require_once '../includes/secure_token.php';
 
 requireLogin('../connexion.php');
 
-$page_title = "Mes Commandes - Tike WA";
+$page_title = "Mes Commandes - TikeWA";
 $body_class = "client-page";
 include 'header.php';
 

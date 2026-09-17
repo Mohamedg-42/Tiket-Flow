@@ -215,10 +215,6 @@ try {
             ");
             $stmt_up->execute([$ref_db, $transaction_id, $cotisation_id]);
 
-            // Crédit de la campagne
-            $stmt_c = $pdo->prepare("UPDATE cotisation_campagnes SET montant_collecte = montant_collecte + ? WHERE id = ?");
-            $stmt_c->execute([$cot['montant'], $cot['campagne_id']]);
-
             $pdo->commit();
 
             echo json_encode(['status' => 'success', 'module' => 'cotisations', 'id' => $cotisation_id]);
@@ -244,16 +240,14 @@ try {
             $stmt_up->execute([$ref_db, $transaction_id, $vote_id]);
 
             // Enregistrement des votes payants
-            $stmt_check_v = $pdo->prepare("SELECT COUNT(*) FROM event_votes WHERE paiement_id = ?");
-            $stmt_check_v->execute([$vote_id]);
-            if ((int) $stmt_check_v->fetchColumn() === 0) {
-                $candidats = json_decode($vp['candidats_ids'] ?? '[]', true) ?: [];
+            $candidats = json_decode($vp['candidats_ids'] ?? '[]', true) ?: [];
+            if (!empty($candidats)) {
                 $stmt_vote = $pdo->prepare("
-                    INSERT INTO event_votes (event_id, candidat_id, user_id, date_vote, type_vote, paiement_id, ip_address) 
-                    VALUES (?, ?, ?, NOW(), 'payant', ?, 'Bictorys-Webhook')
+                    INSERT INTO event_votes (event_id, candidat_id, user_id, created_at) 
+                    VALUES (?, ?, ?, NOW())
                 ");
                 foreach ($candidats as $cand_id) {
-                    $stmt_vote->execute([$vp['event_id'], (int) $cand_id, $vp['user_id'], $vote_id]);
+                    $stmt_vote->execute([$vp['event_id'], (int) $cand_id, $vp['user_id']]);
                 }
             }
 

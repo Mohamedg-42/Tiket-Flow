@@ -190,8 +190,10 @@ function openEventModal(button) {
 
     updateMultiTicketTotal();
     if (clientEventModal) {
+        clientEventModal.removeAttribute('hidden');
         clientEventModal.hidden = false;
         clientEventModal.style.display = 'flex';
+        clientEventModal.style.zIndex = '100005';
     }
     document.body.classList.add('modal-open');
 }
@@ -740,6 +742,7 @@ async function toggleLike(e, btn) {
 function closeEventModal() {
     const modal = document.getElementById('clientEventModal');
     if (modal) {
+        modal.setAttribute('hidden', '');
         modal.hidden = true;
         modal.style.display = 'none';
     }
@@ -800,9 +803,9 @@ async function openClient3DSeating(targetTicketId = null, forcedEventId = null) 
     document.body.classList.add('modal-open');
 
     const canvas = document.getElementById('client3DCanvas');
-    const EngineClass = window.Tike WAVenue3D || window.Tike WAVenue3D || window.EventiaVenue3D;
+    const EngineClass = window.TikeWAVenue3D || window.EventiaVenue3D;
     if (!EngineClass) {
-        console.error('Tike WAVenue3D introuvable dans window');
+        console.error('TikeWAVenue3D introuvable dans window');
         alert('Initialisation de la vue 3D en cours... Veuillez patienter.');
         return;
     }
@@ -905,7 +908,7 @@ async function openClient3DSeating(targetTicketId = null, forcedEventId = null) 
                             <div style="grid-column: 1 / -1; text-align: center; color: #737373; padding: 3rem 1rem;">
                                 <i class="fa-solid fa-images" style="font-size: 3rem; color: #000000; margin-bottom: 1rem; display: block;"></i>
                                 <h4 style="color: #F5F5F5; margin-bottom: 0.5rem;">Visualisation interactive disponible en 3D</h4>
-                                <p style="font-size: 0.85rem; max-width: 450px; margin: 0 auto;">Les angles de vue réels sont simulés en temps réel avec le moteur 3D d'Eventia.</p>
+                                <p style="font-size: 0.85rem; max-width: 450px; margin: 0 auto;">Les angles de vue réels sont simulés en temps réel avec le moteur 3D de TikeWA.</p>
                             </div>
                         `;
             }
@@ -1194,7 +1197,7 @@ function openEventDetailsModal(target) {
     let category = 'Événement';
     let image = '';
     let desc = '';
-    let promoter = 'Organisateur Tike WA';
+    let promoter = 'Organisateur TikeWA';
     let capacity = 0;
     let stock = 0;
     let tickets = [];
@@ -1516,10 +1519,11 @@ function closeCotisationDetailsModal() {
     document.body.classList.remove('modal-open');
 }
 
-/* --- 3. MODAL DÉTAILS VOTE & CARROUSEL HORIZONTAL DES CANDIDATS --- */
 function resolveCandPhoto(photo) {
     if (!photo) return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
     if (photo.startsWith('http')) return photo;
+    if (photo.startsWith('../')) return photo;
+    if (photo.startsWith('uploads/')) return '../' + photo;
     return '../uploads/candidats/' + photo;
 }
 
@@ -1644,11 +1648,12 @@ function openVoteDetailsModal(target) {
                 card.id = 'cand-card-' + cId;
                 card.style.cursor = 'pointer';
                 card.title = `Voir le profil de ${safeNom}`;
-                card.onclick = function() { openCandidatDetailsModal(cId, id); };
+                card.onclick = function () { openCandidatDetailsModal(cId, id); };
 
                 card.innerHTML = `
                     <div class="vote-cand-photo-wrap">
-                        <img src="${cPhoto}" alt="${safeNom}" class="vote-cand-photo" loading="lazy">
+                        <img src="${cPhoto}" alt="${safeNom}" class="vote-cand-photo" loading="lazy" decoding="async"
+                             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';">
                     </div>
                     <div class="vote-cand-body">
                         <h4 class="vote-cand-nom" title="${safeNom}">${cand.nom}</h4>
@@ -1712,7 +1717,12 @@ function openCandidatDetailsModal(candId, eventId) {
 
     // Remplissage de la modale de détails
     const photoEl = document.getElementById('candModalPhoto');
-    if (photoEl) photoEl.src = resolveCandPhoto(cand.photo);
+    if (photoEl) {
+        photoEl.src = resolveCandPhoto(cand.photo);
+        photoEl.onerror = function () {
+            this.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
+        };
+    }
 
     const rankBadge = document.getElementById('candModalRankBadge');
     if (rankBadge) {
@@ -1966,7 +1976,7 @@ function openShareModal(options) {
 
     const type = options.type || 'vote';
     const id = options.id;
-    const title = options.title || 'Découvrez cette publication sur Tike WA';
+    const title = options.title || 'Découvrez cette publication sur TikeWA';
 
     // Construction du lien permanent avec paramètres de deep-link
     const loc = window.location;
@@ -2021,11 +2031,11 @@ function openShareModal(options) {
     if (waBtn) {
         let msg = '';
         if (type === 'vote' && options.candNom) {
-            msg = "🗳️ Votez pour " + options.candNom + " dans « " + title + " » sur Tike WA ! Cliquez ici : " + permalink;
+            msg = "🗳️ Votez pour " + options.candNom + " dans « " + title + " » sur TikeWA ! Cliquez ici : " + permalink;
         } else if (type === 'vote') {
-            msg = "🗳️ Participez au vote « " + title + " » sur Tike WA ! Cliquez ici : " + permalink;
+            msg = "🗳️ Participez au vote « " + title + " » sur TikeWA ! Cliquez ici : " + permalink;
         } else {
-            msg = "🎟️ Découvrez « " + title + " » sur Tike WA ! Cliquez ici : " + permalink;
+            msg = "🎟️ Découvrez « " + title + " » sur TikeWA ! Cliquez ici : " + permalink;
         }
         waBtn.href = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msg);
     }
@@ -2093,11 +2103,11 @@ function copyShareLink() {
 function shareViaWhatsApp() {
     let message = '';
     if (currentShareData.type === 'vote' && currentShareData.candNom) {
-        message = "🗳️ Soutenez et votez pour " + currentShareData.candNom + " sur Tike WA :\n" + currentShareData.url;
+        message = "🗳️ Soutenez et votez pour " + currentShareData.candNom + " sur TikeWA :\n" + currentShareData.url;
     } else if (currentShareData.type === 'vote') {
-        message = "🗳️ Participez au vote : " + currentShareData.title + " sur Tike WA :\n" + currentShareData.url;
+        message = "🗳️ Participez au vote : " + currentShareData.title + " sur TikeWA :\n" + currentShareData.url;
     } else {
-        message = "🎟️ Découvrez " + currentShareData.title + " sur Tike WA :\n" + currentShareData.url;
+        message = "🎟️ Découvrez " + currentShareData.title + " sur TikeWA :\n" + currentShareData.url;
     }
     window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(message), '_blank');
 }
@@ -2107,7 +2117,7 @@ function shareViaFacebook() {
 }
 
 function shareViaTwitter() {
-    const tweet = (currentShareData.candNom ? ("Votez pour " + currentShareData.candNom) : ("Participez au vote : " + currentShareData.title)) + " sur @Tike WACi\n";
+    const tweet = (currentShareData.candNom ? ("Votez pour " + currentShareData.candNom) : ("Participez au vote : " + currentShareData.title)) + " sur @TikeWACi\n";
     window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(tweet) + '&url=' + encodeURIComponent(currentShareData.url), '_blank', 'width=600,height=450');
 }
 
@@ -2262,7 +2272,7 @@ function initFaCustomDropdowns() {
     var selects = document.querySelectorAll('select.fa-enhanced-select');
     if (!selects.length) return;
 
-    selects.forEach(function(select) {
+    selects.forEach(function (select) {
         if (select.dataset.faCustomInit === '1') return;
         select.dataset.faCustomInit = '1';
 
@@ -2301,7 +2311,7 @@ function initFaCustomDropdowns() {
             content.innerHTML = (iconClass ? '<i class="' + iconClass + '"></i> ' : '') + '<span>' + text + '</span>';
         }
 
-        Array.from(select.options).forEach(function(opt, idx) {
+        Array.from(select.options).forEach(function (opt, idx) {
             var li = document.createElement('li');
             li.className = 'fa-custom-dropdown-item' + (opt.selected ? ' selected' : '');
             li.setAttribute('role', 'option');
@@ -2311,12 +2321,12 @@ function initFaCustomDropdowns() {
             var text = (opt.text || '').trim();
             li.innerHTML = (iconClass ? '<i class="' + iconClass + '"></i> ' : '') + '<span>' + text + '</span>';
 
-            li.addEventListener('click', function(e) {
+            li.addEventListener('click', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 select.selectedIndex = idx;
                 updateTrigger();
-                menu.querySelectorAll('.fa-custom-dropdown-item').forEach(function(el) {
+                menu.querySelectorAll('.fa-custom-dropdown-item').forEach(function (el) {
                     el.classList.remove('selected');
                     el.setAttribute('aria-selected', 'false');
                 });
@@ -2334,11 +2344,11 @@ function initFaCustomDropdowns() {
 
         updateTrigger();
 
-        trigger.addEventListener('click', function(e) {
+        trigger.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
             var isOpen = wrapper.classList.contains('open');
-            document.querySelectorAll('.fa-custom-dropdown.open').forEach(function(d) {
+            document.querySelectorAll('.fa-custom-dropdown.open').forEach(function (d) {
                 d.classList.remove('open');
                 var t = d.querySelector('.fa-custom-dropdown-trigger');
                 if (t) t.setAttribute('aria-expanded', 'false');
@@ -2350,8 +2360,8 @@ function initFaCustomDropdowns() {
         });
     });
 
-    document.addEventListener('click', function() {
-        document.querySelectorAll('.fa-custom-dropdown.open').forEach(function(d) {
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.fa-custom-dropdown.open').forEach(function (d) {
             d.classList.remove('open');
             var t = d.querySelector('.fa-custom-dropdown-trigger');
             if (t) t.setAttribute('aria-expanded', 'false');

@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $st_check_u = $pdo->prepare("SELECT id FROM users WHERE LOWER(email) = LOWER(?)");
         $st_check_u->execute([$email]);
         if ($st_check_u->fetch()) {
-            $errors[] = "Cette adresse email ($email) est déjà associée à un compte Tike WA. Veuillez vous connecter avant de soumettre votre dossier promoteur.";
+            $errors[] = "Cette adresse email ($email) est déjà associée à un compte TikeWA. Veuillez vous connecter avant de soumettre votre dossier promoteur.";
         }
     }
 
@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
         $st_check_tel->execute([$clean_tel]);
         if ($st_check_tel->fetch()) {
-            $errors[] = "Ce numéro de téléphone est déjà associé à un autre compte existant sur Tike WA.";
+            $errors[] = "Ce numéro de téléphone est déjà associé à un autre compte existant sur TikeWA.";
         }
     }
 
@@ -377,7 +377,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Support WhatsApp pour l'accompagnement des candidats promoteurs
 $whatsapp_support_phone = getenv('WHATSAPP_SUPPORT') ?: '2250596569054';
 $wa_phone_clean = preg_replace('/[^0-9]/', '', $whatsapp_support_phone);
-$wa_help_msg = "Bonjour l'équipe Tike WA, je prépare ma demande pour devenir promoteur d'événements et j'aimerais être guidé(e) pour remplir mon dossier.";
+$wa_help_msg = "Bonjour l'équipe TikeWA, je prépare ma demande pour devenir promoteur d'événements et j'aimerais être guidé(e) pour remplir mon dossier.";
 $wa_support_url = "https://api.whatsapp.com/send?phone=" . $wa_phone_clean . "&text=" . urlencode($wa_help_msg);
 ?>
 <!DOCTYPE html>
@@ -386,14 +386,14 @@ $wa_support_url = "https://api.whatsapp.com/send?phone=" . $wa_phone_clean . "&t
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Devenir Promoteur Partenaire - Tike WA</title>
+    <title>Devenir Promoteur Partenaire - TikeWA</title>
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- Style CSS & Tike WA Brand -->
+    <!-- Style CSS & TikeWA Brand -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/eventia-brand.css">
     <link rel="stylesheet" href="../css/responsive-pro.css">
@@ -869,7 +869,7 @@ $wa_support_url = "https://api.whatsapp.com/send?phone=" . $wa_phone_clean . "&t
         <span class="page-kicker" style="color: var(--accent, #FF4A0D); display: block; margin-bottom: 0.4rem;">
             <i class="fa-solid fa-bullhorn"></i> Partenariat Officiel
         </span>
-        <h1>Devenez Promoteur Officiel sur Tike WA</h1>
+        <h1>Devenez Promoteur Officiel sur TikeWA</h1>
         <p>
             Vendez vos billets en ligne, gérez vos jauges et places interactives, et encaissez vos recettes
             instantanément par Mobile Money en toute sécurité.
@@ -910,7 +910,7 @@ $wa_support_url = "https://api.whatsapp.com/send?phone=" . $wa_phone_clean . "&t
                 <div class="pwa-content">
                     <div class="pwa-title">Besoin d'aide pour constituer votre dossier ?</div>
                     <p class="pwa-text">
-                        Vous avez des doutes sur le statut (particulier ou entreprise), les documents à fournir ou le fonctionnement de la billetterie ? Un conseiller Tike WA vous répond et vous guide directement sur WhatsApp.
+                        Vous avez des doutes sur le statut (particulier ou entreprise), les documents à fournir ou le fonctionnement de la billetterie ? Un conseiller TikeWA vous répond et vous guide directement sur WhatsApp.
                     </p>
                 </div>
                 <div class="pwa-action">
@@ -1181,7 +1181,7 @@ $wa_support_url = "https://api.whatsapp.com/send?phone=" . $wa_phone_clean . "&t
                         <label for="description">Description de vos activités</label>
                         <textarea id="description" name="description" rows="4" required
                             placeholder="Décrivez vos activités principales, votre positionnement, vos types d'événements, votre public et vos projets..."><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
-                        <small style="color: var(--muted); font-size: 0.78rem;">Présentez vos réalisations et la nature des événements que vous comptez commercialiser sur Tike WA.</small>
+                        <small style="color: var(--muted); font-size: 0.78rem;">Présentez vos réalisations et la nature des événements que vous comptez commercialiser sur TikeWA.</small>
                     </div>
 
                     <div class="form-row-2">
@@ -1206,7 +1206,7 @@ $wa_support_url = "https://api.whatsapp.com/send?phone=" . $wa_phone_clean . "&t
                         <i class="fa-solid fa-shield-halved" style="color: var(--primary, #000000); margin-right: 4px;"></i>
                         En soumettant ce dossier, vous certifiez l'exactitude des pièces fournies. L'accès aux
                         fonctionnalités de vente de billets, d'encaissement et de retrait est conditionné à la validation
-                        définitive par l'administration de Tike WA.
+                        définitive par l'administration de TikeWA.
                     </div>
 
                     <button type="submit" class="btn-submit-promo" id="btnSubmitPromo">

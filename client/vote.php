@@ -66,35 +66,94 @@ if (!$event) {
 $is_private_event = ($event['visibilite'] ?? 'public') === 'prive';
 if ($is_private_event) {
     $expected_token = (string) ($event['access_token'] ?? '');
-    $is_token_authorized = (!empty($event_token) && ($event_token === $expected_token || resolve_resource_token($pdo, $event_token, 'event') === (int)$event['id']));
+    $is_token_authorized = (!empty($event_token) && ($event_token === $expected_token || resolve_resource_token($pdo, $event_token, 'event') === (int) $event['id']));
     if (!$is_token_authorized && ($expected_token === '' || !hash_equals($expected_token, $event_token))) {
         http_response_code(403);
         ?>
         <!DOCTYPE html>
         <html lang="fr">
+
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Accès restreint — Scrutin Privé | Tike WA</title>
+            <title>Accès restreint — Scrutin Privé | TikeWA</title>
             <meta name="robots" content="noindex, nofollow">
             <style>
-                body { font-family: system-ui, -apple-system, sans-serif; background: #0F172A; color: #E2E8F0; min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; padding: 2rem; box-sizing: border-box; }
-                .box { max-width: 440px; width: 100%; text-align: center; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 2.5rem 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-                .icon { font-size: 2.75rem; color: #FF4A0D; margin-bottom: 1.25rem; display: block; }
-                h1 { font-size: 1.35rem; margin: 0 0 0.75rem; font-weight: 800; color: #FFFFFF; }
-                p { color: #94A3B8; font-size: 0.92rem; line-height: 1.6; margin: 0 0 1.5rem; }
-                a { display: inline-flex; align-items: center; gap: 8px; background: #FF4A0D; color: #FFFFFF; font-weight: 700; font-size: 0.88rem; text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 999px; transition: background 0.2s; }
-                a:hover { background: #E03E08; }
+                body {
+                    font-family: system-ui, -apple-system, sans-serif;
+                    background: #0F172A;
+                    color: #E2E8F0;
+                    min-height: 100vh;
+                    margin: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 2rem;
+                    box-sizing: border-box;
+                }
+
+                .box {
+                    max-width: 440px;
+                    width: 100%;
+                    text-align: center;
+                    background: rgba(30, 41, 59, 0.7);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 16px;
+                    padding: 2.5rem 2rem;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+                }
+
+                .icon {
+                    font-size: 2.75rem;
+                    color: #FF4A0D;
+                    margin-bottom: 1.25rem;
+                    display: block;
+                }
+
+                h1 {
+                    font-size: 1.35rem;
+                    margin: 0 0 0.75rem;
+                    font-weight: 800;
+                    color: #FFFFFF;
+                }
+
+                p {
+                    color: #94A3B8;
+                    font-size: 0.92rem;
+                    line-height: 1.6;
+                    margin: 0 0 1.5rem;
+                }
+
+                a {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: #FF4A0D;
+                    color: #FFFFFF;
+                    font-weight: 700;
+                    font-size: 0.88rem;
+                    text-decoration: none;
+                    padding: 0.75rem 1.5rem;
+                    border-radius: 999px;
+                    transition: background 0.2s;
+                }
+
+                a:hover {
+                    background: #E03E08;
+                }
             </style>
         </head>
+
         <body>
             <div class="box">
                 <span class="icon">🔒</span>
                 <h1>Accès restreint au scrutin</h1>
-                <p>Ce concours de vote est strictement privé. Vous devez obligatoirement utiliser le lien d'invitation sécurisé fourni par l'organisateur pour y accéder et voter.</p>
+                <p>Ce concours de vote est strictement privé. Vous devez obligatoirement utiliser le lien d'invitation sécurisé
+                    fourni par l'organisateur pour y accéder et voter.</p>
                 <a href="accueil.php">← Retour à l'accueil</a>
             </div>
         </body>
+
         </html>
         <?php
         exit();
@@ -149,7 +208,8 @@ if ($user_id) {
         $stmt_tel = $pdo->prepare("SELECT telephone FROM users WHERE id = ?");
         $stmt_tel->execute([$user_id]);
         $user_telephone = (string) $stmt_tel->fetchColumn();
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) {
+    }
 }
 
 $voted_candidates = [];
@@ -189,7 +249,7 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-$page_title = htmlspecialchars($event['nom']) . " — Vote Officiel | Tike WA";
+$page_title = htmlspecialchars($event['nom']) . " — Vote Officiel | TikeWA";
 $body_class = "client-page vote-detail-page";
 include __DIR__ . '/header.php';
 ?>
@@ -595,7 +655,7 @@ include __DIR__ . '/header.php';
     .vote-cand-photo-wrap {
         position: relative;
         width: 100%;
-        height: 175px;
+        height: 230px;
         background: #0F172A;
         overflow: hidden;
         cursor: pointer;
@@ -846,14 +906,38 @@ include __DIR__ . '/header.php';
         white-space: pre-line;
     }
 
-    @media (max-width: 600px) {
+    /* Alignement vertical et grande photo des candidats sur mobile */
+    @media (max-width: 768px) {
+        .vote-cands-nav {
+            display: none !important;
+        }
+
+        .vote-cands-horizontal-track {
+            flex-direction: column !important;
+            overflow-x: visible !important;
+            overflow-y: visible !important;
+            scroll-snap-type: none !important;
+            align-items: center !important;
+            gap: 1.5rem !important;
+            padding: 0.5rem 0 2rem !important;
+        }
+
         .vote-cand-card {
-            flex: 0 0 190px;
-            width: 190px;
+            flex: 0 0 auto !important;
+            width: 100% !important;
+            max-width: 340px !important;
+            scroll-snap-align: none !important;
+            border-radius: 14px !important;
         }
 
         .vote-cand-photo-wrap {
-            height: 165px;
+            height: 320px !important;
+            min-height: 280px !important;
+        }
+
+        .vote-cand-photo {
+            object-fit: cover !important;
+            object-position: center top !important;
         }
 
         .candidat-detail-hero {
@@ -1176,8 +1260,10 @@ include __DIR__ . '/header.php';
                 <h1 class="vote-hero-title"><?php echo htmlspecialchars($event['nom']); ?></h1>
 
                 <?php if ($is_private_event): ?>
-                    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 74, 13, 0.08); border: 1px solid rgba(255, 74, 13, 0.25); color: #FF4A0D; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.85rem;">
-                        <i class="fa-solid fa-user-shield"></i> Scrutin Privé — Participation réservée exclusivement aux personnes inscrites sur la liste des invités autorisés.
+                    <div
+                        style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 74, 13, 0.08); border: 1px solid rgba(255, 74, 13, 0.25); color: #FF4A0D; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.85rem;">
+                        <i class="fa-solid fa-user-shield"></i> Scrutin Privé — Participation réservée exclusivement aux
+                        personnes inscrites sur la liste des invités autorisés.
                     </div>
                 <?php endif; ?>
 
@@ -1545,29 +1631,36 @@ include __DIR__ . '/header.php';
 <div id="modalPrivateVotePhone" class="candidat-modal-overlay" style="display: none; z-index: 9999;">
     <div class="candidat-modal-card" style="max-width: 420px; padding: 1.5rem;">
         <div style="text-align: center; margin-bottom: 1.25rem;">
-            <div style="width: 50px; height: 50px; background: rgba(255, 74, 13, 0.1); border: 1px solid rgba(255, 74, 13, 0.3); color: #FF4A0D; border-radius: 12px; display: grid; place-items: center; margin: 0 auto 0.75rem; font-size: 1.35rem;">
+            <div
+                style="width: 50px; height: 50px; background: rgba(255, 74, 13, 0.1); border: 1px solid rgba(255, 74, 13, 0.3); color: #FF4A0D; border-radius: 12px; display: grid; place-items: center; margin: 0 auto 0.75rem; font-size: 1.35rem;">
                 <i class="fa-solid fa-user-shield"></i>
             </div>
-            <h3 style="margin: 0 0 0.4rem; font-size: 1.15rem; font-weight: 800; color: #0F172A;">Scrutin Privé & Confidentiel</h3>
+            <h3 style="margin: 0 0 0.4rem; font-size: 1.15rem; font-weight: 800; color: #0F172A;">Scrutin Privé &
+                Confidentiel</h3>
             <p style="margin: 0; font-size: 0.84rem; color: #64748B; line-height: 1.5;">
-                Ce vote est strictement réservé aux invités enregistrés au préalable par l'organisateur. Veuillez saisir votre numéro de téléphone pour vérifier votre éligibilité.
+                Ce vote est strictement réservé aux invités enregistrés au préalable par l'organisateur. Veuillez saisir
+                votre numéro de téléphone pour vérifier votre éligibilité.
             </p>
         </div>
 
         <div style="margin-bottom: 1.25rem;">
-            <label for="privateVotePhoneField" style="font-size: 0.78rem; font-weight: 700; color: #0F172A; display: block; margin-bottom: 6px;">
+            <label for="privateVotePhoneField"
+                style="font-size: 0.78rem; font-weight: 700; color: #0F172A; display: block; margin-bottom: 6px;">
                 Numéro de téléphone enregistré *
             </label>
             <input type="tel" id="privateVotePhoneField" placeholder="Ex: 07 01 02 03 04"
                 style="width: 100%; padding: 0.75rem 0.9rem; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 0.95rem; font-family: inherit; box-sizing: border-box;">
-            <span id="privateVotePhoneError" style="display: none; color: #EF4444; font-size: 0.75rem; font-weight: 600; margin-top: 4px;"></span>
+            <span id="privateVotePhoneError"
+                style="display: none; color: #EF4444; font-size: 0.75rem; font-weight: 600; margin-top: 4px;"></span>
         </div>
 
         <div style="display: flex; gap: 0.75rem;">
-            <button type="button" onclick="closePrivatePhoneModal()" style="flex: 1; padding: 0.75rem; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: #64748B; cursor: pointer;">
+            <button type="button" onclick="closePrivatePhoneModal()"
+                style="flex: 1; padding: 0.75rem; background: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: #64748B; cursor: pointer;">
                 Annuler
             </button>
-            <button type="button" onclick="confirmPrivateVotePhone()" style="flex: 1; padding: 0.75rem; background: #FF4A0D; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: #FFFFFF; cursor: pointer;">
+            <button type="button" onclick="confirmPrivateVotePhone()"
+                style="flex: 1; padding: 0.75rem; background: #FF4A0D; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: #FFFFFF; cursor: pointer;">
                 Valider mon vote
             </button>
         </div>
@@ -1619,7 +1712,7 @@ include __DIR__ . '/header.php';
         userPhoneGlobal = val;
         try {
             sessionStorage.setItem('tikeli_voter_phone_' + eventIdGlobal, userPhoneGlobal);
-        } catch(e) {}
+        } catch (e) { }
         closePrivatePhoneModal();
         if (typeof pendingVoteAction === 'function') {
             pendingVoteAction();
@@ -1909,7 +2002,7 @@ include __DIR__ . '/header.php';
         const baseUrl = window.location.origin + window.location.pathname;
         const privParam = isPrivateGlobal && eventTokenGlobal ? `&token=${encodeURIComponent(eventTokenGlobal)}` : '';
         const shareUrl = `${baseUrl}?id=${eventId}&candidat_id=${candId}${privParam}#candidat-${candId}`;
-        showShareModal(`Votez pour ${candNom} !`, `Candidat(e) dans « ${eventNom} » sur Tike WA`, shareUrl, candNom);
+        showShareModal(`Votez pour ${candNom} !`, `Candidat(e) dans « ${eventNom} » sur TikeWA`, shareUrl, candNom);
     }
 
     function showShareModal(title, subtitle, url, candNom = null) {
@@ -1922,8 +2015,8 @@ include __DIR__ . '/header.php';
 
         // Bouton WhatsApp
         const waText = candNom
-            ? `🗳️ Votez pour *${candNom}* sur Tike WA !\nCliquez ici : ${url}`
-            : `🗳️ Participez au vote officiel pour *${title}* sur Tike WA !\nCliquez ici : ${url}`;
+            ? `🗳️ Votez pour *${candNom}* sur TikeWA !\nCliquez ici : ${url}`
+            : `🗳️ Participez au vote officiel pour *${title}* sur TikeWA !\nCliquez ici : ${url}`;
         document.getElementById('shareWaLink').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
 
         // Bouton Facebook
@@ -1997,7 +2090,7 @@ include __DIR__ . '/header.php';
             const targetCand = document.getElementById('candidat-' + focusId);
             if (targetCand) {
                 setTimeout(() => {
-                    targetCand.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    targetCand.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
                     openCandidateDetailModal(focusId);
                 }, 350);
             }

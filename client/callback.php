@@ -289,7 +289,7 @@ try {
     exit();
 }
 
-$page_title = "Paiement Confirmé - Tike WA";
+$page_title = "Paiement Confirmé - TikeWA";
 $body_class = "client-page payment-success-page";
 include 'header.php';
 ?>
@@ -325,7 +325,7 @@ include 'header.php';
             $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' && $_SERVER['HTTPS'] !== '' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/');
             $public_link = $base_url . "/telecharger-pdf.php?order_id=" . $order_id . "&token=" . $download_token;
             $pdf_order_filename = "billets-commande-" . ($order['numero_commande'] ?? $order_id) . ".pdf";
-            $wa_message = "🎟️ *Billets Officiels Tike WA*\nCommande #" . ($order['numero_commande'] ?? $order_id) . "\nTitulaire : " . $client_nom . "\n📥 Télécharger le PDF : " . $public_link;
+            $wa_message = "🎟️ *Billets Officiels TikeWA*\nCommande #" . ($order['numero_commande'] ?? $order_id) . "\nTitulaire : " . $client_nom . "\n📥 Télécharger le PDF : " . $public_link;
             ?>
             <button type="button"
                 data-pdf="telecharger-pdf.php?order_id=<?php echo $order_id; ?>&token=<?php echo $download_token; ?>"
@@ -412,7 +412,7 @@ include 'header.php';
                         // Fichier et lien PDF individuel
                         $pdf_single_filename = "billet-" . preg_replace('/[^A-Za-z0-9\-]/', '', $tk['code_unique']) . ".pdf";
                         $ticket_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/') . '/telecharger-pdf.php?code=' . urlencode($tk['code_unique']);
-                        $wa_text = "🎟️ *Billet Officiel Tike WA (PDF)*\n"
+                        $wa_text = "🎟️ *Billet Officiel TikeWA (PDF)*\n"
                             . "📌 *Événement :* " . $tk['event_name'] . "\n"
                             . "🏷️ *Type :* " . $tk['type_ticket'] . "\n"
                             . (!empty($tk['place']) ? "💺 *Place :* " . $tk['place'] . "\n" : "")

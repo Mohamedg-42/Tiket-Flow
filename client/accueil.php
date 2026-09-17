@@ -12,7 +12,7 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-$page_title = "Tike WA - Billetterie en ligne & Événements";
+$page_title = "TikeWA - Billetterie en ligne & Événements";
 $body_class = "client-page client-home-page";
 include 'header.php';
 
@@ -38,7 +38,7 @@ $peut_agir = !$is_logged_in || $user_role === 'client';
         <div
             style="background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: 10px; padding: 0.85rem 1.25rem; color: #000000; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600;">
             <i class="fa-solid fa-circle-check" style="color: var(--tikeli-orange, #FF4A0D);"></i>
-            <span>Vous avez été déconnecté avec succès. À bientôt sur Tike WA !</span>
+            <span>Vous avez été déconnecté avec succès. À bientôt sur TikeWA !</span>
         </div>
     </div>
     <script>
@@ -335,20 +335,27 @@ $nb_campagnes_total = count($campagnes);
 $nb_votes_total = count($classement);
 
 if (!function_exists('get_event_cat_icon')) {
-    function get_event_cat_icon($cat) {
-        $c = mb_strtolower(trim((string)$cat));
-        if (strpos($c, 'concert') !== false || strpos($c, 'musique') !== false) return 'fa-solid fa-music';
-        if (strpos($c, 'festival') !== false) return 'fa-solid fa-umbrella-beach';
-        if (strpos($c, 'spectacle') !== false || strpos($c, 'humour') !== false) return 'fa-solid fa-masks-theater';
-        if (strpos($c, 'conf') !== false || strpos($c, 'seminaire') !== false) return 'fa-solid fa-microphone';
-        if (strpos($c, 'sport') !== false) return 'fa-solid fa-futbol';
-        if (strpos($c, 'soir') !== false || strpos($c, 'gala') !== false) return 'fa-solid fa-champagne-glasses';
+    function get_event_cat_icon($cat)
+    {
+        $c = mb_strtolower(trim((string) $cat));
+        if (strpos($c, 'concert') !== false || strpos($c, 'musique') !== false)
+            return 'fa-solid fa-music';
+        if (strpos($c, 'festival') !== false)
+            return 'fa-solid fa-umbrella-beach';
+        if (strpos($c, 'spectacle') !== false || strpos($c, 'humour') !== false)
+            return 'fa-solid fa-masks-theater';
+        if (strpos($c, 'conf') !== false || strpos($c, 'seminaire') !== false)
+            return 'fa-solid fa-microphone';
+        if (strpos($c, 'sport') !== false)
+            return 'fa-solid fa-futbol';
+        if (strpos($c, 'soir') !== false || strpos($c, 'gala') !== false)
+            return 'fa-solid fa-champagne-glasses';
         return 'fa-solid fa-tag';
     }
 }
 ?>
 
-<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
+<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.2.0'; ?>">
 
 <style>
     /* Failsafe carrousel horizontal des candidats et modales */
@@ -458,7 +465,7 @@ if (!function_exists('get_event_cat_icon')) {
     .vote-cand-photo-wrap {
         position: relative;
         width: 100%;
-        height: 190px;
+        height: 230px;
         background: #0f172a;
         overflow: hidden;
         cursor: pointer;
@@ -468,6 +475,7 @@ if (!function_exists('get_event_cat_icon')) {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: center top;
         transition: transform 0.35s ease;
         display: block;
     }
@@ -718,14 +726,38 @@ if (!function_exists('get_event_cat_icon')) {
         white-space: pre-line;
     }
 
-    @media (max-width: 600px) {
+    /* Alignement vertical des candidats sur mobile */
+    @media (max-width: 768px) {
+        .vote-cands-nav {
+            display: none !important;
+        }
+
+        .vote-cands-horizontal-track {
+            flex-direction: column !important;
+            overflow-x: visible !important;
+            overflow-y: visible !important;
+            scroll-snap-type: none !important;
+            align-items: center !important;
+            gap: 1.25rem !important;
+            padding: 0.5rem 0 1.5rem !important;
+        }
+
         .vote-cand-card {
-            flex: 0 0 185px;
-            width: 185px;
+            flex: 0 0 auto !important;
+            width: 100% !important;
+            max-width: 340px !important;
+            scroll-snap-align: none !important;
+            border-radius: 14px !important;
         }
 
         .vote-cand-photo-wrap {
-            height: 165px;
+            height: 320px !important;
+            min-height: 280px !important;
+        }
+
+        .vote-cand-photo {
+            object-fit: cover !important;
+            object-position: center top !important;
         }
 
         .candidat-detail-hero {
@@ -832,22 +864,33 @@ if (!function_exists('get_event_cat_icon')) {
 
 <main class="client-main"
     style="max-width: 1200px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2rem) clamp(0.75rem, 2vw, 1.5rem);">
-    <!-- ===== Onglets principaux (tout en haut) ===== -->
-    <div class="main-tabs">
-        <a href="accueil.php?onglet=evenements"
-            class="main-tab <?php echo ($onglet === 'evenements') ? 'active' : ''; ?>">
-            <i class="fa-solid fa-calendar-days"></i> Événements
-            <span class="main-tab-badge"><?php echo $nb_events_total; ?></span>
-        </a>
-        <a href="accueil.php?onglet=cotisations"
-            class="main-tab <?php echo ($onglet === 'cotisations') ? 'active' : ''; ?>">
-            <i class="fa-solid fa-hand-holding-heart"></i> Cotisations
-            <span class="main-tab-badge"><?php echo $nb_campagnes_total; ?></span>
-        </a>
-        <a href="accueil.php?onglet=voter" class="main-tab <?php echo ($onglet === 'voter') ? 'active' : ''; ?>">
-            <i class="fa-solid fa-vote-yea"></i> Vote
-            <span class="main-tab-badge"><?php echo $nb_votes_total; ?></span>
-        </a>
+    <!-- ===== Onglets principaux (Défilement Fluide & Notifications en Haut) ===== -->
+    <div class="main-tabs-wrapper">
+        <div class="main-tabs-scroll-container" id="mainTabsScrollContainer">
+            <div class="main-tabs" id="mainTabs">
+                <a href="accueil.php?onglet=evenements"
+                    class="main-tab <?php echo ($onglet === 'evenements') ? 'active' : ''; ?>">
+                    <span class="main-tab-badge"
+                        title="<?php echo $nb_events_total; ?> événements disponibles"><?php echo $nb_events_total; ?></span>
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Événements</span>
+                </a>
+                <a href="accueil.php?onglet=cotisations"
+                    class="main-tab <?php echo ($onglet === 'cotisations') ? 'active' : ''; ?>">
+                    <span class="main-tab-badge"
+                        title="<?php echo $nb_campagnes_total; ?> collectes en cours"><?php echo $nb_campagnes_total; ?></span>
+                    <i class="fa-solid fa-hand-holding-heart"></i>
+                    <span>Cotisations</span>
+                </a>
+                <a href="accueil.php?onglet=voter"
+                    class="main-tab <?php echo ($onglet === 'voter') ? 'active' : ''; ?>">
+                    <span class="main-tab-badge"
+                        title="<?php echo $nb_votes_total; ?> concours de vote"><?php echo $nb_votes_total; ?></span>
+                    <i class="fa-solid fa-vote-yea"></i>
+                    <span>Vote</span>
+                </a>
+            </div>
+        </div>
     </div>
 
     <?php if ($onglet === 'cotisations'): ?>
@@ -866,12 +909,14 @@ if (!function_exists('get_event_cat_icon')) {
 
             <!-- Zone de Recherche Cotisations -->
             <div style="max-width: 820px; margin: 0 auto 2.25rem;">
-                <form method="GET" action="accueil.php" class="search-box-wrapper" style="box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08); border: 1px solid var(--line); border-radius: 14px; background: #ffffff; padding: 0.5rem 0.65rem;">
+                <form method="GET" action="accueil.php" class="search-box-wrapper"
+                    style="box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08); border: 1px solid var(--line); border-radius: 14px; background: #ffffff; padding: 0.5rem 0.65rem;">
                     <input type="hidden" name="onglet" value="cotisations">
 
                     <div class="search-input-field" style="flex: 2; min-width: 220px;">
                         <i class="fa-solid fa-magnifying-glass" style="color: #FF4A0D;"></i>
-                        <input type="text" name="q_cotisation" placeholder="Rechercher une collecte, un projet, une cause..."
+                        <input type="text" name="q_cotisation"
+                            placeholder="Rechercher une collecte, un projet, une cause..."
                             value="<?php echo htmlspecialchars($q_cotisation); ?>" autocomplete="off">
                     </div>
 
@@ -890,12 +935,16 @@ if (!function_exists('get_event_cat_icon')) {
                 </form>
 
                 <?php if (!empty($q_cotisation) || $filtre_cotisation !== 'tous'): ?>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem; padding: 0 0.5rem; font-size: 0.85rem; flex-wrap: wrap; gap: 8px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem; padding: 0 0.5rem; font-size: 0.85rem; flex-wrap: wrap; gap: 8px;">
                         <span style="color: var(--muted);">
-                            Résultats pour <strong>« <?php echo htmlspecialchars(!empty($q_cotisation) ? $q_cotisation : $filtre_cotisation); ?> »</strong> : 
+                            Résultats pour <strong>«
+                                <?php echo htmlspecialchars(!empty($q_cotisation) ? $q_cotisation : $filtre_cotisation); ?>
+                                »</strong> :
                             <strong style="color: var(--navy);"><?php echo count($campagnes); ?></strong> collecte(s) trouvée(s)
                         </span>
-                        <a href="accueil.php?onglet=cotisations" style="color: #FF4A0D; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                        <a href="accueil.php?onglet=cotisations"
+                            style="color: #FF4A0D; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-xmark"></i> Réinitialiser la recherche
                         </a>
                     </div>
@@ -946,8 +995,10 @@ if (!function_exists('get_event_cat_icon')) {
                             </div>
 
                             <div style="padding: 1rem 1.15rem; display: flex; flex-direction: column; flex: 1;">
-                                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; font-size: 0.76rem;">
-                                    <span style="color: <?php echo $est_terminee ? 'var(--muted)' : '#FF4A0D'; ?>; font-weight: 700; font-family: 'Space Mono', monospace; text-transform: uppercase;">
+                                <div
+                                    style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; font-size: 0.76rem;">
+                                    <span
+                                        style="color: <?php echo $est_terminee ? 'var(--muted)' : '#FF4A0D'; ?>; font-weight: 700; font-family: 'Space Mono', monospace; text-transform: uppercase;">
                                         <i class="fa-solid fa-hand-holding-heart" style="margin-right: 3px;"></i>
                                         <?php echo $est_terminee ? 'Terminée' : 'En cours'; ?>
                                     </span>
@@ -1030,92 +1081,100 @@ if (!function_exists('get_event_cat_icon')) {
 
             <?php else: ?>
                 <?php if (!empty($q_cotisation) || $filtre_cotisation !== 'tous'): ?>
-                    <div style="text-align: center; background: #ffffff; border: 1px solid var(--line); border-radius: 16px; padding: 3.5rem 1rem; max-width: 640px; margin: 0 auto; box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);">
-                        <i class="fa-solid fa-magnifying-glass" style="font-size: 2.75rem; color: #CBD5E1; margin-bottom: 1rem; display: block;"></i>
-                        <h3 style="color: var(--navy); margin-bottom: 0.4rem; font-size: 1.25rem; font-weight: 800;">Aucune collecte trouvée</h3>
-                        <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.92rem;">Aucune campagne ne correspond à votre recherche « <strong><?php echo htmlspecialchars(!empty($q_cotisation) ? $q_cotisation : $filtre_cotisation); ?></strong> ».</p>
-                        <a href="accueil.php?onglet=cotisations" class="btn-submit" style="display: inline-flex; align-items: center; gap: 6px; width: auto; text-decoration: none; padding: 0.65rem 1.5rem; margin: 0 auto;">
+                    <div
+                        style="text-align: center; background: #ffffff; border: 1px solid var(--line); border-radius: 16px; padding: 3.5rem 1rem; max-width: 640px; margin: 0 auto; box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);">
+                        <i class="fa-solid fa-magnifying-glass"
+                            style="font-size: 2.75rem; color: #CBD5E1; margin-bottom: 1rem; display: block;"></i>
+                        <h3 style="color: var(--navy); margin-bottom: 0.4rem; font-size: 1.25rem; font-weight: 800;">Aucune collecte
+                            trouvée</h3>
+                        <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.92rem;">Aucune campagne ne correspond à
+                            votre recherche «
+                            <strong><?php echo htmlspecialchars(!empty($q_cotisation) ? $q_cotisation : $filtre_cotisation); ?></strong>
+                            ».
+                        </p>
+                        <a href="accueil.php?onglet=cotisations" class="btn-submit"
+                            style="display: inline-flex; align-items: center; gap: 6px; width: auto; text-decoration: none; padding: 0.65rem 1.5rem; margin: 0 auto;">
                             <i class="fa-solid fa-rotate-left"></i> Voir toutes les collectes
                         </a>
                     </div>
                 <?php else: ?>
                     <!-- Aucune campagne : formulaire de contribution générale -->
                     <div class="cotisation-card">
-                    <?php if ($peut_agir): ?>
-                        <form method="POST" action="cotisation.php">
+                        <?php if ($peut_agir): ?>
+                            <form method="POST" action="cotisation.php">
 
-                            <?php if ($is_logged_in): ?>
-                                <!-- Client connecté : aucune saisie d'identité, uniquement le montant -->
-                                <input type="hidden" name="nom"
-                                    value="<?php echo htmlspecialchars($_SESSION['user_nom'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                <input type="hidden" name="email"
-                                    value="<?php echo htmlspecialchars($_SESSION['user_email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
-                                <input type="hidden" name="telephone"
-                                    value="<?php echo htmlspecialchars($user_telephone, ENT_QUOTES, 'UTF-8'); ?>">
+                                <?php if ($is_logged_in): ?>
+                                    <!-- Client connecté : aucune saisie d'identité, uniquement le montant -->
+                                    <input type="hidden" name="nom"
+                                        value="<?php echo htmlspecialchars($_SESSION['user_nom'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                    <input type="hidden" name="email"
+                                        value="<?php echo htmlspecialchars($_SESSION['user_email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
+                                    <input type="hidden" name="telephone"
+                                        value="<?php echo htmlspecialchars($user_telephone, ENT_QUOTES, 'UTF-8'); ?>">
 
-                                <div
-                                    style="background: #FFF2ED; border: 1px solid var(--line); border-left: 3px solid var(--primary); border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--ink);">
-                                    <i class="fa-solid fa-circle-user" style="color: var(--primary);"></i>
-                                    Contribution au nom de <strong><?php echo htmlspecialchars($_SESSION['user_nom'] ?? ''); ?></strong>
-                                    <span style="color: var(--muted);">·
-                                        <?php echo htmlspecialchars($user_telephone !== '' ? $user_telephone : ($_SESSION['user_email'] ?? '')); ?></span>
-                                </div>
-                            <?php else: ?>
-                                <!-- Visiteur : formulaire complet à remplir -->
+                                    <div
+                                        style="background: #FFF2ED; border: 1px solid var(--line); border-left: 3px solid var(--primary); border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--ink);">
+                                        <i class="fa-solid fa-circle-user" style="color: var(--primary);"></i>
+                                        Contribution au nom de <strong><?php echo htmlspecialchars($_SESSION['user_nom'] ?? ''); ?></strong>
+                                        <span style="color: var(--muted);">·
+                                            <?php echo htmlspecialchars($user_telephone !== '' ? $user_telephone : ($_SESSION['user_email'] ?? '')); ?></span>
+                                    </div>
+                                <?php else: ?>
+                                    <!-- Visiteur : formulaire complet à remplir -->
+                                    <div class="form-group">
+                                        <label for="cot_nom"><i class="fa-solid fa-user"></i> Nom & Prénom</label>
+                                        <input type="text" id="cot_nom" name="nom" required placeholder="Ex: Jean Koffi"
+                                            value="<?php echo htmlspecialchars($_SESSION['user_nom'] ?? ''); ?>">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="cot_email"><i class="fa-regular fa-envelope"></i> Email</label>
+                                        <input type="email" id="cot_email" name="email" placeholder="votre.email@exemple.com"
+                                            value="<?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?>">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="cot_tel"><i class="fa-solid fa-phone"></i> Téléphone (Mobile Money)</label>
+                                        <input type="tel" id="cot_tel" name="telephone" required placeholder="Ex: 07 00 00 00 00">
+                                    </div>
+                                <?php endif; ?>
+
                                 <div class="form-group">
-                                    <label for="cot_nom"><i class="fa-solid fa-user"></i> Nom & Prénom</label>
-                                    <input type="text" id="cot_nom" name="nom" required placeholder="Ex: Jean Koffi"
-                                        value="<?php echo htmlspecialchars($_SESSION['user_nom'] ?? ''); ?>">
+                                    <label for="cot_montant"><i class="fa-solid fa-coins"></i> Montant de la cotisation (FCFA)</label>
+                                    <input type="number" id="cot_montant" name="montant" required min="500" step="500"
+                                        placeholder="Ex: 5000">
+                                    <div class="cotisation-amounts" style="margin-top: 0.6rem;">
+                                        <button type="button" class="cotisation-amount-btn" onclick="setCotisation(1000)">1 000
+                                            F</button>
+                                        <button type="button" class="cotisation-amount-btn" onclick="setCotisation(2500)">2 500
+                                            F</button>
+                                        <button type="button" class="cotisation-amount-btn" onclick="setCotisation(5000)">5 000
+                                            F</button>
+                                        <button type="button" class="cotisation-amount-btn" onclick="setCotisation(10000)">10 000
+                                            F</button>
+                                        <button type="button" class="cotisation-amount-btn" onclick="setCotisation(25000)">25 000
+                                            F</button>
+                                    </div>
                                 </div>
 
-                                <div class="form-group">
-                                    <label for="cot_email"><i class="fa-regular fa-envelope"></i> Email</label>
-                                    <input type="email" id="cot_email" name="email" placeholder="votre.email@exemple.com"
-                                        value="<?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?>">
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="cot_tel"><i class="fa-solid fa-phone"></i> Téléphone (Mobile Money)</label>
-                                    <input type="tel" id="cot_tel" name="telephone" required placeholder="Ex: 07 00 00 00 00">
-                                </div>
-                            <?php endif; ?>
-
-                            <div class="form-group">
-                                <label for="cot_montant"><i class="fa-solid fa-coins"></i> Montant de la cotisation (FCFA)</label>
-                                <input type="number" id="cot_montant" name="montant" required min="500" step="500"
-                                    placeholder="Ex: 5000">
-                                <div class="cotisation-amounts" style="margin-top: 0.6rem;">
-                                    <button type="button" class="cotisation-amount-btn" onclick="setCotisation(1000)">1 000
-                                        F</button>
-                                    <button type="button" class="cotisation-amount-btn" onclick="setCotisation(2500)">2 500
-                                        F</button>
-                                    <button type="button" class="cotisation-amount-btn" onclick="setCotisation(5000)">5 000
-                                        F</button>
-                                    <button type="button" class="cotisation-amount-btn" onclick="setCotisation(10000)">10 000
-                                        F</button>
-                                    <button type="button" class="cotisation-amount-btn" onclick="setCotisation(25000)">25 000
-                                        F</button>
-                                </div>
+                                <button type="submit" class="btn-submit" style="margin-top: 0.5rem;">
+                                    <i class="fa-solid fa-heart"></i> Je cotise maintenant
+                                </button>
+                                <p style="color: var(--muted); font-size: 0.78rem; margin-top: 0.75rem; text-align: center;">
+                                    <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Paiement sécurisé par
+                                    Mobile Money
+                                </p>
+                            </form>
+                        <?php else: ?>
+                            <div class="alert alert-error" style="margin: 0;">
+                                <i class="fa-solid fa-lock"></i>
+                                Les contributions sont réservées aux clients. Votre compte
+                                <?php echo htmlspecialchars($_SESSION['user_role'] ?? ''); ?> ne peut pas cotiser.
                             </div>
-
-                            <button type="submit" class="btn-submit" style="margin-top: 0.5rem;">
-                                <i class="fa-solid fa-heart"></i> Je cotise maintenant
-                            </button>
-                            <p style="color: var(--muted); font-size: 0.78rem; margin-top: 0.75rem; text-align: center;">
-                                <i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Paiement sécurisé par
-                                Mobile Money
-                            </p>
-                        </form>
-                    <?php else: ?>
-                        <div class="alert alert-error" style="margin: 0;">
-                            <i class="fa-solid fa-lock"></i>
-                            Les contributions sont réservées aux clients. Votre compte
-                            <?php echo htmlspecialchars($_SESSION['user_role'] ?? ''); ?> ne peut pas cotiser.
-                        </div>
-                    <?php endif; ?>
-                </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
-        <?php endif; ?>
         </section>
 
     <?php elseif ($onglet === 'voter'): ?>
@@ -1134,7 +1193,8 @@ if (!function_exists('get_event_cat_icon')) {
 
             <!-- Zone de Recherche Scrutins, Concours & Votes -->
             <div style="max-width: 820px; margin: 0 auto 2.25rem;">
-                <form method="GET" action="accueil.php" class="search-box-wrapper" style="box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08); border: 1px solid var(--line); border-radius: 14px; background: #ffffff; padding: 0.5rem 0.65rem;">
+                <form method="GET" action="accueil.php" class="search-box-wrapper"
+                    style="box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08); border: 1px solid var(--line); border-radius: 14px; background: #ffffff; padding: 0.5rem 0.65rem;">
                     <input type="hidden" name="onglet" value="voter">
 
                     <div class="search-input-field" style="flex: 2; min-width: 220px;">
@@ -1159,12 +1219,15 @@ if (!function_exists('get_event_cat_icon')) {
                 </form>
 
                 <?php if (!empty($q_vote) || $type_vote !== 'tous'): ?>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem; padding: 0 0.5rem; font-size: 0.85rem; flex-wrap: wrap; gap: 8px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.85rem; padding: 0 0.5rem; font-size: 0.85rem; flex-wrap: wrap; gap: 8px;">
                         <span style="color: var(--muted);">
-                            Résultats pour <strong>« <?php echo htmlspecialchars(!empty($q_vote) ? $q_vote : $type_vote); ?> »</strong> : 
+                            Résultats pour <strong>« <?php echo htmlspecialchars(!empty($q_vote) ? $q_vote : $type_vote); ?>
+                                »</strong> :
                             <strong style="color: var(--navy);"><?php echo count($classement); ?></strong> scrutin(s) trouvé(s)
                         </span>
-                        <a href="accueil.php?onglet=voter" style="color: #FF4A0D; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                        <a href="accueil.php?onglet=voter"
+                            style="color: #FF4A0D; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-xmark"></i> Réinitialiser la recherche
                         </a>
                     </div>
@@ -1204,7 +1267,8 @@ if (!function_exists('get_event_cat_icon')) {
                             </div>
 
                             <div style="padding: 1rem 1.15rem; display: flex; flex-direction: column; flex: 1;">
-                                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; font-size: 0.76rem;">
+                                <div
+                                    style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem; font-size: 0.76rem;">
                                     <span style="color: #FF4A0D; font-weight: 700; font-family: 'Space Mono', monospace;">
                                         <i class="fa-solid fa-trophy" style="margin-right: 3px;"></i>
                                         <?php echo $rang === 0 ? '1er' : ($rang + 1) . 'e'; ?> au classement
@@ -1267,8 +1331,9 @@ if (!function_exists('get_event_cat_icon')) {
                                                     }
                                                     ?>
                                                     <img src="<?php echo $c_thumb; ?>" alt="<?php echo htmlspecialchars($cand['nom']); ?>"
-                                                        style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid #ffffff; margin-left: <?php echo $idx_c > 0 ? '-6px' : '0'; ?>; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"
-                                                        loading="lazy">
+                                                        style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; object-position: center top; border: 2px solid #ffffff; margin-left: <?php echo $idx_c > 0 ? '-6px' : '0'; ?>; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"
+                                                        loading="lazy" decoding="async"
+                                                        onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80';">
                                                 <?php endforeach; ?>
                                             </div>
                                             <span style="font-size: 0.74rem; font-weight: 700; color: var(--navy); margin-left: 6px;">
@@ -1307,11 +1372,18 @@ if (!function_exists('get_event_cat_icon')) {
                 </div>
             <?php else: ?>
                 <?php if (!empty($q_vote) || $type_vote !== 'tous'): ?>
-                    <div style="text-align: center; background: #ffffff; border: 1px solid var(--line); border-radius: 16px; padding: 3.5rem 1rem; max-width: 640px; margin: 0 auto; box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);">
-                        <i class="fa-solid fa-magnifying-glass" style="font-size: 2.75rem; color: #CBD5E1; margin-bottom: 1rem; display: block;"></i>
-                        <h3 style="color: var(--navy); margin-bottom: 0.4rem; font-size: 1.25rem; font-weight: 800;">Aucun scrutin trouvé</h3>
-                        <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.92rem;">Aucun événement ou concours ne correspond à votre recherche « <strong><?php echo htmlspecialchars(!empty($q_vote) ? $q_vote : $type_vote); ?></strong> ».</p>
-                        <a href="accueil.php?onglet=voter" class="btn-submit" style="display: inline-flex; align-items: center; gap: 6px; width: auto; text-decoration: none; padding: 0.65rem 1.5rem; margin: 0 auto;">
+                    <div
+                        style="text-align: center; background: #ffffff; border: 1px solid var(--line); border-radius: 16px; padding: 3.5rem 1rem; max-width: 640px; margin: 0 auto; box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);">
+                        <i class="fa-solid fa-magnifying-glass"
+                            style="font-size: 2.75rem; color: #CBD5E1; margin-bottom: 1rem; display: block;"></i>
+                        <h3 style="color: var(--navy); margin-bottom: 0.4rem; font-size: 1.25rem; font-weight: 800;">Aucun scrutin
+                            trouvé</h3>
+                        <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.92rem;">Aucun événement ou concours ne
+                            correspond à votre recherche «
+                            <strong><?php echo htmlspecialchars(!empty($q_vote) ? $q_vote : $type_vote); ?></strong> ».
+                        </p>
+                        <a href="accueil.php?onglet=voter" class="btn-submit"
+                            style="display: inline-flex; align-items: center; gap: 6px; width: auto; text-decoration: none; padding: 0.65rem 1.5rem; margin: 0 auto;">
                             <i class="fa-solid fa-rotate-left"></i> Voir tous les scrutins
                         </a>
                     </div>
@@ -1453,7 +1525,8 @@ if (!function_exists('get_event_cat_icon')) {
                             <div style="padding: 1rem 1.15rem; display: flex; flex-direction: column; flex: 1;">
                                 <div
                                     style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem; font-size: 0.76rem;">
-                                    <span style="color: #FF4A0D; font-weight: 700; font-family: 'Space Mono', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 4px;">
+                                    <span
+                                        style="color: #FF4A0D; font-weight: 700; font-family: 'Space Mono', monospace; text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 4px;">
                                         <i class="<?php echo get_event_cat_icon($event['categorie']); ?>"></i>
                                         <?php echo htmlspecialchars($event['categorie']); ?>
                                     </span>
@@ -1610,7 +1683,7 @@ if (!function_exists('get_event_cat_icon')) {
                 </span>
                 <h2
                     style="color: #ffffff; font-size: clamp(1.6rem, 3.5vw, 2.3rem); font-weight: 900; margin: 0.25rem 0 0.85rem; letter-spacing: -0.03em; line-height: 1.2;">
-                    Vous organisez des événements ? Devenez Promoteur Officiel sur Eventia.
+                    Vous organisez des événements ? Devenez Promoteur Officiel sur TikeWA.
                 </h2>
                 <p style="color: #E5E5E5; font-size: 1rem; line-height: 1.6; margin-bottom: 1.75rem; max-width: 680px;">
                     Que vous soyez une personne physique (organisateur indépendant) ou une personne morale (agence,
@@ -1713,18 +1786,23 @@ if (!function_exists('get_event_cat_icon')) {
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0.75rem;">
-                        <label for="client_nom" style="font-size: 0.8rem;"><i class="fa-solid fa-user" style="color: var(--primary); margin-right: 4px;"></i> Nom & Prénom du titulaire</label>
+                        <label for="client_nom" style="font-size: 0.8rem;"><i class="fa-solid fa-user"
+                                style="color: var(--primary); margin-right: 4px;"></i> Nom & Prénom du titulaire</label>
                         <input type="text" id="client_nom" name="client_nom" required placeholder="Ex: Jean Koffi">
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0.75rem;">
-                        <label for="client_email" style="font-size: 0.8rem;"><i class="fa-regular fa-envelope" style="color: var(--primary); margin-right: 4px;"></i> Adresse Email (réception des billets & QR codes)</label>
+                        <label for="client_email" style="font-size: 0.8rem;"><i class="fa-regular fa-envelope"
+                                style="color: var(--primary); margin-right: 4px;"></i> Adresse Email (réception des billets
+                            & QR codes)</label>
                         <input type="email" id="client_email" name="client_email" required
                             placeholder="votre.email@exemple.com">
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label for="client_telephone" style="font-size: 0.8rem;"><i class="fa-solid fa-phone" style="color: var(--primary); margin-right: 4px;"></i> Numéro de Téléphone (Mobile Money)</label>
+                        <label for="client_telephone" style="font-size: 0.8rem;"><i class="fa-solid fa-phone"
+                                style="color: var(--primary); margin-right: 4px;"></i> Numéro de Téléphone (Mobile
+                            Money)</label>
                         <input type="tel" id="client_telephone" name="client_telephone" required
                             placeholder="Ex: 07 00 00 00 00">
                     </div>
@@ -2375,12 +2453,12 @@ if (!function_exists('get_event_cat_icon')) {
     function handleReservationAction(button) {
         if (!button) return;
         var eventId = button.getAttribute('data-event-id') || (button.dataset ? button.dataset.eventId : '');
-        // Détection PC / Desktop (> 768px) : redirection vers la page dédiée complète
-        if (window.innerWidth > 768 && eventId) {
+        // Redirection directe vers la billetterie complète de l'événement (mobile & desktop)
+        if (eventId) {
             window.location.href = 'evenement.php?id=' + encodeURIComponent(eventId) + '#billets';
             return;
         }
-        // Mobile (<= 768px) : menu modale dédié
+        // Fallback modale si l'identifiant n'est pas résolu
         if (typeof openEventModal === 'function') {
             openEventModal(button);
         }
@@ -2388,30 +2466,19 @@ if (!function_exists('get_event_cat_icon')) {
     window.handleReservationAction = handleReservationAction;
 
     function handleEventCardClick(eventId, cardElement, ev) {
-        // Si le clic provient du bouton de partage flottant ou d'un bouton d'action interne, ne pas interférer
-        if (ev && ev.target && (ev.target.closest('.poster-floating-share-btn') || ev.target.closest('.btn-card-share'))) {
+        // Ne pas interférer si le clic provient d'un bouton d'action interne, lien ou partage
+        if (ev && ev.target && (ev.target.closest('.poster-floating-share-btn') || ev.target.closest('.btn-card-share') || ev.target.closest('.btn-submit') || ev.target.closest('button') || ev.target.closest('a'))) {
             return;
         }
 
-        // Détection Mobile (<= 768px) : ouverture directe du menu mobile de l'événement
-        if (window.innerWidth <= 768) {
-            if (ev && ev.preventDefault) ev.preventDefault();
-            var resBtn = cardElement ? cardElement.querySelector('button[data-event-id]') : null;
-            if (resBtn && typeof openEventModal === 'function') {
-                openEventModal(resBtn);
-            } else if (typeof openEventDetailsModal === 'function') {
-                openEventDetailsModal(eventId);
-            } else {
-                window.location.href = 'evenement.php?id=' + encodeURIComponent(eventId);
-            }
-        } else {
-            // Détection PC / Desktop (> 768px) : redirection vers la page dédiée complète
+        // Navigation directe et fluide vers la page de l'événement (mobile et desktop)
+        if (eventId) {
             window.location.href = 'evenement.php?id=' + encodeURIComponent(eventId);
         }
     }
     window.handleEventCardClick = handleEventCardClick;
 </script>
 
-<script src="../js/accueil-client.js?v=1.1.0"></script>
+<script src="../js/accueil-client.js?v=1.2.0"></script>
 
 <?php include 'footer.php'; ?>

@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_claim'])) {
         ");
         $stmt_ins->execute([$user_id, $sujet, $msg]);
 
-        $message = "Votre ticket de réclamation a été transmis avec succès au support prioritaire Tike WA.";
+        $message = "Votre ticket de réclamation a été transmis avec succès au support prioritaire TikeWA.";
         $msg_type = "success";
     }
 }
@@ -325,7 +325,7 @@ function get_claim_badge($statut) {
                         <div style="background: #FFF2ED; border: 1px solid var(--dash-border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
                                 <strong style="color: var(--dash-primary); font-size: 0.84rem; display: flex; align-items: center; gap: 6px;">
-                                    <i class="fa-solid fa-reply"></i> Réponse officielle du Support Tike WA
+                                    <i class="fa-solid fa-reply"></i> Réponse officielle du Support TikeWA
                                 </strong>
                                 <span style="font-size: 0.72rem; color: var(--dash-muted);">
                                     <?php echo !empty($cl['updated_at']) ? 'Mise à jour le ' . date('d/m/Y à H:i', strtotime($cl['updated_at'])) : ''; ?>

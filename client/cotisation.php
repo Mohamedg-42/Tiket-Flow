@@ -212,7 +212,7 @@ if ($is_private_campagne) {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Accès restreint — Collecte Privée | Tike WA</title>
+            <title>Accès restreint — Collecte Privée | TikeWA</title>
             <meta name="robots" content="noindex, nofollow">
             <style>
                 body { font-family: system-ui, -apple-system, sans-serif; background: #0F172A; color: #E2E8F0; min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; padding: 2rem; box-sizing: border-box; }

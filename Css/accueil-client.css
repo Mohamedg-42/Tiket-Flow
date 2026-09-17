@@ -2342,6 +2342,7 @@
     #clientEventModal {
         padding: 0 !important;
         align-items: flex-end !important;
+        z-index: 100005 !important;
     }
 
     #clientEventModal .client-modal-box {
@@ -2496,7 +2497,7 @@
 .vote-cand-photo-wrap {
     position: relative;
     width: 100%;
-    height: 190px;
+    height: 230px;
     background: #0f172a;
     overflow: hidden;
     cursor: pointer;
@@ -2506,6 +2507,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center top;
     transition: transform 0.35s ease;
     display: block;
 }
@@ -2740,14 +2742,38 @@
     white-space: pre-line;
 }
 
-@media (max-width: 600px) {
+/* Alignement vertical des candidats sur mobile */
+@media (max-width: 768px) {
+    .vote-cands-nav {
+        display: none !important;
+    }
+
+    .vote-cands-horizontal-track {
+        flex-direction: column !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        scroll-snap-type: none !important;
+        align-items: center !important;
+        gap: 1.25rem !important;
+        padding: 0.5rem 0 1.5rem !important;
+    }
+
     .vote-cand-card {
-        flex: 0 0 185px;
-        width: 185px;
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        max-width: 340px !important;
+        scroll-snap-align: none !important;
+        border-radius: 14px !important;
     }
 
     .vote-cand-photo-wrap {
-        height: 165px;
+        height: 320px !important;
+        min-height: 280px !important;
+    }
+
+    .vote-cand-photo {
+        object-fit: cover !important;
+        object-position: center top !important;
     }
 
     .candidat-detail-hero {
@@ -2918,8 +2944,15 @@
 }
 
 @keyframes faDropdownFade {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .fa-custom-dropdown-item {

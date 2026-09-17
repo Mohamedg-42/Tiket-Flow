@@ -55,7 +55,7 @@ if (!$order || $order['statut'] !== 'en_attente') {
 
 // Génération de la signature cryptographique sécurisée du paiement
 if (!defined('APP_SECRET_KEY')) {
-    error_log("Tike WA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
+    error_log("TikeWA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
     $_SESSION['order_message'] = "Erreur de configuration serveur. Veuillez contacter l'administrateur.";
     header('Location: accueil.php');
     exit();
@@ -185,16 +185,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmer_simulation_
     exit();
 }
 
-$page_title = "Paiement Sécurisé - Tike WA";
+$back_url = 'accueil.php';
+$page_title = "Paiement Sécurisé - TikeWA";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>
 
-<div class="payment-container"
-    style="max-width: 620px; margin: 2rem auto 3.5rem; padding: 0 clamp(0.75rem, 2vw, 1rem);">
-    <a href="accueil.php" class="back-link"
+<div class="payment-container">
+    <a href="<?php echo $back_url; ?>" class="back-link"
         style="margin-bottom: 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; color: var(--eventia-muted, #737373); text-decoration: none; font-weight: 600; font-size: 0.9rem;">
-        <i class="fa-solid fa-arrow-left"></i> Annuler et retourner à l'accueil
+        <i class="fa-solid fa-arrow-left"></i> Annuler et retourner à l'événement
     </a>
 
     <?php if (!empty($error_msg)): ?>
@@ -208,28 +208,23 @@ include 'header.php';
         </div>
     <?php endif; ?>
 
-    <div class="payment-card eventia-card"
-        style="padding: 0; overflow: hidden; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 12px 24px -4px rgba(16, 24, 40, 0.08); background: #ffffff;">
+    <div class="payment-card eventia-card">
 
         <!-- En-tête Swiss Style -->
-        <div class="payment-heading" style="background: #0f172a; color: #ffffff; padding: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="payment-icon"
-                    style="width: 48px; height: 48px; background: rgba(255, 74, 13, 0.15); border: 1px solid rgba(255, 74, 13, 0.3); border-radius: 12px; display: grid; place-items: center; font-size: 1.3rem; margin-bottom: 1rem; color: var(--tikeli-orange, #FF4A0D);">
+        <div class="payment-heading">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                <div class="payment-icon">
                     <i class="fa-solid fa-shield-halved"></i>
                 </div>
-                <span
-                    style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-family: 'Space Mono', monospace; font-size: 0.75rem; padding: 0.35rem 0.65rem; border-radius: 6px; text-transform: uppercase;">
+                <span class="secure-badge">
                     Bictorys Secure Pay
                 </span>
             </div>
-            <span class="page-kicker"
-                style="color: var(--tikeli-orange, #FF4A0D); font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; font-family: 'Space Mono', monospace;">Commande
+            <span class="page-kicker">Commande
                 #<?php echo htmlspecialchars($order['numero_commande']); ?></span>
-            <h1
-                style="color: #ffffff; margin: 0.3rem 0 0.5rem; font-size: 1.7rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800; line-height: 1.2;">
+            <h1 class="payment-title">
                 Finaliser votre Paiement</h1>
-            <p style="color: #94a3b8; font-size: 0.92rem; margin: 0;">
+            <p style="color: #94a3b8; font-size: 0.92rem; margin: 0; word-break: break-word;">
                 Titulaire :
                 <strong
                     style="color: #f1f5f9;"><?php echo htmlspecialchars($order['client_nom'] ?: ($_SESSION['user_nom'] ?? 'Client')); ?></strong>
@@ -240,18 +235,17 @@ include 'header.php';
         </div>
 
         <!-- Montant Total à régler -->
-        <div class="payment-amount"
-            style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 1.25rem 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div class="payment-amount">
             <span style="color: #0f172a; font-weight: 700; font-size: 0.95rem;">Montant Total :</span>
             <strong class="swiss-numeral"
-                style="color: #0f172a; font-size: 1.85rem; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 900;"><?php echo number_format($order['montant_total'], 0, ',', ' '); ?>
+                style="color: #0f172a; font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 900;"><?php echo number_format($order['montant_total'], 0, ',', ' '); ?>
                 <span
                     style="font-family: 'Space Mono', monospace; font-size: 0.95rem; color: var(--eventia-muted, #737373); font-weight: 700;">FCFA</span></strong>
         </div>
 
         <!-- Formulaire de Paiement Harmonisé -->
         <form method="POST" action="paiement.php?token=<?php echo urlencode($cur_order_token); ?>" id="bictorys-pay-form"
-            style="padding: 2rem;">
+            class="payment-form">
             <input type="hidden" name="initier_paiement" value="1">
             <input type="hidden" name="provider" id="selected_provider" value="wave_money">
 
@@ -262,40 +256,35 @@ include 'header.php';
                     1. Choisissez votre moyen de paiement
                 </label>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;"
-                    id="provider-selector">
+                <div class="provider-grid" id="provider-selector">
                     <!-- Wave -->
-                    <button type="button" class="provider-card active" data-provider="wave_money"
-                        style="background: #ffffff; border: 2px solid #1ba0e2; border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                    <button type="button" class="provider-card active" data-provider="wave_money">
                         <span
-                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #1ba0e2;"></span>
-                        <strong style="color: #0f172a; font-size: 0.95rem;">Wave</strong>
+                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #1ba0e2; flex-shrink: 0;"></span>
+                        <strong style="color: #0f172a; font-size: 0.92rem;">Wave</strong>
                         <small style="color: #64748b; font-size: 0.72rem;">Sans frais</small>
                     </button>
 
                     <!-- Orange Money -->
-                    <button type="button" class="provider-card" data-provider="orange_money"
-                        style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                    <button type="button" class="provider-card" data-provider="orange_money">
                         <span
-                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #ff7900;"></span>
-                        <strong style="color: #0f172a; font-size: 0.95rem;">Orange</strong>
+                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #ff7900; flex-shrink: 0;"></span>
+                        <strong style="color: #0f172a; font-size: 0.92rem;">Orange</strong>
                         <small style="color: #64748b; font-size: 0.72rem;">Code #144*82#</small>
                     </button>
 
                     <!-- MTN MoMo -->
-                    <button type="button" class="provider-card" data-provider="mtn_money"
-                        style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                    <button type="button" class="provider-card" data-provider="mtn_money">
                         <span
-                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #ffcc00;"></span>
-                        <strong style="color: #0f172a; font-size: 0.95rem;">MTN MoMo</strong>
+                            style="display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #ffcc00; flex-shrink: 0;"></span>
+                        <strong style="color: #0f172a; font-size: 0.92rem;">MTN MoMo</strong>
                         <small style="color: #64748b; font-size: 0.72rem;">Prompt USSD</small>
                     </button>
 
                     <!-- Carte Bancaire -->
-                    <button type="button" class="provider-card" data-provider="card"
-                        style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.85rem 0.5rem; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                    <button type="button" class="provider-card" data-provider="card">
                         <i class="fa-regular fa-credit-card" style="color: #3b82f6; font-size: 1rem;"></i>
-                        <strong style="color: #0f172a; font-size: 0.95rem;">Carte Visa/CB</strong>
+                        <strong style="color: #0f172a; font-size: 0.92rem;">Carte Visa/CB</strong>
                         <small style="color: #64748b; font-size: 0.72rem;">Chiffré 3DS</small>
                     </button>
                 </div>
@@ -350,8 +339,7 @@ include 'header.php';
             </div>
 
             <!-- Bouton de validation d'action -->
-            <button type="submit" id="btn-submit-pay"
-                style="width: 100%; background: var(--tikeli-orange, #FF4A0D); color: #ffffff; border: none; padding: 1.05rem 1.5rem; border-radius: 10px; font-size: 1.05rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.65rem; transition: background 0.2s ease, transform 0.1s ease; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);">
+            <button type="submit" id="btn-submit-pay" class="btn-submit-pay">
                 <i class="fa-solid fa-lock"></i>
                 <span id="btn-pay-label">Payer <?php echo number_format($order['montant_total'], 0, ',', ' '); ?> FCFA
                     avec Wave</span>
@@ -368,9 +356,9 @@ include 'header.php';
 
             <div style="margin-top: 1.5rem; text-align: center; border-top: 1px solid #E2E8F0; padding-top: 1.25rem;">
                 <p
-                    style="margin: 0; color: var(--eventia-muted, #737373); font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.45rem;">
+                    style="margin: 0; color: var(--eventia-muted, #737373); font-size: 0.82rem; display: flex; align-items: center; justify-content: center; gap: 0.45rem; flex-wrap: wrap;">
                     <i class="fa-solid fa-shield-check" style="color: #10B981;"></i>
-                    Transaction sécurisée et chiffrée 256-bit certifiée PCI-DSS
+                    Transaction sécurisée et chiffrée certifiée PCI-DSS
                 </p>
             </div>
         </form>
@@ -398,7 +386,7 @@ include 'header.php';
 
         <div class="pay-modal-body">
             <!-- ============================================================ -->
-            <!-- VUE 1 : DÉTAILS DE LA COMMANDE (ORDER DETAILS)               -->
+            <!-- VUE 1 : DÉTAILS DE LA COMMANDE (Harmonisation Écran 1)       -->
             <!-- ============================================================ -->
             <div id="modal-view-details">
                 <span style="font-family: 'Space Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tikeli-orange, #FF4A0D); font-weight: 700; display: block; margin-bottom: 0.25rem;">
@@ -412,7 +400,9 @@ include 'header.php';
                 <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; text-align: left; font-size: 0.9rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #EDF2F7;">
                         <span style="color: #64748b; font-size: 0.8rem; font-family: 'Space Mono', monospace; text-transform: uppercase;">Commande</span>
-                        <strong style="color: #0f172a; font-family: 'Space Mono', monospace; font-size: 0.88rem;">#<?php echo htmlspecialchars($order['numero_commande']); ?></strong>
+                        <strong style="color: #0f172a; font-family: 'Space Mono', monospace; font-size: 0.88rem;">
+                            #<?php echo htmlspecialchars($order['numero_commande']); ?>
+                        </strong>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #EDF2F7;">
                         <span style="color: #64748b; font-size: 0.8rem; font-family: 'Space Mono', monospace; text-transform: uppercase;">Opérateur</span>
@@ -453,10 +443,9 @@ include 'header.php';
             </div>
 
             <!-- ============================================================ -->
-            <!-- VUE 2 : PAIEMENT VALIDÉ AVEC SUCCÈS (CONFIRMATION PROCESS)   -->
+            <!-- VUE 2 : PAIEMENT VALIDÉ AVEC SUCCÈS (Harmonisation Écran 2)  -->
             <!-- ============================================================ -->
             <div id="modal-view-success" style="display: none;">
-                <!-- Icône Coche Verte Animée -->
                 <div class="success-check-icon">
                     <i class="fa-solid fa-check"></i>
                 </div>
@@ -465,10 +454,10 @@ include 'header.php';
                     Your payment has been successfully proceed!
                 </h4>
                 <p style="margin: 0 0 1.25rem; font-size: 0.88rem; color: #047857;">
-                    Votre autorisation de paiement a été acceptée et traitée par la passerelle Bictorys.
+                    Votre transaction a été validée par la passerelle de paiement sécurisée.
                 </p>
 
-                <!-- Détails de validation -->
+                <!-- Bloc Montant Corrigé & Message Harmonisé -->
                 <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem; text-align: left;">
                     <div style="margin-bottom: 0.75rem;">
                         <span style="font-family: 'Space Mono', monospace; font-size: 0.72rem; text-transform: uppercase; color: #166534; font-weight: 700; display: block; margin-bottom: 2px;">
@@ -492,13 +481,13 @@ include 'header.php';
                 <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1rem; text-align: center;">
                     <span style="font-size: 0.85rem; font-weight: 600; color: #334155; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                         <i class="fa-solid fa-spinner fa-spin" style="color: #059669;"></i>
-                        Génération et téléchargement de vos e-Tickets...
+                        Génération de vos billets et QR codes officiels...
                     </span>
                     <div class="pay-progress-bar">
                         <div id="pay-progress-fill" class="pay-progress-fill"></div>
                     </div>
                     <small style="color: #64748b; font-size: 0.75rem; margin-top: 0.5rem; display: block;">
-                        Redirection automatique vers vos billets officiels...
+                        Redirection vers votre espace de téléchargement...
                     </small>
                 </div>
             </div>
@@ -507,43 +496,183 @@ include 'header.php';
 </div>
 
 <style>
-/* ─── STYLES MODALE DE PAIEMENT HARMONISÉE ────────────────────────────────────── */
+/* MISE EN PAGE RESPONSIVE & STYLE SUISSE MÜLLER-BROCKMANN */
+.payment-container {
+    max-width: 620px;
+    margin: 1.5rem auto 3.5rem;
+    padding: 0 clamp(0.75rem, 3.5vw, 1.25rem);
+    box-sizing: border-box;
+    width: 100%;
+}
+.payment-card {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #E2E8F0;
+    border-radius: 14px;
+    box-shadow: 0 12px 24px -4px rgba(16, 24, 40, 0.08);
+    background: #ffffff;
+    width: 100%;
+    box-sizing: border-box;
+}
+.payment-heading {
+    background: #0f172a;
+    color: #ffffff;
+    padding: clamp(1.25rem, 4vw, 2rem);
+    box-sizing: border-box;
+    width: 100%;
+}
+.payment-icon {
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 74, 13, 0.15);
+    border: 1px solid rgba(255, 74, 13, 0.3);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+    margin-bottom: 0.85rem;
+    color: var(--tikeli-orange, #FF4A0D);
+    flex-shrink: 0;
+}
+.secure-badge {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.page-kicker {
+    color: var(--tikeli-orange, #FF4A0D);
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'Space Mono', monospace;
+    display: block;
+}
+.payment-title {
+    color: #ffffff;
+    margin: 0.25rem 0 0.5rem;
+    font-size: clamp(1.25rem, 4vw, 1.7rem);
+    font-family: var(--font-heading, 'Outfit', sans-serif);
+    font-weight: 800;
+    line-height: 1.22;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+.payment-amount {
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    padding: clamp(0.9rem, 3vw, 1.25rem) clamp(1rem, 4vw, 2rem);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    width: 100%;
+}
+.swiss-numeral {
+    font-size: clamp(1.4rem, 4.5vw, 1.85rem);
+    white-space: nowrap;
+}
+.payment-form {
+    padding: clamp(1rem, 4vw, 2rem);
+    box-sizing: border-box;
+    width: 100%;
+}
+.provider-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+@media (min-width: 520px) {
+    .provider-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+.provider-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.75rem 0.4rem;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+}
+.provider-card.active {
+    border: 2px solid #1ba0e2;
+    background: #F8FAFC;
+}
+.btn-submit-pay {
+    width: 100%;
+    background: var(--tikeli-orange, #FF4A0D);
+    color: #ffffff;
+    border: none;
+    padding: 0.95rem 1.25rem;
+    border-radius: 10px;
+    font-size: clamp(0.92rem, 2.8vw, 1.05rem);
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    transition: background 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);
+    box-sizing: border-box;
+}
+
+/* STYLES MODALE DE PAIEMENT HARMONISÉE */
 .pay-modal-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.75);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     z-index: 99999;
     display: none;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
+    padding: clamp(0.5rem, 3vw, 1rem);
     opacity: 0;
     transition: opacity 0.2s ease;
+    box-sizing: border-box;
 }
-
 .pay-modal-backdrop.is-open {
-    display: flex;
     opacity: 1;
 }
-
 .pay-modal-card {
     background: #ffffff;
     width: 100%;
-    max-width: 460px;
+    max-width: 420px;
     border-radius: 16px;
     box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
     overflow: hidden;
     border: 1px solid #E2E8F0;
     transform: scale(0.95);
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    margin: auto;
 }
-
 .pay-modal-backdrop.is-open .pay-modal-card {
     transform: scale(1);
 }
-
 .pay-modal-header {
     background: #0f172a;
     color: #ffffff;
@@ -551,8 +680,8 @@ include 'header.php';
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-sizing: border-box;
 }
-
 .pay-modal-close {
     background: none;
     border: none;
@@ -566,37 +695,40 @@ include 'header.php';
 .pay-modal-close:hover {
     color: #ffffff;
 }
-
 .pay-modal-body {
-    padding: 1.5rem;
+    padding: clamp(1rem, 3.5vw, 1.5rem);
     text-align: center;
+    box-sizing: border-box;
 }
-
 .btn-modal-cancel {
     background: #ffffff;
-    border: 1.5px solid #CBD5E1;
+    border: 1.5px solid #cbd5e1;
     color: #475569;
-    padding: 0.85rem 1.2rem;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    font-weight: 800;
+    padding: 0.8rem 0.85rem;
+    border-radius: 8px;
+    font-size: clamp(0.78rem, 2.5vw, 0.88rem);
+    font-weight: 700;
     font-family: 'Space Mono', monospace;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
     transition: all 0.15s ease;
+    box-sizing: border-box;
 }
 .btn-modal-cancel:hover {
-    background: #FEE2E2;
-    border-color: #F87171;
-    color: #DC2626;
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #94a3b8;
 }
-
 .btn-modal-confirm {
     background: #2563eb;
-    border: none;
+    border: 1.5px solid #2563eb;
     color: #ffffff;
-    padding: 0.85rem 1.2rem;
-    border-radius: 10px;
-    font-size: 0.95rem;
+    padding: 0.8rem 0.85rem;
+    border-radius: 8px;
+    font-size: clamp(0.78rem, 2.5vw, 0.88rem);
     font-weight: 800;
     font-family: 'Space Mono', monospace;
     cursor: pointer;
@@ -604,28 +736,27 @@ include 'header.php';
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
+    gap: 0.4rem;
     transition: all 0.15s ease;
+    box-sizing: border-box;
 }
 .btn-modal-confirm:hover {
     background: #1d4ed8;
     transform: translateY(-1px);
 }
-
 .success-check-icon {
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background: #D1FAE5;
     color: #059669;
     display: grid;
     place-items: center;
-    font-size: 2rem;
-    margin: 0 auto 1.15rem;
+    font-size: 1.85rem;
+    margin: 0 auto 1rem;
     box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.15);
     animation: bounceIn 0.4s ease-out;
 }
-
 .pay-progress-bar {
     width: 100%;
     height: 6px;
@@ -634,7 +765,6 @@ include 'header.php';
     overflow: hidden;
     margin-top: 0.85rem;
 }
-
 .pay-progress-fill {
     height: 100%;
     background: #10B981;
@@ -642,7 +772,6 @@ include 'header.php';
     border-radius: 999px;
     transition: width 1.5s linear;
 }
-
 @keyframes bounceIn {
     0% { transform: scale(0.5); opacity: 0; }
     70% { transform: scale(1.1); }

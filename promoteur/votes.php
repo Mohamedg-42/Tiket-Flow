@@ -1089,7 +1089,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
             const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/vote.php');
             url = base + '?id=' + eventId;
         }
-        const msg = "🗳️ Votez dès maintenant pour « " + eventTitle + " » sur Tike WA ! Cliquez ici : " + url;
+        const msg = "🗳️ Votez dès maintenant pour « " + eventTitle + " » sur TikeWA ! Cliquez ici : " + url;
         
         currentPromoterShareUrl = url;
         currentPromoterShareMsg = msg;
@@ -1112,7 +1112,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
             const base = loc.protocol + '//' + loc.host + loc.pathname.replace('/promoteur/votes.php', '/client/vote.php');
             url = base + '?id=' + eventId + '&candidat_id=' + candId;
         }
-        const msg = "🗳️ Soutenez et votez pour " + candNom + " dans « " + eventTitle + " » sur Tike WA ! Cliquez ici : " + url;
+        const msg = "🗳️ Soutenez et votez pour " + candNom + " dans « " + eventTitle + " » sur TikeWA ! Cliquez ici : " + url;
         
         currentPromoterShareUrl = url;
         currentPromoterShareMsg = msg;

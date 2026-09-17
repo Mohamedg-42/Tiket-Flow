@@ -9,7 +9,7 @@ require_once '../includes/auth.php';
 
 requireLogin('../connexion.php');
 
-$page_title = "Support & Réclamations - Tike WA";
+$page_title = "Support & Réclamations - TikeWA";
 include 'header.php';
 
 $user_id = (int) $_SESSION['user_id'];

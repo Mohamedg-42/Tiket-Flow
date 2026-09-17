@@ -136,7 +136,7 @@ if (empty($tickets)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>e-Ticket Officiel - Tike WA</title>
+    <title>e-Ticket Officiel - TikeWA</title>
     <!-- Google Fonts & FontAwesome -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -504,7 +504,7 @@ if (empty($tickets)) {
             $tk_type = $first_tk['type_ticket'] ?? '';
             $tk_code = $first_tk['code_unique'] ?? '';
 
-            $wa_message = "🎟️ *Billet Officiel Tike WA*\n"
+            $wa_message = "🎟️ *Billet Officiel TikeWA*\n"
                 . "📌 *Événement :* " . $ev_name . "\n"
                 . "🏷️ *Catégorie :* " . $tk_type . "\n"
                 . "📅 *Date :* " . $ev_date . ($ev_time ? " à " . $ev_time : "") . "\n"

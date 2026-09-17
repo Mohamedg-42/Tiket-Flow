@@ -8,7 +8,7 @@ require_once __DIR__ . '/../config/smtp.php';
 require_once __DIR__ . '/smtp.php';
 
 /**
- * Fonction générique pour expédier un email au format HTML via SMTP Tike WA
+ * Fonction générique pour expédier un email au format HTML via SMTP TikeWA
  *
  * @param string $to_email       Adresse email du destinataire
  * @param string $to_name        Nom du destinataire
@@ -31,7 +31,7 @@ function sendTikeliEmail(
     }
 
     $from_email = defined('SMTP_FROM') && !empty(SMTP_FROM) ? SMTP_FROM : 'no-reply@tikeli.ci';
-    $from_name = defined('SMTP_FROM_NAME') && !empty(SMTP_FROM_NAME) ? SMTP_FROM_NAME : 'Tike WA';
+    $from_name = defined('SMTP_FROM_NAME') && !empty(SMTP_FROM_NAME) ? SMTP_FROM_NAME : 'TikeWA';
 
     if (!empty($attachment_data) && !empty($attachment_filename)) {
         // Message MIME multipart/mixed (HTML + Pièce jointe)
@@ -66,14 +66,14 @@ function sendTikeliEmail(
     $res = smtp_send($to_email, $to_name, $subject, $headers, $body);
 
     if (!$res['ok']) {
-        error_log("[Tike WA Mailer] Échec envoi à {$to_email} : " . $res['error']);
+        error_log("[TikeWA Mailer] Échec envoi à {$to_email} : " . $res['error']);
     }
 
     return (bool) $res['ok'];
 }
 
 /**
- * Enveloppe HTML standardisée aux couleurs Tike WA (Navy & Ambre)
+ * Enveloppe HTML standardisée aux couleurs TikeWA (Navy & Ambre)
  */
 function wrapTikeliTemplate(string $title, string $content_html): string
 {
@@ -91,10 +91,10 @@ function wrapTikeliTemplate(string $title, string $content_html): string
     <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 30px 15px; color: #0f172a;'>
         <div style='max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0;'>
             
-            <!-- En-tête de marque Tike WA -->
+            <!-- En-tête de marque TikeWA -->
             <div style='background: #000000; color: #ffffff; padding: 28px 24px; text-align: center; border-bottom: 3px solid #FF4A0D;'>
                 <div style='font-size: 26px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 8px;'>
-                    TIKE WA
+                    TikeWA
                 </div>
                 <div style='color: #a3a3a3; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;'>
                     Plateforme Officielle de Billetterie
@@ -108,7 +108,7 @@ function wrapTikeliTemplate(string $title, string $content_html): string
 
             <!-- Pied de page -->
             <div style='background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;'>
-                <p style='margin: 0 0 6px;'>© {$year} Tike WA. Tous droits réservés.</p>
+                <p style='margin: 0 0 6px;'>© {$year} TikeWA. Tous droits réservés.</p>
                 <p style='margin: 0;'>Paiements sécurisés par Mobile Money (Wave, Orange, MTN, Moov).</p>
                 <div style='margin-top: 10px;'>
                     <a href='{$site_url}/client/accueil.php' style='color: #16233f; text-decoration: none; font-weight: 700; margin: 0 8px;'>Accueil</a> ·
@@ -131,7 +131,7 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
         return false;
     }
 
-    $subject = "Vos Billets & QR Codes — Commande #" . $order_number . " - Tike WA";
+    $subject = "Vos Billets & QR Codes — Commande #" . $order_number . " - TikeWA";
 
     // Cartes individuelles des billets
     $tickets_html = "";
@@ -207,7 +207,7 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
             }
         }
     } catch (Throwable $e) {
-        error_log("[Tike WA Mailer] Erreur génération token commande: " . $e->getMessage());
+        error_log("[TikeWA Mailer] Erreur génération token commande: " . $e->getMessage());
     }
 
     $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' && $_SERVER['HTTPS'] !== '') ? 'https://' : 'http://';
@@ -241,7 +241,7 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
         </div>
     ";
 
-    $body_html = wrapTikeliTemplate("Vos Billets Tike WA #" . $order_number, $content);
+    $body_html = wrapTikeliTemplate("Vos Billets TikeWA #" . $order_number, $content);
 
     // Pièce jointe PDF
     require_once __DIR__ . '/pdf.php';
@@ -257,14 +257,14 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
  */
 function sendWelcomeClientEmail(string $to_email, string $to_name): bool
 {
-    $subject = "Bienvenue sur Tike WA, " . $to_name . " !";
+    $subject = "Bienvenue sur TikeWA, " . $to_name . " !";
     $site_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform";
 
     $content = "
-        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Bienvenue dans la communauté Tike WA !</h2>
+        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Bienvenue dans la communauté TikeWA !</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Votre compte client a été créé avec succès sur <strong>Tike WA</strong>. Vous pouvez désormais réserver vos places de concert, festivals, spectacles et conférences en quelques clics par Mobile Money.
+            Votre compte client a été créé avec succès sur <strong>TikeWA</strong>. Vous pouvez désormais réserver vos places de concert, festivals, spectacles et conférences en quelques clics par Mobile Money.
         </p>
 
         <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin: 20px 0;'>
@@ -288,7 +288,7 @@ function sendWelcomeClientEmail(string $to_email, string $to_name): bool
         </p>
     ";
 
-    $body_html = wrapTikeliTemplate("Bienvenue sur Tike WA", $content);
+    $body_html = wrapTikeliTemplate("Bienvenue sur TikeWA", $content);
     return sendTikeliEmail($to_email, $to_name, $subject, $body_html);
 }
 
@@ -298,14 +298,14 @@ function sendWelcomeClientEmail(string $to_email, string $to_name): bool
  */
 function sendPromoterRegistrationEmail(string $to_email, string $to_name, string $activite = ''): bool
 {
-    $subject = "Dossier Promoteur bien reçu — En cours d'examen - Tike WA";
+    $subject = "Dossier Promoteur bien reçu — En cours d'examen - TikeWA";
     $site_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform";
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Votre dossier promoteur a été enregistré</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Nous vous confirmons la bonne réception de votre demande d'ouverture de compte <strong>Organisateur / Promoteur</strong> sur Tike WA.
+            Nous vous confirmons la bonne réception de votre demande d'ouverture de compte <strong>Organisateur / Promoteur</strong> sur TikeWA.
         </p>
 
         <div style='background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin: 18px 0; color: #166534; font-size: 13.5px; line-height: 1.5;'>
@@ -329,7 +329,7 @@ function sendPromoterRegistrationEmail(string $to_email, string $to_name, string
         </p>
     ";
 
-    $body_html = wrapTikeliTemplate("Dossier Promoteur Tike WA", $content);
+    $body_html = wrapTikeliTemplate("Dossier Promoteur TikeWA", $content);
     return sendTikeliEmail($to_email, $to_name, $subject, $body_html);
 }
 
@@ -350,7 +350,7 @@ function sendAdminCreatedAccountEmail(
         @require_once __DIR__ . '/../config/database.php';
     }
 
-    $subject = "Votre compte d'accès à la plateforme Tike WA a été créé";
+    $subject = "Votre compte d'accès à la plateforme TikeWA a été créé";
     $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $site_url = "{$scheme}://{$host}/ticket-platform";
@@ -388,10 +388,10 @@ function sendAdminCreatedAccountEmail(
     $role_label = $role_labels[$role] ?? ucfirst($role);
 
     $content = "
-        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Votre compte Tike WA a été créé</h2>
+        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Votre compte TikeWA a été créé</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Un administrateur de la plateforme <strong>Tike WA</strong> vient de vous ouvrir un compte d'accès officiel. Pour des raisons strictes de sécurité et de confidentialité, votre mot de passe n'est pas transmis en clair dans cet e-mail.
+            Un administrateur de la plateforme <strong>TikeWA</strong> vient de vous ouvrir un compte d'accès officiel. Pour des raisons strictes de sécurité et de confidentialité, votre mot de passe n'est pas transmis en clair dans cet e-mail.
         </p>
 
         <!-- Boîte des identifiants sécurisée -->
@@ -418,7 +418,7 @@ function sendAdminCreatedAccountEmail(
                 <tr>
                     <td align='center' style='padding: 6px;'>
                         <a href='{$login_url}' style='background: #FF4A0D; color: #ffffff; padding: 13px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);'>
-                            Me Connecter à Tike WA
+                            Me Connecter à TikeWA
                         </a>
                     </td>
                     <td align='center' style='padding: 6px;'>
@@ -435,7 +435,7 @@ function sendAdminCreatedAccountEmail(
         </div>
     ";
 
-    $body_html = wrapTikeliTemplate("Votre Compte Tike WA", $content);
+    $body_html = wrapTikeliTemplate("Votre Compte TikeWA", $content);
     return sendTikeliEmail($to_email, $to_name, $subject, $body_html);
 }
 
@@ -451,15 +451,15 @@ function sendAccountStatusNotificationEmail(
 ): bool {
     $is_reactivation = ($type === 'reactivation' || $type === 'actif');
     $subject = $is_reactivation
-        ? "Votre compte Tike WA a été réactivé"
-        : "Notification concernant l'état de votre compte Tike WA";
+        ? "Votre compte TikeWA a été réactivé"
+        : "Notification concernant l'état de votre compte TikeWA";
 
     if ($is_reactivation) {
         $content = "
             <h2 style='margin: 0 0 12px; color: #16a34a; font-size: 20px;'>Votre compte est de nouveau actif</h2>
             <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
                 Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-                Nous vous informons que la suspension temporaire de votre compte Tike WA a été levée. Vous pouvez à présent vous reconnecter et accéder à l'ensemble de vos services.
+                Nous vous informons que la suspension temporaire de votre compte TikeWA a été levée. Vous pouvez à présent vous reconnecter et accéder à l'ensemble de vos services.
             </p>
         ";
     } else {
@@ -468,7 +468,7 @@ function sendAccountStatusNotificationEmail(
             <h2 style='margin: 0 0 12px; color: #dc2626; font-size: 20px;'>Suspension de votre compte</h2>
             <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
                 Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-                L'administration de Tike WA vous informe que votre compte fait l'objet d'une suspension" . $fin_str . ".
+                L'administration de TikeWA vous informe que votre compte fait l'objet d'une suspension" . $fin_str . ".
             </p>
             " . (!empty($motif) ? "
             <div style='background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px 14px; border-radius: 0 6px 6px 0; font-size: 13.5px; color: #991b1b; margin: 15px 0;'>
@@ -490,7 +490,7 @@ function sendAccountStatusNotificationEmail(
  */
 function sendPromoterApprovalEmail(string $to_email, string $to_name, string $structure_name = ''): bool
 {
-    $subject = "Félicitations ! Votre compte Promoteur Tike WA est activé";
+    $subject = "Félicitations ! Votre compte Promoteur TikeWA est activé";
     $login_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform/connexion.php";
 
     $nom_aff = !empty($structure_name) ? $structure_name : $to_name;
@@ -499,7 +499,7 @@ function sendPromoterApprovalEmail(string $to_email, string $to_name, string $st
         <h2 style='margin: 0 0 12px; color: #16a34a; font-size: 20px;'>Votre compte Promoteur est validé !</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            L'administration d'<strong>Tike WA</strong> a le plaisir de vous informer que votre dossier d'éligibilité pour <strong>" . htmlspecialchars($nom_aff) . "</strong> a été <strong>validé avec succès</strong>.
+            L'administration d'<strong>TikeWA</strong> a le plaisir de vous informer que votre dossier d'éligibilité pour <strong>" . htmlspecialchars($nom_aff) . "</strong> a été <strong>validé avec succès</strong>.
         </p>
 
         <div style='background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 18px; margin: 20px 0;'>
@@ -524,7 +524,7 @@ function sendPromoterApprovalEmail(string $to_email, string $to_name, string $st
         </p>
     ";
 
-    $body_html = wrapTikeliTemplate("Compte Promoteur Activé - Tike WA", $content);
+    $body_html = wrapTikeliTemplate("Compte Promoteur Activé - TikeWA", $content);
     return sendTikeliEmail($to_email, $to_name, $subject, $body_html);
 }
 
@@ -533,7 +533,7 @@ function sendPromoterApprovalEmail(string $to_email, string $to_name, string $st
  */
 function sendPromoterRejectionEmail(string $to_email, string $to_name, string $motif = ''): bool
 {
-    $subject = "Notification concernant votre candidature promoteur Tike WA";
+    $subject = "Notification concernant votre candidature promoteur TikeWA";
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #dc2626; font-size: 20px;'>Dossier Promoteur Non Validé</h2>
@@ -552,7 +552,7 @@ function sendPromoterRejectionEmail(string $to_email, string $to_name, string $m
         </p>
     ";
 
-    $body_html = wrapTikeliTemplate("Candidature Promoteur - Tike WA", $content);
+    $body_html = wrapTikeliTemplate("Candidature Promoteur - TikeWA", $content);
     return sendTikeliEmail($to_email, $to_name, $subject, $body_html);
 }
 
@@ -566,7 +566,7 @@ function sendPasswordResetEmail(
     string $reset_url,
     int $expiry_minutes = 60
 ): bool {
-    $subject = "Réinitialisation de votre mot de passe Tike WA";
+    $subject = "Réinitialisation de votre mot de passe TikeWA";
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Demande de réinitialisation de mot de passe</h2>
@@ -597,7 +597,7 @@ function sendPasswordResetEmail(
         </div>
     ";
 
-    $body_html = wrapTikeliTemplate("Réinitialisation Mot de Passe - Tike WA", $content);
+    $body_html = wrapTikeliTemplate("Réinitialisation Mot de Passe - TikeWA", $content);
     return sendTikeliEmail($to_email, $to_name, $subject, $body_html);
 }
 
@@ -606,14 +606,14 @@ function sendPasswordResetEmail(
  */
 function sendPasswordChangedConfirmationEmail(string $to_email, string $to_name): bool
 {
-    $subject = "Votre mot de passe Tike WA a été modifié";
+    $subject = "Votre mot de passe TikeWA a été modifié";
     $login_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform/connexion.php";
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #16a34a; font-size: 20px;'>Mot de passe mis à jour avec succès</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Le mot de passe de votre compte <strong>Tike WA</strong> a été modifié avec succès le <strong>" . date('d/m/Y à H:i') . "</strong>.
+            Le mot de passe de votre compte <strong>TikeWA</strong> a été modifié avec succès le <strong>" . date('d/m/Y à H:i') . "</strong>.
         </p>
 
         <div style='text-align: center; margin: 24px 0;'>
@@ -623,11 +623,11 @@ function sendPasswordChangedConfirmationEmail(string $to_email, string $to_name)
         </div>
 
         <div style='background: #fef2f2; border-left: 4px solid #dc2626; padding: 12px 14px; border-radius: 0 6px 6px 0; font-size: 12.5px; color: #991b1b; margin-top: 15px;'>
-            <strong>Alerte Sécurité :</strong> Si vous n'avez pas effectué ce changement, veuillez contacter immédiatement l'assistance Tike WA pour sécuriser votre compte.
+            <strong>Alerte Sécurité :</strong> Si vous n'avez pas effectué ce changement, veuillez contacter immédiatement l'assistance TikeWA pour sécuriser votre compte.
         </div>
     ";
 
-    $body_html = wrapTikeliTemplate("Mot de Passe Modifié - Tike WA", $content);
+    $body_html = wrapTikeliTemplate("Mot de Passe Modifié - TikeWA", $content);
     return sendTikeliEmail($to_email, $to_name, $subject, $body_html);
 }
 
@@ -642,7 +642,7 @@ function sendSeatChangedConfirmationEmail(
     string $ancienne_place,
     string $nouvelle_place
 ): bool {
-    $subject = "Votre place a été modifiée : " . $nouvelle_place . " — " . ($ticket['event_name'] ?? 'Tike WA');
+    $subject = "Votre place a été modifiée : " . $nouvelle_place . " — " . ($ticket['event_name'] ?? 'TikeWA');
     $site_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/ticket-platform';
 
     $content = "
@@ -696,7 +696,7 @@ function sendSeatChangedConfirmationEmail(
         </p>
     ";
 
-    $body_html = wrapTikeliTemplate("Changement de Place Confirmé - Tike WA", $content);
+    $body_html = wrapTikeliTemplate("Changement de Place Confirmé - TikeWA", $content);
 
     // Génération du PDF actualisé en pièce jointe
     $pdf_data = null;
@@ -719,7 +719,7 @@ function sendSeatChangedConfirmationEmail(
         $pdf_data = generateTicketsPdf([$pdf_ticket_item], $order_num, $to_name);
         $pdf_filename = 'billet-' . preg_replace('/[^A-Za-z0-9\-]/', '', $ticket['code_unique']) . '.pdf';
     } catch (Throwable $e) {
-        error_log("[Tike WA Mailer] Erreur génération PDF changement place : " . $e->getMessage());
+        error_log("[TikeWA Mailer] Erreur génération PDF changement place : " . $e->getMessage());
     }
 
     return sendTikeliEmail($to_email, $to_name, $subject, $body_html, $pdf_data ?: null, $pdf_filename);

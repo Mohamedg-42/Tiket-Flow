@@ -9,7 +9,7 @@ require_once '../includes/auth.php';
 
 requireLogin('../connexion.php');
 
-$page_title = "Mes Tickets - Tike WA";
+$page_title = "Mes Tickets - TikeWA";
 $body_class = "client-page tickets-page";
 include 'header.php';
 
@@ -150,7 +150,7 @@ $tickets = $stmt->fetchAll();
                 // Fichier et lien de partage WhatsApp du billet (PDF)
                 $pdf_ticket_filename = "billet-" . preg_replace('/[^A-Za-z0-9\-]/', '', $t['code_unique']) . ".pdf";
                 $ticket_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . rtrim(str_replace('\\', '/', dirname($_SERVER['PHP_SELF'])), '/') . '/telecharger-pdf.php?code=' . urlencode($t['code_unique']);
-                $wa_text = "🎟️ Mon billet Tike WA (PDF)\nÉvénement : " . $t['event_name']
+                $wa_text = "🎟️ Mon billet TikeWA (PDF)\nÉvénement : " . $t['event_name']
                     . "\nType : " . $t['type_ticket']
                     . (!empty($t['place_numero']) ? "\nPlace : " . $t['place_numero'] : '')
                     . "\nCode : " . $t['code_unique']
@@ -469,7 +469,7 @@ async function openSeatChange3DModal(ticketId, eventId, ticketTypeId, eventName,
     if (spinner) spinner.style.display = 'block';
 
     const canvas = document.getElementById('canvasChangeSeat3D');
-    const EngineClass = window.Tike WAVenue3D || window.Tike WAVenue3D || window.EventiaVenue3D;
+    const EngineClass = window.TikeWAVenue3D || window.EventiaVenue3D;
 
     if (!seatChangeEngine && EngineClass) {
         seatChangeEngine = new EngineClass(canvas, {

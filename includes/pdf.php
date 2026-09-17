@@ -54,7 +54,7 @@ if (!function_exists('pdf_fetch_qr_jpeg')) {
             return null;
         }
 
-        $ctx = stream_context_create(['http' => ['timeout' => 8, 'user_agent' => 'Tike WA/1.0']]);
+        $ctx = stream_context_create(['http' => ['timeout' => 8, 'user_agent' => 'TikeWA/1.0']]);
         $raw = @file_get_contents($url, false, $ctx);
         if ($raw === false || strlen($raw) < 100) {
             return null;
@@ -144,7 +144,7 @@ if (!function_exists('generateTicketsPdf')) {
         // Si la commande comporte plus d'un billet, page de garde récapitulative
         if (count($tickets) > 1) {
             $p = [];
-            $p[] = $rect(0, $H - 75, $W, 75, '0.05 0.58 0.53'); // Teal Tike WA
+            $p[] = $rect(0, $H - 75, $W, 75, '0.05 0.58 0.53'); // Teal TikeWA
             $p[] = $text('TIKÉLI', 45, $H - 45, 24, 'F2', '1 1 1');
             $p[] = $text('Billetterie 100% Securisee - e-Billets officiels', 45, $H - 65, 10, 'F1', '1 1 1');
             $p[] = $text('Commande #' . $orderNumber, 45, $H - 115, 16, 'F2', '0 0 0');
@@ -171,7 +171,7 @@ if (!function_exists('generateTicketsPdf')) {
 
             // En-tête discret de page
             $p[] = $text(date('d/m/Y H:i'), 38, $H - 40, 8.5, 'F1', '0.2 0.2 0.2');
-            $p[] = $text('e-Ticket Officiel - Tike WA', $W / 2 - 50, $H - 40, 8.5, 'F1', '0.2 0.2 0.2');
+            $p[] = $text('e-Ticket Officiel - TikeWA', $W / 2 - 50, $H - 40, 8.5, 'F1', '0.2 0.2 0.2');
 
             // 1. Dimensions de la Carte Billet
             $cardX = 38.0;
@@ -183,8 +183,8 @@ if (!function_exists('generateTicketsPdf')) {
             // Carte avec BORDS ARRONDIS et contour noir
             $p[] = $roundedRect($cardX, $cardY, $cardW, $cardH, 18.0, '0 0 0', '1 1 1', 1.8);
 
-            // Logo TIKE WA (Orange #ff5500)
-            $p[] = $text('TIKE WA', $cardX + 22, $cardY + $cardH - 38, 15, 'F2', '1.0 0.33 0.0'); // Tike WA Orange
+            // Logo TIKEWA (Orange #ff5500)
+            $p[] = $text('TIKEWA', $cardX + 22, $cardY + $cardH - 38, 15, 'F2', '1.0 0.33 0.0'); // TikeWA Orange
             
             // Badge VENDU / VALIDE avec bords arrondis parfaitement centré
             $badgeW = 66.0;

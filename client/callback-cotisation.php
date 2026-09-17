@@ -9,7 +9,7 @@ require_once '../config/database.php';
 session_start();
 
 // FeexPay / passerelle redirige via GET
-$cotisation_id = filter_input(INPUT_GET, 'cotisation_id', FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'cotisation_id', FILTER_VALIDATE_INT);
+$cotisation_id = filter_input(INPUT_GET, 'cotisation_id', FILTER_VALIDATE_INT) ?: (filter_var($_GET['cotisation_id'] ?? null, FILTER_VALIDATE_INT) ?: filter_input(INPUT_POST, 'cotisation_id', FILTER_VALIDATE_INT));
 $methode = $_GET['methode'] ?? $_POST['methode'] ?? '';
 $methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kadevpay', 'feexpay', 'bictorys'];
 
@@ -39,7 +39,7 @@ if (!$cotisation) {
 
 // 1.1 Vérification de la signature cryptographique sécurisée anti-falsification (SEC-002)
 if (!defined('APP_SECRET_KEY')) {
-    error_log("Tike WA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
+    error_log("TikeWA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
     $_SESSION['cotisation_message'] = "Erreur de configuration serveur. Veuillez contacter l'administrateur.";
     $_SESSION['cotisation_type'] = 'error';
     header('Location: accueil.php?onglet=cotisations');
@@ -90,10 +90,6 @@ try {
         ");
         $stmt_pay->execute([$methode, $reference, $transaction_api_id, $telephone_final, $cotisation_id]);
 
-        // Mettre à jour le montant collecté de la campagne si non déjà crédité
-        $stmt_c = $pdo->prepare("UPDATE cotisation_campagnes SET montant_collecte = montant_collecte + ? WHERE id = ?");
-        $stmt_c->execute([$cotisation['montant'], $cotisation['campagne_id']]);
-
         $pdo->commit();
     }
 
@@ -109,106 +105,96 @@ try {
     exit();
 }
 
-$page_title = "Contribution Confirmée - Tike WA";
+$page_title = "Contribution Confirmée - TikeWA";
 $body_class = "client-page payment-page";
 include 'header.php';
 ?>
 
-<main class="client-main"
-    style="max-width: 640px; margin: 0 auto; padding: clamp(1rem, 2.5vw, 2rem) clamp(0.75rem, 2vw, 1rem);">
+<main class="payment-success-container"
+    style="max-width: 800px; margin: 2rem auto 3.5rem; padding: 0 clamp(0.75rem, 2vw, 1.5rem);">
 
-    <!-- ===== Confirmation du paiement de la contribution ===== -->
+    <!-- En-tête de confirmation harmonisé avec les événements -->
     <div
-        style="background: #ffffff; border: 1px solid var(--line); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-xl);">
+        style="text-align: center; background: #ffffff; border: 1px solid var(--line, #E2E8F0); border-radius: 16px; padding: clamp(1.5rem, 4vw, 2.5rem); margin-bottom: 2rem; box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06);">
         <div
-            style="background: linear-gradient(135deg, #000000 0%, #000000 100%); color: #ffffff; padding: 2.25rem 2rem; text-align: center;">
+            style="width: 72px; height: 72px; background: rgba(16, 185, 129, 0.12); color: #059669; border-radius: 50%; display: grid; place-items: center; font-size: 2.2rem; margin: 0 auto 1.25rem; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.08);">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h1 style="color: var(--navy, #0f172a); margin-bottom: 0.5rem; font-size: clamp(1.5rem, 3.5vw, 2rem); font-family: var(--font-heading, 'Outfit', sans-serif); font-weight: 800;">
+            Paiement Confirmé !
+        </h1>
+        <p style="color: var(--muted, #64748b); font-size: 1rem; margin-bottom: 1.5rem; line-height: 1.5;">
+            Votre contribution pour <?php echo !empty($cotisation['campagne_titre']) ? 'la cause <strong>« ' . htmlspecialchars($cotisation['campagne_titre']) . ' »</strong>' : 'cette campagne'; ?>
+            d'un montant de <strong style="color: var(--navy, #0f172a);"><?php echo number_format((float) $cotisation['montant'], 0, ',', ' '); ?> FCFA</strong> a été réglée avec succès via
+            <strong><?php echo strtoupper(htmlspecialchars(str_replace('_', ' ', $methode))); ?></strong>.
+        </p>
+
+        <!-- Récapitulatif technique -->
+        <div
+            style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.92rem;">
             <div
-                style="width: 60px; height: 60px; background: rgba(22, 163, 74, 0.25); border-radius: 50%; display: grid; place-items: center; font-size: 1.6rem; margin: 0 auto 1rem; color: #FF4A0D;">
-                <i class="fa-solid fa-circle-check"></i>
+                style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #E2E8F0;">
+                <span style="color: #64748b; font-family: 'Space Mono', monospace; font-size: 0.8rem; text-transform: uppercase;">Donateur</span>
+                <strong style="color: #0f172a;"><?php echo htmlspecialchars($cotisation['nom']); ?></strong>
             </div>
-            <span class="page-kicker" style="color: #FF4A0D;">Paiement réussi</span>
-            <h1 style="color: #ffffff; margin: 0.3rem 0 0.5rem; font-size: 1.7rem;">Merci pour votre Contribution !</h1>
-            <p style="color: #737373; font-size: 0.92rem; margin: 0;">
-                Votre paiement a été confirmé par Mobile
-                Money<?php echo !empty($cotisation['campagne_titre']) ? ' pour la campagne <strong style="color:#E5E5E5;">' . htmlspecialchars($cotisation['campagne_titre']) . '</strong>' : ''; ?>.
-            </p>
+            <?php if (!empty($cotisation['campagne_titre'])): ?>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #E2E8F0;">
+                    <span style="color: #64748b; font-family: 'Space Mono', monospace; font-size: 0.8rem; text-transform: uppercase;">Campagne</span>
+                    <strong style="color: #0f172a; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($cotisation['campagne_titre']); ?></strong>
+                </div>
+            <?php endif; ?>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #E2E8F0;">
+                <span style="color: #64748b; font-family: 'Space Mono', monospace; font-size: 0.8rem; text-transform: uppercase;">Moyen de Paiement</span>
+                <strong style="color: #0f172a; text-transform: capitalize;"><?php echo htmlspecialchars(str_replace('_', ' ', $methode)); ?></strong>
+            </div>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #E2E8F0;">
+                <span style="color: #64748b; font-family: 'Space Mono', monospace; font-size: 0.8rem; text-transform: uppercase;">Référence Bictorys</span>
+                <strong style="color: #0f172a; font-family: 'Space Mono', monospace; font-size: 0.85rem;"><?php echo htmlspecialchars($reference); ?></strong>
+            </div>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0 0.2rem; font-size: 1.05rem;">
+                <span style="color: #0f172a; font-weight: 700;">Montant Encaissé</span>
+                <strong style="color: var(--tikeli-orange, #FF4A0D); font-size: 1.35rem; font-family: 'Outfit', sans-serif; font-weight: 900;">
+                    <?php echo number_format((float) $cotisation['montant'], 0, ',', ' '); ?>
+                    <span style="font-size: 0.85rem; font-family: 'Space Mono', monospace;">FCFA</span>
+                </strong>
+            </div>
         </div>
 
-        <div style="padding: 2rem;">
+        <?php
+        $campagne_id_url = (int) ($cotisation['campagne_id'] ?? 0);
+        $share_cot_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/ticket-platform/client/accueil.php?onglet=cotisations';
+        $wa_cot_text = "🤝 Je viens de soutenir la cause « " . ($cotisation['campagne_titre'] ?? 'cette campagne') . " » sur TikeWA ! Participez vous aussi à la collecte ici : " . $share_cot_url;
+        $wa_cot_href = "https://api.whatsapp.com/send?text=" . urlencode($wa_cot_text);
+        ?>
 
-            <!-- Récapitulatif -->
-            <div
-                style="background: #F5F5F5; border: 1px solid var(--line); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--line-light); font-size: 0.9rem;">
-                    <span style="color: var(--muted);">Contributeur</span>
-                    <strong style="color: var(--navy);"><?php echo htmlspecialchars($cotisation['nom']); ?></strong>
-                </div>
-                <?php if (!empty($cotisation['campagne_titre'])): ?>
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--line-light); font-size: 0.9rem;">
-                        <span style="color: var(--muted);">Campagne</span>
-                        <strong
-                            style="color: var(--navy);"><?php echo htmlspecialchars($cotisation['campagne_titre']); ?></strong>
-                    </div>
-                <?php endif; ?>
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--line-light); font-size: 0.9rem;">
-                    <span style="color: var(--muted);">Opérateur</span>
-                    <strong
-                        style="color: var(--navy); text-transform: capitalize;"><?php echo htmlspecialchars(str_replace('_', ' ', $methode)); ?></strong>
-                </div>
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; font-size: 1.05rem;">
-                    <span style="color: var(--navy); font-weight: 700;">Montant payé</span>
-                    <strong
-                        style="color: var(--primary); font-size: 1.3rem;"><?php echo number_format((float) $cotisation['montant'], 0, ',', ' '); ?>
-                        FCFA</strong>
-                </div>
-            </div>
+        <!-- Boutons d'actions harmonisés -->
+        <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="<?php echo $wa_cot_href; ?>" target="_blank" class="btn-submit"
+                style="width: auto; padding: 0.75rem 1.4rem; background: #25D366; color: white; text-decoration: none; border-color: #25D366; font-weight: 700; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
+                <i class="fa-brands fa-whatsapp" style="font-size: 1.15rem;"></i> Partager par WhatsApp
+            </a>
 
-            <!-- Référence de transaction -->
-            <div
-                style="background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: center;">
-                <small
-                    style="color: #000000; font-weight: 700; text-transform: uppercase; font-size: 0.72rem; display: block; margin-bottom: 4px;">Référence
-                    de transaction</small>
-                <strong
-                    style="font-family: monospace; font-size: 1.1rem; color: #000000; letter-spacing: 1px;"><?php echo htmlspecialchars($reference); ?></strong>
-                <small style="color: var(--muted); display: block; margin-top: 4px; font-size: 0.75rem;">Conservez cette
-                    référence comme preuve de votre contribution.</small>
-            </div>
-
-            <?php
-            $campagne_id_url = (int) ($cotisation['campagne_id'] ?? 0);
-            $share_cot_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/ticket-platform/client/accueil.php?onglet=cotisations';
-            $wa_cot_text = "🤝 Je viens de soutenir la cause « " . ($cotisation['campagne_titre'] ?? 'cette campagne') . " » sur Tike WA ! Participez vous aussi à la collecte ici : " . $share_cot_url;
-            $wa_cot_href = "https://api.whatsapp.com/send?text=" . urlencode($wa_cot_text);
-            ?>
-
-            <div style="margin-bottom: 1rem;">
-                <a href="<?php echo $wa_cot_href; ?>" target="_blank" class="btn-submit"
-                    style="display: block; width: 100%; text-align: center; background: #25D366; color: white; text-decoration: none; border-color: #25D366; font-weight: 700; padding: 0.75rem;">
-                    <i class="fa-brands fa-whatsapp"></i> Partager la campagne sur WhatsApp
+            <?php if (($cotisation['campagne_visibilite'] ?? 'public') === 'prive' && !empty($cotisation['campagne_id'])): ?>
+                <a href="cotisation.php?id=<?php echo (int) $cotisation['campagne_id']; ?>&token=<?php echo urlencode($cotisation['campagne_access_token'] ?? ''); ?>"
+                    class="btn-submit"
+                    style="width: auto; padding: 0.75rem 1.4rem; background: var(--tikeli-orange, #FF4A0D); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
+                    <i class="fa-solid fa-hand-holding-heart"></i> Voir la campagne
                 </a>
-            </div>
+            <?php else: ?>
+                <a href="accueil.php?onglet=cotisations" class="btn-submit"
+                    style="width: auto; padding: 0.75rem 1.4rem; background: var(--tikeli-orange, #FF4A0D); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
+                    <i class="fa-solid fa-hand-holding-heart"></i> Explorer les campagnes
+                </a>
+            <?php endif; ?>
 
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                <?php if (($cotisation['campagne_visibilite'] ?? 'public') === 'prive' && !empty($cotisation['campagne_id'])): ?>
-                    <a href="cotisation.php?id=<?php echo (int) $cotisation['campagne_id']; ?>&token=<?php echo urlencode($cotisation['campagne_access_token'] ?? ''); ?>"
-                        class="btn-submit" style="flex: 1; text-decoration: none; text-align: center;">
-                        <i class="fa-solid fa-hand-holding-heart"></i> Retourner à la collecte privée
-                    </a>
-                <?php else: ?>
-                    <a href="accueil.php?onglet=cotisations" class="btn-submit"
-                        style="flex: 1; text-decoration: none; text-align: center; background: transparent; color: var(--muted); border: 1px solid var(--line);">
-                        <i class="fa-solid fa-hand-holding-heart"></i> Autres campagnes
-                    </a>
-                    <a href="accueil.php" class="btn-submit" style="flex: 1; text-decoration: none; text-align: center;">
-                        <i class="fa-solid fa-house"></i> Retour à l'accueil
-                    </a>
-                <?php endif; ?>
-            </div>
+            <a href="accueil.php" class="btn-submit"
+                style="width: auto; padding: 0.75rem 1.25rem; background: transparent; color: var(--navy, #0f172a); border: 1px solid var(--line, #E2E8F0); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
+                <i class="fa-solid fa-house"></i> Retour à l'accueil
+            </a>
         </div>
     </div>
 </main>

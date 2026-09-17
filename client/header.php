@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$page_title = $page_title ?? 'Tike WA - Billetterie en ligne';
+$page_title = $page_title ?? 'TikeWA - Billetterie en ligne';
 $body_class = $body_class ?? 'client-page';
 $is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 $user_role = $_SESSION['user_role'] ?? 'client';
@@ -31,7 +31,7 @@ $user_role = $_SESSION['user_role'] ?? 'client';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Style CSS -->
     <link rel="stylesheet" href="../css/style.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
-    <!-- Tike WA Brand Design System -->
+    <!-- TikeWA Brand Design System -->
     <link rel="stylesheet" href="../css/eventia-brand.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
     <!-- Responsive Professional CSS -->
     <link rel="stylesheet" href="../css/responsive-pro.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
@@ -40,7 +40,7 @@ $user_role = $_SESSION['user_role'] ?? 'client';
 
 <header class="client-header shared-client-header">
     <a href="accueil.php" class="client-brand" style="display: inline-flex; align-items: center; text-decoration: none; padding: 2px 0;">
-        <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA" style="height: 44px; width: auto; max-width: 170px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));">
+        <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA" style="height: 44px; width: auto; max-width: 170px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));">
     </a>
 
     <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Ouvrir le menu">

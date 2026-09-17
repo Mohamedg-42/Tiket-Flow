@@ -11,7 +11,7 @@ require_once '../includes/auth.php';
 checkRole(['promoteur', 'admin'], '../connexion.php');
 
 $current_page = basename($_SERVER['PHP_SELF']);
-$page_title = $page_title ?? 'Centre de Contrôle Promoteur - Tike WA';
+$page_title = $page_title ?? 'Centre de Contrôle Promoteur - TikeWA';
 $user_id = (int) $_SESSION['user_id'];
 
 // 1. Récupération des informations et du solde du promoteur
@@ -108,7 +108,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
     <!-- Styles CSS -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard-pro.css">
-    <!-- Tike WA Brand Design System -->
+    <!-- TikeWA Brand Design System -->
     <link rel="stylesheet" href="../css/eventia-brand.css">
     <!-- Responsive Professional CSS -->
     <link rel="stylesheet" href="../css/responsive-pro.css">
@@ -739,7 +739,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             style="display: flex; align-items: center; gap: 8px; color: #ffffff; font-weight: 800; font-size: 0.92rem; overflow: hidden; min-width: 0;">
             <a href="dashboard.php"
                 style="display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0;">
-                <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA"
+                <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA"
                     style="height: 28px; width: auto; max-width: 110px; object-fit: contain;">
             </a>
             <span
@@ -766,7 +766,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             <div class="ctrl-brand">
                 <a href="dashboard.php" class="ctrl-brand-logo"
                     style="text-decoration: none; display: flex; align-items: center;">
-                    <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA"
+                    <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA"
                         style="height: 40px; width: auto; max-width: 160px; object-fit: contain;">
                 </a>
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -856,7 +856,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         <a href="demande-evenement.php"
                             class="<?php echo $current_page === 'demande-evenement.php' ? 'active' : ''; ?>"
                             data-title="Proposer un Événement"
-                            data-desc="Soumettre un nouvel événement à la validation de l'administration Tike WA."
+                            data-desc="Soumettre un nouvel événement à la validation de l'administration TikeWA."
                             data-category="Événements">
                             <i class="fa-solid fa-plus-circle"></i>
                             <span>Proposer un Événement</span>
@@ -954,7 +954,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         <a href="reclamations.php"
                             class="<?php echo $current_page === 'reclamations.php' ? 'active' : ''; ?>"
                             data-title="Support & Réclamations"
-                            data-desc="Contacter l'administration Tike WA en cas de litige ou assistance technique."
+                            data-desc="Contacter l'administration TikeWA en cas de litige ou assistance technique."
                             data-category="Support">
                             <i class="fa-solid fa-headset"></i>
                             <span>Support & Tickets</span>
@@ -972,7 +972,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             <!-- 5. Pied du Centre de Contrôle -->
             <div class="ctrl-footer">
                 <a href="../client/accueil.php" target="_blank" class="ctrl-btn-site" data-title="Voir le Site Public"
-                    data-desc="Consulter la vitrine publique Tike WA et les événements en ligne."
+                    data-desc="Consulter la vitrine publique TikeWA et les événements en ligne."
                     data-category="Raccourci">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     <span>Voir le Site Public</span>

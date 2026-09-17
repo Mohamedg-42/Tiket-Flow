@@ -81,7 +81,7 @@ $is_station_suspended = ($current_station && $current_station['statut'] !== 'act
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal POS Guichet — Tike WA</title>
+    <title>Terminal POS Guichet — TikeWA</title>
     
     <!-- Typographie Grotesque & Monospace technique (Style Suisse) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -270,7 +270,7 @@ $is_station_suspended = ($current_station && $current_station['statut'] !== 'act
     <header class="pos-header">
         <div class="pos-header-left">
             <span style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 900; color: var(--pos-orange); letter-spacing: -0.5px;">
-                Tike WA <span style="font-size: 0.8rem; color: #94A3B8; font-weight: 600;">• POS GUICHET</span>
+                TikeWA <span style="font-size: 0.8rem; color: #94A3B8; font-weight: 600;">• POS GUICHET</span>
             </span>
 
             <form method="GET" class="pos-station-selector">
@@ -530,7 +530,7 @@ $is_station_suspended = ($current_station && $current_station['statut'] !== 'act
     <!-- ZONE DE REÇU IMPRIMABLE (Format Ticket Thermique 80mm) -->
     <div id="printableReceipt" style="display: none;">
         <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 6px; margin-bottom: 8px;">
-            <h2 style="font-size: 16px; margin: 0 0 2px;">TIKE WA</h2>
+            <h2 style="font-size: 16px; margin: 0 0 2px;">TIKEWA</h2>
             <div style="font-size: 11px;">BILLETTERIE OFFICIELLE</div>
             <div style="font-size: 10px;" id="receiptStationName">Gare Routière</div>
             <div style="font-size: 10px;" id="receiptDate">Date: </div>

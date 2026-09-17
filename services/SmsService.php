@@ -82,7 +82,7 @@ class SmsService
             ];
         }
 
-        $message = "Votre code de confirmation Tike WA pour {$eventName} est : {$code}. Valable 5 minutes. Ne le partagez jamais.";
+        $message = "Votre code de confirmation TikeWA pour {$eventName} est : {$code}. Valable 5 minutes. Ne le partagez jamais.";
 
         // Vérifie si une passerelle SMS externe est configurée dans l'environnement
         $gatewayUrl = getenv('SMS_GATEWAY_URL');
@@ -97,7 +97,7 @@ class SmsService
                 $payload = json_encode([
                     'to'      => $phoneNorm,
                     'message' => $message,
-                    'sender'  => 'Tike WA'
+                    'sender'  => 'TikeWA'
                 ]);
 
                 curl_setopt_array($ch, [
