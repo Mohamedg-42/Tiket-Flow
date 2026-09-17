@@ -1,6 +1,38 @@
 # ==============================================================================
-# CONFIGURATION APACHE & OPTIMISATION DE PERFORMANCE (.htaccess)
-# Mise en cache navigateur, compression HTTP et sécurité
+# CONFIGURATION APACHE & RÉÉCRITURE D'URL (CLEAN URLS SANS .PHP)
+# ==============================================================================
+
+Options -MultiViews +FollowSymLinks
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Redirection propre de index.php vers le dossier parent (/)
+    RewriteCond %{REQUEST_METHOD} !POST
+    RewriteCond %{THE_REQUEST} \s/+(.*?/)?index\.php[\s?] [NC]
+    RewriteRule ^ /%1 [R=301,L,NE]
+
+    # 2. Redirection 301 externe des fichiers .php vers l'URL sans extension
+    # (Exclut les scripts d'installation et les endpoints AJAX internes)
+    RewriteCond %{REQUEST_METHOD} !POST
+    RewriteCond %{THE_REQUEST} !/ajax/ [NC]
+    RewriteCond %{REQUEST_URI} !^/installer_postgres\.php$
+    RewriteCond %{THE_REQUEST} \s/+(.*?/)?([^/?\s]+)\.php[\s?] [NC]
+    RewriteRule ^ /%1%2 [R=301,L,NE]
+
+    # 3. Réécriture conviviale pour les événements par slug (aucun ID visible dans l'URL)
+    RewriteRule ^(?:client/)?evenement/([a-zA-Z0-9_-]+)/?$ client/evenement.php?slug=$1 [L,QSA]
+    RewriteRule ^evenement/?$ client/evenement.php [L,QSA]
+
+    # 4. Réécriture interne transparente : mapper l'URL sans extension vers son fichier .php
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.*)$ $1.php [L,QSA]
+</IfModule>
+
+# ==============================================================================
+# OPTIMISATION DE PERFORMANCE & SÉCURITÉ
 # ==============================================================================
 
 <IfModule mod_headers.c>

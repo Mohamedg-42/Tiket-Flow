@@ -124,43 +124,20 @@ try {
         $zones = $stmt_z->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 5. Association des Tarifs de l'événement aux zones de la salle
-    // Si des ticket_types existent pour l'événement, on lie chaque ticket_type à une zone selon prix ou nom
-    $zone_tarifs = [];
+    // 5. Association & Palette des Tarifs de l'événement
+    $palette_tarifs = [
+        0 => '#f59e0b', // Or / Ambre prestige (VVIP / VVVP / Carré Or)
+        1 => '#FF4A0D', // Orange signature TikeWA (VIP / Honneur)
+        2 => '#0d9488', // Émeraude identitaire suisse (STANDARD / Parterre)
+        3 => '#6366f1', // Indigo / Bleu moderne (Économique / Étudiant / Bronze)
+        4 => '#8b5cf6', // Violet
+        5 => '#3b82f6', // Azur
+    ];
     if (!empty($ticket_types)) {
-        foreach ($zones as $idx => $z) {
-            $matched_ticket = null;
-            // Match par nom
-            foreach ($ticket_types as $tt) {
-                if (stripos($z['nom_zone'], $tt['nom']) !== false || stripos($tt['nom'], $z['nom_zone']) !== false) {
-                    $matched_ticket = $tt;
-                    break;
-                }
-            }
-            // Match par index si non trouvé
-            if (!$matched_ticket) {
-                $matched_ticket = $ticket_types[$idx % count($ticket_types)];
-            }
-
-            $zone_tarifs[$z['id']] = [
-                'ticket_type_id' => $matched_ticket['id'],
-                'ticket_nom' => $matched_ticket['nom'],
-                'prix' => (float)$matched_ticket['prix'],
-                'frais_place' => (float)(!empty($matched_ticket['frais_place']) && (float)$matched_ticket['frais_place'] > 0 ? $matched_ticket['frais_place'] : 1000),
-                'stock' => max(0, (int)$matched_ticket['quantite'] - (int)($matched_ticket['quantite_vendue'] ?? 0))
-            ];
+        foreach ($ticket_types as $idx => &$tt) {
+            $tt['couleur'] = $palette_tarifs[$idx % count($palette_tarifs)];
         }
-    } else {
-        // Mode studio Admin sans événement spécifique : utiliser tarif_indicatif
-        foreach ($zones as $z) {
-            $zone_tarifs[$z['id']] = [
-                'ticket_type_id' => $z['id'],
-                'ticket_nom' => $z['nom_zone'],
-                'prix' => (float)($z['tarif_indicatif'] > 0 ? $z['tarif_indicatif'] : 10000),
-                'frais_place' => 1000,
-                'stock' => $z['capacite']
-            ];
-        }
+        unset($tt);
     }
 
     // 6. Récupération des places déjà réservées pour cet événement
@@ -195,9 +172,10 @@ try {
     }
 
     // 7. Génération de la matrice spatiale des sièges 3D
-    // Construit les blocs de rangées avec coordonnées réelles 3D (X, Y, Z)
+    // Distribution équilibrée garantissant des places pour TOUS les tarifs de l'événement
     $seats_3d = [];
     $seat_id_counter = 1;
+    $num_t = count($ticket_types);
 
     foreach ($zones as $z) {
         $z_id = $z['id'];
@@ -205,13 +183,6 @@ try {
         $z_color = $z['couleur'] ?: '#0d9488';
         $z_elev = (int)($z['elevation_3d'] ?? 0);
         $z_pos = $z['position_3d'] ?? 'centre';
-        $tarif_info = $zone_tarifs[$z_id] ?? [
-            'ticket_type_id' => $z_id,
-            'ticket_nom' => $z_name,
-            'prix' => 10000,
-            'frais_place' => 1000,
-            'stock' => 100
-        ];
 
         // Nombre de rangées et sièges par rangée pour le rendu 3D
         $nb_rows = 4;
@@ -235,6 +206,47 @@ try {
 
         for ($r = 0; $r < $nb_rows; $r++) {
             $row_label = $row_letters[$r % count($row_letters)];
+
+            // Détermination du tarif spécifique pour cette rangée
+            if ($num_t > 0) {
+                if ($num_t === 1) {
+                    $matched_tt = $ticket_types[0];
+                } else {
+                    $z_name_lower = mb_strtolower($z_name);
+                    $matched_tt = null;
+
+                    // A. Détection prioritaire par mot-clé de zone
+                    if (preg_match('/\b(vvip|vvvp|loge|loges|prestige|or|carré or|vip prestige)\b/ui', $z_name_lower)) {
+                        $matched_tt = $ticket_types[0];
+                    } elseif (preg_match('/\b(vip|honneur|tribune officielle|balcon vip)\b/ui', $z_name_lower) && !preg_match('/\b(vvip|vvvp)\b/ui', $z_name_lower)) {
+                        $matched_tt = ($num_t >= 3 && isset($ticket_types[1])) ? $ticket_types[1] : $ticket_types[0];
+                    } elseif (preg_match('/\b(standard|populaire|gradin|gradins|pelouse|lateral|latéraux|virage|virages)\b/ui', $z_name_lower)) {
+                        $matched_tt = $ticket_types[$num_t - 1];
+                    }
+
+                    // B. Partitionnement étagé des rangées selon la proximité de la scène
+                    if (!$matched_tt) {
+                        $fraction = $r / max(1, $nb_rows);
+                        $t_index = (int) floor($fraction * $num_t);
+                        $t_index = max(0, min($num_t - 1, $t_index));
+                        $matched_tt = $ticket_types[$t_index];
+                    }
+                }
+
+                $seat_ticket_id = $matched_tt['id'];
+                $seat_ticket_nom = $matched_tt['nom'];
+                $seat_prix = (float)$matched_tt['prix'];
+                $seat_frais = (float)(!empty($matched_tt['frais_place']) && (float)$matched_tt['frais_place'] > 0 ? $matched_tt['frais_place'] : 1000);
+                $seat_color = $matched_tt['couleur'] ?? $z_color;
+            } else {
+                // Mode studio admin sans événement
+                $seat_ticket_id = $z_id;
+                $seat_ticket_nom = $z_name;
+                $seat_prix = (float)($z['tarif_indicatif'] > 0 ? $z['tarif_indicatif'] : 10000);
+                $seat_frais = 1000;
+                $seat_color = $z_color;
+            }
+
             for ($s = 1; $s <= $seats_per_row; $s++) {
                 $seat_code = substr($z_name, 0, 3) . '-' . $row_label . sprintf('%02d', $s);
                 
@@ -275,21 +287,53 @@ try {
                     'number' => $s,
                     'zone_id' => $z_id,
                     'zone_name' => $z_name,
-                    'zone_color' => $z_color,
+                    'zone_color' => $seat_color,
                     'elevation' => $z_elev,
                     'position_type' => $z_pos,
                     'x' => round($x_offset, 2),
                     'y' => round($y_offset, 2),
                     'z' => round($z_depth, 2),
-                    'ticket_type_id' => $tarif_info['ticket_type_id'],
-                    'ticket_nom' => $tarif_info['ticket_nom'],
-                    'prix' => $tarif_info['prix'],
-                    'frais_place' => $tarif_info['frais_place'],
+                    'ticket_type_id' => $seat_ticket_id,
+                    'ticket_nom' => $seat_ticket_nom,
+                    'prix' => $seat_prix,
+                    'frais_place' => $seat_frais,
                     'statut' => $is_cur ? 'actuelle' : ($is_taken ? 'reserve' : 'libre'),
                     'is_current' => $is_cur
                 ];
 
                 $seat_id_counter++;
+            }
+        }
+    }
+
+    // Garantie absolue : Si un tarif n'a reçu aucune place, lui allouer une rangée
+    if (!empty($ticket_types) && count($ticket_types) > 1) {
+        $seats_by_tt = [];
+        foreach ($seats_3d as $idx => $s) {
+            $seats_by_tt[$s['ticket_type_id']][] = $idx;
+        }
+        foreach ($ticket_types as $tt) {
+            $tid = $tt['id'];
+            if (empty($seats_by_tt[$tid])) {
+                $max_tid = null;
+                $max_count = 0;
+                foreach ($seats_by_tt as $k => $indices) {
+                    if (count($indices) > $max_count) {
+                        $max_count = count($indices);
+                        $max_tid = $k;
+                    }
+                }
+                if ($max_tid && $max_count > 10) {
+                    $to_reassign = array_splice($seats_by_tt[$max_tid], -10);
+                    foreach ($to_reassign as $s_idx) {
+                        $seats_3d[$s_idx]['ticket_type_id'] = $tt['id'];
+                        $seats_3d[$s_idx]['ticket_nom'] = $tt['nom'];
+                        $seats_3d[$s_idx]['prix'] = (float)$tt['prix'];
+                        $seats_3d[$s_idx]['frais_place'] = (float)(!empty($tt['frais_place']) ? $tt['frais_place'] : 1000);
+                        $seats_3d[$s_idx]['zone_color'] = $tt['couleur'];
+                    }
+                    $seats_by_tt[$tid] = $to_reassign;
+                }
             }
         }
     }

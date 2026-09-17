@@ -1340,7 +1340,7 @@ include __DIR__ . '/header.php';
                 <?php endif; ?>
 
                 <?php if ($has_tickets): ?>
-                    <a href="evenement.php?id=<?php echo (int) $event['id']; ?>" class="btn-vote-candidate"
+                    <a href="evenement/<?php echo rawurlencode($event['slug'] ?: (string) $event['id']); ?>" class="btn-vote-candidate"
                         style="width: auto; padding: 0.55rem 1.15rem; font-size: 0.82rem; text-decoration: none; background: #0F172A;">
                         <i class="fa-solid fa-ticket"></i> Réserver vos places (Billetterie)
                     </a>

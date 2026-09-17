@@ -90,16 +90,24 @@ if (($event['visibilite'] ?? 'public') === 'prive') {
         && (int) ($verified['expires'] ?? 0) >= time()
         && normalizePhone($client_telephone) === $verified['telephone'];
 
+    $event_slug = '';
+    try {
+        $stmt_s = $pdo->prepare("SELECT slug FROM events WHERE id = ?");
+        $stmt_s->execute([$event_id]);
+        $event_slug = (string) $stmt_s->fetchColumn();
+    } catch (\Throwable $e) {}
+    $event_back_url = !empty($event_slug) ? ('evenement/' . rawurlencode($event_slug)) : ('evenement.php?id=' . $event_id);
+
     if (!$verified_ok) {
         $_SESSION['order_message'] = "Veuillez d'abord vérifier votre éligibilité (téléphone + code SMS) pour cet événement privé.";
-        header('Location: evenement.php?id=' . $event_id);
+        header('Location: ' . $event_back_url);
         exit();
     }
 
     $eligibility = checkWhitelistEligibility($pdo, $event_id, $client_telephone);
     if (!$eligibility['eligible']) {
         $_SESSION['order_message'] = $eligibility['message'];
-        header('Location: evenement.php?id=' . $event_id);
+        header('Location: ' . $event_back_url);
         exit();
     }
     $whitelist_guest = $eligibility;
@@ -201,7 +209,7 @@ if ($total_places_choisies <= 0 || empty($order_items_to_create)) {
 
 if ($whitelist_guest !== null && $total_places_choisies > (int) $whitelist_guest['remaining']) {
     $_SESSION['order_message'] = "Vous ne pouvez commander que " . (int) $whitelist_guest['remaining'] . " billet(s) au maximum pour cet événement (quota d'invitation).";
-    header('Location: evenement.php?id=' . $event_id);
+    header('Location: ' . $event_back_url);
     exit();
 }
 

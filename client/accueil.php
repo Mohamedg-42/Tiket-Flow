@@ -5,6 +5,7 @@
 // ==============================================================================
 
 require_once '../config/database.php';
+require_once '../includes/slug_helper.php';
 session_start();
 
 // Empêcher le cache agressif du navigateur pour refléter immédiatement les modifications
@@ -130,11 +131,19 @@ if (isset($_GET['vote_id']) && !empty($_GET['vote_id'])) {
     exit();
 }
 
-// Redirection automatique vers la page dédiée evenement.php si event_id est présent (hors modal)
-if (isset($_GET['event_id']) && !empty($_GET['event_id']) && !isset($_GET['modal'])) {
-    $e_id = (int) $_GET['event_id'];
-    header("Location: evenement.php?id={$e_id}");
-    exit();
+// Redirection automatique vers la page dédiée de l'événement si event_id ou slug est présent (hors modal)
+if ((isset($_GET['event_id']) || isset($_GET['slug'])) && !isset($_GET['modal'])) {
+    $e_slug = trim($_GET['slug'] ?? '');
+    if (empty($e_slug) && !empty($_GET['event_id'])) {
+        $e_id = (int) $_GET['event_id'];
+        $stmt_slug = $pdo->prepare("SELECT slug FROM events WHERE id = ?");
+        $stmt_slug->execute([$e_id]);
+        $e_slug = $stmt_slug->fetchColumn();
+    }
+    if (!empty($e_slug)) {
+        header("Location: evenement/" . rawurlencode($e_slug), true, 301);
+        exit();
+    }
 }
 
 // Onglet actif (événements / cotisations / voter) avec support du deep-linking
@@ -1510,10 +1519,13 @@ if (!function_exists('get_event_cat_icon')) {
                         // Image : résolution propre et fallback événementiel pro
                         $default_event_img = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80';
                         $img_url = resolve_media_url($event['image'] ?? '', $default_event_img, ['events']);
+                        $event_slug_identifier = !empty($event['slug']) ? $event['slug'] : (string)$event['id'];
+                        $event_friendly_link = 'evenement/' . rawurlencode($event_slug_identifier);
                         ?>
                         <article class="event-card-item" id="event-card-<?php echo (int) $event['id']; ?>"
+                            data-event-slug="<?php echo htmlspecialchars($event_slug_identifier, ENT_QUOTES, 'UTF-8'); ?>"
                             style="cursor: pointer; display: flex; flex-direction: column;"
-                            onclick="handleEventCardClick(<?php echo (int) $event['id']; ?>, this, event)">
+                            onclick="handleEventCardClick('<?php echo htmlspecialchars($event_slug_identifier, ENT_QUOTES, 'UTF-8'); ?>', this, event)">
                             <div
                                 style="display: block; position: relative; text-decoration: none; overflow: hidden; background: #0f172a; border-radius: 12px 12px 0 0; height: 190px;">
                                 <img src="<?php echo htmlspecialchars($img_url, ENT_QUOTES, 'UTF-8'); ?>"
@@ -1549,9 +1561,9 @@ if (!function_exists('get_event_cat_icon')) {
 
                                 <h3
                                     style="margin: 0 0 0.35rem; color: var(--navy); font-size: 1.08rem; line-height: 1.25; font-weight: 800;">
-                                    <a href="evenement.php?id=<?php echo (int) $event['id']; ?>"
+                                    <a href="<?php echo htmlspecialchars($event_friendly_link, ENT_QUOTES, 'UTF-8'); ?>"
                                         style="color: inherit; text-decoration: none;"
-                                        onclick="if (window.innerWidth <= 768) { event.preventDefault(); event.stopPropagation(); handleEventCardClick(<?php echo (int) $event['id']; ?>, this.closest('.event-card-item'), event); }">
+                                        onclick="if (window.innerWidth <= 768) { event.preventDefault(); event.stopPropagation(); handleEventCardClick('<?php echo htmlspecialchars($event_slug_identifier, ENT_QUOTES, 'UTF-8'); ?>', this.closest('.event-card-item'), event); }">
                                         <?php echo htmlspecialchars($event['nom']); ?>
                                     </a>
                                 </h3>
@@ -1633,7 +1645,9 @@ if (!function_exists('get_event_cat_icon')) {
                                                 data-event-desc="<?php echo htmlspecialchars($event['description'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
                                                 data-event-capacity="<?php echo $capacite_totale; ?>"
                                                 data-event-stock="<?php echo $stock_total; ?>"
-                                                data-event-id="<?php echo (int) $event['id']; ?>" data-has-salle-3d="1"
+                                                data-event-id="<?php echo (int) $event['id']; ?>"
+                                                data-event-slug="<?php echo htmlspecialchars($event_slug_identifier, ENT_QUOTES, 'UTF-8'); ?>"
+                                                data-has-salle-3d="1"
                                                 data-ticket-options="<?php echo htmlspecialchars(json_encode($event_tickets_json), ENT_QUOTES, 'UTF-8'); ?>"
                                                 <?php if ($peut_agir): ?>onclick="event.stopPropagation(); handleReservationAction(this)">
                                                     <i class="fa-solid fa-ticket"></i> Réserver
@@ -2452,10 +2466,12 @@ if (!function_exists('get_event_cat_icon')) {
     window.TICKETS_BY_EVENT = <?php echo json_encode($tickets_by_event ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;
     function handleReservationAction(button) {
         if (!button) return;
+        var eventSlug = button.getAttribute('data-event-slug') || (button.dataset ? button.dataset.eventSlug : '');
         var eventId = button.getAttribute('data-event-id') || (button.dataset ? button.dataset.eventId : '');
-        // Redirection directe vers la billetterie complète de l'événement (mobile & desktop)
-        if (eventId) {
-            window.location.href = 'evenement.php?id=' + encodeURIComponent(eventId) + '#billets';
+        var targetSlug = eventSlug || eventId;
+        // Redirection directe vers la billetterie sans ID visible
+        if (targetSlug) {
+            window.location.href = 'evenement/' + encodeURIComponent(targetSlug) + '#billets';
             return;
         }
         // Fallback modale si l'identifiant n'est pas résolu
@@ -2465,20 +2481,21 @@ if (!function_exists('get_event_cat_icon')) {
     }
     window.handleReservationAction = handleReservationAction;
 
-    function handleEventCardClick(eventId, cardElement, ev) {
+    function handleEventCardClick(eventSlugOrId, cardElement, ev) {
         // Ne pas interférer si le clic provient d'un bouton d'action interne, lien ou partage
         if (ev && ev.target && (ev.target.closest('.poster-floating-share-btn') || ev.target.closest('.btn-card-share') || ev.target.closest('.btn-submit') || ev.target.closest('button') || ev.target.closest('a'))) {
             return;
         }
 
-        // Navigation directe et fluide vers la page de l'événement (mobile et desktop)
-        if (eventId) {
-            window.location.href = 'evenement.php?id=' + encodeURIComponent(eventId);
+        // Navigation directe et fluide vers l'URL conviviale de l'événement sans ID
+        if (eventSlugOrId) {
+            window.location.href = 'evenement/' + encodeURIComponent(eventSlugOrId);
         }
     }
     window.handleEventCardClick = handleEventCardClick;
 </script>
 
-<script src="../js/accueil-client.js?v=1.2.0"></script>
+<script src="../js/venue-3d-engine.js?v=<?php echo file_exists(__DIR__ . '/../js/venue-3d-engine.js') ? filemtime(__DIR__ . '/../js/venue-3d-engine.js') : time(); ?>"></script>
+<script src="../js/accueil-client.js?v=<?php echo file_exists(__DIR__ . '/../js/accueil-client.js') ? filemtime(__DIR__ . '/../js/accueil-client.js') : time(); ?>"></script>
 
 <?php include 'footer.php'; ?>

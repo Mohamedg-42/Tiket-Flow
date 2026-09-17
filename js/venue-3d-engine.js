@@ -152,15 +152,36 @@ class TikeWAVenue3D {
 
     async loadFromEndpoint(url) {
         try {
-            let res = await fetch(url, { cache: 'no-store' });
-            if (!res.ok) {
-                // Fallback attempt: invert ../ prefix if path is relative
-                const altUrl = url.startsWith('../') ? url.replace(/^\.\.\//, '') : ('../' + url);
+            const candidateUrls = [url];
+            if (url.startsWith('../')) {
+                candidateUrls.push(url.replace(/^\.\.\//, ''));
+            } else {
+                candidateUrls.push('../' + url);
+            }
+            try {
+                const baseUri = document.baseURI || window.location.href;
+                const absoluteTarget = new URL(url, baseUri).href;
+                if (!candidateUrls.includes(absoluteTarget)) {
+                    candidateUrls.push(absoluteTarget);
+                }
+            } catch (_) {}
+
+            let res = null;
+            for (const cand of candidateUrls) {
                 try {
-                    const altRes = await fetch(altUrl, { cache: 'no-store' });
-                    if (altRes.ok) res = altRes;
+                    const testRes = await fetch(cand, { cache: 'no-store' });
+                    if (testRes && testRes.ok) {
+                        res = testRes;
+                        break;
+                    }
                 } catch (_) {}
             }
+
+            if (!res || !res.ok) {
+                console.error('Échec de requête pour tous les chemins 3D:', candidateUrls);
+                return null;
+            }
+
             const json = await res.json();
             if (json && json.success) {
                 this.loadVenueData(json);
@@ -1030,9 +1051,4 @@ class TikeWAVenue3D {
 // Export global pour utilisation dans les scripts
 window.TikeWAVenue3D = TikeWAVenue3D;
 window.EventiaVenue3D = TikeWAVenue3D;
-if (typeof EventiaVenue3D === 'undefined') {
-    var EventiaVenue3D = TikeWAVenue3D;
-}
-if (typeof TikeWAVenue3D === 'undefined') {
-    var TikeWAVenue3D = TikeWAVenue3D;
-}
+

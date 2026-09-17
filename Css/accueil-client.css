@@ -1109,18 +1109,33 @@
     transition: all 0.15s ease;
 }
 
+.studio-filter-btn .s3d-price-tag {
+    color: #FF4A0D;
+    font-weight: 700;
+    transition: color 0.15s ease;
+}
+
 .studio-filter-btn:hover {
     border-color: #FF4A0D;
     color: #FFFFFF;
     background: #1E293B;
 }
 
+.studio-filter-btn:hover .s3d-price-tag {
+    color: #FFA07A;
+}
+
 .studio-filter-btn.active {
-    background: #FF4A0D;
-    color: #FFFFFF;
-    border-color: #FF4A0D;
+    background: #FF4A0D !important;
+    color: #FFFFFF !important;
+    border-color: #FF4A0D !important;
     font-weight: 800;
     box-shadow: 0 2px 12px rgba(255, 74, 13, 0.5);
+}
+
+.studio-filter-btn.active .s3d-price-tag,
+.studio-filter-btn.active span[style*="color"] {
+    color: #FFFFFF !important;
 }
 
 .s3d-touch-hint {

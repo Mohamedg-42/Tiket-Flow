@@ -12,40 +12,66 @@ header("Expires: 0");
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/secure_token.php';
+require_once __DIR__ . '/../includes/slug_helper.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+$event_slug = trim((string) ($_GET['slug'] ?? ''));
 $event_token = trim((string) ($_GET['token'] ?? ''));
 $event_id = 0;
 
-if (!empty($event_token)) {
-    // 1. Résolution via la table des tokens sécurisés (anti-exposition d'ID)
+// 1. Résolution prioritaire par slug convivial sans ID
+if (!empty($event_slug)) {
+    $stmt_slug = $pdo->prepare("SELECT id FROM events WHERE slug = ? LIMIT 1");
+    $stmt_slug->execute([$event_slug]);
+    $event_id = (int) $stmt_slug->fetchColumn();
+
+    // Si non trouvé par slug exact, vérifier s'il s'agit d'un token sécurisé passé en slug
+    if (!$event_id) {
+        $resolved_tok_id = resolve_resource_token($pdo, $event_slug, 'event');
+        if ($resolved_tok_id) {
+            $event_id = $resolved_tok_id;
+            $event_token = $event_slug;
+        } else {
+            $stmt_tok = $pdo->prepare("SELECT id FROM events WHERE access_token = ? LIMIT 1");
+            $stmt_tok->execute([$event_slug]);
+            $found_by_tok = (int) $stmt_tok->fetchColumn();
+            if ($found_by_tok) {
+                $event_id = $found_by_tok;
+                $event_token = $event_slug;
+            }
+        }
+    }
+}
+
+// 2. Résolution via paramètre token sécurisé (?token=...)
+if (!$event_id && !empty($event_token)) {
     $resolved_e_id = resolve_resource_token($pdo, $event_token, 'event');
     if ($resolved_e_id) {
         $event_id = $resolved_e_id;
     } else {
-        // 2. Fallback pour access_token natif d'événement privé
         $stmt_tok = $pdo->prepare("SELECT id FROM events WHERE access_token = ? LIMIT 1");
         $stmt_tok->execute([$event_token]);
         $event_id = (int) $stmt_tok->fetchColumn();
     }
 }
 
+// 3. Fallback rétrocompatible si l'ancien paramètre id numérique a été envoyé
 if (!$event_id) {
     $event_id = (isset($_GET['id']) && is_numeric($_GET['id'])) ? (int) $_GET['id'] : ((isset($_GET['event_id']) && is_numeric($_GET['event_id'])) ? (int) $_GET['event_id'] : 0);
 }
 
 if (!$event_id) {
-    if (!empty($event_token)) {
+    if (!empty($event_token) || !empty($event_slug)) {
         render_token_security_error(
             "Événement introuvable",
-            "Le lien d'accès sécurisé à cet événement est invalide, a expiré ou n'existe pas.",
+            "Le lien d'accès à cet événement est invalide, a expiré ou n'existe pas.",
             404,
-            "accueil.php?onglet=evenements"
+            "accueil"
         );
     }
-    header('Location: accueil.php?onglet=evenements');
+    header('Location: accueil');
     exit();
 }
 
@@ -63,7 +89,20 @@ $stmt->execute([$event_id]);
 $event = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$event) {
-    header('Location: accueil.php?onglet=evenements');
+    header('Location: accueil');
+    exit();
+}
+
+// 1.0 Masquage des ID : si l'accès a été fait via un paramètre numérique (?id= ou ?event_id=),
+// redirection 301 automatique vers l'URL conviviale propre sans ID
+if ((isset($_GET['id']) || isset($_GET['event_id'])) && empty($event_slug) && !empty($event['slug'])) {
+    $cleanUrl = 'evenement/' . rawurlencode($event['slug']);
+    $otherParams = $_GET;
+    unset($otherParams['id'], $otherParams['event_id']);
+    if (!empty($otherParams)) {
+        $cleanUrl .= '?' . http_build_query($otherParams);
+    }
+    header('Location: ' . $cleanUrl, true, 301);
     exit();
 }
 
@@ -190,9 +229,19 @@ $body_class = "client-page event-detail-page";
 include __DIR__ . '/header.php';
 ?>
 
-<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
+<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo file_exists(__DIR__ . '/../Css/accueil-client.css') ? filemtime(__DIR__ . '/../Css/accueil-client.css') : '1.2.0'; ?>">
 
 <style>
+    /* Correction contraste bouton actif filtre 3D */
+    .studio-filter-btn.active,
+    .studio-filter-btn.active * {
+        color: #FFFFFF !important;
+    }
+    .studio-filter-btn.active .s3d-price-tag {
+        color: #FFFFFF !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    }
+
     /* ==========================================================================
    STYLE TYPOGRAPHIQUE SUISSE & GRILLE MODULAIRE MÜLLER-BROCKMANN (client/evenement.php)
    ========================================================================== */
@@ -2333,7 +2382,7 @@ include __DIR__ . '/header.php';
 <script>
     window.EV_EVENT_ID = <?php echo (int) $event['id']; ?>;
 </script>
-<script src="../js/venue-3d-engine.js?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" defer></script>
-<script src="../js/accueil-client.js?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" defer></script>
+<script src="../js/venue-3d-engine.js?v=<?php echo file_exists(__DIR__ . '/../js/venue-3d-engine.js') ? filemtime(__DIR__ . '/../js/venue-3d-engine.js') : time(); ?>"></script>
+<script src="../js/accueil-client.js?v=<?php echo file_exists(__DIR__ . '/../js/accueil-client.js') ? filemtime(__DIR__ . '/../js/accueil-client.js') : time(); ?>"></script>
 
 <?php include __DIR__ . '/footer.php'; ?>

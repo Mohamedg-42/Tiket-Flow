@@ -413,7 +413,7 @@ $tickets = $stmt->fetchAll();
 </div>
 
 <script src="../js/share-ticket.js"></script>
-<script src="../js/venue-3d-engine.js"></script>
+<script src="../js/venue-3d-engine.js?v=<?php echo file_exists(__DIR__ . '/../js/venue-3d-engine.js') ? filemtime(__DIR__ . '/../js/venue-3d-engine.js') : time(); ?>"></script>
 <script>
 let seatChangeEngine = null;
 let activeChangeTicketId = null;

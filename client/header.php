@@ -22,6 +22,13 @@ $user_role = $_SESSION['user_role'] ?? 'client';
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($page_title); ?></title>
+    <?php
+    $app_client_base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/') . '/';
+    if (!str_ends_with($app_client_base, '/client/')) {
+        $app_client_base = rtrim($app_client_base, '/') . '/client/';
+    }
+    ?>
+    <base href="<?php echo htmlspecialchars($app_client_base); ?>">
     <link rel="icon" type="image/png" href="../images/favicon.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
     <!-- Google Fonts: Outfit, Inter & Space Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

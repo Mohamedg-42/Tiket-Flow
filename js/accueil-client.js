@@ -112,7 +112,7 @@ function openEventModal(button) {
                 seatChoiceHtml = `
                 <div class="seat-choice-block" id="seat_block_${ticket.id}">
                     <label class="seat-choice-label">
-                        <input type="checkbox" id="seat_toggle_${ticket.id}" onchange="toggleSeatMap(${ticket.id})">
+                        <input type="checkbox" id="seat_toggle_${ticket.id}" onchange="toggleSeatMap(${ticket.id}, ${eventId})">
                         <div class="seat-choice-text-wrap">
                             <div class="seat-choice-title-row">
                                 <span class="seat-choice-3d-badge"><i class="fa-solid fa-cube"></i> Vue 3D</span>
@@ -136,7 +136,7 @@ function openEventModal(button) {
                             </div>
                         </div>
 
-                        <button type="button" class="btn-scene-interactive" onclick="openClient3DSeating(${ticket.id})" title="Ouvrir le Rendu 3D de la salle">
+                        <button type="button" class="btn-scene-interactive" onclick="openClient3DSeating(${ticket.id}, ${eventId})" title="Ouvrir le Rendu 3D de la salle">
                             <div class="btn-scene-left">
                                 <span class="btn-scene-icon-box">
                                     <i class="fa-solid fa-cube"></i>
@@ -220,16 +220,22 @@ function toggleSeatMap(ticketId, forcedEventId = null) {
 
     const opening = toggleCb.checked;
     sceneView.hidden = !opening;
+    if (opening) {
+        sceneView.removeAttribute('hidden');
+    } else {
+        sceneView.setAttribute('hidden', '');
+    }
 
     // Détermination robuste de l'ID événement
     const urlParams = new URLSearchParams(window.location.search);
     const eventId = forcedEventId
-        || urlParams.get('id')
-        || urlParams.get('event_id')
+        || (typeof window.EV_EVENT_ID !== 'undefined' ? window.EV_EVENT_ID : null)
         || document.getElementById('clientModalEventId')?.value
         || document.querySelector('input[name="event_id"]')?.value
         || document.getElementById('event_id')?.value
-        || (typeof window.EV_EVENT_ID !== 'undefined' ? window.EV_EVENT_ID : null);
+        || document.querySelector('[data-event-id]')?.getAttribute('data-event-id')
+        || urlParams.get('id')
+        || urlParams.get('event_id');
 
     if (opening) {
         // Mode "place au choix sur la vue de scène"
@@ -768,12 +774,13 @@ let currentEvent3DData = null;
 async function openClient3DSeating(targetTicketId = null, forcedEventId = null) {
     const urlParams = new URLSearchParams(window.location.search);
     const eventId = forcedEventId
-        || urlParams.get('id')
-        || urlParams.get('event_id')
+        || (typeof window.EV_EVENT_ID !== 'undefined' ? window.EV_EVENT_ID : null)
         || document.getElementById('clientModalEventId')?.value
         || document.querySelector('input[name="event_id"]')?.value
         || document.getElementById('event_id')?.value
-        || (typeof window.EV_EVENT_ID !== 'undefined' ? window.EV_EVENT_ID : null);
+        || document.querySelector('[data-event-id]')?.getAttribute('data-event-id')
+        || urlParams.get('id')
+        || urlParams.get('event_id');
     const eventName = document.getElementById('clientModalEventName')?.textContent
         || document.querySelector('.event-title')?.textContent
         || document.querySelector('h1')?.textContent
@@ -798,12 +805,28 @@ async function openClient3DSeating(targetTicketId = null, forcedEventId = null) 
         console.error('Modal #client3DSeatingModal introuvable');
         return;
     }
+    modal3D.removeAttribute('hidden');
     modal3D.hidden = false;
     modal3D.style.display = 'flex';
     document.body.classList.add('modal-open');
 
     const canvas = document.getElementById('client3DCanvas');
-    const EngineClass = window.TikeWAVenue3D || window.EventiaVenue3D;
+    let EngineClass = window.TikeWAVenue3D || window.EventiaVenue3D;
+    if (!EngineClass) {
+        try {
+            await new Promise((resolve) => {
+                const s = document.createElement('script');
+                const baseUri = document.baseURI || window.location.href;
+                const isClient = baseUri.includes('/client/') || window.location.pathname.includes('/client/');
+                s.src = (isClient ? '../js/venue-3d-engine.js' : 'js/venue-3d-engine.js') + '?v=1.2.0';
+                s.onload = () => resolve();
+                s.onerror = () => resolve();
+                document.head.appendChild(s);
+            });
+            EngineClass = window.TikeWAVenue3D || window.EventiaVenue3D;
+        } catch (_) {}
+    }
+
     if (!EngineClass) {
         console.error('TikeWAVenue3D introuvable dans window');
         alert('Initialisation de la vue 3D en cours... Veuillez patienter.');
@@ -828,7 +851,9 @@ async function openClient3DSeating(targetTicketId = null, forcedEventId = null) 
                         sightBox.style.display = 'block';
                         const p = Number(seat.prix) || 0;
                         const f = Number(seat.frais_place) > 0 ? Number(seat.frais_place) : 1000;
-                        sightDesc.innerHTML = `<strong>Place ${seat.code}</strong> (${seat.zone_name})<br>
+                        const tierColor = seat.zone_color || '#FF4A0D';
+                        const tierLabel = seat.ticket_nom ? `<span style="display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 800; background: ${tierColor}22; color: ${tierColor}; border: 1px solid ${tierColor}55; margin-left: 5px;">${seat.ticket_nom}</span>` : '';
+                        sightDesc.innerHTML = `<strong>Place ${seat.code}</strong> ${tierLabel} (${seat.zone_name})<br>
                             Distance estimée : <strong>${Math.max(6, Math.round(seat.z / 10))} m</strong><br>
                             <span style="color: #FF4A0D; font-weight: 700;">Billet : ${p.toLocaleString('fr-FR')} F + Choix place : ${f.toLocaleString('fr-FR')} F = ${(p + f).toLocaleString('fr-FR')} FCFA</span>`;
                     }
@@ -844,8 +869,10 @@ async function openClient3DSeating(targetTicketId = null, forcedEventId = null) 
         tariffBar.innerHTML = '<div style="color: #94A3B8; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;"><i class="fa-solid fa-spinner fa-spin" style="color: #FF4A0D;"></i> Chargement de la salle 3D...</div>';
     }
 
-    // Chargement des données 3D pour cet événement (avec cache-buster et fallback de chemin)
-    const apiBasePath = window.location.pathname.includes('/client/') ? '../ajax/salle_3d_data.php' : 'ajax/salle_3d_data.php';
+    // Chargement des données 3D pour cet événement (avec résolution contextuelle robuste)
+    const baseUri = document.baseURI || window.location.href;
+    const isClientContext = baseUri.includes('/client/') || window.location.pathname.includes('/client/');
+    const apiBasePath = isClientContext ? '../ajax/salle_3d_data.php' : 'ajax/salle_3d_data.php';
     const endpointUrl = `${apiBasePath}?event_id=${eventId}&_t=${Date.now()}`;
     const data = await client3DEngine.loadFromEndpoint(endpointUrl);
     if (data && data.success) {
@@ -925,7 +952,8 @@ async function openClient3DSeating(targetTicketId = null, forcedEventId = null) 
                     btn.type = 'button';
                     btn.className = 'studio-filter-btn';
                     btn.dataset.tierId = tt.id;
-                    btn.innerHTML = `<span style="font-weight: 800;">${tt.nom}</span> · <span style="color: #FF4A0D;">${Number(tt.prix).toLocaleString('fr-FR')} F</span>`;
+                    const tierColor = tt.couleur || '#FF4A0D';
+                    btn.innerHTML = `<span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ${tierColor}; box-shadow: 0 0 6px ${tierColor}88; margin-right: 6px; vertical-align: middle;"></span><span style="font-weight: 800;">${tt.nom}</span> · <span class="s3d-price-tag">${Number(tt.prix).toLocaleString('fr-FR')} F</span>`;
                     btn.onclick = () => filterClient3D(btn, tt.id);
                     tariffBar.appendChild(btn);
                     if (targetTicketId && Number(tt.id) === Number(targetTicketId)) {
@@ -945,6 +973,19 @@ async function openClient3DSeating(targetTicketId = null, forcedEventId = null) 
                     tariffBar.appendChild(btn);
                 });
             }
+        }
+
+        // Légende enrichie avec les catégories de tarifs réelles
+        const legendEl = document.querySelector('#client3DSeatingModal .s3d-legend');
+        if (legendEl && data.ticket_types && data.ticket_types.length > 0) {
+            let legendHTML = '';
+            data.ticket_types.forEach(tt => {
+                const c = tt.couleur || '#0d9488';
+                legendHTML += `<span class="s3d-legend-item"><span class="s3d-dot" style="background: ${c}; box-shadow: 0 0 6px ${c}aa;"></span> ${tt.nom}</span>`;
+            });
+            legendHTML += `<span class="s3d-legend-item"><span class="s3d-dot" style="background: #f59e0b; border: 1.5px solid #ffffff;"></span> Choisi</span>`;
+            legendHTML += `<span class="s3d-legend-item"><span class="s3d-dot" style="background: #475569;"></span> Occupé</span>`;
+            legendEl.innerHTML = legendHTML;
         }
 
         updateClient3DSidebar([]);
@@ -1010,8 +1051,16 @@ function switchClient3DTab(tab) {
 }
 
 function filterClient3D(btn, filterId) {
-    document.querySelectorAll('#client3DTariffBar .studio-filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#client3DTariffBar .studio-filter-btn').forEach(b => {
+        b.classList.remove('active');
+        const pt = b.querySelector('.s3d-price-tag');
+        if (pt) pt.style.color = '';
+    });
     btn.classList.add('active');
+    const activePrice = btn.querySelector('.s3d-price-tag');
+    if (activePrice) {
+        activePrice.style.color = '#FFFFFF';
+    }
     if (client3DEngine) {
         client3DEngine.filterByTariff(filterId);
     }
@@ -1051,12 +1100,18 @@ function updateClient3DSidebar(seats) {
     seats.forEach(s => {
         const p = Number(s.prix) || 0;
         const f = Number(s.frais_place) > 0 ? Number(s.frais_place) : 1000;
+        const tierColor = s.zone_color || '#FF4A0D';
+        const tierTag = s.ticket_nom ? `<span style="display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 800; background: ${tierColor}22; color: ${tierColor}; border: 1px solid ${tierColor}55; margin-left: 6px;">${s.ticket_nom}</span>` : '';
+
         const item = document.createElement('div');
         item.className = 's3d-selected-seat-item';
         item.style.cssText = 'background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 0.55rem 0.75rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; animation: candidateSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; transition: all 0.2s ease;';
         item.innerHTML = `
                     <div>
-                        <strong style="color: #F8FAFC; font-size: 0.82rem;"><i class="fa-solid fa-chair" style="color: #FF4A0D;"></i> Place ${s.code}</strong>
+                        <div style="display: flex; align-items: center; margin-bottom: 2px;">
+                            <strong style="color: #F8FAFC; font-size: 0.82rem;"><i class="fa-solid fa-chair" style="color: ${tierColor};"></i> Place ${s.code}</strong>
+                            ${tierTag}
+                        </div>
                         <div style="font-size: 0.72rem; color: #94A3B8;">${s.zone_name} • Rang ${s.row}</div>
                         <div style="font-size: 0.68rem; color: #FF4A0D; font-weight: 700;">Choix de place : +${f.toLocaleString('fr-FR')} F</div>
                     </div>
