@@ -181,6 +181,31 @@ $chart_labels = [];
 $chart_revenue_vals = [];
 $chart_tickets_vals = [];
 
+// Optimisation Performance : Plage globale et agrégation unique groupée par jour
+$max_offset = ($points_count - 1) * $step_days + max(1, $step_days - 1);
+$global_start = date('Y-m-d 00:00:00', strtotime("-$max_offset days"));
+$global_end = date('Y-m-d 23:59:59');
+
+$sql_pt_ev = $selected_event_id ? "AND t.event_id = " . (int)$selected_event_id : "";
+$stmt_agg = $pdo->prepare("
+    SELECT TO_CHAR(t.date_achat, 'YYYY-MM-DD') as dt, COALESCE(SUM(t.prix), 0) as ca, COUNT(*) as nb
+    FROM tickets t
+    JOIN events e ON t.event_id = e.id
+    WHERE e.user_id = ? AND t.statut IN ('vendu', 'utilise')
+      AND t.date_achat >= ? AND t.date_achat <= ?
+      $sql_pt_ev
+    GROUP BY TO_CHAR(t.date_achat, 'YYYY-MM-DD')
+");
+$stmt_agg->execute([$user_id, $global_start, $global_end]);
+
+$stats_by_date = [];
+foreach ($stmt_agg->fetchAll(PDO::FETCH_ASSOC) as $r_agg) {
+    $stats_by_date[$r_agg['dt']] = [
+        'ca' => (float)$r_agg['ca'],
+        'nb' => (int)$r_agg['nb']
+    ];
+}
+
 for ($i = $points_count - 1; $i >= 0; $i--) {
     $offset = $i * $step_days;
     $d_end = date('Y-m-d', strtotime("-$offset days"));
@@ -188,19 +213,21 @@ for ($i = $points_count - 1; $i >= 0; $i--) {
     $d_start = date('Y-m-d', strtotime("-$span days", strtotime($d_end)));
     $chart_labels[] = date('d M', strtotime($d_end));
 
-    $sql_pt_ev = $selected_event_id ? "AND t.event_id = $selected_event_id" : "";
-    $stmt_pt = $pdo->prepare("
-        SELECT COALESCE(SUM(t.prix), 0) as ca, COUNT(*) as nb
-        FROM tickets t
-        JOIN events e ON t.event_id = e.id
-        WHERE e.user_id = ? AND t.statut IN ('vendu', 'utilise')
-          AND DATE(t.date_achat) BETWEEN ? AND ?
-          $sql_pt_ev
-    ");
-    $stmt_pt->execute([$user_id, $d_start, $d_end]);
-    $row_pt = $stmt_pt->fetch();
-    $chart_revenue_vals[] = (float) ($row_pt['ca'] ?? 0);
-    $chart_tickets_vals[] = (int) ($row_pt['nb'] ?? 0);
+    // Agrégation rapide en mémoire vive
+    $step_ca = 0.0;
+    $step_nb = 0;
+    $curr = strtotime($d_start);
+    $end_ts = strtotime($d_end);
+    while ($curr <= $end_ts) {
+        $key = date('Y-m-d', $curr);
+        if (isset($stats_by_date[$key])) {
+            $step_ca += $stats_by_date[$key]['ca'];
+            $step_nb += $stats_by_date[$key]['nb'];
+        }
+        $curr = strtotime('+1 day', $curr);
+    }
+    $chart_revenue_vals[] = $step_ca;
+    $chart_tickets_vals[] = $step_nb;
 }
 
 $sparkline_data = array_map(function ($v) {

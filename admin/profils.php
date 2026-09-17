@@ -51,11 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_profile'])) {
             $message = "Le profil « " . htmlspecialchars($nom) . " » a été créé avec succès !";
             $msg_type = "success";
         } catch (PDOException $e) {
-            if ($e->getCode() == 23000) {
-                $message = "Un profil portant ce nom existe déjà.";
-            } else {
-                $message = "Erreur lors de la création : " . $e->getMessage();
-            }
+            $message = friendly_db_error($e, 'profil', "Impossible d'enregistrer ce profil d'accès. Veuillez vérifier le nom saisi.");
             $msg_type = "error";
         }
     }
@@ -99,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             $message = "Le profil « " . htmlspecialchars($nom) . " » a été mis à jour avec succès.";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur lors de la mise à jour : " . $e->getMessage();
+            $message = friendly_db_error($e, 'profil', "Impossible de mettre à jour ce profil d'accès. Veuillez vérifier les informations saisies.");
             $msg_type = "error";
         }
     }
@@ -132,12 +128,17 @@ if (isset($_GET['delete_profile'])) {
             $message = "Impossible de supprimer ce profil car $nb_users_with utilisateur(s) y sont rattachés. Réassignez-les d'abord.";
             $msg_type = "error";
         } else {
+            try {
             $pdo->prepare("DELETE FROM profile_permissions WHERE profile_id = ?")->execute([$del_id]);
             $pdo->prepare("DELETE FROM profiles WHERE id = ?")->execute([$del_id]);
 
             logActivity('profile.delete', 'profile', $del_id, "Suppression du profil « {$prof_to_del['nom']} »");
             $message = "Le profil a été supprimé avec succès.";
             $msg_type = "success";
+        } catch (PDOException $e) {
+            $message = friendly_db_error($e, 'profil', "Impossible de supprimer ce profil car il est encore lié à des utilisateurs ou des permissions.");
+            $msg_type = "error";
+        }
         }
     }
 }

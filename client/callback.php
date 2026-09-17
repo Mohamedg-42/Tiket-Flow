@@ -272,13 +272,19 @@ try {
         $email_sent = sendTicketEmail($client_email, $client_nom, $order['numero_commande'], $generated_tickets_list, $order_id);
     }
 
+    // Redirection immédiate vers la page officielle de téléchargement des billets
+    require_once '../includes/secure_token.php';
+    $order_sec_token = get_or_create_resource_token($pdo, 'order', (int) $order_id);
+    header('Location: telecharger-ticket.php?token=' . urlencode($order_sec_token) . '&payment_success=1');
+    exit();
+
 } catch (Exception $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
     require_once '../includes/auth.php';
     logActivity('payment.callback_failed', 'order', $order_id, "Erreur validation commande : " . $e->getMessage());
-    $_SESSION['order_message'] = "Une erreur est survenue lors de la validation de vos billets : " . $e->getMessage();
+    $_SESSION['order_message'] = friendly_db_error($e, 'billet', "Une erreur technique est survenue lors de l'émission de vos billets. Votre paiement est sécurisé, veuillez contacter le support avec votre référence.");
     header('Location: accueil.php');
     exit();
 }

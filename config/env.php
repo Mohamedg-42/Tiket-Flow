@@ -75,3 +75,9 @@ if (!defined('APP_SECRET_KEY')) {
     }
     define('APP_SECRET_KEY', !empty($app_secret) ? $app_secret : 'tikeli_pay_sec_9948271');
 }
+
+// Version globale de l'application pour la mise en cache HTTP optimale des assets (CSS, JS, images)
+if (!defined('APP_VERSION')) {
+    define('APP_VERSION', getenv('APP_VERSION') ?: '1.1.0');
+}
+

@@ -100,7 +100,7 @@ try {
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($admin_page_title); ?></title>
-    <link rel="icon" type="image/png" href="../images/favicon.png?v=<?php echo time(); ?>">
+    <link rel="icon" type="image/png" href="../images/favicon.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
 
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -746,7 +746,7 @@ try {
             style="display: flex; align-items: center; gap: 8px; color: #ffffff; font-weight: 800; font-size: 1rem; overflow: hidden; min-width: 0;">
             <a href="dashboard.php"
                 style="display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0;">
-                <img src="../images/logo.png?v=<?php echo time(); ?>" alt="Tike WA"
+                <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA"
                     style="height: 28px; width: auto; max-width: 110px; object-fit: contain;">
             </a>
             <span style="font-size: 0.8rem; color: #737373; font-weight: 600;">• Admin</span>
@@ -770,7 +770,7 @@ try {
             <div class="ctrl-brand">
                 <a href="dashboard.php" class="ctrl-brand-logo"
                     style="text-decoration: none; display: flex; align-items: center;">
-                    <img src="../images/logo.png?v=<?php echo time(); ?>" alt="Tike WA"
+                    <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA"
                         style="height: 40px; width: auto; max-width: 160px; object-fit: contain;">
                 </a>
 

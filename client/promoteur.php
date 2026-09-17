@@ -5,10 +5,29 @@
 // ==============================================================================
 
 require_once '../config/database.php';
+require_once '../includes/secure_token.php';
 session_start();
 
-$promoter_user_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-if (!$promoter_user_id) {
+$promoter_token = trim((string) ($_GET['token'] ?? ''));
+$promoter_user_id = null;
+
+if (!empty($promoter_token)) {
+    $promoter_user_id = resolve_resource_token($pdo, $promoter_token, 'promoter');
+    if (!$promoter_user_id) {
+        render_token_security_error(
+            "Profil promoteur introuvable",
+            "Ce lien d'accès au profil promoteur est inexistant, invalide ou a été désactivé.",
+            404,
+            "accueil.php"
+        );
+    }
+} elseif (isset($_GET['id']) && is_numeric($_GET['id'])) {
+    // Redirection sécurisée (301) vers le lien avec token pour masquer l'ID
+    $legacy_id = (int) $_GET['id'];
+    $secure_token = get_or_create_resource_token($pdo, 'promoter', $legacy_id);
+    header('Location: promoteur.php?token=' . urlencode($secure_token), true, 301);
+    exit();
+} else {
     header('Location: accueil.php');
     exit();
 }

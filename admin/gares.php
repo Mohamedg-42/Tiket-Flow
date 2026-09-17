@@ -23,13 +23,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_create_station
         $message = "Le nom de la gare est obligatoire.";
         $msg_type = "error";
     } else {
-        $stmt = $pdo->prepare("
-            INSERT INTO stations (nom, ville, adresse, responsable_nom, responsable_telephone, statut)
-            VALUES (?, ?, ?, ?, ?, 'active')
-        ");
-        $stmt->execute([$nom, $ville ?: null, $adresse ?: null, $resp_nom ?: null, $resp_tel ?: null]);
-        $message = "Gare « " . htmlspecialchars($nom) . " » créée avec succès.";
-        $msg_type = "success";
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO stations (nom, ville, adresse, responsable_nom, responsable_telephone, statut)
+                VALUES (?, ?, ?, ?, ?, 'active')
+            ");
+            $stmt->execute([$nom, $ville ?: null, $adresse ?: null, $resp_nom ?: null, $resp_tel ?: null]);
+            $message = "Gare « " . htmlspecialchars($nom) . " » créée avec succès.";
+            $msg_type = "success";
+        } catch (PDOException $e) {
+            $message = friendly_db_error($e, 'gare', "Impossible de créer cette gare. Veuillez vérifier les données.");
+            $msg_type = "error";
+        }
     }
 }
 
@@ -43,13 +48,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_edit_station']
     $resp_tel = trim($_POST['responsable_telephone'] ?? '');
 
     if ($id && !empty($nom)) {
-        $stmt = $pdo->prepare("
-            UPDATE stations SET nom = ?, ville = ?, adresse = ?, responsable_nom = ?, responsable_telephone = ?, updated_at = NOW()
-            WHERE id = ?
-        ");
-        $stmt->execute([$nom, $ville ?: null, $adresse ?: null, $resp_nom ?: null, $resp_tel ?: null, $id]);
-        $message = "Gare mise à jour avec succès.";
-        $msg_type = "success";
+        try {
+            $stmt = $pdo->prepare("
+                UPDATE stations SET nom = ?, ville = ?, adresse = ?, responsable_nom = ?, responsable_telephone = ?, updated_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->execute([$nom, $ville ?: null, $adresse ?: null, $resp_nom ?: null, $resp_tel ?: null, $id]);
+            $message = "Gare mise à jour avec succès.";
+            $msg_type = "success";
+        } catch (PDOException $e) {
+            $message = friendly_db_error($e, 'gare', "Impossible de mettre à jour cette gare.");
+            $msg_type = "error";
+        }
     }
 }
 
@@ -58,9 +68,14 @@ if (isset($_GET['set_statut'])) {
     $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
     $new_statut = $_GET['set_statut'];
     if ($id && in_array($new_statut, ['active', 'suspendue', 'stoppee'], true)) {
-        $pdo->prepare("UPDATE stations SET statut = ?, updated_at = NOW() WHERE id = ?")->execute([$new_statut, $id]);
-        $message = "Statut de la gare mis à jour (" . $new_statut . ").";
-        $msg_type = "success";
+        try {
+            $pdo->prepare("UPDATE stations SET statut = ?, updated_at = NOW() WHERE id = ?")->execute([$new_statut, $id]);
+            $message = "Statut de la gare mis à jour (" . $new_statut . ").";
+            $msg_type = "success";
+        } catch (PDOException $e) {
+            $message = friendly_db_error($e, 'gare', "Impossible de changer le statut de cette gare.");
+            $msg_type = "error";
+        }
     }
 }
 
@@ -87,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_create_agent']
             $message = "Agent « " . htmlspecialchars($nom) . " » créé et rattaché à la gare.";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur lors de la création de l'agent (email déjà utilisé ?) : " . $e->getMessage();
+            $message = friendly_db_error($e, 'agent_gare', "Impossible d'enregistrer cet agent. Veuillez vérifier si l'adresse email n'est pas déjà utilisée.");
             $msg_type = "error";
         }
     }

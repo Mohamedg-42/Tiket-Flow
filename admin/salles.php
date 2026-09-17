@@ -114,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_create_salle']
             $message = "La salle « " . htmlspecialchars($nom) . " », ses photos et ses plans 3D ont été enregistrés avec succès !";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur lors de la création de la salle : " . $e->getMessage();
+            $message = friendly_db_error($e, 'salle', "Impossible d'enregistrer la salle. Veuillez vérifier les informations saisies.");
             $msg_type = "error";
         }
     }
@@ -219,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_update_salle']
             $message = "Les informations, photos et fichiers 3D de la salle ont été mis à jour avec succès.";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur de mise à jour : " . $e->getMessage();
+            $message = friendly_db_error($e, 'salle', "Impossible de mettre à jour cette salle. Veuillez vérifier les informations saisies.");
             $msg_type = "error";
         }
     }
@@ -246,9 +246,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_add_zone'])) {
 
 if (isset($_GET['delete_zone'])) {
     $del_z_id = (int)$_GET['delete_zone'];
-    $pdo->prepare("DELETE FROM salle_zones WHERE id = ?")->execute([$del_z_id]);
-    $message = "La zone a été supprimée.";
-    $msg_type = "success";
+    try {
+        $pdo->prepare("DELETE FROM salle_zones WHERE id = ?")->execute([$del_z_id]);
+        $message = "La zone a été supprimée.";
+        $msg_type = "success";
+    } catch (PDOException $e) {
+        $message = friendly_db_error($e, 'salle', "Impossible de supprimer cette zone. Elle est peut-être liée à des événements existants.");
+        $msg_type = "error";
+    }
 }
 
 // ------------------------------------------------------------------------------
@@ -256,15 +261,20 @@ if (isset($_GET['delete_zone'])) {
 // ------------------------------------------------------------------------------
 if (isset($_GET['delete_salle'])) {
     $del_s_id = (int)$_GET['delete_salle'];
-    $stmt_s = $pdo->prepare("SELECT nom FROM salles WHERE id = ?");
-    $stmt_s->execute([$del_s_id]);
-    $s_to_del = $stmt_s->fetch();
+    try {
+        $stmt_s = $pdo->prepare("SELECT nom FROM salles WHERE id = ?");
+        $stmt_s->execute([$del_s_id]);
+        $s_to_del = $stmt_s->fetch();
 
-    if ($s_to_del) {
-        $pdo->prepare("DELETE FROM salles WHERE id = ?")->execute([$del_s_id]);
-        logActivity('salle.delete', 'salle', $del_s_id, "Suppression de la salle #$del_s_id (« {$s_to_del['nom']} »)");
-        $message = "La salle « " . htmlspecialchars($s_to_del['nom']) . " » a été supprimée.";
-        $msg_type = "success";
+        if ($s_to_del) {
+            $pdo->prepare("DELETE FROM salles WHERE id = ?")->execute([$del_s_id]);
+            logActivity('salle.delete', 'salle', $del_s_id, "Suppression de la salle #$del_s_id (« {$s_to_del['nom']} »)");
+            $message = "La salle « " . htmlspecialchars($s_to_del['nom']) . " » a été supprimée.";
+            $msg_type = "success";
+        }
+    } catch (PDOException $e) {
+        $message = friendly_db_error($e, 'salle', "Impossible de supprimer cette salle car elle est liée à des événements ou billets existants.");
+        $msg_type = "error";
     }
 }
 

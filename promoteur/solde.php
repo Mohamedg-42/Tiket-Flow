@@ -25,6 +25,7 @@ $solde_actuel = $promoter ? (float)$promoter['solde'] : 0.00;
 // 2. Traitement d'un RETRAIT INSTANTANÉ (Virement via API Feexpay Mobile Money)
 // ------------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['demande_retrait'])) {
+    verifyCsrfToken(true);
     $montant   = (float)($_POST['montant'] ?? 0);
     $methode   = $_POST['methode'] ?? 'wave';
     $telephone = trim($_POST['numero_telephone'] ?? '');
@@ -106,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['demande_retrait'])) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            $message = "Erreur lors du virement instantané : " . $e->getMessage();
+            $message = friendly_db_error($e, 'retrait_solde', "Le virement instantané n'a pas pu être exécuté. Veuillez vérifier vos coordonnées de paiement et réessayer.");
             $msg_type = "error";
         }
     }
@@ -554,6 +555,7 @@ function render_momo_icon($methode, $size = 36) {
         <div style="padding: 1.5rem;">
             <?php if ($solde_actuel > 0): ?>
                 <form method="POST" action="solde.php" id="form-retrait" onsubmit="return validerRetrait();">
+                    <?php echo csrfField(); ?>
                     <input type="hidden" name="demande_retrait" value="1">
                     <input type="hidden" name="methode" id="selected_methode" value="wave">
 

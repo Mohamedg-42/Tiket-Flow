@@ -1,0 +1,72 @@
+[
+    {
+        "id": "T029",
+        "feature": "Administration",
+        "test": "Contrôle de la méthode de suppression dans admin\/supprimer-evenement.php",
+        "expected": "Suppression sécurisée exigeant POST + confirmation + jeton anti-CSRF",
+        "obtained": "Protégé en POST",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T031",
+        "feature": "Sécurité Injection",
+        "test": "Injection SQL complexe dans le paramètre de recherche q",
+        "expected": "Aucune injection SQL possible (recherche littérale par requête préparée PDO)",
+        "obtained": "0 résultat(s) retourné(s) sans fuite ni altération de requête",
+        "status": "RÉUSSI",
+        "priority": "Critique",
+        "details": ""
+    },
+    {
+        "id": "T032",
+        "feature": "Sécurité XSS",
+        "test": "Neutralisation des balises scripts malveillantes (<script>alert(1)<\/script>)",
+        "expected": "Balises <script> converties en entités &lt;script&gt;",
+        "obtained": "&lt;script&gt;alert(&#039;XSS_TEST_ANTIGRAVITY&#039;)&lt;\/script&gt;",
+        "status": "RÉUSSI",
+        "priority": "Critique",
+        "details": ""
+    },
+    {
+        "id": "T033",
+        "feature": "Sécurité Fuite Info",
+        "test": "Interception et neutralisation des messages d'erreurs SQLSTATE bruts",
+        "expected": "Message actionnable orienté utilisateur sans SQLSTATE ni nom de table\/colonne",
+        "obtained": "Cette adresse email est déjà enregistrée. Veuillez vous connecter ou utiliser une autre adresse.",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T033B",
+        "feature": "Sécurité CSRF",
+        "test": "Audit de la présence active de vérification anti-CSRF sur les formulaires POST",
+        "expected": "Présence active de verifyCsrfToken() sur les actions sensibles",
+        "obtained": "verifyCsrfToken actif",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T034",
+        "feature": "Performance",
+        "test": "Mesure des temps d'exécution backend sur requêtes agrégées clés",
+        "expected": "Temps de requête catalogue < 100 ms",
+        "obtained": "2.23 ms (Catalogue de 4 événements)",
+        "status": "RÉUSSI",
+        "priority": "Moyenne",
+        "details": ""
+    },
+    {
+        "id": "T035",
+        "feature": "Interface & Responsive",
+        "test": "Présence systématique des métadonnées viewport et feuilles responsive-pro.css",
+        "expected": "Balise viewport et feuille responsive-pro.css déclarées",
+        "obtained": "Viewport et feuille responsive-pro.css présents",
+        "status": "RÉUSSI",
+        "priority": "Moyenne",
+        "details": ""
+    }
+]

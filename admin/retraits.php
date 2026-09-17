@@ -12,6 +12,9 @@ $msg_type = "";
 
 // 1. Traitement des actions Administrateur (Payer ou Refuser)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_retrait'])) {
+    if (isset($_POST['csrf_token'])) {
+        verifyCsrfToken(true);
+    }
     $withdraw_id = (int) $_POST['withdraw_id'];
     $action_type = $_POST['action_retrait'];
 
@@ -25,11 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_retrait'])) {
 
         if ($action_type === 'pay') {
             // Confirmation du virement effectué
-            $stmt = $pdo->prepare("UPDATE withdrawals SET statut = 'paye', reviewed_at = NOW() WHERE id = ?");
-            $stmt->execute([$withdraw_id]);
+            try {
+                $stmt = $pdo->prepare("UPDATE withdrawals SET statut = 'paye', reviewed_at = NOW() WHERE id = ?");
+                $stmt->execute([$withdraw_id]);
 
-            $message = "Le retrait de " . number_format($montant, 0, ',', ' ') . " FCFA a été marqué comme PAYÉ avec succès.";
-            $msg_type = "success";
+                $message = "Le retrait de " . number_format($montant, 0, ',', ' ') . " FCFA a été marqué comme PAYÉ avec succès.";
+                $msg_type = "success";
+            } catch (Exception $e) {
+                $message = friendly_db_error($e, 'retrait', "Impossible de valider ce retrait. Veuillez réessayer.");
+                $msg_type = "error";
+            }
 
         } elseif ($action_type === 'reject') {
             $commentaire = trim($_POST['commentaire_admin'] ?? 'Numéro incorrect ou compte non identifiable');
@@ -53,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_retrait'])) {
             } catch (Exception $e) {
                 if ($pdo->inTransaction())
                     $pdo->rollBack();
-                $message = "Erreur lors du refus : " . $e->getMessage();
+                $message = friendly_db_error($e, 'retrait', "Impossible de refuser ce retrait ou de ré-créditer le solde. Veuillez réessayer.");
                 $msg_type = "error";
             }
         }
@@ -322,6 +330,7 @@ function render_momo_icon($methode, $size = 24) {
                                             <form method="POST"
                                                 onsubmit="return confirm('Confirmez-vous que le virement Mobile Money a été envoyé avec succès ?');"
                                                 style="margin: 0; display: inline;">
+                                                <?php echo csrfField(); ?>
                                                 <input type="hidden" name="withdraw_id" value="<?php echo $w['id']; ?>">
                                                 <input type="hidden" name="action_retrait" value="pay">
                                                 <button type="submit" class="dash-btn-action btn-success"
@@ -333,6 +342,7 @@ function render_momo_icon($methode, $size = 24) {
                                             <form method="POST"
                                                 onsubmit="return confirm('Confirmez-vous le refus ? Le montant sera immédiatement re-crédité sur le solde du promoteur.');"
                                                 style="margin: 0; display: inline;">
+                                                <?php echo csrfField(); ?>
                                                 <input type="hidden" name="withdraw_id" value="<?php echo $w['id']; ?>">
                                                 <input type="hidden" name="action_retrait" value="reject">
                                                 <button type="submit" class="dash-btn-action btn-danger"

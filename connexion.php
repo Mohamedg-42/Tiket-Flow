@@ -81,6 +81,8 @@ if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout
                 $_SESSION['nom'] = $user['nom'];
                 $_SESSION['prenom'] = $user['prenom'] ?? '';
                 $_SESSION['user_email'] = $user['email'];
+                $_SESSION['user_telephone'] = $user['telephone'] ?? '';
+                $_SESSION['user_phone'] = $user['telephone'] ?? '';
                 $_SESSION['user_role'] = $user['role'];
                 $_SESSION['user_profile_id'] = (int) ($user['profile_id'] ?? 0);
                 $_SESSION['est_verifie'] = (int) $user['est_verifie'];
@@ -125,7 +127,7 @@ if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Connexion - Tike WA</title>
-    <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo time(); ?>">
+    <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -198,7 +200,7 @@ if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout
         <div style="text-align: center; margin-bottom: 1.75rem;">
             <a href="client/accueil.php"
                 style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; text-decoration: none;">
-                <img src="images/logo.png?v=<?php echo time(); ?>" alt="Tike WA"
+                <img src="images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA"
                     style="height: 56px; width: auto; max-width: 200px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
             </a>
             <h1

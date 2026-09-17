@@ -47,13 +47,12 @@ try {
     }
 
 } catch (\PDOException $e) {
-    // En production, ne pas afficher le message d'erreur brut
+    error_log("Erreur PDO Tike WA: " . $e->getMessage());
     $is_debug = (getenv('APP_DEBUG') === 'true' || getenv('APP_ENV') === 'development');
     if ($is_debug) {
-        die("❌ Erreur de connexion à PostgreSQL : " . $e->getMessage());
+        die("❌ Erreur technique de connexion à la base : " . htmlspecialchars($e->getMessage()));
     } else {
-        error_log("Erreur PDO Tike WA: " . $e->getMessage());
-        die("❌ Impossible de se connecter à la base de données. Veuillez réessayer dans quelques instants.");
+        die("❌ Service momentanément indisponible. Veuillez rafraîchir la page ou réessayer dans quelques instants.");
     }
 }
 
@@ -61,8 +60,10 @@ if (!function_exists('resolve_media_url')) {
     /**
      * Résout l'URL publique d'un média (affiche, image, photo) avec fallback automatique.
      * Détecte les URLs distantes, vérifie l'existence et l'intégrité des fichiers locaux (> 500 octets).
+     * Optimisé avec mémoïsation en mémoire vive pour supprimer les accès disques répétitifs.
      */
     function resolve_media_url($image_val, $default_url, $subfolders = ['events', 'cotisations', 'candidats']) {
+        static $memo = [];
         $val = trim((string) $image_val);
         if ($val === '' || $val === 'default.jpg' || $val === 'null') {
             return $default_url;
@@ -70,15 +71,92 @@ if (!function_exists('resolve_media_url')) {
         if (strpos($val, 'http://') === 0 || strpos($val, 'https://') === 0) {
             return $val;
         }
+        $cacheKey = $val . '|' . (is_array($subfolders) ? implode(',', $subfolders) : (string)$subfolders);
+        if (isset($memo[$cacheKey])) {
+            return $memo[$cacheKey];
+        }
         $rootUploads = realpath(__DIR__ . '/../uploads');
         if ($rootUploads) {
             foreach ((array)$subfolders as $folder) {
                 $filePath = $rootUploads . DIRECTORY_SEPARATOR . $folder . DIRECTORY_SEPARATOR . $val;
                 if (file_exists($filePath) && @filesize($filePath) > 500) {
-                    return '../uploads/' . $folder . '/' . $val;
+                    return $memo[$cacheKey] = '../uploads/' . $folder . '/' . $val;
                 }
             }
         }
-        return $default_url;
+        return $memo[$cacheKey] = $default_url;
     }
 }
+
+if (!function_exists('friendly_db_error')) {
+    /**
+     * Transforme une exception technique de base de données (PDOException / Exception)
+     * en un message clair, professionnel et orienté action pour l'utilisateur,
+     * tout en consignant les détails techniques réels dans les logs serveur.
+     *
+     * @param Throwable $e L'exception interceptée
+     * @param string $actionContext Le contexte de l'action (ex: 'inscription', 'demande_evenement')
+     * @param string|null $customDefault Message de repli personnalisé
+     * @return string Message convivial et actionnable destiné à l'utilisateur
+     */
+    function friendly_db_error(Throwable $e, string $actionContext = 'operation', ?string $customDefault = null): string {
+        // 1. Journalisation sécurisée des détails techniques pour le débogage serveur
+        error_log(sprintf(
+            "[%s] [DB_ERROR:%s] %s in %s:%d",
+            date('Y-m-d H:i:s'),
+            strtoupper($actionContext),
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine()
+        ));
+
+        // 2. Détection du code SQLSTATE ou type d'erreur
+        $code = (string) $e->getCode();
+        $msg = $e->getMessage();
+
+        // 23505 = Unique violation (PostgreSQL), 1062 = Duplicate entry (MySQL)
+        if ($code === '23505' || $code === '1062' || stripos($msg, 'duplicate') !== false || stripos($msg, 'unique') !== false) {
+            if (stripos($msg, 'email') !== false) {
+                return "Cette adresse email est déjà enregistrée. Veuillez vous connecter ou utiliser une autre adresse.";
+            }
+            if (stripos($msg, 'telephone') !== false || stripos($msg, 'tel') !== false) {
+                return "Ce numéro de téléphone est déjà associé à un compte ou une inscription. Veuillez vérifier votre saisie.";
+            }
+            if (stripos($msg, 'code_guichet') !== false) {
+                return "Ce code de guichet est déjà attribué. Veuillez choisir un autre code.";
+            }
+            if (stripos($msg, 'code') !== false || stripos($msg, 'reference') !== false) {
+                return "Cette référence ou ce code existe déjà. Veuillez utiliser un identifiant différent.";
+            }
+            return "Un enregistrement avec ces informations existe déjà. Veuillez vérifier vos données.";
+        }
+
+        // 23503 = Foreign key violation
+        if ($code === '23503' || stripos($msg, 'foreign key') !== false) {
+            return "L'élément associé (événement, catégorie, utilisateur) n'existe plus ou n'est plus accessible. Veuillez actualiser la page.";
+        }
+
+        // 23502 = Not null violation
+        if ($code === '23502' || stripos($msg, 'not-null') !== false) {
+            return "Certaines informations obligatoires sont manquantes. Veuillez compléter tous les champs requis.";
+        }
+
+        // 22001 = String data right truncation
+        if ($code === '22001' || stripos($msg, 'too long') !== false) {
+            return "Le texte saisi dans l'un des champs dépasse la taille maximale autorisée.";
+        }
+
+        // Connexion au serveur de données
+        if (stripos($msg, 'connection') !== false || stripos($msg, 'server closed') !== false) {
+            return "Le serveur est momentanément indisponible. Veuillez patienter quelques instants et réessayer.";
+        }
+
+        if ($customDefault !== null) {
+            return $customDefault;
+        }
+
+        return "Une difficulté technique est survenue lors de l'opération. Veuillez vérifier vos informations et réessayer, ou contacter notre assistance si le problème persiste.";
+    }
+}
+
+

@@ -1,0 +1,92 @@
+[
+    {
+        "id": "T008",
+        "feature": "Inscription",
+        "test": "Soumission d'inscription avec champs obligatoires vides",
+        "expected": "Rejet immédiat avec message explicite sur champs obligatoires",
+        "obtained": "Rejeté: Veuillez remplir tous les champs obligatoires (Nom, Prénom, Email, Téléphone, Mot de passe).",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T009",
+        "feature": "Inscription",
+        "test": "Tentative d'inscription avec un email déjà existant",
+        "expected": "Rejet via contrainte unique et message actionnable",
+        "obtained": "Exception interceptée -> Message: Cette adresse email est déjà enregistrée. Veuillez vous connecter ou utiliser une autre adresse.",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T010",
+        "feature": "Inscription",
+        "test": "Validation de la longueur minimale du mot de passe (< 6 caractères)",
+        "expected": "Rejet des mots de passe de moins de 6 caractères",
+        "obtained": "Rejeté: Le mot de passe doit contenir au moins 6 caractères.",
+        "status": "RÉUSSI",
+        "priority": "Moyenne",
+        "details": ""
+    },
+    {
+        "id": "T011",
+        "feature": "Réinitialisation",
+        "test": "Demande de réinitialisation pour email inexistant (sécurité anti-énumération)",
+        "expected": "Message neutre anti-énumération",
+        "obtained": "Si cette adresse existe dans notre base de données, un lien de réinitialisation vient de vous être envoyé.",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T013",
+        "feature": "Billetterie Client",
+        "test": "Validation de quantité de billets nulle ou négative (quantite <= 0)",
+        "expected": "Quantités <= 0 rejetées systématiquement côté serveur",
+        "obtained": "Toutes les valeurs <= 0 ont été rejetées",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T020",
+        "feature": "Espace Promoteur",
+        "test": "Validation des extensions d'affiches d'événements (JPG, PNG, WEBP)",
+        "expected": "Validation conforme pour les formats d'image autorisés",
+        "obtained": "Toutes les extensions d'images valides acceptées",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T021",
+        "feature": "Espace Promoteur",
+        "test": "Blocage strict des fichiers exécutables (.php, .phtml, .exe, .sh)",
+        "expected": "Rejet strict des fichiers exécutables côté serveur",
+        "obtained": "Tous les fichiers dangereux ont été bloqués",
+        "status": "RÉUSSI",
+        "priority": "Critique",
+        "details": ""
+    },
+    {
+        "id": "T023",
+        "feature": "Espace Promoteur",
+        "test": "Tentative de retrait d'un montant supérieur au solde disponible",
+        "expected": "Rejet de la demande de retrait avec message \"Solde insuffisant\"",
+        "obtained": "Solde insuffisant pour effectuer ce retrait (solde: 799,900 FCFA).",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T023B",
+        "feature": "Cotisations",
+        "test": "Validation des montants de cotisation négatifs ou inférieurs au minimum",
+        "expected": "Rejet des montants de cotisation négatifs ou < 500 FCFA",
+        "obtained": "Montant rejeté conformément aux règles métier",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    }
+]

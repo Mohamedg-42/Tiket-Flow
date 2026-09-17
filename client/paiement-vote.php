@@ -8,9 +8,30 @@ require_once '../config/database.php';
 require_once '../config/bictorys.php';
 session_start();
 
-$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
-if (!$id) {
-    header('Location: accueil.php');
+require_once '../includes/secure_token.php';
+
+$token = trim((string) ($_GET['token'] ?? ''));
+$id = null;
+
+if (!empty($token)) {
+    $id = resolve_resource_token($pdo, $token, 'vote_payment');
+    if (!$id) {
+        render_token_security_error(
+            "Paiement de vote introuvable",
+            "Ce lien de paiement de vote est invalide, a expiré ou a été désactivé.",
+            404,
+            "accueil.php?onglet=voter"
+        );
+    }
+} elseif (isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $id = (int) $_GET['id'];
+    $sec_token = get_or_create_resource_token($pdo, 'vote_payment', $id);
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: paiement-vote.php?token=' . urlencode($sec_token), true, 301);
+        exit();
+    }
+} else {
+    header('Location: accueil.php?onglet=voter');
     exit();
 }
 
@@ -52,10 +73,11 @@ $back_url = $is_event_prive
 
 $pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
 $vote_token = hash_hmac('sha256', $vote_pay['id'] . '|' . $vote_pay['montant'] . '|' . $vote_pay['created_at'], $pay_secret);
+$cur_vote_token = get_or_create_resource_token($pdo, 'vote_payment', (int) $vote_pay['id']);
 
 $error_msg = null;
 if (isset($_GET['error'])) {
-    $error_msg = "La transaction de vote a été interrompue. Vous pouvez la relancer ci-dessous.";
+    $error_msg = "Le paiement du vote a été interrompu ou a échoué. Vous pouvez réessayer avec votre moyen de paiement ci-dessous.";
 }
 
 // Initialisation Bictorys
@@ -66,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement_vote
     $host = $_SERVER['HTTP_HOST'];
     $baseUrl = $protocol . '://' . $host . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
     $callbackUrl = $baseUrl . '/callback-vote.php?vote_paiement_id=' . $vote_pay['id'] . '&methode=bictorys&vote_token=' . $vote_token . ($is_event_prive && !empty($event_token) ? ('&token=' . urlencode($event_token)) : '');
-    $errorUrl = $baseUrl . '/paiement-vote.php?id=' . $vote_pay['id'] . '&error=1';
+    $errorUrl = $baseUrl . '/paiement-vote.php?token=' . urlencode($cur_vote_token) . '&error=1';
 
     $selected_provider = trim($_POST['provider'] ?? '');
     $phone_submitted = trim($_POST['phone'] ?? $vote_phone);
@@ -230,7 +252,7 @@ include 'header.php';
                     style="font-family: 'Space Mono', monospace; font-size: 0.95rem; color: var(--eventia-muted, #737373); font-weight: 700;">FCFA</span></strong>
         </div>
 
-        <form method="POST" action="paiement-vote.php?id=<?php echo $vote_pay['id']; ?>" id="bictorys-vote-form"
+        <form method="POST" action="paiement-vote.php?token=<?php echo urlencode($cur_vote_token); ?>" id="bictorys-vote-form"
             style="padding: 2rem;">
             <input type="hidden" name="initier_paiement_vote" value="1">
             <input type="hidden" name="provider" id="selected_provider_vote" value="wave_money">
@@ -425,9 +447,12 @@ include 'header.php';
 
         if (form && submitBtn) {
             form.addEventListener('submit', function () {
-                submitBtn.disabled = true;
+                submitBtn.style.pointerEvents = 'none';
                 submitBtn.style.opacity = '0.75';
                 submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Connexion sécurisée en cours...</span>';
+                setTimeout(function () {
+                    submitBtn.disabled = true;
+                }, 50);
             });
         }
     });

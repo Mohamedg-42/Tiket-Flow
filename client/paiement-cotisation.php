@@ -8,11 +8,31 @@ require_once '../config/database.php';
 require_once '../config/bictorys.php';
 session_start();
 
+require_once '../includes/secure_token.php';
 $is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 
-$cotisation_id = filter_input(INPUT_GET, 'cotisation_id', FILTER_VALIDATE_INT);
-if (!$cotisation_id) {
-    header('Location: accueil.php');
+$token = trim((string) ($_GET['token'] ?? ''));
+$cotisation_id = null;
+
+if (!empty($token)) {
+    $cotisation_id = resolve_resource_token($pdo, $token, 'cotisation_payment');
+    if (!$cotisation_id) {
+        render_token_security_error(
+            "Contribution introuvable",
+            "Ce lien de paiement de cotisation est invalide, a expiré ou a été désactivé.",
+            404,
+            "accueil.php?onglet=cotisations"
+        );
+    }
+} elseif (isset($_GET['cotisation_id']) && is_numeric($_GET['cotisation_id'])) {
+    $cotisation_id = (int) $_GET['cotisation_id'];
+    $sec_token = get_or_create_resource_token($pdo, 'cotisation_payment', $cotisation_id);
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: paiement-cotisation.php?token=' . urlencode($sec_token), true, 301);
+        exit();
+    }
+} else {
+    header('Location: accueil.php?onglet=cotisations');
     exit();
 }
 
@@ -34,7 +54,7 @@ if (!$cotisation || $cotisation['statut'] !== 'en_attente') {
 }
 
 $is_private_campagne = ($cotisation['visibilite'] ?? 'public') === 'prive';
-$campagne_token = (string) ($_GET['token'] ?? '');
+$campagne_token = (string) ($_GET['campagne_token'] ?? '');
 if ($is_private_campagne) {
     $expected_token = (string) ($cotisation['access_token'] ?? '');
     if ($expected_token === '' || !hash_equals($expected_token, $campagne_token)) {
@@ -46,6 +66,7 @@ if ($is_private_campagne) {
 
 $pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
 $cotisation_token = hash_hmac('sha256', $cotisation['id'] . '|' . $cotisation['montant'] . '|' . $cotisation['created_at'], $pay_secret);
+$cur_cotisation_token = get_or_create_resource_token($pdo, 'cotisation_payment', (int) $cotisation['id']);
 
 $error_msg = null;
 if (isset($_GET['error'])) {
@@ -53,14 +74,21 @@ if (isset($_GET['error'])) {
 }
 
 // Initialisation Bictorys
-$cot_phone = $cotisation['telephone'] ?: ($_SESSION['user_phone'] ?? '');
+$cot_phone = $cotisation['telephone'] ?: ($_SESSION['user_phone'] ?? ($_SESSION['user_telephone'] ?? ''));
+if (empty($cot_phone) && !empty($cotisation['user_id'])) {
+    try {
+        $stmt_u = $pdo->prepare("SELECT telephone FROM users WHERE id = ?");
+        $stmt_u->execute([$cotisation['user_id']]);
+        $cot_phone = (string) $stmt_u->fetchColumn();
+    } catch (\Throwable $t) {}
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement_cotisation'])) {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'];
     $baseUrl = $protocol . '://' . $host . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
     $callbackUrl = $baseUrl . '/callback-cotisation.php?cotisation_id=' . $cotisation_id . '&methode=bictorys&cotisation_token=' . $cotisation_token . ($is_private_campagne ? ('&token=' . urlencode($campagne_token)) : '');
-    $errorUrl = $baseUrl . '/paiement-cotisation.php?cotisation_id=' . $cotisation_id . ($is_private_campagne ? ('&token=' . urlencode($campagne_token)) : '') . '&error=1';
+    $errorUrl = $baseUrl . '/paiement-cotisation.php?token=' . urlencode($cur_cotisation_token) . '&error=1';
 
     $selected_provider = trim($_POST['provider'] ?? '');
     $phone_submitted   = trim($_POST['phone'] ?? $cot_phone);
@@ -161,7 +189,7 @@ include 'header.php';
             </strong>
         </div>
 
-        <form method="POST" action="paiement-cotisation.php?cotisation_id=<?php echo $cotisation_id; ?><?php echo $is_private_campagne ? ('&token=' . urlencode($campagne_token)) : ''; ?>" id="bictorys-cot-form" style="padding: 2rem;">
+        <form method="POST" action="paiement-cotisation.php?token=<?php echo urlencode($cur_cotisation_token); ?>" id="bictorys-cot-form" style="padding: 2rem;">
             <input type="hidden" name="initier_paiement_cotisation" value="1">
             <input type="hidden" name="provider" id="selected_provider_cot" value="wave_money">
 
@@ -344,9 +372,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (form && submitBtn) {
         form.addEventListener('submit', function () {
-            submitBtn.disabled = true;
+            submitBtn.style.pointerEvents = 'none';
             submitBtn.style.opacity = '0.75';
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Connexion sécurisée en cours...</span>';
+            setTimeout(function () {
+                submitBtn.disabled = true;
+            }, 50);
         });
     }
 });

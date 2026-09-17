@@ -6,12 +6,40 @@
 // ==============================================================================
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/secure_token.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$event_id = (isset($_GET['id']) && is_numeric($_GET['id'])) ? (int) $_GET['id'] : ((isset($_GET['event_id']) && is_numeric($_GET['event_id'])) ? (int) $_GET['event_id'] : 0);
+$event_token = trim((string) ($_GET['token'] ?? ''));
+$event_id = 0;
+
+if (!empty($event_token)) {
+    // 1. Résolution via la table des tokens sécurisés (anti-exposition d'ID)
+    $resolved_v_id = resolve_resource_token($pdo, $event_token, 'event');
+    if ($resolved_v_id) {
+        $event_id = $resolved_v_id;
+    } else {
+        // 2. Fallback pour access_token natif de scrutin privé
+        $stmt_tok = $pdo->prepare("SELECT id FROM events WHERE access_token = ? LIMIT 1");
+        $stmt_tok->execute([$event_token]);
+        $event_id = (int) $stmt_tok->fetchColumn();
+    }
+}
+
 if (!$event_id) {
+    $event_id = (isset($_GET['id']) && is_numeric($_GET['id'])) ? (int) $_GET['id'] : ((isset($_GET['event_id']) && is_numeric($_GET['event_id'])) ? (int) $_GET['event_id'] : 0);
+}
+
+if (!$event_id) {
+    if (!empty($event_token)) {
+        render_token_security_error(
+            "Scrutin introuvable",
+            "Le lien de vote sécurisé est invalide, a expiré ou n'existe pas.",
+            404,
+            "accueil.php?onglet=voter"
+        );
+    }
     header('Location: accueil.php?onglet=voter');
     exit();
 }
@@ -36,10 +64,10 @@ if (!$event) {
 
 // 1.1 Événement / Scrutin privé : accès strictement restreint au lien officiel avec jeton (token)
 $is_private_event = ($event['visibilite'] ?? 'public') === 'prive';
-$event_token = (string) ($_GET['token'] ?? '');
 if ($is_private_event) {
     $expected_token = (string) ($event['access_token'] ?? '');
-    if ($expected_token === '' || !hash_equals($expected_token, $event_token)) {
+    $is_token_authorized = (!empty($event_token) && ($event_token === $expected_token || resolve_resource_token($pdo, $event_token, 'event') === (int)$event['id']));
+    if (!$is_token_authorized && ($expected_token === '' || !hash_equals($expected_token, $event_token))) {
         http_response_code(403);
         ?>
         <!DOCTYPE html>
@@ -166,7 +194,7 @@ $body_class = "client-page vote-detail-page";
 include __DIR__ . '/header.php';
 ?>
 
-<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo time(); ?>">
+<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
 
 <style>
     /* ==========================================================================

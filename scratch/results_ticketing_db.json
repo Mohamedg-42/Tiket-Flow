@@ -1,0 +1,122 @@
+[
+    {
+        "id": "T012",
+        "feature": "Billetterie Client",
+        "test": "Calcul du total panier sur sélection multi-tarifs",
+        "expected": "Calcul exact du panier (25000 FCFA)",
+        "obtained": "25000 FCFA",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T014",
+        "feature": "Places Numérotées",
+        "test": "Contrôle d'attribution et d'unicité d'un siège réservé",
+        "expected": "Capacité d'identifier et d'isoler un siège disponible (statut libre)",
+        "obtained": "Siège « D1 » disponible (ID: 2)",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T015",
+        "feature": "Paiement",
+        "test": "Génération et résolution d'un jeton de commande Base62",
+        "expected": "Résolution du token vers order_id = 1",
+        "obtained": "Token 6w5A887zSlzJGBMIT3ERHO21 résolu vers ID 1",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T016",
+        "feature": "Billets PDF",
+        "test": "Génération d'un document PDF binaire valide avec code QR",
+        "expected": "Flux PDF valide commençant par %PDF- (> 1000 octets)",
+        "obtained": "%PDF- valide généré (13990 octets)",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T016B",
+        "feature": "Billets PDF",
+        "test": "Génération PDF robuste sans plantage si qr_code est null ou chaîne vide",
+        "expected": "PDF généré sans exception PHP 8 (ValueError évité)",
+        "obtained": "%PDF- généré avec succès malgré qr_code vide",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T017",
+        "feature": "Portefeuille",
+        "test": "Cloisonnement strict des billets affichés par utilisateur",
+        "expected": "Requête préparée t.user_id = ? sans fuite de données d'autres acheteurs",
+        "obtained": "48 billet(s) trouvé(s) pour l'utilisateur 4",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T018",
+        "feature": "Changement Place",
+        "test": "Autorisation de modification de place pour le propriétaire du billet",
+        "expected": "is_owner = true pour le propriétaire légitime",
+        "obtained": "Propriétaire légitime reconnu (Ticket #1)",
+        "status": "RÉUSSI",
+        "priority": "Moyenne",
+        "details": ""
+    },
+    {
+        "id": "T019",
+        "feature": "Changement Place",
+        "test": "Rejet formel de modification de place pour le billet d'un tiers",
+        "expected": "is_owner = false pour utilisateur tiers (rejet 403)",
+        "obtained": "Accès rejeté avec succès (is_owner = false)",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T024",
+        "feature": "Espace Agent",
+        "test": "Validation et compostage d'un billet valide non utilisé",
+        "expected": "Statut mis à jour de \"vendu\" à \"utilise\" (affected = 1)",
+        "obtained": "Statut final: utilise (lignes modifiées: 1)",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T025",
+        "feature": "Espace Agent",
+        "test": "Détection immédiate d'un billet déjà utilisé (anti-fraude réutilisation)",
+        "expected": "Détection du statut \"utilise\" et alerte billet déjà composté",
+        "obtained": "Billet détecté déjà utilisé (composté le 2026-09-16 09:42:20.935697)",
+        "status": "RÉUSSI",
+        "priority": "Critique",
+        "details": ""
+    },
+    {
+        "id": "T026",
+        "feature": "Espace Agent",
+        "test": "Refus de validation si l'agent n'est pas affecté à l'événement",
+        "expected": "is_authorized = false pour événement non assigné",
+        "obtained": "Scan rejeté pour événement hors périmètre",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T030",
+        "feature": "Base de données",
+        "test": "Transaction ACID avec rollback strict en cas d'erreur de traitement",
+        "expected": "Aucune commande orpheline créée après rollback (initialCount == finalCount)",
+        "obtained": "Initial: 80 | Final: 80",
+        "status": "RÉUSSI",
+        "priority": "Critique",
+        "details": ""
+    }
+]

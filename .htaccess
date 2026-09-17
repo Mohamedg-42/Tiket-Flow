@@ -1,0 +1,45 @@
+# ==============================================================================
+# CONFIGURATION APACHE & OPTIMISATION DE PERFORMANCE (.htaccess)
+# Mise en cache navigateur, compression HTTP et sécurité
+# ==============================================================================
+
+<IfModule mod_headers.c>
+    # 1. Mise en cache des ressources statiques immuables (30 jours)
+    <FilesMatch "\.(ico|pdf|flv|jpg|jpeg|png|gif|webp|js|css|swf|svg|woff|woff2|ttf|eot)$">
+        Header set Cache-Control "max-age=2592000, public"
+    </FilesMatch>
+
+    # 2. Sécurité des types MIME
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault "access plus 1 month"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+<IfModule mod_deflate.c>
+    # Compression GZIP des types texte
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/x-javascript application/json application/xml
+</IfModule>
+
+# Activation de la compression native PHP si disponible
+<IfModule mod_php.c>
+    php_flag zlib.output_compression on
+    php_value zlib.output_compression_level 5
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag zlib.output_compression on
+    php_value zlib.output_compression_level 5
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag zlib.output_compression on
+    php_value zlib.output_compression_level 5
+</IfModule>

@@ -162,9 +162,26 @@ try {
             INSERT INTO vote_paiements (event_id, candidat_id, candidats_ids, user_id, visitor_id, telephone, montant, methode, reference, statut)
             VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, 'en_attente')
         ");
-        $stmt_ins->execute([$event_id, $primary_cand, $cands_json, $user_id, $visitor_id, $verified_tel_clean, $montant_total, $reference]);
+        $stmt_ins->execute([
+            $event_id,
+            $primary_cand,
+            $cands_json,
+            $user_id,
+            $visitor_id,
+            $verified_tel_clean,
+            $montant_total,
+            $reference
+        ]);
 
-        $redir = 'paiement-vote.php?id=' . $pdo->lastInsertId() . ($is_private_event ? ('&token=' . urlencode($token_req)) : '');
+        $inserted_vote_id = (int) $pdo->lastInsertId();
+        if ($inserted_vote_id <= 0) {
+            throw new Exception("Impossible de créer le paiement de vote.");
+        }
+
+        require_once '../includes/secure_token.php';
+        $vote_token = get_or_create_resource_token($pdo, 'vote_payment', $inserted_vote_id);
+
+        $redir = 'paiement-vote.php?token=' . urlencode($vote_token) . ($is_private_event ? ('&event_token=' . urlencode($token_req)) : '');
         echo json_encode(['redirect' => $redir]);
         exit();
     }
@@ -233,6 +250,7 @@ try {
     echo json_encode(['voted' => $voted, 'votes' => $count]);
 
 } catch (PDOException $e) {
+    error_log("Vote-event error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
     http_response_code(500);
-    echo json_encode(['error' => 'Erreur base de données : exécutez config/migration-votes-cotisations.sql pour créer la table event_votes.']);
+    echo json_encode(['error' => "Action momentanément indisponible. Veuillez réessayer plus tard."]);
 }

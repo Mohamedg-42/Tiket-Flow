@@ -5,6 +5,7 @@
 // ==============================================================================
 
 require_once '../config/database.php';
+require_once '../includes/secure_token.php';
 require_once '../includes/whitelist.php';
 session_start();
 
@@ -28,8 +29,17 @@ if (!$event_id) {
 // Coordonnées de l'acheteur (connecté ou invité)
 $client_nom = trim($_POST['client_nom'] ?? ($_SESSION['user_nom'] ?? ''));
 $client_email = trim($_POST['client_email'] ?? ($_SESSION['user_email'] ?? ''));
-$client_telephone = trim($_POST['client_telephone'] ?? '');
+$client_telephone = trim($_POST['client_telephone'] ?? ($_SESSION['user_telephone'] ?? ($_SESSION['user_phone'] ?? '')));
 $user_id = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
+
+if (empty($client_telephone) && $user_id) {
+    try {
+        $stmt_u = $pdo->prepare("SELECT telephone FROM users WHERE id = ?");
+        $stmt_u->execute([$user_id]);
+        $client_telephone = trim((string) $stmt_u->fetchColumn());
+    } catch (\Throwable $e) {
+    }
+}
 
 // Récupération du panier multi-tickets : array tickets[ticket_type_id] = quantite
 $tickets_input = $_POST['tickets'] ?? [];
@@ -243,15 +253,16 @@ try {
 
     $_SESSION['guest_order_id'] = $order_id;
 
-    // 5. Redirection vers le paiement Mobile Money
-    header('Location: paiement.php?order_id=' . $order_id);
+    // 5. Redirection vers le paiement Mobile Money sécurisé par token (masquage d'ID)
+    $order_token = get_or_create_resource_token($pdo, 'order', $order_id);
+    header('Location: paiement.php?token=' . urlencode($order_token));
     exit();
 
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    $_SESSION['order_message'] = "Erreur lors de la création de la commande : " . $e->getMessage();
+    $_SESSION['order_message'] = friendly_db_error($e, 'commande', "Impossible de créer votre commande. Les billets sélectionnés ne sont peut-être plus disponibles.");
     header('Location: accueil.php');
     exit();
 }

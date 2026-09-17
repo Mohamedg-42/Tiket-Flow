@@ -5,13 +5,45 @@
 // ==============================================================================
 
 require_once '../config/database.php';
+require_once '../includes/secure_token.php';
 session_start();
 
 $code = trim($_GET['code'] ?? '');
 $order_id = filter_input(INPUT_GET, 'order_id', FILTER_VALIDATE_INT) ?: filter_var($_GET['order_id'] ?? null, FILTER_VALIDATE_INT);
 $ticket_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
-$token = trim($_GET['token'] ?? $_GET['order_token'] ?? '');
+$token = trim((string) ($_GET['token'] ?? $_GET['order_token'] ?? ''));
 $pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : 'tikeli_pay_sec_9948271';
+
+// Résolution par token sécurisé (anti-énumération et masquage d'ID)
+if (!empty($token)) {
+    $resolved_ticket_id = resolve_resource_token($pdo, $token, 'ticket');
+    if ($resolved_ticket_id) {
+        $ticket_id = $resolved_ticket_id;
+    } else {
+        $resolved_order_id = resolve_resource_token($pdo, $token, 'order');
+        if ($resolved_order_id) {
+            $order_id = $resolved_order_id;
+        } elseif (empty($code) && empty($order_id)) {
+            // Token fourni mais invalide ou falsifié
+            render_token_security_error(
+                "Billet introuvable",
+                "Le lien de téléchargement sécurisé est invalide, a expiré ou n'existe pas.",
+                404,
+                "accueil.php"
+            );
+        }
+    }
+} elseif ($ticket_id && empty($code)) {
+    // Redirection automatique 301 pour masquer l'ID numérique
+    $secure_token = get_or_create_resource_token($pdo, 'ticket', $ticket_id);
+    header('Location: telecharger-ticket.php?token=' . urlencode($secure_token), true, 301);
+    exit();
+} elseif ($order_id && empty($code)) {
+    // Redirection automatique 301 pour masquer l'order_id numérique
+    $secure_token = get_or_create_resource_token($pdo, 'order', $order_id);
+    header('Location: telecharger-ticket.php?token=' . urlencode($secure_token), true, 301);
+    exit();
+}
 
 $session_user_id = (int) ($_SESSION['user_id'] ?? 0);
 $is_admin = ($_SESSION['user_role'] ?? '') === 'admin';
@@ -417,6 +449,23 @@ if (empty($tickets)) {
 
 <body>
 
+    <?php if (isset($_GET['payment_success'])): ?>
+        <div style="max-width: 800px; margin: 0 auto 1.5rem; background: #ECFDF5; border: 1px solid #6EE7B7; border-left: 5px solid #059669; border-radius: 12px; padding: 1.15rem 1.4rem; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.9rem;">
+                <div style="width: 42px; height: 42px; border-radius: 50%; background: #D1FAE5; color: #059669; display: grid; place-items: center; font-size: 1.3rem; flex-shrink: 0;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0 0 2px; font-size: 1.05rem; font-weight: 800; color: #065F46; font-family: 'Outfit', sans-serif;">Paiement Validé avec Succès !</h3>
+                    <p style="margin: 0; font-size: 0.88rem; color: #047857;">Vos billets officiels sont disponibles ci-dessous. Vous pouvez les télécharger en PDF, les imprimer ou les présenter directement sur votre téléphone.</p>
+                </div>
+            </div>
+            <?php if (!empty($order_info['numero_commande'])): ?>
+                <span style="font-family: 'Space Mono', monospace; font-size: 0.78rem; background: #ffffff; color: #065F46; padding: 4px 10px; border-radius: 6px; border: 1px solid #A7F3D0; font-weight: 700;">#<?php echo htmlspecialchars($order_info['numero_commande']); ?></span>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <div class="action-bar">
         <a href="accueil.php" class="btn-action btn-back">
             <i class="fa-solid fa-arrow-left"></i> Retour au site
@@ -433,15 +482,16 @@ if (empty($tickets)) {
                 $public_link .= "?code=" . urlencode($code);
                 $pdf_query .= "?code=" . urlencode($code);
                 $pdf_filename = "billet-" . preg_replace('/[^A-Za-z0-9\-]/', '', $code) . ".pdf";
-            } elseif (!empty($order_id)) {
-                $token_param = !empty($token) ? "&token=" . urlencode($token) : (!empty($expected_token) ? "&token=" . urlencode($expected_token) : "");
-                $public_link .= "?order_id=" . $order_id . $token_param;
-                $pdf_query .= "?order_id=" . $order_id . $token_param;
-                $pdf_filename = "billets-commande-" . ($order_info['numero_commande'] ?? $order_id) . ".pdf";
             } elseif (!empty($ticket_id)) {
-                $public_link .= "?id=" . $ticket_id;
-                $pdf_query .= "?id=" . $ticket_id;
+                $sec_t_token = get_or_create_resource_token($pdo, 'ticket', $ticket_id);
+                $public_link .= "?token=" . urlencode($sec_t_token);
+                $pdf_query .= "?token=" . urlencode($sec_t_token);
                 $pdf_filename = "billet-" . $ticket_id . ".pdf";
+            } elseif (!empty($order_id)) {
+                $sec_o_token = get_or_create_resource_token($pdo, 'order', $order_id);
+                $public_link .= "?token=" . urlencode($sec_o_token);
+                $pdf_query .= "?token=" . urlencode($sec_o_token);
+                $pdf_filename = "billets-commande-" . ($order_info['numero_commande'] ?? $order_id) . ".pdf";
             } else {
                 $pdf_filename = "billet-tikeli.pdf";
             }

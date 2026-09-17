@@ -1,16 +1,44 @@
-<?php
 require_once '../config/database.php';
+require_once '../includes/secure_token.php';
 require_once '../includes/pdf.php';
 session_start();
 
 $code = trim($_GET['code'] ?? '');
 $order_id = filter_input(INPUT_GET, 'order_id', FILTER_VALIDATE_INT) ?: filter_var($_GET['order_id'] ?? null, FILTER_VALIDATE_INT);
 $ticket_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
-$token = trim($_GET['token'] ?? $_GET['order_token'] ?? '');
-// APP_SECRET_KEY est défini par config/env.php (chargé via config/database.php)
-// Ne jamais mettre de valeur par défaut hardcodée ici
-$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : null;
+$token = trim((string) ($_GET['token'] ?? $_GET['order_token'] ?? ''));
 
+// Résolution par token sécurisé (anti-énumération et masquage d'ID)
+if (!empty($token)) {
+    $resolved_ticket_id = resolve_resource_token($pdo, $token, 'ticket');
+    if ($resolved_ticket_id) {
+        $ticket_id = $resolved_ticket_id;
+    } else {
+        $resolved_order_id = resolve_resource_token($pdo, $token, 'order');
+        if ($resolved_order_id) {
+            $order_id = $resolved_order_id;
+        } elseif (empty($code) && empty($order_id)) {
+            render_token_security_error(
+                "Document introuvable",
+                "Le lien de téléchargement PDF sécurisé est invalide, a expiré ou n'existe pas.",
+                404,
+                "accueil.php"
+            );
+        }
+    }
+} elseif ($ticket_id && empty($code)) {
+    // Redirection automatique 301 pour masquer l'ID numérique
+    $secure_token = get_or_create_resource_token($pdo, 'ticket', $ticket_id);
+    header('Location: telecharger-pdf.php?token=' . urlencode($secure_token), true, 301);
+    exit();
+} elseif ($order_id && empty($code)) {
+    // Redirection automatique 301 pour masquer l'order_id numérique
+    $secure_token = get_or_create_resource_token($pdo, 'order', $order_id);
+    header('Location: telecharger-pdf.php?token=' . urlencode($secure_token), true, 301);
+    exit();
+}
+
+$pay_secret = defined('APP_SECRET_KEY') ? APP_SECRET_KEY : null;
 $session_user_id = (int) ($_SESSION['user_id'] ?? 0);
 $is_admin = ($_SESSION['user_role'] ?? '') === 'admin';
 

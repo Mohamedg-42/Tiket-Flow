@@ -1,0 +1,82 @@
+[
+    {
+        "id": "T001",
+        "feature": "Authentification",
+        "test": "Vérification de la vérification de mot de passe pour les 4 rôles",
+        "expected": "Mots de passe sécurisés avec hash bcrypt pour tous les rôles",
+        "obtained": "admin: OK (bcrypt), promoteur: OK (bcrypt), agent: OK (bcrypt), client: OK (bcrypt)",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T002",
+        "feature": "Authentification",
+        "test": "Tentative de connexion avec mauvais mot de passe",
+        "expected": "password_verify retourne false pour mauvais mot de passe",
+        "obtained": "false (Rejeté correctement)",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T003",
+        "feature": "Authentification",
+        "test": "Mécanisme de verrouillage de session après 5 échecs consécutifs",
+        "expected": "Verrouillage temporaire actif de 15 minutes",
+        "obtained": "Accès verrouillé pendant 900s",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T004",
+        "feature": "Authentification",
+        "test": "Destruction propre de session lors de la déconnexion",
+        "expected": "Variables de session intégralement purgées",
+        "obtained": "Session purgée avec succès",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T005",
+        "feature": "Contrôle d'Accès",
+        "test": "Accès anonyme sans session vers admin\/dashboard.php",
+        "expected": "Redirection immédiate vers connexion.php pour visiteur anonyme",
+        "obtained": "Redirection déclenchée",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T006",
+        "feature": "Contrôle d'Accès",
+        "test": "Utilisateur avec rôle client tentant d'accéder à admin\/",
+        "expected": "Accès formellement interdit au rôle client sur l'administration",
+        "obtained": "Accès bloqué (Refusé)",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    },
+    {
+        "id": "T007",
+        "feature": "Contrôle d'Accès",
+        "test": "Utilisateur avec rôle client accédant à pos\/index.php",
+        "expected": "pos\/index.php doit exiger le rôle agent_gare ou admin",
+        "obtained": "Vérification de rôle présente",
+        "status": "RÉUSSI",
+        "priority": "Critique",
+        "details": ""
+    },
+    {
+        "id": "T007B",
+        "feature": "Contrôle d'Accès",
+        "test": "Refus de connexion pour un compte suspendu définitivement",
+        "expected": "allowed = false pour compte suspendu_def",
+        "obtained": "Bloqué: Votre compte a été suspendu définitivement par l'administrateur. Motif : Fraude",
+        "status": "RÉUSSI",
+        "priority": "Haute",
+        "details": ""
+    }
+]

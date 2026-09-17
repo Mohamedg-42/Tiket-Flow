@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $onglet = 'evenement';
             } catch (Exception $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
-                $message = "Erreur lors de la création de l'événement : " . $e->getMessage();
+                $message = friendly_db_error($e, 'evenement', "Impossible d'enregistrer l'événement. Veuillez vérifier les informations saisies.");
                 $msg_type = "error";
             }
         }
@@ -238,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg_type = "success";
                 $onglet = 'cotisation';
             } catch (Exception $e) {
-                $message = "Erreur lors de la création de la campagne : " . $e->getMessage();
+                $message = friendly_db_error($e, 'cotisation', "Impossible d'enregistrer la campagne. Veuillez vérifier les montants et dates.");
                 $msg_type = "error";
                 $onglet = 'cotisation';
             }
@@ -328,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $onglet = 'vote';
             } catch (Exception $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
-                $message = "Erreur lors de la création du concours : " . $e->getMessage();
+                $message = friendly_db_error($e, 'concours', "Impossible d'enregistrer le concours ou ses candidats. Veuillez vérifier la liste des candidats.");
                 $msg_type = "error";
                 $onglet = 'vote';
             }
@@ -386,7 +386,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg_type = "success";
                 $onglet = 'vote';
             } catch (Exception $e) {
-                $message = "Erreur lors de la création du vote : " . $e->getMessage();
+                $message = friendly_db_error($e, 'vote', "Impossible d'enregistrer ce vote de réalisation. Veuillez vérifier la question et la date.");
                 $msg_type = "error";
                 $onglet = 'vote';
             }

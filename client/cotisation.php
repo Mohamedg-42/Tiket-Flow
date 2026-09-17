@@ -6,6 +6,7 @@
 // ==============================================================================
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/secure_token.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -121,7 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $montant
         ]);
 
-        header('Location: paiement-cotisation.php?cotisation_id=' . (int) $pdo->lastInsertId() . ($post_token ? '&token=' . urlencode($post_token) : ''));
+        $inserted_cot_id = (int) $pdo->lastInsertId();
+        $cot_token = get_or_create_resource_token($pdo, 'cotisation_payment', $inserted_cot_id);
+        header('Location: paiement-cotisation.php?token=' . urlencode($cot_token) . ($post_token ? '&campagne_token=' . urlencode($post_token) : ''));
         exit();
 
     } catch (PDOException $e) {
@@ -136,8 +139,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ==============================================================================
 // 2. CHARGEMENT DE LA CAMPAGNE POUR L'AFFICHAGE PLEINE PAGE (GET)
 // ==============================================================================
-$campagne_id = (isset($_GET['id']) && is_numeric($_GET['id'])) ? (int) $_GET['id'] : ((isset($_GET['campagne_id']) && is_numeric($_GET['campagne_id'])) ? (int) $_GET['campagne_id'] : 0);
-$campagne_token = (string) ($_GET['token'] ?? '');
+$campagne_token = trim((string) ($_GET['token'] ?? ''));
+$campagne_id = 0;
+
+if (!empty($campagne_token)) {
+    // 1. Résolution via la table des tokens sécurisés
+    $resolved_c_id = resolve_resource_token($pdo, $campagne_token, 'cotisation');
+    if ($resolved_c_id) {
+        $campagne_id = $resolved_c_id;
+    } else {
+        // 2. Fallback pour access_token natif de campagne privée
+        $stmt_tok = $pdo->prepare("SELECT id FROM cotisation_campagnes WHERE access_token = ? LIMIT 1");
+        $stmt_tok->execute([$campagne_token]);
+        $campagne_id = (int) $stmt_tok->fetchColumn();
+    }
+}
+
+if (!$campagne_id) {
+    $campagne_id = (isset($_GET['id']) && is_numeric($_GET['id'])) ? (int) $_GET['id'] : ((isset($_GET['campagne_id']) && is_numeric($_GET['campagne_id'])) ? (int) $_GET['campagne_id'] : 0);
+}
 
 // Fallback si aucun ID n'est passé : charger la première campagne active PUBLIQUE
 if (!$campagne_id) {

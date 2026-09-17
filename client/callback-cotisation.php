@@ -103,7 +103,7 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    $_SESSION['cotisation_message'] = "Erreur lors du paiement : " . $e->getMessage();
+    $_SESSION['cotisation_message'] = friendly_db_error($e, 'cotisation', "Une erreur est survenue lors de l'enregistrement de votre contribution. Veuillez contacter le support si votre compte a été débité.");
     $_SESSION['cotisation_type'] = 'error';
     header('Location: accueil.php?onglet=cotisations');
     exit();

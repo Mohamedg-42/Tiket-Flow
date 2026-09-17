@@ -10,11 +10,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Vérification de connexion
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../connexion.php?redirect=pos');
-    exit();
-}
+require_once __DIR__ . '/../includes/auth.php';
+
+// Seul un agent de gare ou un administrateur peut accéder au terminal de vente guichet
+checkRole(['agent_gare', 'admin'], '../connexion.php?redirect=pos');
 
 $user_id = (int) $_SESSION['user_id'];
 $user_name = $_SESSION['user_nom'] ?? 'Guichetier';

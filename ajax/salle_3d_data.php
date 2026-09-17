@@ -328,6 +328,6 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Erreur serveur : ' . $e->getMessage()
+        'message' => friendly_db_error($e, 'salle', "Impossible de charger les données 3D de la salle.")
     ]);
 }

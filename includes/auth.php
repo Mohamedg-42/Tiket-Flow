@@ -373,12 +373,21 @@ function requirePermission($permission_code, $redirect_url = null) {
                 <p style="color: var(--muted); font-size: 0.92rem; margin: 0 0 1.5rem; line-height: 1.5;">
                     Votre profil actuel ne dispose pas de la permission requise (<code><?php echo htmlspecialchars($permission_code); ?></code>) pour effectuer cette opération.
                 </p>
-                <div style="display: flex; gap: 0.75rem; justify-content: center;">
+                <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
                     <a href="javascript:history.back()" class="btn-submit" style="background: #f1f5f9; color: var(--navy); text-decoration: none; width: auto; padding: 0.6rem 1.25rem;">
                         <i class="fa-solid fa-arrow-left"></i> Retour
                     </a>
-                    <a href="dashboard.php" class="btn-submit" style="text-decoration: none; width: auto; padding: 0.6rem 1.25rem;">
-                        <i class="fa-solid fa-house"></i> Tableau de bord
+                    <?php
+                    $home_url = '../client/accueil.php';
+                    if (isset($_SESSION['user_role'])) {
+                        if ($_SESSION['user_role'] === 'admin') $home_url = '../admin/dashboard.php';
+                        elseif ($_SESSION['user_role'] === 'promoteur') $home_url = '../promoteur/dashboard.php';
+                        elseif ($_SESSION['user_role'] === 'agent') $home_url = '../agent/verification.php';
+                        elseif ($_SESSION['user_role'] === 'agent_gare') $home_url = '../gare/vente.php';
+                    }
+                    ?>
+                    <a href="<?php echo htmlspecialchars($home_url); ?>" class="btn-submit" style="text-decoration: none; width: auto; padding: 0.6rem 1.25rem;">
+                        <i class="fa-solid fa-house"></i> Accueil
                     </a>
                 </div>
             </div>

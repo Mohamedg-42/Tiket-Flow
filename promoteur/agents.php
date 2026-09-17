@@ -83,11 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['creer_agent'])) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                $message = "Cet agent est déjà assigné au contrôle de cet événement.";
-            } else {
-                $message = "Erreur : " . $e->getMessage();
-            }
+            $message = friendly_db_error($e, 'assignation_agent', "Impossible d'assigner cet agent. Veuillez vérifier vos informations ou s'il est déjà assigné.");
             $msg_type = "error";
         }
     }
@@ -172,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_agent'])) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            $message = "Erreur : " . $e->getMessage();
+            $message = friendly_db_error($e, 'gestion_agent', "Impossible de modifier ou supprimer cet agent. Veuillez réessayer.");
             $msg_type = "error";
         }
     }

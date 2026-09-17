@@ -6,6 +6,7 @@
 
 require_once '../config/database.php';
 require_once '../includes/auth.php';
+require_once '../includes/secure_token.php';
 
 requireLogin('../connexion.php');
 
@@ -423,7 +424,7 @@ if ($filtre_v_categorie !== '') {
                                                 </a>
                                             </div>
                                         <?php elseif ($is_pending): ?>
-                                            <a href="paiement.php?order_id=<?php echo $ord['id']; ?>" class="btn-action-orange">
+                                            <a href="paiement.php?token=<?php echo urlencode(get_or_create_resource_token($pdo, 'order', (int)$ord['id'])); ?>" class="btn-action-orange">
                                                 <i class="fa-solid fa-credit-card"></i> Payer maintenant
                                             </a>
                                         <?php else: ?>
@@ -566,7 +567,7 @@ if ($filtre_v_categorie !== '') {
                                                 <?php echo htmlspecialchars($cot['reference'] ?? '—'); ?>
                                             </span>
                                         <?php elseif ($cot_attente): ?>
-                                            <a href="paiement-cotisation.php?cotisation_id=<?php echo (int)$cot['id']; ?>" class="btn-action-orange">
+                                            <a href="paiement-cotisation.php?token=<?php echo urlencode(get_or_create_resource_token($pdo, 'cotisation_payment', (int)$cot['id'])); ?>" class="btn-action-orange">
                                                 <i class="fa-solid fa-credit-card"></i> Payer maintenant
                                             </a>
                                         <?php else: ?>

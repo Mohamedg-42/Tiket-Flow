@@ -9,6 +9,11 @@ include 'header.php';
 
 $message = "";
 $msg_type = "";
+if (!empty($_SESSION['event_message'])) {
+    $message = $_SESSION['event_message'];
+    $msg_type = $_SESSION['event_msg_type'] ?? 'info';
+    unset($_SESSION['event_message'], $_SESSION['event_msg_type']);
+}
 
 // 1. Action rapide : Changement direct de statut par l'admin
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
@@ -984,7 +989,7 @@ $categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE cate
                                             style="padding: 0.35rem 0.6rem; font-size: 0.74rem; cursor: pointer;" title="Modifier cet événement (Modale)">
                                             <i class="fa-solid fa-pen"></i> <span>Modifier</span>
                                         </button>
-                                        <a href="supprimer-evenement.php?id=<?php echo $ev['id']; ?>" class="dash-btn-action"
+                                        <a href="supprimer-evenement.php?id=<?php echo $ev['id']; ?>&csrf_token=<?php echo urlencode(getCsrfToken()); ?>" class="dash-btn-action"
                                             style="padding: 0.35rem 0.6rem; font-size: 0.74rem; color: #000000;"
                                             onclick="return confirm('Confirmez-vous la suppression définitive de cet événement ?');"
                                             title="Supprimer">

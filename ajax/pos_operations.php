@@ -11,10 +11,17 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Authentification requise (agent, promoteur ou admin)
+// Authentification requise (agent de guichet ou admin uniquement)
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'UNAUTHENTICATED', 'message' => 'Session expirée.']);
+    exit();
+}
+
+$user_role = $_SESSION['user_role'] ?? '';
+if (!in_array($user_role, ['agent_gare', 'admin'], true)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'FORBIDDEN', 'message' => 'Accès réservé aux agents de guichet et administrateurs.']);
     exit();
 }
 
@@ -276,5 +283,9 @@ try {
         $pdo->rollBack();
     }
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'DATABASE_ERROR', 'message' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'error' => 'DATABASE_ERROR',
+        'message' => friendly_db_error($e, 'gare', "Une erreur technique est survenue lors de l'opération de guichet. Veuillez réessayer.")
+    ]);
 }

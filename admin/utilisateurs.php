@@ -22,6 +22,9 @@ $profiles = $pdo->query("SELECT id, nom, description FROM profiles ORDER BY nom 
 
 // Action A : Création directe d'un compte
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_user'])) {
+    if (isset($_POST['csrf_token'])) {
+        verifyCsrfToken(true);
+    }
     requirePermission('users.create');
 
     $nom = trim($_POST['nom'] ?? '');
@@ -104,11 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_user'])) {
                 $message = "Le compte « " . htmlspecialchars($full_name) . " » a été créé avec succès !" . ($email_sent ? " Un e-mail contenant ses identifiants a été envoyé à $email." : " (Note: l'e-mail automatique n'a pas pu être délivré).");
                 $msg_type = "success";
             } catch (PDOException $e) {
-                if ($e->getCode() == '23000' || $e->getCode() == '23505' || str_contains($e->getMessage(), 'uq_users_email') || str_contains($e->getMessage(), 'Duplicate entry') || str_contains($e->getMessage(), 'unique constraint')) {
-                    $message = "Cette adresse email est déjà associée à un compte.";
-                } else {
-                    $message = "Erreur lors de la création : " . $e->getMessage();
-                }
+                $message = friendly_db_error($e, 'utilisateur', "Impossible d'enregistrer cet utilisateur. Veuillez vérifier les informations saisies.");
                 $msg_type = "error";
             }
         }
@@ -117,6 +116,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_user'])) {
 
 // Action B : Modification complète d'un compte
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
+    if (isset($_POST['csrf_token'])) {
+        verifyCsrfToken(true);
+    }
     requirePermission('users.edit');
 
     $user_id = (int) $_POST['user_id'];
@@ -214,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
             $message = "Les informations du compte ont été mises à jour avec succès.";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur de mise à jour : " . $e->getMessage();
+            $message = friendly_db_error($e, 'utilisateur', "Impossible de mettre à jour ce compte. Veuillez vérifier les informations saisies.");
             $msg_type = "error";
         }
     }
@@ -222,6 +224,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_user'])) {
 
 // Action C : Suspension (temporaire ou définitive)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['suspend_user'])) {
+    if (isset($_POST['csrf_token'])) {
+        verifyCsrfToken(true);
+    }
     requirePermission('users.status');
 
     $user_id = (int) $_POST['user_id'];
@@ -304,12 +309,17 @@ if (isset($_GET['delete'])) {
         $message = "Vous ne pouvez pas supprimer votre propre compte administrateur.";
         $msg_type = "error";
     } else {
-        $stmt_del = $pdo->prepare("DELETE FROM users WHERE id = ?");
-        $stmt_del->execute([$del_id]);
+        try {
+            $stmt_del = $pdo->prepare("DELETE FROM users WHERE id = ?");
+            $stmt_del->execute([$del_id]);
 
-        logActivity('user.delete', 'user', $del_id, "Suppression définitive du compte #$del_id");
-        $message = "Utilisateur supprimé avec succès.";
-        $msg_type = "success";
+            logActivity('user.delete', 'user', $del_id, "Suppression définitive du compte #$del_id");
+            $message = "Utilisateur supprimé avec succès.";
+            $msg_type = "success";
+        } catch (PDOException $e) {
+            $message = friendly_db_error($e, 'utilisateur', "Impossible de supprimer cet utilisateur car il est rattaché à des commandes, événements ou opérations existants.");
+            $msg_type = "error";
+        }
     }
 }
 
@@ -1191,6 +1201,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
             <button type="button" class="dash-modal-close" onclick="closeCreateUserModal()">&times;</button>
         </div>
         <form method="POST" action="utilisateurs.php">
+            <?php echo csrfField(); ?>
             <input type="hidden" name="create_user" value="1">
             <div class="dash-modal-body" style="display: grid; gap: 0.9rem;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -1307,6 +1318,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
         </div>
         <form method="POST" action="utilisateurs.php"
             onsubmit="return confirm('Confirmez-vous l\'enregistrement de ces modifications ?');">
+            <?php echo csrfField(); ?>
             <input type="hidden" name="update_user" value="1">
             <input type="hidden" name="user_id" id="edit_user_id">
             <div class="dash-modal-body" style="display: grid; gap: 0.9rem;">
@@ -1409,6 +1421,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
         </div>
         <form method="POST" action="utilisateurs.php"
             onsubmit="return confirm('Confirmez-vous la suspension de cet utilisateur ?');">
+            <?php echo csrfField(); ?>
             <input type="hidden" name="suspend_user" value="1">
             <input type="hidden" name="user_id" id="suspend_user_id">
 

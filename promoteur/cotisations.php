@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creer
             }
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur : " . $e->getMessage();
+            $message = friendly_db_error($e, 'campagne_cotisation', "Impossible de créer la campagne de cotisation. Veuillez vérifier vos informations et réessayer.");
             $msg_type = "error";
         }
     }
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'ajout
             $message = "Participant « " . htmlspecialchars($nom) . " » enregistré avec succès sur la liste autorisée.";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur lors de l'enregistrement du participant : " . $e->getMessage();
+            $message = friendly_db_error($e, 'ajout_invite_campagne', "Impossible d'enregistrer ce participant. Veuillez vérifier son numéro de téléphone ou son email.");
             $msg_type = "error";
         }
     }
@@ -162,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'modif
             $message = "Informations de l'invité « " . htmlspecialchars($nom) . " » mises à jour avec succès.";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur lors de la modification du participant : " . $e->getMessage();
+            $message = friendly_db_error($e, 'modif_invite_campagne', "Impossible de modifier les informations du participant. Veuillez vérifier les données saisies.");
             $msg_type = "error";
         }
     }

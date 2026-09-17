@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Mot de passe oublié - Tike WA</title>
-    <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo time(); ?>">
+    <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -180,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Logo & Titre -->
         <div style="text-align: center; margin-bottom: 1.75rem;">
             <a href="client/accueil.php" title="Retour à l'accueil" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-bottom: 0.5rem;">
-                <img src="images/logo.png?v=<?php echo time(); ?>" alt="Tike WA" style="height: 52px; width: auto; max-width: 190px; object-fit: contain;">
+                <img src="images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA" style="height: 52px; width: auto; max-width: 190px; object-fit: contain;">
             </a>
             <h1 style="font-size: 1.35rem; font-weight: 800; color: #000000; margin: 0.5rem 0 0.25rem; font-family: var(--font-heading);">
                 Mot de passe oublié ?

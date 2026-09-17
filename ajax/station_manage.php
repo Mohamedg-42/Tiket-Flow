@@ -134,5 +134,9 @@ try {
     }
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'DATABASE_ERROR', 'message' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'error' => 'DATABASE_ERROR',
+        'message' => friendly_db_error($e, 'gare', "Impossible d'effectuer l'opération sur cette gare.")
+    ]);
 }

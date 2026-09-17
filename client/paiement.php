@@ -8,15 +8,39 @@
 
 require_once '../config/database.php';
 require_once '../config/bictorys.php';
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
+require_once '../includes/secure_token.php';
 $is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 
-$order_id = filter_input(INPUT_GET, 'order_id', FILTER_VALIDATE_INT);
-if (!$order_id) {
+$token = trim((string) ($_GET['token'] ?? ''));
+$order_id = null;
+
+if (!empty($token)) {
+    $order_id = resolve_resource_token($pdo, $token, 'order');
+    if (!$order_id) {
+        render_token_security_error(
+            "Paiement introuvable",
+            "Ce lien de paiement est invalide, a expiré ou la commande est introuvable.",
+            404,
+            "accueil.php"
+        );
+    }
+} elseif (isset($_GET['order_id']) && is_numeric($_GET['order_id'])) {
+    $order_id = (int) $_GET['order_id'];
+    $sec_token = get_or_create_resource_token($pdo, 'order', $order_id);
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: paiement.php?token=' . urlencode($sec_token), true, 301);
+        exit();
+    }
+} else {
     header('Location: accueil.php');
     exit();
 }
+
+$cur_order_token = $token ?: get_or_create_resource_token($pdo, 'order', (int) $order_id);
 
 // Récupération de la commande
 $stmt = $pdo->prepare('SELECT * FROM orders WHERE id = ?');
@@ -45,7 +69,15 @@ if (isset($_GET['error'])) {
 }
 
 // Téléphone client par défaut
-$client_phone = $order['client_telephone'] ?: ($_SESSION['user_phone'] ?? '');
+$client_phone = $order['client_telephone'] ?: ($_SESSION['user_phone'] ?? ($_SESSION['user_telephone'] ?? ''));
+if (empty($client_phone) && !empty($order['user_id'])) {
+    try {
+        $stmt_u = $pdo->prepare("SELECT telephone FROM users WHERE id = ?");
+        $stmt_u->execute([$order['user_id']]);
+        $client_phone = (string) $stmt_u->fetchColumn();
+    } catch (\Throwable $t) {
+    }
+}
 
 // Traitement de l'initialisation du paiement Bictorys
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement'])) {
@@ -53,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement'])) 
     $host = $_SERVER['HTTP_HOST'];
     $baseUrl = $protocol . '://' . $host . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
     $callbackUrl = $baseUrl . '/callback.php?order_id=' . $order_id . '&methode=bictorys&pay_token=' . $pay_token;
-    $errorUrl = $baseUrl . '/paiement.php?order_id=' . $order_id . '&error=1';
+    $errorUrl = $baseUrl . '/paiement.php?token=' . urlencode($cur_order_token) . '&error=1';
 
     $selected_provider = trim($_POST['provider'] ?? '');
     $phone_submitted = trim($_POST['phone'] ?? $client_phone);
@@ -90,12 +122,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement'])) 
     }
 
     $charge = bictorys_create_charge($chargeParams);
+
+    // Réponse AJAX pour la modale intégrée
+    if (!empty($_POST['ajax']) || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+        header('Content-Type: application/json; charset=utf-8');
+        if ($charge['success'] && !empty($charge['redirectUrl'])) {
+            $txId = $charge['transactionId'] ?? '';
+            $finalCallback = $callbackUrl . '&transaction_id=' . urlencode($txId);
+            echo json_encode([
+                'success' => true,
+                'transactionId' => $txId,
+                'redirectUrl' => $charge['redirectUrl'],
+                'callbackUrl' => $finalCallback,
+                'amount' => (int) round($order['montant_total']),
+                'amount_formatted' => number_format($order['montant_total'], 0, ',', ' '),
+                'currency' => 'FCFA',
+                'orderNumber' => $order['numero_commande'],
+                'clientNom' => $order['client_nom'] ?: ($_SESSION['user_nom'] ?? 'Client'),
+                'clientPhone' => $phone_submitted,
+                'provider' => $selected_provider ?: 'wave_money',
+                'is_simulator' => (strpos($charge['redirectUrl'], '/simulator/') !== false)
+            ]);
+            exit();
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => $charge['error'] ?? "Impossible d'initialiser la session de paiement sécurisée Bictorys."
+            ]);
+            exit();
+        }
+    }
+
     if ($charge['success'] && !empty($charge['redirectUrl'])) {
         header('Location: ' . $charge['redirectUrl']);
         exit();
     } else {
         $error_msg = $charge['error'] ?? "Impossible d'initialiser la session de paiement sécurisée Bictorys.";
     }
+}
+
+// Confirmation de la simulation Bictorys via requête AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmer_simulation_bictorys'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $txId = trim($_POST['transaction_id'] ?? '');
+    if (!empty($txId)) {
+        $confirmUrl = 'https://api.test.bictorys.com/simulator/v1/confirm?transaction_id=' . urlencode($txId);
+        $ch = curl_init($confirmUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_SSL_VERIFYPEER => false
+        ]);
+        curl_exec($ch);
+        curl_close($ch);
+    }
+    echo json_encode([
+        'success' => true,
+        'message' => 'Paiement confirmé avec succès',
+        'transactionId' => $txId
+    ]);
+    exit();
 }
 
 $page_title = "Paiement Sécurisé - Tike WA";
@@ -163,7 +250,7 @@ include 'header.php';
         </div>
 
         <!-- Formulaire de Paiement Harmonisé -->
-        <form method="POST" action="paiement.php?order_id=<?php echo $order_id; ?>" id="bictorys-pay-form"
+        <form method="POST" action="paiement.php?token=<?php echo urlencode($cur_order_token); ?>" id="bictorys-pay-form"
             style="padding: 2rem;">
             <input type="hidden" name="initier_paiement" value="1">
             <input type="hidden" name="provider" id="selected_provider" value="wave_money">
@@ -290,6 +377,279 @@ include 'header.php';
     </div>
 </div>
 
+<!-- ============================================================================== -->
+<!-- MODALE DE PAIEMENT HARMONISÉE (SIMULATION & AUTORISATION BICTORYS)             -->
+<!-- Vue 1: Order Details & Total Payment Amount | Vue 2: Payment Processed Success -->
+<!-- ============================================================================== -->
+<div id="pay-modal-backdrop" class="pay-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-main-title">
+    <div class="pay-modal-card">
+        <!-- En-tête de la modale -->
+        <div class="pay-modal-header">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255, 74, 13, 0.2); border: 1px solid rgba(255, 74, 13, 0.4); display: grid; place-items: center; color: var(--tikeli-orange, #FF4A0D); font-size: 0.95rem;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3 id="modal-main-title" style="margin: 0; font-size: 1.05rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #ffffff;">
+                    Autorisation de Paiement
+                </h3>
+            </div>
+            <button type="button" class="pay-modal-close" id="btn-modal-close" aria-label="Fermer la modale">&times;</button>
+        </div>
+
+        <div class="pay-modal-body">
+            <!-- ============================================================ -->
+            <!-- VUE 1 : DÉTAILS DE LA COMMANDE (ORDER DETAILS)               -->
+            <!-- ============================================================ -->
+            <div id="modal-view-details">
+                <span style="font-family: 'Space Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tikeli-orange, #FF4A0D); font-weight: 700; display: block; margin-bottom: 0.25rem;">
+                    Bictorys Secure Checkout
+                </span>
+                <h4 style="margin: 0 0 1.25rem; font-size: 1.35rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #0f172a;">
+                    Order Details
+                </h4>
+
+                <!-- Récapitulatif harmonisé -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; text-align: left; font-size: 0.9rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #EDF2F7;">
+                        <span style="color: #64748b; font-size: 0.8rem; font-family: 'Space Mono', monospace; text-transform: uppercase;">Commande</span>
+                        <strong style="color: #0f172a; font-family: 'Space Mono', monospace; font-size: 0.88rem;">#<?php echo htmlspecialchars($order['numero_commande']); ?></strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #EDF2F7;">
+                        <span style="color: #64748b; font-size: 0.8rem; font-family: 'Space Mono', monospace; text-transform: uppercase;">Opérateur</span>
+                        <span id="modal-operator-badge" style="display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; color: #0f172a;">
+                            <span id="modal-operator-dot" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #1ba0e2;"></span>
+                            <span id="modal-operator-name">Wave</span>
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #64748b; font-size: 0.8rem; font-family: 'Space Mono', monospace; text-transform: uppercase;">Compte Débité</span>
+                        <strong id="modal-client-phone" style="color: #0f172a; font-family: 'Space Mono', monospace; font-size: 0.88rem;">+225 ...</strong>
+                    </div>
+                </div>
+
+                <!-- Montant Total Harmonisé -->
+                <div style="background: #0f172a; color: #ffffff; border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
+                    <span style="font-family: 'Space Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; display: block; margin-bottom: 4px;">
+                        Total Payment Amount
+                    </span>
+                    <div style="font-family: 'Outfit', 'Inter', sans-serif; font-size: 2.1rem; font-weight: 900; line-height: 1.1; color: #ffffff;">
+                        <span id="modal-total-amount"><?php echo number_format($order['montant_total'], 0, ',', ' '); ?></span>
+                        <span style="font-family: 'Space Mono', monospace; font-size: 1rem; color: #cbd5e1; font-weight: 700;">FCFA</span>
+                    </div>
+                    <small style="color: #94a3b8; font-size: 0.76rem; margin-top: 6px; display: block;">
+                        Débit instantané sécurisé par autorisation bancaire
+                    </small>
+                </div>
+
+                <!-- Boutons d'Action CANCEL & CONFIRM harmonisés -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <button type="button" id="btn-modal-cancel" class="btn-modal-cancel">
+                        <i class="fa-solid fa-xmark"></i> CANCEL
+                    </button>
+                    <button type="button" id="btn-modal-confirm" class="btn-modal-confirm">
+                        <i class="fa-solid fa-check"></i> CONFIRM
+                    </button>
+                </div>
+            </div>
+
+            <!-- ============================================================ -->
+            <!-- VUE 2 : PAIEMENT VALIDÉ AVEC SUCCÈS (CONFIRMATION PROCESS)   -->
+            <!-- ============================================================ -->
+            <div id="modal-view-success" style="display: none;">
+                <!-- Icône Coche Verte Animée -->
+                <div class="success-check-icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+
+                <h4 style="margin: 0 0 0.5rem; font-size: 1.35rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: #065F46;">
+                    Your payment has been successfully proceed!
+                </h4>
+                <p style="margin: 0 0 1.25rem; font-size: 0.88rem; color: #047857;">
+                    Votre autorisation de paiement a été acceptée et traitée par la passerelle Bictorys.
+                </p>
+
+                <!-- Détails de validation -->
+                <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem; text-align: left;">
+                    <div style="margin-bottom: 0.75rem;">
+                        <span style="font-family: 'Space Mono', monospace; font-size: 0.72rem; text-transform: uppercase; color: #166534; font-weight: 700; display: block; margin-bottom: 2px;">
+                            Total Payment Amount
+                        </span>
+                        <strong id="modal-success-amount" style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; color: #15803D; font-weight: 800;">
+                            <?php echo number_format($order['montant_total'], 0, ',', ' '); ?> FCFA
+                        </strong>
+                    </div>
+                    <div>
+                        <span style="font-family: 'Space Mono', monospace; font-size: 0.72rem; text-transform: uppercase; color: #166534; font-weight: 700; display: block; margin-bottom: 2px;">
+                            Payment Message
+                        </span>
+                        <span id="modal-success-msg" style="font-family: 'Space Mono', monospace; font-size: 0.82rem; color: #166534; font-weight: 700; word-break: break-all;">
+                            PAYMENT PROCESSED: <span id="modal-success-txid">...</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Animation & Redirection Automatique -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1rem; text-align: center;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #334155; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-spinner fa-spin" style="color: #059669;"></i>
+                        Génération et téléchargement de vos e-Tickets...
+                    </span>
+                    <div class="pay-progress-bar">
+                        <div id="pay-progress-fill" class="pay-progress-fill"></div>
+                    </div>
+                    <small style="color: #64748b; font-size: 0.75rem; margin-top: 0.5rem; display: block;">
+                        Redirection automatique vers vos billets officiels...
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ─── STYLES MODALE DE PAIEMENT HARMONISÉE ────────────────────────────────────── */
+.pay-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.pay-modal-backdrop.is-open {
+    display: flex;
+    opacity: 1;
+}
+
+.pay-modal-card {
+    background: #ffffff;
+    width: 100%;
+    max-width: 460px;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+    overflow: hidden;
+    border: 1px solid #E2E8F0;
+    transform: scale(0.95);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pay-modal-backdrop.is-open .pay-modal-card {
+    transform: scale(1);
+}
+
+.pay-modal-header {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pay-modal-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+.pay-modal-close:hover {
+    color: #ffffff;
+}
+
+.pay-modal-body {
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.btn-modal-cancel {
+    background: #ffffff;
+    border: 1.5px solid #CBD5E1;
+    color: #475569;
+    padding: 0.85rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.btn-modal-cancel:hover {
+    background: #FEE2E2;
+    border-color: #F87171;
+    color: #DC2626;
+}
+
+.btn-modal-confirm {
+    background: #2563eb;
+    border: none;
+    color: #ffffff;
+    padding: 0.85rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    transition: all 0.15s ease;
+}
+.btn-modal-confirm:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.success-check-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #D1FAE5;
+    color: #059669;
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+    margin: 0 auto 1.15rem;
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.15);
+    animation: bounceIn 0.4s ease-out;
+}
+
+.pay-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #E2E8F0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 0.85rem;
+}
+
+.pay-progress-fill {
+    height: 100%;
+    background: #10B981;
+    width: 0%;
+    border-radius: 999px;
+    transition: width 1.5s linear;
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+}
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const providerInput = document.getElementById('selected_provider');
@@ -301,6 +661,24 @@ include 'header.php';
         const btnAll = document.getElementById('btn-toggle-all');
         const form = document.getElementById('bictorys-pay-form');
         const submitBtn = document.getElementById('btn-submit-pay');
+
+        // Éléments de la Modale
+        const modalBackdrop = document.getElementById('pay-modal-backdrop');
+        const modalCloseBtn = document.getElementById('btn-modal-close');
+        const btnModalCancel = document.getElementById('btn-modal-cancel');
+        const btnModalConfirm = document.getElementById('btn-modal-confirm');
+        const modalViewDetails = document.getElementById('modal-view-details');
+        const modalViewSuccess = document.getElementById('modal-view-success');
+        const modalOperatorDot = document.getElementById('modal-operator-dot');
+        const modalOperatorName = document.getElementById('modal-operator-name');
+        const modalClientPhone = document.getElementById('modal-client-phone');
+        const modalTotalAmount = document.getElementById('modal-total-amount');
+        const modalSuccessAmount = document.getElementById('modal-success-amount');
+        const modalSuccessTxId = document.getElementById('modal-success-txid');
+        const payProgressFill = document.getElementById('pay-progress-fill');
+
+        let currentTxId = '';
+        let currentCallbackUrl = '';
 
         const totalAmount = "<?php echo number_format($order['montant_total'], 0, ',', ' '); ?> FCFA";
 
@@ -368,11 +746,121 @@ include 'header.php';
             });
         }
 
+        // Fermeture de la modale
+        function closeModal() {
+            modalBackdrop.classList.remove('is-open');
+            setTimeout(() => {
+                modalBackdrop.style.display = 'none';
+            }, 200);
+            if (submitBtn) {
+                submitBtn.style.pointerEvents = 'auto';
+                submitBtn.style.opacity = '1';
+                submitBtn.disabled = false;
+                const prov = providerInput.value;
+                submitBtn.innerHTML = '<i class="fa-solid fa-lock"></i> <span id="btn-pay-label">Payer ' + totalAmount + ' avec ' + (config[prov] ? config[prov].name : 'Wave') + '</span> <i class="fa-solid fa-arrow-right"></i>';
+            }
+        }
+
+        if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+        if (btnModalCancel) btnModalCancel.addEventListener('click', closeModal);
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalBackdrop.classList.contains('is-open') && modalViewSuccess.style.display !== 'block') {
+                closeModal();
+            }
+        });
+
+        // Interception de la soumission du formulaire pour affichage dans la MODALE HARMONISÉE
         if (form && submitBtn) {
-            form.addEventListener('submit', function () {
-                submitBtn.disabled = true;
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                submitBtn.style.pointerEvents = 'none';
                 submitBtn.style.opacity = '0.75';
                 submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Connexion sécurisée en cours...</span>';
+
+                const formData = new FormData(form);
+                formData.append('ajax', '1');
+
+                fetch(form.getAttribute('action') || window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.transactionId) {
+                        currentTxId = data.transactionId;
+                        currentCallbackUrl = data.callbackUrl;
+
+                        // Remplir les données de la vue 1
+                        const prov = data.provider || 'wave_money';
+                        const provConf = config[prov] || { name: 'Mobile Money', color: '#FF4A0D' };
+                        modalOperatorDot.style.background = provConf.color;
+                        modalOperatorName.innerText = provConf.name;
+                        modalClientPhone.innerText = data.clientPhone || '<?php echo htmlspecialchars($client_phone); ?>';
+                        modalTotalAmount.innerText = data.amount_formatted || '<?php echo number_format($order['montant_total'], 0, ',', ' '); ?>';
+
+                        // Afficher la Vue 1
+                        modalViewDetails.style.display = 'block';
+                        modalViewSuccess.style.display = 'none';
+
+                        modalBackdrop.style.display = 'flex';
+                        setTimeout(() => {
+                            modalBackdrop.classList.add('is-open');
+                        }, 10);
+                    } else {
+                        alert(data.error || "Impossible d'initialiser le paiement sécurisé.");
+                        closeModal();
+                    }
+                })
+                .catch(err => {
+                    console.error("Erreur AJAX paiement:", err);
+                    // Repli soumission normale si problème réseau
+                    form.submit();
+                });
+            });
+        }
+
+        // Clic sur le bouton CONFIRM de la modale
+        if (btnModalConfirm) {
+            btnModalConfirm.addEventListener('click', function () {
+                btnModalConfirm.disabled = true;
+                btnModalConfirm.style.pointerEvents = 'none';
+                btnModalConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement...';
+
+                const confirmData = new FormData();
+                confirmData.append('confirmer_simulation_bictorys', '1');
+                confirmData.append('transaction_id', currentTxId);
+
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: confirmData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    // Transition vers la VUE 2 : SUCCÈS
+                    modalViewDetails.style.display = 'none';
+                    modalViewSuccess.style.display = 'block';
+
+                    modalSuccessAmount.innerText = modalTotalAmount.innerText + ' FCFA';
+                    modalSuccessTxId.innerText = currentTxId;
+
+                    // Lancer la barre de progression
+                    setTimeout(() => {
+                        payProgressFill.style.width = '100%';
+                    }, 50);
+
+                    // Redirection automatique vers callback -> telecharger-ticket.php
+                    setTimeout(() => {
+                        window.location.href = currentCallbackUrl;
+                    }, 1500);
+                })
+                .catch(err => {
+                    console.error("Erreur confirmation:", err);
+                    // Rediriger directement vers le callback
+                    window.location.href = currentCallbackUrl;
+                });
             });
         }
     });

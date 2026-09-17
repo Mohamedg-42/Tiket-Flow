@@ -224,6 +224,6 @@ try {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Erreur technique lors du changement de place : ' . $e->getMessage()
+        'message' => friendly_db_error($e, 'changer_place', "Impossible de modifier la place attribuée. Le siège sélectionné est peut-être déjà réservé.")
     ]);
 }

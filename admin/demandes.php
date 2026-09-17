@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $e) {
                 if ($pdo->inTransaction())
                     $pdo->rollBack();
-                $message = "Erreur lors de la validation : " . $e->getMessage();
+                $message = friendly_db_error($e, 'validation_demande_admin', "Impossible de valider cet événement pour le moment. Veuillez vérifier les informations et réessayer.");
                 $msg_type = "error";
             }
         } else {

@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_cloturer']) &&
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        $message = "Erreur lors de la clôture : " . $e->getMessage();
+        $message = friendly_db_error($e, 'cloture_caisse', "Impossible de clôturer la caisse pour le moment. Veuillez vérifier vos opérations et réessayer.");
         $msg_type = "error";
     }
 }

@@ -74,6 +74,7 @@ try {
     echo json_encode(['liked' => $liked, 'likes' => $count]);
 
 } catch (PDOException $e) {
+    error_log("Like-event error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
     http_response_code(500);
-    echo json_encode(['error' => 'Erreur base de données : exécutez config/migration-likes.sql pour créer la table event_likes.']);
+    echo json_encode(['error' => "Action momentanément indisponible. Veuillez réessayer."]);
 }

@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_r->execute([$id]);
         $event = $stmt_r->fetch();
     } catch (PDOException $e) {
-        $message = 'Erreur lors de la modification : ' . $e->getMessage();
+        $message = friendly_db_error($e, 'modifier_evenement', "Impossible de mettre à jour cet événement. Veuillez vérifier les informations saisies.");
         $msg_type = 'error';
     }
 }

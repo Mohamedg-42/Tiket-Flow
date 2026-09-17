@@ -361,17 +361,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            if ($e->getCode() == 23505 || $e->getCode() == 23000 || str_contains($e->getMessage(), 'duplicate') || str_contains($e->getMessage(), 'UNIQUE')) {
-                $message = "Une donnée transmise (adresse email, numéro de téléphone ou identifiant de registre) existe déjà dans notre système.";
-            } else {
-                $message = "Erreur lors de l'enregistrement de votre dossier : " . $e->getMessage();
-            }
+            $message = friendly_db_error($e, 'devenir_promoteur', "Une erreur est survenue lors de l'enregistrement de votre dossier. Veuillez vérifier votre saisie et réessayer.");
             $msg_type = "error";
         } catch (Exception $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            $message = $e->getMessage();
+            error_log("[devenir_promoteur] " . $e->getMessage());
+            $message = "Une erreur est survenue lors de l'envoi de votre candidature. Veuillez vérifier vos fichiers et réessayer.";
             $msg_type = "error";
         }
     }

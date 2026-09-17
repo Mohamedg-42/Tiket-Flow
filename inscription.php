@@ -56,11 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg_type = "success";
 
         } catch (PDOException $e) {
-            if ($e->getCode() == 23000 || str_contains($e->getMessage(), 'Duplicate entry') || str_contains($e->getMessage(), 'UNIQUE')) {
-                $message = "Cette adresse email est déjà associée à un compte.";
-            } else {
-                $message = "Erreur lors de l'enregistrement : " . $e->getMessage();
-            }
+            $message = friendly_db_error($e, 'inscription_client', "Impossible de créer votre compte pour le moment. Veuillez vérifier vos informations et réessayer.");
             $msg_type = "error";
         }
     }
@@ -73,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Créer un compte - Tike WA</title>
-    <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo time(); ?>">
+    <link rel="icon" type="image/png" href="images/favicon.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -201,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div style="text-align: center; margin-bottom: 1.75rem;">
             <a href="client/accueil.php"
                 style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; text-decoration: none;">
-                <img src="images/logo.png?v=<?php echo time(); ?>" alt="Tike WA"
+                <img src="images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA"
                     style="height: 56px; width: auto; max-width: 200px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
             </a>
             <h1

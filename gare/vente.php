@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_vendre'])) {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
                 }
-                $message = "Erreur lors de la vente : " . $e->getMessage();
+                $message = friendly_db_error($e, 'vente_guichet', "Impossible de finaliser la vente au guichet. Veuillez vérifier le stock disponible et réessayer.");
                 $msg_type = "error";
             }
         }

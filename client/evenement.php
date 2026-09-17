@@ -11,12 +11,40 @@ header("Pragma: no-cache");
 header("Expires: 0");
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/secure_token.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$event_id = (isset($_GET['id']) && is_numeric($_GET['id'])) ? (int) $_GET['id'] : ((isset($_GET['event_id']) && is_numeric($_GET['event_id'])) ? (int) $_GET['event_id'] : 0);
+$event_token = trim((string) ($_GET['token'] ?? ''));
+$event_id = 0;
+
+if (!empty($event_token)) {
+    // 1. Résolution via la table des tokens sécurisés (anti-exposition d'ID)
+    $resolved_e_id = resolve_resource_token($pdo, $event_token, 'event');
+    if ($resolved_e_id) {
+        $event_id = $resolved_e_id;
+    } else {
+        // 2. Fallback pour access_token natif d'événement privé
+        $stmt_tok = $pdo->prepare("SELECT id FROM events WHERE access_token = ? LIMIT 1");
+        $stmt_tok->execute([$event_token]);
+        $event_id = (int) $stmt_tok->fetchColumn();
+    }
+}
+
 if (!$event_id) {
+    $event_id = (isset($_GET['id']) && is_numeric($_GET['id'])) ? (int) $_GET['id'] : ((isset($_GET['event_id']) && is_numeric($_GET['event_id'])) ? (int) $_GET['event_id'] : 0);
+}
+
+if (!$event_id) {
+    if (!empty($event_token)) {
+        render_token_security_error(
+            "Événement introuvable",
+            "Le lien d'accès sécurisé à cet événement est invalide, a expiré ou n'existe pas.",
+            404,
+            "accueil.php?onglet=evenements"
+        );
+    }
     header('Location: accueil.php?onglet=evenements');
     exit();
 }
@@ -46,7 +74,8 @@ $is_private_event = ($event['visibilite'] ?? 'public') === 'prive';
 if ($is_private_event) {
     $provided_token = (string) ($_GET['token'] ?? '');
     $expected_token = (string) ($event['access_token'] ?? '');
-    if ($expected_token === '' || !hash_equals($expected_token, $provided_token)) {
+    $is_token_authorized = (!empty($event_token) && ($event_token === $expected_token || resolve_resource_token($pdo, $event_token, 'event') === (int)$event['id']));
+    if (!$is_token_authorized && ($expected_token === '' || !hash_equals($expected_token, $provided_token))) {
         http_response_code(403);
         ?>
         <!DOCTYPE html>
@@ -161,7 +190,7 @@ $body_class = "client-page event-detail-page";
 include __DIR__ . '/header.php';
 ?>
 
-<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo time(); ?>">
+<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
 
 <style>
     /* ==========================================================================
@@ -1222,6 +1251,7 @@ include __DIR__ . '/header.php';
             </div>
             <img src="<?php echo htmlspecialchars($event_img, ENT_QUOTES, 'UTF-8'); ?>"
                 alt="<?php echo htmlspecialchars($event['nom']); ?>" class="event-hero-img"
+                fetchpriority="high" decoding="async"
                 onerror="this.onerror=null; this.src='<?php echo $default_event_img; ?>';">
 
             <div class="event-hero-badges">
@@ -2303,7 +2333,7 @@ include __DIR__ . '/header.php';
 <script>
     window.EV_EVENT_ID = <?php echo (int) $event['id']; ?>;
 </script>
-<script src="../js/venue-3d-engine.js?v=<?php echo time(); ?>"></script>
-<script src="../js/accueil-client.js?v=<?php echo time(); ?>"></script>
+<script src="../js/venue-3d-engine.js?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" defer></script>
+<script src="../js/accueil-client.js?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" defer></script>
 
 <?php include __DIR__ . '/footer.php'; ?>

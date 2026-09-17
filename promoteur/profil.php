@@ -6,8 +6,10 @@
 
 $page_title = "Mon Profil Public - Espace Promoteur";
 include 'header.php';
+require_once '../includes/secure_token.php';
 
 $user_id = (int)$_SESSION['user_id'];
+$promoter_token = get_or_create_resource_token($pdo, 'promoter', $user_id);
 $message = "";
 $msg_type = "";
 
@@ -161,7 +163,7 @@ if (empty($initials)) {
         </div>
 
         <div>
-            <a href="../client/promoteur.php?id=<?php echo $user_id; ?>" target="_blank" class="dash-btn-action btn-primary" style="padding: 0.6rem 1.15rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <a href="../client/promoteur.php?token=<?php echo urlencode($promoter_token); ?>" target="_blank" class="dash-btn-action btn-primary" style="padding: 0.6rem 1.15rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Voir mon Profil Public
             </a>
         </div>

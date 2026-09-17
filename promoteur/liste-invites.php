@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_add'])) {
             $msg_type = "success";
             $selected_event_id = (int) $ev['id'];
         } catch (PDOException $e) {
-            $message = "Erreur lors de l'ajout : " . $e->getMessage();
+            $message = friendly_db_error($e, 'ajout_invite_evenement', "Impossible d'ajouter cet invité. Veuillez vérifier que son numéro de téléphone n'est pas déjà enregistré pour cet événement.");
             $msg_type = "error";
         }
     }
@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_edit'])) {
                 $selected_event_id = (int) $ev['id'];
             }
         } catch (PDOException $e) {
-            $message = "Erreur lors de la modification : " . $e->getMessage();
+            $message = friendly_db_error($e, 'modif_invite_evenement', "Impossible de modifier cet invité. Veuillez vérifier les informations saisies.");
             $msg_type = "error";
         }
     }

@@ -269,8 +269,8 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    error_log("Erreur Webhook Bictorys: " . $e->getMessage());
+    error_log("Erreur Webhook Bictorys: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Une erreur interne est survenue lors du traitement.']);
 }
 

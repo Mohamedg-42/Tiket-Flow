@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_type'])) {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
                 }
-                $message = "Erreur lors de la validation : " . $e->getMessage();
+                $message = friendly_db_error($e, 'validation_demande_evenement', "Impossible d'approuver cet événement pour le moment. Veuillez vérifier les informations saisies.");
                 $msg_type = "error";
             }
 

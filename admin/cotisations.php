@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } catch (PDOException $e) {
-        $message = "Erreur base de données : " . $e->getMessage();
+        $message = friendly_db_error($e, 'cotisation', "Impossible d'effectuer l'action sur cette campagne. Veuillez réessayer.");
         $msg_type = "error";
     }
 }

@@ -107,13 +107,16 @@ $visitor_id = session_id();
 $likes_counts = [];
 $liked_events = [];
 try {
-    foreach ($pdo->query("SELECT event_id, COUNT(*) AS total FROM event_likes GROUP BY event_id") as $row) {
-        $likes_counts[(int) $row['event_id']] = (int) $row['total'];
-    }
-    $stmt_likes = $pdo->prepare("SELECT event_id FROM event_likes WHERE user_id = ? OR visitor_id = ?");
-    $stmt_likes->execute([$is_logged_in ? (int) $_SESSION['user_id'] : 0, $visitor_id]);
-    foreach ($stmt_likes->fetchAll() as $row) {
-        $liked_events[(int) $row['event_id']] = true;
+    if (!empty($all_event_ids)) {
+        $in_likes = implode(',', $all_event_ids);
+        foreach ($pdo->query("SELECT event_id, COUNT(*) AS total FROM event_likes WHERE event_id IN ($in_likes) GROUP BY event_id") as $row) {
+            $likes_counts[(int) $row['event_id']] = (int) $row['total'];
+        }
+        $stmt_likes = $pdo->prepare("SELECT event_id FROM event_likes WHERE (user_id = ? OR visitor_id = ?) AND event_id IN ($in_likes)");
+        $stmt_likes->execute([$is_logged_in ? (int) $_SESSION['user_id'] : 0, $visitor_id]);
+        foreach ($stmt_likes->fetchAll() as $row) {
+            $liked_events[(int) $row['event_id']] = true;
+        }
     }
 } catch (PDOException $e) {
     // Table event_likes pas encore migrée : likes masqués
@@ -148,13 +151,16 @@ if (!in_array($onglet, ['evenements', 'cotisations', 'voter'], true)) {
 $votes_counts = [];
 $voted_events = [];
 try {
-    foreach ($pdo->query("SELECT event_id, COUNT(*) AS total FROM event_votes GROUP BY event_id") as $row) {
-        $votes_counts[(int) $row['event_id']] = (int) $row['total'];
-    }
-    $stmt_votes = $pdo->prepare("SELECT event_id FROM event_votes WHERE user_id = ? OR visitor_id = ?");
-    $stmt_votes->execute([$is_logged_in ? (int) $_SESSION['user_id'] : 0, $visitor_id]);
-    foreach ($stmt_votes->fetchAll() as $row) {
-        $voted_events[(int) $row['event_id']] = true;
+    if (!empty($all_event_ids)) {
+        $in_votes = implode(',', $all_event_ids);
+        foreach ($pdo->query("SELECT event_id, COUNT(*) AS total FROM event_votes WHERE event_id IN ($in_votes) GROUP BY event_id") as $row) {
+            $votes_counts[(int) $row['event_id']] = (int) $row['total'];
+        }
+        $stmt_votes = $pdo->prepare("SELECT event_id FROM event_votes WHERE (user_id = ? OR visitor_id = ?) AND event_id IN ($in_votes)");
+        $stmt_votes->execute([$is_logged_in ? (int) $_SESSION['user_id'] : 0, $visitor_id]);
+        foreach ($stmt_votes->fetchAll() as $row) {
+            $voted_events[(int) $row['event_id']] = true;
+        }
     }
 } catch (PDOException $e) {
     // Table event_votes pas encore migrée : votes masqués
@@ -342,7 +348,7 @@ if (!function_exists('get_event_cat_icon')) {
 }
 ?>
 
-<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo time(); ?>">
+<link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
 
 <style>
     /* Failsafe carrousel horizontal des candidats et modales */
@@ -1682,6 +1688,8 @@ if (!function_exists('get_event_cat_icon')) {
                 <input type="hidden" name="client_nom" value="<?php echo htmlspecialchars($_SESSION['user_nom'] ?? ''); ?>">
                 <input type="hidden" name="client_email"
                     value="<?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?>">
+                <input type="hidden" name="client_telephone"
+                    value="<?php echo htmlspecialchars($_SESSION['user_telephone'] ?? ($_SESSION['user_phone'] ?? '')); ?>">
                 <div
                     style="background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.65rem;">
                     <div
@@ -2404,7 +2412,6 @@ if (!function_exists('get_event_cat_icon')) {
     window.handleEventCardClick = handleEventCardClick;
 </script>
 
-<script src="../js/venue-3d-engine.js?v=<?php echo time(); ?>"></script>
-<script src="../js/accueil-client.js?v=<?php echo time(); ?>"></script>
+<script src="../js/accueil-client.js?v=1.1.0"></script>
 
 <?php include 'footer.php'; ?>

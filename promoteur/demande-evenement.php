@@ -259,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg_type = "success";
 
             } catch (PDOException $e) {
-                $message = "Erreur lors de l'envoi de la demande : " . $e->getMessage();
+                $message = friendly_db_error($e, 'demande_evenement', "Impossible d'enregistrer votre demande d'événement pour le moment. Veuillez vérifier les informations et réessayer.");
                 $msg_type = "error";
             }
         }
@@ -315,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creer
             }
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur lors de la soumission de la campagne : " . $e->getMessage();
+            $message = friendly_db_error($e, 'demande_campagne', "Impossible d'enregistrer votre campagne pour le moment. Veuillez vérifier les informations et réessayer.");
             $msg_type = "error";
         }
     }
@@ -448,7 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'propo
             $message = "La demande de concours « " . htmlspecialchars($nom) . " » avec " . count($candidats_data) . " participant(s) a été transmise à l'administrateur avec succès ! Vous pouvez suivre sa validation dans Mes Demandes.";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur lors de la soumission : " . $e->getMessage();
+            $message = friendly_db_error($e, 'demande_concours', "Impossible d'enregistrer votre concours de vote pour le moment. Veuillez vérifier les informations et réessayer.");
             $msg_type = "error";
         }
     }
@@ -522,7 +522,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'propo
             $message = "Votre proposition de vote pour la réalisation de « " . htmlspecialchars($nom) . " » a été transmise à l'administrateur avec succès ! Vous pouvez suivre sa validation dans Mes Demandes.";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = "Erreur lors de la soumission : " . $e->getMessage();
+            $message = friendly_db_error($e, 'demande_vote_realisation', "Impossible d'enregistrer votre proposition de vote pour le moment. Veuillez vérifier les informations et réessayer.");
             $msg_type = "error";
         }
     }

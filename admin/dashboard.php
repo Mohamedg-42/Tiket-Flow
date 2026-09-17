@@ -189,6 +189,38 @@ $chart_labels = [];
 $chart_revenue_vals = [];
 $chart_tickets_vals = [];
 
+// Optimisation Performance : Calcul de la plage globale et requête unique groupée par jour
+$max_offset = ($points_count - 1) * $step_days + max(1, $step_days - 1);
+$global_start = date('Y-m-d 00:00:00', strtotime("-$max_offset days"));
+$global_end = date('Y-m-d 23:59:59');
+
+$stats_by_date = [];
+if ($selected_event_id) {
+    $stmt_agg = $pdo->prepare("
+        SELECT TO_CHAR(t.date_achat, 'YYYY-MM-DD') as dt, COALESCE(SUM(t.prix), 0) as ca, COUNT(*) as nb
+        FROM tickets t
+        WHERE t.event_id = ? AND t.statut IN ('vendu', 'utilise') 
+          AND t.date_achat >= ? AND t.date_achat <= ?
+        GROUP BY TO_CHAR(t.date_achat, 'YYYY-MM-DD')
+    ");
+    $stmt_agg->execute([$selected_event_id, $global_start, $global_end]);
+} else {
+    $stmt_agg = $pdo->prepare("
+        SELECT TO_CHAR(p.date_paiement, 'YYYY-MM-DD') as dt, COALESCE(SUM(p.montant), 0) as ca, COUNT(*) as nb
+        FROM payments p
+        WHERE p.statut = 'paye' 
+          AND p.date_paiement >= ? AND p.date_paiement <= ?
+        GROUP BY TO_CHAR(p.date_paiement, 'YYYY-MM-DD')
+    ");
+    $stmt_agg->execute([$global_start, $global_end]);
+}
+foreach ($stmt_agg->fetchAll(PDO::FETCH_ASSOC) as $r_agg) {
+    $stats_by_date[$r_agg['dt']] = [
+        'ca' => (float)$r_agg['ca'],
+        'nb' => (int)$r_agg['nb']
+    ];
+}
+
 for ($i = $points_count - 1; $i >= 0; $i--) {
     $offset = $i * $step_days;
     $d_end = date('Y-m-d', strtotime("-$offset days"));
@@ -196,26 +228,21 @@ for ($i = $points_count - 1; $i >= 0; $i--) {
     $d_start = date('Y-m-d', strtotime("-$span days", strtotime($d_end)));
     $chart_labels[] = date('d M', strtotime($d_end));
 
-    if ($selected_event_id) {
-        $stmt_pt = $pdo->prepare("
-            SELECT COALESCE(SUM(t.prix), 0) as ca, COUNT(*) as nb
-            FROM tickets t
-            WHERE t.event_id = ? AND t.statut IN ('vendu', 'utilise') 
-              AND DATE(t.date_achat) BETWEEN ? AND ?
-        ");
-        $stmt_pt->execute([$selected_event_id, $d_start, $d_end]);
-    } else {
-        $stmt_pt = $pdo->prepare("
-            SELECT COALESCE(SUM(p.montant), 0) as ca, COUNT(*) as nb
-            FROM payments p
-            WHERE p.statut = 'paye' 
-              AND DATE(p.date_paiement) BETWEEN ? AND ?
-        ");
-        $stmt_pt->execute([$d_start, $d_end]);
+    // Agrégation rapide en mémoire pour la plage [d_start, d_end]
+    $step_ca = 0.0;
+    $step_nb = 0;
+    $curr = strtotime($d_start);
+    $end_ts = strtotime($d_end);
+    while ($curr <= $end_ts) {
+        $key = date('Y-m-d', $curr);
+        if (isset($stats_by_date[$key])) {
+            $step_ca += $stats_by_date[$key]['ca'];
+            $step_nb += $stats_by_date[$key]['nb'];
+        }
+        $curr = strtotime('+1 day', $curr);
     }
-    $row_pt = $stmt_pt->fetch();
-    $chart_revenue_vals[] = (float) ($row_pt['ca'] ?? 0);
-    $chart_tickets_vals[] = (int) ($row_pt['nb'] ?? 0);
+    $chart_revenue_vals[] = $step_ca;
+    $chart_tickets_vals[] = $step_nb;
 }
 
 // Sparklines dynamiques générées à partir des points réels

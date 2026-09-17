@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate'])) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        $message = "❌ Erreur lors de la génération : " . $e->getMessage();
+        $message = friendly_db_error($e, 'places', "Impossible de générer ou synchroniser les places physiques. Veuillez vérifier les types de billets.");
         $msg_type = "error";
     }
 }

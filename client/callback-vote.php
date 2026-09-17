@@ -108,7 +108,7 @@ try {
     }
 } catch (Exception $e) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
-    $_SESSION['vote_message'] = "Erreur lors du paiement : " . $e->getMessage();
+    $_SESSION['vote_message'] = friendly_db_error($e, 'vote', "Une erreur technique est survenue lors de l'enregistrement de votre vote. Veuillez contacter le support si votre compte a été débité.");
     header('Location: accueil.php?onglet=voter');
     exit();
 }

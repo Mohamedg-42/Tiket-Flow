@@ -49,6 +49,11 @@ if (!function_exists('pdf_fetch_qr_jpeg')) {
      */
     function pdf_fetch_qr_jpeg(string $url): ?array
     {
+        $url = trim($url);
+        if ($url === '' || !preg_match('#^https?://#i', $url)) {
+            return null;
+        }
+
         $ctx = stream_context_create(['http' => ['timeout' => 8, 'user_agent' => 'Tike WA/1.0']]);
         $raw = @file_get_contents($url, false, $ctx);
         if ($raw === false || strlen($raw) < 100) {
