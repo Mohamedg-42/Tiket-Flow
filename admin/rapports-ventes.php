@@ -100,7 +100,7 @@ $sessions = $stmt_sess->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <a href="gares.php" class="dash-btn-action" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <a href="gares" class="dash-btn-action" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-bus"></i> Gérer les Gares
             </a>
             <button type="button" onclick="window.print()" class="dash-btn-action"

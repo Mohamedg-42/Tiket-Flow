@@ -302,11 +302,11 @@ $taux_entree = ($tot_billets > 0) ? round(($tot_scannes / $tot_billets) * 100) :
         </div>
 
         <div class="verif-header-actions">
-            <a href="export.php?type=tickets&statut=utilise" class="dash-btn-action"
+            <a href="export?type=tickets&statut=utilise" class="dash-btn-action"
                 style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;" title="Exporter les billets scannés sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="tickets.php" class="dash-btn-action btn-primary"
+            <a href="tickets" class="dash-btn-action btn-primary"
                 style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-ticket"></i> Voir Tous les Billets
             </a>
@@ -337,7 +337,7 @@ $taux_entree = ($tot_billets > 0) ? round(($tot_scannes / $tot_billets) * 100) :
                 <strong><?php echo htmlspecialchars($admin_nom); ?></strong></span>
         </div>
 
-        <form method="POST" action="verification.php"
+        <form method="POST" action="verification"
             style="display: flex; gap: 8px; align-items: center; margin: 0; flex-wrap: wrap;">
             <input type="hidden" name="scan_ticket" value="1">
             <div style="position: relative; flex: 1; min-width: 250px;">
@@ -379,7 +379,7 @@ $taux_entree = ($tot_billets > 0) ? round(($tot_scannes / $tot_billets) * 100) :
         </div>
 
         <!-- À DROITE : RECHERCHE -->
-        <form method="GET" action="verification.php"
+        <form method="GET" action="verification"
             style="display: inline-flex; gap: 6px; align-items: center; margin: 0; flex-wrap: wrap;">
             <input type="hidden" name="statut" value="<?php echo htmlspecialchars($statut_f); ?>">
             <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>"
@@ -390,7 +390,7 @@ $taux_entree = ($tot_billets > 0) ? round(($tot_scannes / $tot_billets) * 100) :
                 Filtrer
             </button>
             <?php if ($statut_f !== 'tous' || $search !== ''): ?>
-                <a href="verification.php"
+                <a href="verification"
                     style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
             <?php endif; ?>
         </form>

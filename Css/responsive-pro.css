@@ -247,6 +247,10 @@ body {
     
     .client-nav.active a {
         width: 100%;
+        box-sizing: border-box !important;
+        white-space: normal !important;
+        overflow-wrap: break-word !important;
+        word-break: normal !important;
         padding: 0.85rem 1rem;
         border-radius: 8px;
         animation: navItemStagger 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;

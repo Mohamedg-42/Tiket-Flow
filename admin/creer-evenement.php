@@ -65,10 +65,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Catégorie
         $categorie = trim($_POST['categorie'] ?? 'Concert');
         $categorie_custom = trim($_POST['categorie_custom'] ?? '');
-        if ($categorie === 'Autre' && !empty($categorie_custom)) {
-            $categorie = $categorie_custom;
+        if ($categorie === 'Autre' || !empty($categorie_custom)) {
+            if (!empty($categorie_custom)) {
+                $categorie = $categorie_custom;
+            } else {
+                $categorie = 'Autre';
+            }
         }
-        if (empty($categorie)) $categorie = 'Concert';
+        if (empty($categorie)) $categorie = 'Autre';
 
         $date_evenement = $_POST['date_evenement'] ?? '';
         $heure = $_POST['heure'] ?? '20:00';
@@ -576,6 +580,127 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         box-sizing: border-box;
     }
 
+    /* Visibilité et Cartes d'Options Radio (Style Suisse Épuré, Zéro Sticker) */
+    .dash-visibility-group {
+        background: #FAFAFA;
+        border: 1px solid var(--dash-border, #E5E5E5);
+        border-radius: 12px;
+        padding: 1.15rem 1.25rem;
+        margin-top: 0.5rem;
+        margin-bottom: 1.25rem;
+        box-sizing: border-box;
+    }
+
+    .dash-visibility-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 0.85rem;
+        font-size: 0.88rem;
+        font-weight: 800;
+        color: #000000;
+        letter-spacing: -0.01em;
+    }
+
+    .dash-visibility-options {
+        display: flex;
+        gap: 0.85rem;
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .dash-visibility-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.75rem 1.25rem;
+        border: 1.5px solid #CBD5E1;
+        border-radius: 9px;
+        background: #FFFFFF;
+        color: #0F172A;
+        font-size: 0.86rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        user-select: none;
+        line-height: 1.35;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        box-sizing: border-box;
+    }
+
+    .dash-visibility-card:hover {
+        border-color: #94A3B8;
+        background: #F8FAFC;
+    }
+
+    .dash-visibility-card input[type="radio"] {
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        max-width: 18px !important;
+        margin: 0 !important;
+        accent-color: #FF4A0D !important;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .dash-visibility-card .option-title {
+        font-weight: 800;
+        color: inherit;
+        white-space: nowrap;
+    }
+
+    .dash-visibility-card .option-desc {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #64748B;
+        margin-left: 2px;
+    }
+
+    /* État Actif / Coché */
+    .dash-visibility-card:has(input[type="radio"]:checked),
+    .dash-visibility-card.is-active {
+        border-color: #0F172A !important;
+        background: #0F172A !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+    }
+
+    .dash-visibility-card:has(input[type="radio"]:checked) .option-title,
+    .dash-visibility-card.is-active .option-title {
+        color: #FFFFFF !important;
+    }
+
+    .dash-visibility-card:has(input[type="radio"]:checked) .option-desc,
+    .dash-visibility-card.is-active .option-desc {
+        color: #CBD5E1 !important;
+    }
+
+    .dash-visibility-card:has(input[type="radio"]:checked) input[type="radio"],
+    .dash-visibility-card.is-active input[type="radio"] {
+        accent-color: #FF4A0D !important;
+    }
+
+    .dash-visibility-hint {
+        display: block;
+        margin-top: 0.75rem;
+        color: #64748B;
+        font-size: 0.76rem;
+        line-height: 1.45;
+    }
+
+    @media (max-width: 680px) {
+        .dash-visibility-options {
+            flex-direction: column;
+        }
+        .dash-visibility-card {
+            width: 100%;
+        }
+        .dash-visibility-card .option-title {
+            white-space: normal;
+        }
+    }
+
     /* Grille des tarifs responsive & anti-débordement */
     #tickets-container {
         width: 100%;
@@ -843,13 +968,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <a href="evenements.php" class="dash-btn-action" style="padding: 0.5rem 0.95rem; text-decoration: none; font-size: 0.82rem;">
+            <a href="evenements" class="dash-btn-action" style="padding: 0.5rem 0.95rem; text-decoration: none; font-size: 0.82rem;">
                 <i class="fa-solid fa-calendar-days"></i> Événements
             </a>
-            <a href="cotisations.php" class="dash-btn-action" style="padding: 0.5rem 0.95rem; text-decoration: none; font-size: 0.82rem;">
+            <a href="cotisations" class="dash-btn-action" style="padding: 0.5rem 0.95rem; text-decoration: none; font-size: 0.82rem;">
                 <i class="fa-solid fa-hand-holding-heart"></i> Cotisations
             </a>
-            <a href="votes.php" class="dash-btn-action" style="padding: 0.5rem 0.95rem; text-decoration: none; font-size: 0.82rem;">
+            <a href="votes" class="dash-btn-action" style="padding: 0.5rem 0.95rem; text-decoration: none; font-size: 0.82rem;">
                 <i class="fa-solid fa-ranking-star"></i> Votes
             </a>
         </div>
@@ -864,11 +989,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if ($msg_type === 'success'): ?>
                     <div style="margin-top: 4px; font-size: 0.8rem;">
                         <?php if ($onglet === 'evenement'): ?>
-                            <a href="evenements.php" style="color: #FF4A0D; text-decoration: underline;">Voir dans Tous les Événements →</a>
+                            <a href="evenements" style="color: #FF4A0D; text-decoration: underline;">Voir dans Tous les Événements →</a>
                         <?php elseif ($onglet === 'cotisation'): ?>
-                            <a href="cotisations.php" style="color: #FF4A0D; text-decoration: underline;">Voir dans Gestion des Cotisations →</a>
+                            <a href="cotisations" style="color: #FF4A0D; text-decoration: underline;">Voir dans Gestion des Cotisations →</a>
                         <?php else: ?>
-                            <a href="votes.php" style="color: #FF4A0D; text-decoration: underline;">Voir dans Supervision des Votes →</a>
+                            <a href="votes" style="color: #FF4A0D; text-decoration: underline;">Voir dans Supervision des Votes →</a>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
@@ -878,13 +1003,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Navigation par Onglets 3 Services -->
     <div class="admin-creation-tabs">
-        <a href="creer-evenement.php?onglet=evenement" class="admin-tab-btn <?php echo $onglet === 'evenement' ? 'is-active' : ''; ?>">
+        <a href="creer-evenement?onglet=evenement" class="admin-tab-btn <?php echo $onglet === 'evenement' ? 'is-active' : ''; ?>">
             <i class="fa-solid fa-calendar-plus"></i> 1. Événement & Billetterie
         </a>
-        <a href="creer-evenement.php?onglet=cotisation" class="admin-tab-btn <?php echo $onglet === 'cotisation' ? 'is-active' : ''; ?>">
+        <a href="creer-evenement?onglet=cotisation" class="admin-tab-btn <?php echo $onglet === 'cotisation' ? 'is-active' : ''; ?>">
             <i class="fa-solid fa-hand-holding-heart"></i> 2. Campagne de Cotisation
         </a>
-        <a href="creer-evenement.php?onglet=vote" class="admin-tab-btn <?php echo $onglet === 'vote' ? 'is-active' : ''; ?>">
+        <a href="creer-evenement?onglet=vote" class="admin-tab-btn <?php echo $onglet === 'vote' ? 'is-active' : ''; ?>">
             <i class="fa-solid fa-trophy"></i> 3. Concours & Vote Payant
         </a>
     </div>
@@ -954,7 +1079,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="Autre">✏️ Autre / Saisir une catégorie sur mesure...</option>
                         </select>
                         <div id="container_custom_cat" style="display: none; margin-top: 6px;">
-                            <input type="text" id="categorie_custom" name="categorie_custom" placeholder="Saisissez la catégorie personnalisée..." style="border: 1px solid #FF4A0D; background: #FFF2ED;">
+                            <input type="text" id="categorie_custom" name="categorie_custom" placeholder="Saisissez la catégorie personnalisée (ou laisser vide pour 'Autre')..." style="border: 1px solid #FF4A0D; background: #FFF2ED;">
                         </div>
                     </div>
 
@@ -1285,8 +1410,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="dash-form-group" style="margin: 0;">
                         <label for="visibilite_evenement" style="font-weight: 700;"><i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité *</label>
                         <select name="visibilite" id="visibilite_evenement" style="font-weight: 700;">
-                            <option value="public" selected>🌐 Public (recherche, accueil, recommandations)</option>
-                            <option value="prive">🔒 Privé (lien direct + liste d'invités uniquement)</option>
+                            <option value="public" selected>Public (recherche, accueil, recommandations)</option>
+                            <option value="prive">Privé (lien direct + liste d'invités uniquement)</option>
                         </select>
                     </div>
                 </div>
@@ -1381,19 +1506,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <!-- Visibilité Cotisation -->
-                <div class="dash-form-group" style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-top: 0.25rem;">
-                    <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 800;">
+                <div class="dash-visibility-group">
+                    <div class="dash-visibility-label">
                         <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité de la Campagne *
-                    </label>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
-                            <input type="radio" name="visibilite_cotisation" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Publique (listée sur la plateforme)
+                    </div>
+                    <div class="dash-visibility-options">
+                        <label class="dash-visibility-card">
+                            <input type="radio" name="visibilite_cotisation" value="public" checked onchange="syncVisibilityCards(this)">
+                            <span class="option-title">Publique</span>
+                            <span class="option-desc">(listée sur la plateforme)</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
-                            <input type="radio" name="visibilite_cotisation" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privée (lien direct uniquement)
+                        <label class="dash-visibility-card">
+                            <input type="radio" name="visibilite_cotisation" value="prive" onchange="syncVisibilityCards(this)">
+                            <span class="option-title">Privée</span>
+                            <span class="option-desc">(lien direct uniquement)</span>
                         </label>
                     </div>
-                    <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                    <small class="dash-visibility-hint">
                         Une campagne <strong>privée</strong> n'apparaît dans aucune liste publique. Un lien d'accès sécurisé est généré automatiquement après création.
                     </small>
                 </div>
@@ -1530,19 +1659,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <!-- Visibilité Concours -->
-                    <div class="dash-form-group" style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-top: 0.25rem;">
-                        <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 800;">
+                    <div class="dash-visibility-group">
+                        <div class="dash-visibility-label">
                             <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du Concours *
-                        </label>
-                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
-                                <input type="radio" name="visibilite_concours" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public (affiché sur la plateforme)
+                        </div>
+                        <div class="dash-visibility-options">
+                            <label class="dash-visibility-card">
+                                <input type="radio" name="visibilite_concours" value="public" checked onchange="syncVisibilityCards(this)">
+                                <span class="option-title">Public</span>
+                                <span class="option-desc">(affiché sur la plateforme)</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
-                                <input type="radio" name="visibilite_concours" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct + whitelist uniquement)
+                            <label class="dash-visibility-card">
+                                <input type="radio" name="visibilite_concours" value="prive" onchange="syncVisibilityCards(this)">
+                                <span class="option-title">Privé</span>
+                                <span class="option-desc">(lien direct + whitelist uniquement)</span>
                             </label>
                         </div>
-                        <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                        <small class="dash-visibility-hint">
                             Un concours <strong>privé</strong> n'est pas référencé publiquement. Un lien unique sécurisé sera généré à la création.
                         </small>
                     </div>
@@ -1622,19 +1755,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <!-- Visibilité Vote Réalisation -->
-                    <div class="dash-form-group" style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-top: 0.25rem;">
-                        <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 800;">
+                    <div class="dash-visibility-group">
+                        <div class="dash-visibility-label">
                             <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du Vote *
-                        </label>
-                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
-                                <input type="radio" name="visibilite_realisation" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public (ouvert à tous)
+                        </div>
+                        <div class="dash-visibility-options">
+                            <label class="dash-visibility-card">
+                                <input type="radio" name="visibilite_realisation" value="public" checked onchange="syncVisibilityCards(this)">
+                                <span class="option-title">Public</span>
+                                <span class="option-desc">(ouvert à tous)</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.88rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
-                                <input type="radio" name="visibilite_realisation" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct uniquement)
+                            <label class="dash-visibility-card">
+                                <input type="radio" name="visibilite_realisation" value="prive" onchange="syncVisibilityCards(this)">
+                                <span class="option-title">Privé</span>
+                                <span class="option-desc">(lien direct uniquement)</span>
                             </label>
                         </div>
-                        <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                        <small class="dash-visibility-hint">
                             Un vote <strong>privé</strong> n'est pas listé publiquement. Partagez le lien unique généré avec les participants concernés.
                         </small>
                     </div>
@@ -1651,6 +1788,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script>
+    // Synchronisation d'état pour les cartes de visibilité (avec fallback pour tout navigateur)
+    function syncVisibilityCards(radio) {
+        if (!radio) return;
+        const group = radio.closest('.dash-visibility-options') || radio.closest('.dash-radio-cards');
+        if (!group) return;
+        group.querySelectorAll('.dash-visibility-card, .dash-radio-card').forEach(card => {
+            const input = card.querySelector('input[type="radio"]');
+            if (input && input.checked) {
+                card.classList.add('is-active');
+            } else {
+                card.classList.remove('is-active');
+            }
+        });
+    }
+
     // Liste des salles transmise depuis la BDD
     const DB_SALLES = <?php echo json_encode($db_salles, JSON_UNESCAPED_UNICODE); ?>;
 
@@ -1780,7 +1932,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const input = document.getElementById('categorie_custom');
         if (sel.value === 'Autre') {
             box.style.display = 'block';
-            input.required = true;
             input.focus();
         } else {
             box.style.display = 'none';
@@ -1799,7 +1950,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             sel.value = 'Autre';
             box.style.display = 'block';
-            input.required = true;
             input.focus();
         }
     }

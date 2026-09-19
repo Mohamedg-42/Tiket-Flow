@@ -37,7 +37,7 @@ try {
                 WHERE statut = 'actif'
                   AND (
                       date_evenement < CURRENT_DATE 
-                      OR (date_evenement = CURRENT_DATE AND heure <= CURRENT_TIME)
+                      OR (date_evenement = CURRENT_DATE AND (heure IS NULL OR heure <= CURRENT_TIME))
                   )
             ");
         } catch (\Exception $e) {

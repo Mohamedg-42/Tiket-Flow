@@ -126,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_vote_admin']))
             $stmt_n->execute([$cand_id]);
             $c_nom = $stmt_n->fetchColumn();
 
-            $stmt_del = $pdo->prepare("DELETE FROM event_candidats WHERE id = ?");
+            $stmt_del = $pdo->prepare("UPDATE event_candidats SET deleted_at = NOW() WHERE id = ?");
             $stmt_del->execute([$cand_id]);
             $message = "Le candidat « " . htmlspecialchars($c_nom ?: 'sélectionné') . " » a été retiré du concours.";
             $msg_type = "success";
@@ -148,11 +148,11 @@ $sql = "
            (SELECT COUNT(*) FROM event_votes v WHERE v.event_id = e.id) as total_votes,
            (SELECT COUNT(*) FROM event_likes l WHERE l.event_id = e.id) as total_likes,
            (SELECT COALESCE(SUM(vp.montant), 0) FROM vote_paiements vp WHERE vp.event_id = e.id AND vp.statut = 'paye') as total_recette_votes,
-           (SELECT COUNT(*) FROM event_candidats c WHERE c.event_id = e.id) as nb_candidats
+           (SELECT COUNT(*) FROM event_candidats c WHERE c.event_id = e.id AND c.deleted_at IS NULL) as nb_candidats
     FROM events e
     LEFT JOIN users u ON e.user_id = u.id
     LEFT JOIN promoters p ON u.id = p.user_id
-    WHERE (e.type_vote IS NOT NULL AND e.type_vote != 'aucun' AND e.type_vote != '')
+    WHERE (e.type_vote IS NOT NULL AND e.type_vote != 'aucun' AND e.type_vote != '') AND e.deleted_at IS NULL AND e.statut != 'supprime'
 ";
 $params = [];
 
@@ -204,7 +204,7 @@ if (!empty($votes_events)) {
                (SELECT COUNT(*) FROM event_votes ev WHERE ev.candidat_id = c.id) as nb_votes,
                (SELECT COALESCE(SUM(vp.montant), 0) FROM vote_paiements vp WHERE vp.candidat_id = c.id AND vp.statut = 'paye') as recettes_candidat
         FROM event_candidats c
-        WHERE c.event_id IN ($in_q)
+        WHERE c.event_id IN ($in_q) AND c.deleted_at IS NULL
         ORDER BY nb_votes DESC, c.id ASC
     ");
     $stmt_c->execute($eids);
@@ -849,13 +849,13 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
         </div>
 
         <div class="votes-header-actions">
-            <a href="export.php?type=votes&type_filter=<?php echo urlencode($type_filter); ?>&statut=<?php echo urlencode($statut_filter); ?>&periode=<?php echo urlencode($periode); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les concours, votes et recettes sur Excel (CSV)">
+            <a href="export?type=votes&type_filter=<?php echo urlencode($type_filter); ?>&statut=<?php echo urlencode($statut_filter); ?>&periode=<?php echo urlencode($periode); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les concours, votes et recettes sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
             <button type="button" class="dash-btn-action" onclick="window.print()">
                 <i class="fa-solid fa-print"></i> Imprimer
             </button>
-            <a href="creer-evenement.php?onglet=vote" class="dash-btn-action btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+            <a href="creer-evenement?onglet=vote" class="dash-btn-action btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-plus"></i> Nouveau Vote / Concours
             </a>
         </div>
@@ -896,7 +896,7 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
         </div>
 
         <!-- À DROITE : SÉLECTEURS & RECHERCHE -->
-        <form method="GET" action="votes.php" class="votes-search-form">
+        <form method="GET" action="votes" class="votes-search-form">
             <input type="hidden" name="type" value="<?php echo htmlspecialchars($type_filter); ?>">
 
             <select name="statut" onchange="this.form.submit()" style="padding: 0.42rem 0.65rem; border-radius: 8px; border: 1px solid var(--dash-border); font-size: 0.82rem; font-weight: 700; background: #ffffff; color: var(--dash-text); cursor: pointer;">
@@ -919,7 +919,7 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
             </button>
 
             <?php if ($type_filter !== 'tous' || $statut_filter !== 'tous' || $periode !== 'tous' || $search !== ''): ?>
-                <a href="votes.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
+                <a href="votes" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -1133,7 +1133,7 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
                                             </form>
                                         <?php endif; ?>
 
-                                        <a href="../client/accueil.php?onglet=voter&vote_id=<?php echo (int)$ve['id']; ?>" target="_blank" class="dash-btn-action" style="border-radius: 8px; justify-content: center; background: #F5F5F5; border: 1px solid #E5E5E5; color: var(--dash-text); flex-shrink: 0;" title="Ouvrir la page de vote publique">
+                                        <a href="../client/accueil?onglet=voter&vote_id=<?php echo (int)$ve['id']; ?>" target="_blank" class="dash-btn-action" style="border-radius: 8px; justify-content: center; background: #F5F5F5; border: 1px solid #E5E5E5; color: var(--dash-text); flex-shrink: 0;" title="Ouvrir la page de vote publique">
                                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                         </a>
                                     </div>
@@ -1174,7 +1174,7 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
         <div class="dash-modal-body">
             <!-- ONGLET 1 : CONFIGURATION DU VOTE & CONCOURS -->
             <div id="paneVoteConfig" style="display: flex; flex-direction: column; gap: 0.9rem;">
-                <form method="POST" action="votes.php" id="formVoteConfig">
+                <form method="POST" action="votes" id="formVoteConfig">
                     <input type="hidden" name="action_vote_admin" value="modifier">
                     <input type="hidden" name="event_id" id="edit_vote_event_id">
 
@@ -1284,7 +1284,7 @@ $nb_concours_actifs = (int)$pdo->query("SELECT COUNT(*) FROM events WHERE type_v
 
                 <!-- Formulaire Dépliable d'Ajout / Modification de Candidat -->
                 <div id="boxCandidatForm" class="cand-form-box" style="display: none;">
-                    <form method="POST" action="votes.php" enctype="multipart/form-data" id="formCandidat">
+                    <form method="POST" action="votes" enctype="multipart/form-data" id="formCandidat">
                         <input type="hidden" name="action_vote_admin" id="candidat_form_action" value="ajouter_candidat">
                         <input type="hidden" name="event_id" id="candidat_form_event_id">
                         <input type="hidden" name="candidat_id" id="candidat_form_candidat_id">
@@ -1564,7 +1564,7 @@ function renderCandidatesList(cands, totalVotesEvent) {
                     <button type="button" class="dash-btn-action" onclick="editCandidatInline(${c.id})" style="padding: 0.35rem 0.55rem; font-size: 0.75rem;" title="Modifier les infos de ce candidat">
                         <i class="fa-solid fa-pen"></i>
                     </button>
-                    <form method="POST" action="votes.php" onsubmit="return confirm('Voulez-vous vraiment retirer « ${escapeHtml(c.nom)} » de ce concours ?');" style="margin: 0;">
+                    <form method="POST" action="votes" onsubmit="return confirm('Voulez-vous vraiment retirer « ${escapeHtml(c.nom)} » de ce concours ?');" style="margin: 0;">
                         <input type="hidden" name="action_vote_admin" value="supprimer_candidat">
                         <input type="hidden" name="event_id" value="${c.event_id}">
                         <input type="hidden" name="candidat_id" value="${c.id}">
@@ -1605,7 +1605,7 @@ function openEditVoteModal(evId, targetTab = 'config') {
     document.getElementById('edit_vote_statut').value = ev.event_statut || 'actif';
     
     // Lien vers la modification avancée de l'événement
-    document.getElementById('edit_vote_full_link').href = 'modifier-evenement.php?id=' + encodeURIComponent(ev.id);
+    document.getElementById('edit_vote_full_link').href='modifier-evenement?id=' + encodeURIComponent(ev.id);
 
     // Lien permanent direct de vote
     const baseVoteUrl = window.location.origin + window.location.pathname.replace('/admin/votes.php', '/client/accueil.php');

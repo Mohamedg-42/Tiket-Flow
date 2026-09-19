@@ -7,7 +7,7 @@
 require_once '../config/database.php';
 require_once '../includes/auth.php';
 
-requireLogin('../connexion.php');
+requireLogin('../connexion');
 
 $page_title = "Mes Tickets - TikeWA";
 $body_class = "client-page tickets-page";
@@ -95,7 +95,7 @@ $tickets = $stmt->fetchAll();
                 <h1 class="swiss-headline">Mes Billets & QR Codes</h1>
                 <p>Présentez ces QR codes à l'entrée de l'événement pour faire scanner votre entrée.</p>
             </div>
-            <a href="accueil.php" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.35rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <a href="accueil" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.35rem; display: inline-flex; align-items: center; gap: 0.5rem;">
                 <i class="fa-solid fa-arrow-left"></i> Retour aux événements
             </a>
         </div>
@@ -133,7 +133,7 @@ $tickets = $stmt->fetchAll();
             </select>
 
             <?php if ($filtre_event > 0 || $filtre_type !== '' || $filtre_statut !== ''): ?>
-                <a href="mes-tickets.php" class="filter-reset-btn">
+                <a href="mes-tickets" class="filter-reset-btn">
                     <i class="fa-solid fa-xmark"></i> Réinitialiser
                 </a>
             <?php endif; ?>
@@ -227,7 +227,7 @@ $tickets = $stmt->fetchAll();
                         </div>
 
                         <div class="ticket-btn-group">
-                            <a href="telecharger-ticket.php?code=<?php echo urlencode($t['code_unique']); ?>" target="_blank" class="btn-ticket-pdf" title="Télécharger le billet PDF">
+                            <a href="telecharger-ticket?code=<?php echo urlencode($t['code_unique']); ?>" target="_blank" class="btn-ticket-pdf" title="Télécharger le billet PDF">
                                 <i class="fa-solid fa-download"></i> PDF
                             </a>
                             <button type="button" 
@@ -275,7 +275,7 @@ $tickets = $stmt->fetchAll();
             </div>
             <h3 style="color: #000000; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Vous n'avez aucun billet pour le moment</h3>
             <p style="color: #737373; font-size: 0.92rem; max-width: 440px; margin: 0 auto 1.5rem;">Réservez votre premier événement dès maintenant et retrouvez vos billets ici !</p>
-            <a href="accueil.php" class="btn-submit" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.65rem 1.4rem; width: auto;">
+            <a href="accueil" class="btn-submit" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.65rem 1.4rem; width: auto;">
                 <i class="fa-solid fa-compass"></i> Explorer les événements
             </a>
         </div>

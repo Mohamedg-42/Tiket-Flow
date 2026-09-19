@@ -554,7 +554,7 @@ function render_momo_icon($methode, $size = 36) {
 
         <div style="padding: 1.5rem;">
             <?php if ($solde_actuel > 0): ?>
-                <form method="POST" action="solde.php" id="form-retrait" onsubmit="return validerRetrait();">
+                <form method="POST" action="solde" id="form-retrait" onsubmit="return validerRetrait();">
                     <?php echo csrfField(); ?>
                     <input type="hidden" name="demande_retrait" value="1">
                     <input type="hidden" name="methode" id="selected_methode" value="wave">
@@ -666,7 +666,7 @@ function render_momo_icon($methode, $size = 36) {
                     <i class="fa-solid fa-piggy-bank" style="font-size: 2.75rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                     <strong style="display: block; font-size: 1.05rem; color: var(--dash-text); margin-bottom: 0.25rem;">Votre solde disponible est de 0 FCFA</strong>
                     <p style="font-size: 0.84rem; margin: 0 0 1rem;">Dès la première vente de billets pour vos événements, vous pourrez virer vos gains à tout moment.</p>
-                    <a href="mes-evenements.php" class="dash-btn-action btn-primary" style="display: inline-flex; text-decoration: none;">
+                    <a href="mes-evenements" class="dash-btn-action btn-primary" style="display: inline-flex; text-decoration: none;">
                         <i class="fa-solid fa-calendar-days"></i> Consulter mes événements
                     </a>
                 </div>
@@ -719,13 +719,13 @@ function render_momo_icon($methode, $size = 36) {
             </button>
 
             <!-- Export Excel des virements -->
-            <a href="export.php?type=retraits&periode=<?php echo urlencode($periode); ?>&methode=<?php echo urlencode($filter_methode); ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.4rem 0.85rem; font-size: 0.82rem; text-decoration: none;" title="Exporter les virements au format Excel (CSV)">
+            <a href="export?type=retraits&periode=<?php echo urlencode($periode); ?>&methode=<?php echo urlencode($filter_methode); ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.4rem 0.85rem; font-size: 0.82rem; text-decoration: none;" title="Exporter les virements au format Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
                 <span>Exporter Excel</span>
             </a>
 
             <?php if ($periode !== 'toutes' || $filter_methode !== 'toutes' || $search_q !== ''): ?>
-                <a href="solde.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
+                <a href="solde" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>

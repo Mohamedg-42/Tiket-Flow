@@ -40,7 +40,7 @@ if (!$event_id) {
             "accueil.php?onglet=voter"
         );
     }
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 
@@ -58,7 +58,7 @@ $stmt->execute([$event_id]);
 $event = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$event) {
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 
@@ -150,7 +150,7 @@ if ($is_private_event) {
                 <h1>Accès restreint au scrutin</h1>
                 <p>Ce concours de vote est strictement privé. Vous devez obligatoirement utiliser le lien d'invitation sécurisé
                     fourni par l'organisateur pour y accéder et voter.</p>
-                <a href="accueil.php">← Retour à l'accueil</a>
+                <a href="accueil">← Retour à l'accueil</a>
             </div>
         </body>
 
@@ -1202,9 +1202,9 @@ include __DIR__ . '/header.php';
     <!-- Fil d'Ariane & Boutons de retour / partage -->
     <div class="vote-topbar">
         <div class="vote-breadcrumb">
-            <a href="accueil.php"><i class="fa-solid fa-house"></i> Accueil</a>
+            <a href="accueil"><i class="fa-solid fa-house"></i> Accueil</a>
             <span>/</span>
-            <a href="accueil.php?onglet=voter"><i class="fa-solid fa-trophy"></i> Concours & Votes</a>
+            <a href="accueil?onglet=voter"><i class="fa-solid fa-trophy"></i> Concours & Votes</a>
             <span>/</span>
             <span
                 style="color: var(--vote-dark); font-weight: 700;"><?php echo htmlspecialchars($event['nom']); ?></span>
@@ -1215,7 +1215,7 @@ include __DIR__ . '/header.php';
                 onclick="openShareVotePage(<?php echo (int) $event['id']; ?>, '<?php echo htmlspecialchars(addslashes($event['nom'])); ?>')">
                 <i class="fa-solid fa-share-nodes" style="color: var(--vote-orange);"></i> Partager ce concours
             </button>
-            <a href="accueil.php?onglet=voter" class="vote-btn-share-top">
+            <a href="accueil?onglet=voter" class="vote-btn-share-top">
                 <i class="fa-solid fa-arrow-left"></i> Tous les concours
             </a>
         </div>
@@ -1327,6 +1327,7 @@ include __DIR__ . '/header.php';
             <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
                 <?php if (!empty($candidats)): ?>
                     <a href="#candidats" class="btn-vote-candidate"
+                        onclick="event.preventDefault(); document.getElementById('candidats')?.scrollIntoView({behavior:'smooth', block:'start'}); try { history.pushState(null,'','#candidats'); } catch(_){} return false;"
                         style="width: auto; padding: 0.55rem 1.15rem; font-size: 0.82rem; text-decoration: none;">
                         <i class="fa-solid fa-check-to-slot"></i> Voir les personnes à voter
                     </a>
@@ -1340,7 +1341,7 @@ include __DIR__ . '/header.php';
                 <?php endif; ?>
 
                 <?php if ($has_tickets): ?>
-                    <a href="evenement/<?php echo rawurlencode($event['slug'] ?: (string) $event['id']); ?>" class="btn-vote-candidate"
+                    <a href="evenement/<?php echo rawurlencode($event['slug'] ?: (string) $event['id']); ?>#billets" class="btn-vote-candidate"
                         style="width: auto; padding: 0.55rem 1.15rem; font-size: 0.82rem; text-decoration: none; background: #0F172A;">
                         <i class="fa-solid fa-ticket"></i> Réserver vos places (Billetterie)
                     </a>

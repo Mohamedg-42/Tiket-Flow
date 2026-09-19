@@ -92,15 +92,15 @@ if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout
 
                 // E. Redirection automatique selon le rôle de l'utilisateur
                 if ($user['role'] === 'admin') {
-                    header("Location: admin/dashboard.php");
+                    header("Location: admin/dashboard");
                 } elseif ($user['role'] === 'agent') {
-                    header("Location: agent/verification.php");
+                    header("Location: agent/verification");
                 } elseif ($user['role'] === 'agent_gare') {
-                    header("Location: gare/vente.php");
+                    header("Location: gare/vente");
                 } elseif ($user['role'] === 'promoteur') {
-                    header("Location: promoteur/dashboard.php");
+                    header("Location: promoteur/dashboard");
                 } else {
-                    header("Location: client/accueil.php");
+                    header("Location: client/accueil");
                 }
                 exit();
             }
@@ -185,7 +185,7 @@ if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout
 
     <!-- Bouton Retour hors de la section -->
     <div style="width: 100%; max-width: 440px; margin: 0 auto 0.85rem; box-sizing: border-box;">
-        <a href="client/accueil.php"
+        <a href="client/accueil"
             style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000); text-decoration: none; padding: 7px 14px; border-radius: 10px; background: #ffffff; border: 1px solid var(--eventia-border, #E5E5E5); box-shadow: 0 2px 5px rgba(11, 29, 58, 0.04); transition: all 0.2s;"
             onmouseover="this.style.background='#F5F5F5'; this.style.color='var(--eventia-amber-dark, #FF4A0D)'; this.style.transform='translateX(-2px)';"
             onmouseout="this.style.background='#ffffff'; this.style.color='var(--eventia-navy, #000000)'; this.style.transform='none';">
@@ -198,7 +198,7 @@ if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout
 
         <!-- Logo & Titre Identique -->
         <div style="text-align: center; margin-bottom: 1.75rem;">
-            <a href="client/accueil.php"
+            <a href="client/accueil"
                 style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; text-decoration: none;">
                 <img src="images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA"
                     style="height: 56px; width: auto; max-width: 200px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
@@ -231,7 +231,7 @@ if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout
         <?php endif; ?>
 
         <!-- Formulaire de connexion -->
-        <form method="POST" action="connexion.php" style="display: flex; flex-direction: column; gap: 1.15rem;">
+        <form method="POST" action="connexion" style="display: flex; flex-direction: column; gap: 1.15rem;">
 
             <!-- Champ Email avec Label Parfaitement Positionné -->
             <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 6px;">
@@ -264,7 +264,7 @@ if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout
                     </button>
                 </div>
                 <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-                    <a href="mot-de-passe-oublie.php"
+                    <a href="mot-de-passe-oublie"
                         style="font-size: 0.84rem; font-weight: 700; color: var(--tikeli-orange, #FF4A0D); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;"
                         onmouseover="this.style.opacity='0.85'; this.style.textDecoration='underline';"
                         onmouseout="this.style.opacity='1'; this.style.textDecoration='none';">
@@ -284,7 +284,7 @@ if (isset($_SESSION['login_lockout_until']) && time() < $_SESSION['login_lockout
         <!-- Lien Création de Compte -->
         <div class="auth-footer"
             style="margin-top: 1.5rem; padding-top: 1.15rem; border-top: 1px solid var(--eventia-border, #E5E5E5); text-align: center; font-size: 0.86rem; color: var(--eventia-muted, #737373);">
-            Pas encore de compte ? <a href="inscription.php"
+            Pas encore de compte ? <a href="inscription"
                 style="color: var(--eventia-navy, #000000); font-weight: 800; text-decoration: none;">Créer un
                 compte</a>
         </div>

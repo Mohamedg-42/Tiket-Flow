@@ -144,8 +144,8 @@ if (!function_exists('generateTicketsPdf')) {
         // Si la commande comporte plus d'un billet, page de garde récapitulative
         if (count($tickets) > 1) {
             $p = [];
-            $p[] = $rect(0, $H - 75, $W, 75, '0.05 0.58 0.53'); // Teal TikeWA
-            $p[] = $text('TIKÉLI', 45, $H - 45, 24, 'F2', '1 1 1');
+            $p[] = $rect(0, $H - 75, $W, 75, '1.0 0.29 0.05'); // Orange TikeWA
+            $p[] = $text('TikeWA', 45, $H - 45, 24, 'F2', '1 1 1');
             $p[] = $text('Billetterie 100% Securisee - e-Billets officiels', 45, $H - 65, 10, 'F1', '1 1 1');
             $p[] = $text('Commande #' . $orderNumber, 45, $H - 115, 16, 'F2', '0 0 0');
             $p[] = $text('Titulaire : ' . $clientName, 45, $H - 138, 11, 'F1', '0.39 0.45 0.55');

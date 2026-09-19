@@ -22,8 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_SESSION['user_id']) && in_array($_SESSION['user_role'] ?? '', ['promoteur', 'admin'], true)) {
         $_SESSION['cotisation_message'] = "Les contributions sont réservées aux clients. Votre compte " . ($_SESSION['user_role'] ?? '') . " ne peut pas cotiser.";
         $_SESSION['cotisation_type'] = 'error';
-        $redirect = $campagne_id ? ('cotisation.php?id=' . $campagne_id . ($post_token ? '&token=' . urlencode($post_token) : '')) : 'accueil.php?onglet=cotisations';
-        header('Location: ' . $redirect);
+        $redirect = $campagne_id ? ('cotisation?id=' . $campagne_id . ($post_token ? '&token=' . urlencode($post_token) : '')) : 'accueil?onglet=cotisations';
+        header('Location:  ' . $redirect);
         exit();
     }
 
@@ -38,8 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($nom === '' || !$montant || $montant < 500) {
         $_SESSION['cotisation_message'] = "Veuillez renseigner votre nom et un montant valide (minimum 500 FCFA).";
         $_SESSION['cotisation_type'] = 'error';
-        $redirect = $campagne_id ? ('cotisation.php?id=' . $campagne_id . ($post_token ? '&token=' . urlencode($post_token) : '')) : 'accueil.php?onglet=cotisations';
-        header('Location: ' . $redirect);
+        $redirect = $campagne_id ? ('cotisation?id=' . $campagne_id . ($post_token ? '&token=' . urlencode($post_token) : '')) : 'accueil?onglet=cotisations';
+        header('Location:  ' . $redirect);
         exit();
     }
 
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$camp_info) {
                 $_SESSION['cotisation_message'] = "Cette campagne de cotisation n'est plus active ou est clôturée.";
                 $_SESSION['cotisation_type'] = 'error';
-                header('Location: accueil.php?onglet=cotisations');
+                header('Location: accueil?onglet=cotisations');
                 exit();
             }
             $campagne_titre = $camp_info['titre'];
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (empty($post_token) || !hash_equals($expected_token, $post_token)) {
                     $_SESSION['cotisation_message'] = "Action non autorisée : Jeton d'accès privé manquant ou invalide.";
                     $_SESSION['cotisation_type'] = 'error';
-                    header('Location: accueil.php?onglet=cotisations');
+                    header('Location: accueil?onglet=cotisations');
                     exit();
                 }
 
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (empty($tel_clean)) {
                     $_SESSION['cotisation_message'] = "Un numéro de téléphone valide est obligatoire pour participer à cette collecte privée.";
                     $_SESSION['cotisation_type'] = 'error';
-                    header('Location: cotisation.php?id=' . $campagne_id . '&token=' . urlencode($post_token));
+                    header('Location: cotisation?id=' . $campagne_id . '&token=' . urlencode($post_token));
                     exit();
                 }
 
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$is_whitelisted) {
                     $_SESSION['cotisation_message'] = "Action refusée : Le numéro " . htmlspecialchars($telephone) . " ne figure pas sur la liste des participants enregistrés au préalable pour cette collecte privée.";
                     $_SESSION['cotisation_type'] = 'error';
-                    header('Location: cotisation.php?id=' . $campagne_id . '&token=' . urlencode($post_token));
+                    header('Location: cotisation?id=' . $campagne_id . '&token=' . urlencode($post_token));
                     exit();
                 }
             }
@@ -124,14 +124,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $inserted_cot_id = (int) $pdo->lastInsertId();
         $cot_token = get_or_create_resource_token($pdo, 'cotisation_payment', $inserted_cot_id);
-        header('Location: paiement-cotisation.php?token=' . urlencode($cot_token) . ($post_token ? '&campagne_token=' . urlencode($post_token) : ''));
+        header('Location: paiement-cotisation?token=' . urlencode($cot_token) . ($post_token ? '&campagne_token=' . urlencode($post_token) : ''));
         exit();
 
     } catch (PDOException $e) {
         $_SESSION['cotisation_message'] = "Une erreur est survenue lors de l'enregistrement de votre don. Veuillez réessayer.";
         $_SESSION['cotisation_type'] = 'error';
-        $redirect = $campagne_id ? ('cotisation.php?id=' . $campagne_id . ($post_token ? '&token=' . urlencode($post_token) : '')) : 'accueil.php?onglet=cotisations';
-        header('Location: ' . $redirect);
+        $redirect = $campagne_id ? ('cotisation?id=' . $campagne_id . ($post_token ? '&token=' . urlencode($post_token) : '')) : 'accueil?onglet=cotisations';
+        header('Location:  ' . $redirect);
         exit();
     }
 }
@@ -170,11 +170,11 @@ if (!$campagne_id) {
         if ($first_id > 0) {
             $campagne_id = $first_id;
         } else {
-            header('Location: accueil.php?onglet=cotisations');
+            header('Location: accueil?onglet=cotisations');
             exit();
         }
     } catch (PDOException $e) {
-        header('Location: accueil.php?onglet=cotisations');
+        header('Location: accueil?onglet=cotisations');
         exit();
     }
 }
@@ -196,7 +196,7 @@ $stmt->execute([$campagne_id]);
 $campagne = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$campagne) {
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 
@@ -229,7 +229,7 @@ if ($is_private_campagne) {
                 <span class="icon">🔒</span>
                 <h1>Collecte Privée Restreinte</h1>
                 <p>Cette campagne de cotisation est strictement confidentielle. Vous devez obligatoirement utiliser le lien d'invitation officiel fourni par l'organisateur pour la consulter et y contribuer.</p>
-                <a href="accueil.php">← Retour à l'accueil</a>
+                <a href="accueil">← Retour à l'accueil</a>
             </div>
         </body>
         </html>
@@ -296,7 +296,7 @@ include 'header.php';
     style="max-width: 1200px; margin: 1.5rem auto 4rem; padding: 0 clamp(1.25rem, 4vw, 2.5rem);">
     <!-- Lien de retour épuré avec marge aérée -->
     <div style="margin-bottom: 2.25rem;">
-        <a href="accueil.php?onglet=cotisations"
+        <a href="accueil?onglet=cotisations"
             style="display: inline-flex; align-items: center; gap: 0.6rem; color: var(--muted); text-decoration: none; font-weight: 700; font-size: 0.92rem; transition: all 0.2s;"
             onmouseover="this.style.color='var(--primary)'; this.style.transform='translateX(-3px)';"
             onmouseout="this.style.color='var(--muted)'; this.style.transform='translateX(0)';">
@@ -486,7 +486,7 @@ include 'header.php';
                     </div>
                 <?php else: ?>
                     <!-- FORMULAIRE ACTIF DIRECTEMENT DANS LA PAGE -->
-                    <form method="POST" action="cotisation.php<?php echo $is_private_campagne ? ('?token=' . urlencode($campagne_token)) : ''; ?>" id="directCotisationForm">
+                    <form method="POST" action="cotisation<?php echo $is_private_campagne ? ('?token=' . urlencode($campagne_token)) : ''; ?>" id="directCotisationForm">
                         <input type="hidden" name="campagne_id" value="<?php echo (int) $campagne['id']; ?>">
                         <?php if ($is_private_campagne): ?>
                             <input type="hidden" name="token" value="<?php echo htmlspecialchars($campagne_token, ENT_QUOTES, 'UTF-8'); ?>">

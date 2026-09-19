@@ -69,7 +69,7 @@ $nb_total = (int) $pdo->query("SELECT COUNT(*) FROM claims")->fetchColumn();
             <p>Traitez les réclamations des clients, répondez aux promoteurs et résolvez les litiges de commande.</p>
         </div>
         <div>
-            <a href="export.php?type=reclamations&tab=<?php echo urlencode($tab); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les réclamations sur Excel (CSV)">
+            <a href="export?type=reclamations&tab=<?php echo urlencode($tab); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les réclamations sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
         </div>

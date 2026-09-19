@@ -29,12 +29,12 @@ if (!empty($token)) {
 } elseif ($ticket_id && empty($code)) {
     // Redirection automatique 301 pour masquer l'ID numérique
     $secure_token = get_or_create_resource_token($pdo, 'ticket', $ticket_id);
-    header('Location: telecharger-pdf.php?token=' . urlencode($secure_token), true, 301);
+    header('Location: telecharger-pdf?token=' . urlencode($secure_token), true, 301);
     exit();
 } elseif ($order_id && empty($code)) {
     // Redirection automatique 301 pour masquer l'order_id numérique
     $secure_token = get_or_create_resource_token($pdo, 'order', $order_id);
-    header('Location: telecharger-pdf.php?token=' . urlencode($secure_token), true, 301);
+    header('Location: telecharger-pdf?token=' . urlencode($secure_token), true, 301);
     exit();
 }
 

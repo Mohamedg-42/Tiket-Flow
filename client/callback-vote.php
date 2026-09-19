@@ -16,7 +16,7 @@ $methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kade
 if (!$vote_paiement_id || !in_array($methode, $methodes_autorisees, true)) {
     $_SESSION['vote_message'] = "Paiement non validé ou méthode non reconnue.";
     $_SESSION['vote_type']    = 'error';
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 
@@ -32,7 +32,7 @@ $vote_pay = $stmt->fetch();
 
 if (!$vote_pay) {
     $_SESSION['vote_message'] = 'Ce paiement de vote est introuvable.';
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 
@@ -41,7 +41,7 @@ if (!defined('APP_SECRET_KEY')) {
     error_log("TikeWA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
     $_SESSION['vote_message'] = "Erreur de configuration serveur. Veuillez contacter l'administrateur.";
     $_SESSION['vote_type'] = 'error';
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 $pay_secret = APP_SECRET_KEY;
@@ -51,7 +51,7 @@ $vote_token = $_GET['vote_token'] ?? $_POST['vote_token'] ?? '';
 if (empty($vote_token) || !hash_equals($expected_token, $vote_token)) {
     $_SESSION['vote_message'] = "Validation rejetée : signature de paiement de vote invalide ou absente.";
     $_SESSION['vote_type'] = 'error';
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 
@@ -59,7 +59,7 @@ $is_already_paid = in_array($vote_pay['statut'], ['paye', 'valide'], true);
 
 if (!$is_already_paid && $vote_pay['statut'] !== 'en_attente') {
     $_SESSION['vote_message'] = 'Ce paiement de vote est introuvable ou a été annulé.';
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 
@@ -113,7 +113,7 @@ try {
 } catch (Exception $e) {
     if ($pdo->inTransaction()) { $pdo->rollBack(); }
     $_SESSION['vote_message'] = friendly_db_error($e, 'vote', "Une erreur technique est survenue lors de l'enregistrement de votre vote. Veuillez contacter le support si votre compte a été débité.");
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 
@@ -235,19 +235,19 @@ include 'header.php';
             </a>
 
             <?php if (($vote_pay['event_visibilite'] ?? 'public') === 'prive'): ?>
-                <a href="vote.php?id=<?php echo (int) $vote_pay['event_id']; ?>&token=<?php echo urlencode($vote_pay['event_access_token'] ?? ''); ?>"
+                <a href="vote?id=<?php echo (int) $vote_pay['event_id']; ?>&token=<?php echo urlencode($vote_pay['event_access_token'] ?? ''); ?>"
                     class="btn-submit"
                     style="width: auto; padding: 0.75rem 1.4rem; background: var(--tikeli-orange, #FF4A0D); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
                     <i class="fa-solid fa-vote-yea"></i> Retourner au scrutin privé
                 </a>
             <?php else: ?>
-                <a href="accueil.php?onglet=voter" class="btn-submit"
+                <a href="accueil?onglet=voter" class="btn-submit"
                     style="width: auto; padding: 0.75rem 1.4rem; background: var(--tikeli-orange, #FF4A0D); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
                     <i class="fa-solid fa-trophy"></i> Voir le classement des votes
                 </a>
             <?php endif; ?>
 
-            <a href="accueil.php" class="btn-submit"
+            <a href="accueil" class="btn-submit"
                 style="width: auto; padding: 0.75rem 1.25rem; background: transparent; color: var(--navy, #0f172a); border: 1px solid var(--line, #E2E8F0); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
                 <i class="fa-solid fa-house"></i> Retour à l'accueil
             </a>

@@ -7,7 +7,7 @@
 require_once '../config/database.php';
 require_once '../includes/auth.php';
 
-requireLogin('../connexion.php');
+requireLogin('../connexion');
 
 $page_title = "Support & Réclamations - TikeWA";
 include 'header.php';

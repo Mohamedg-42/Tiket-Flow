@@ -151,7 +151,7 @@ $requests = $stmt->fetchAll();
             la commission.</p>
     </div>
     <div>
-        <a href="export.php?type=demandes&tab=evenements" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les demandes d'événements sur Excel (CSV)">
+        <a href="export?type=demandes&tab=evenements" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les demandes d'événements sur Excel (CSV)">
             <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
         </a>
     </div>

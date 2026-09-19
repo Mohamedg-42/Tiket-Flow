@@ -23,13 +23,21 @@ $user_role = $_SESSION['user_role'] ?? 'client';
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title><?php echo htmlspecialchars($page_title); ?></title>
     <?php
-    $app_client_base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/') . '/';
-    if (!str_ends_with($app_client_base, '/client/')) {
-        $app_client_base = rtrim($app_client_base, '/') . '/client/';
+    $sn = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+    if (strpos($sn, '/client/') !== false) {
+        $app_root = substr($sn, 0, strpos($sn, '/client/'));
+    } elseif (strpos($sn, '/admin/') !== false) {
+        $app_root = substr($sn, 0, strpos($sn, '/admin/'));
+    } elseif (strpos($sn, '/promoteur/') !== false) {
+        $app_root = substr($sn, 0, strpos($sn, '/promoteur/'));
+    } else {
+        $app_root = rtrim(dirname($sn), '/');
     }
+    $app_root = rtrim($app_root, '/');
+    $app_client_base = $app_root . '/client/';
     ?>
     <base href="<?php echo htmlspecialchars($app_client_base); ?>">
-    <link rel="icon" type="image/png" href="../images/favicon.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
+    <link rel="icon" type="image/png" href="<?php echo htmlspecialchars($app_root); ?>/images/favicon.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
     <!-- Google Fonts: Outfit, Inter & Space Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,17 +45,17 @@ $user_role = $_SESSION['user_role'] ?? 'client';
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Style CSS -->
-    <link rel="stylesheet" href="../css/style.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($app_root); ?>/css/style.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
     <!-- TikeWA Brand Design System -->
-    <link rel="stylesheet" href="../css/eventia-brand.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($app_root); ?>/css/eventia-brand.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
     <!-- Responsive Professional CSS -->
-    <link rel="stylesheet" href="../css/responsive-pro.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($app_root); ?>/css/responsive-pro.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>">
 </head>
 <body class="<?php echo htmlspecialchars($body_class); ?>">
 
 <header class="client-header shared-client-header">
-    <a href="accueil.php" class="client-brand" style="display: inline-flex; align-items: center; text-decoration: none; padding: 2px 0;">
-        <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA" style="height: 44px; width: auto; max-width: 170px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));">
+    <a href="<?php echo htmlspecialchars($app_root); ?>/client/accueil" class="client-brand" style="display: inline-flex; align-items: center; text-decoration: none; padding: 2px 0;">
+        <img src="<?php echo htmlspecialchars($app_root); ?>/images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA" style="height: 44px; width: auto; max-width: 170px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));">
     </a>
 
     <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Ouvrir le menu">
@@ -55,34 +63,34 @@ $user_role = $_SESSION['user_role'] ?? 'client';
     </button>
 
     <nav class="client-nav">
-        <a href="accueil.php"><i class="fa-solid fa-house"></i> Accueil</a>
+        <a href="<?php echo htmlspecialchars($app_root); ?>/client/accueil"><i class="fa-solid fa-house"></i> Accueil</a>
         
         <?php if ($is_logged_in): ?>
             <?php if ($user_role === 'promoteur'): ?>
                 <!-- Raccourci vers l'espace Promoteur -->
-                <a href="../promoteur/dashboard.php" class="btn-espace-promoteur">
+                <a href="<?php echo htmlspecialchars($app_root); ?>/promoteur/dashboard" class="btn-espace-promoteur">
                     <i class="fa-solid fa-bullhorn"></i> Mon Espace Promoteur
                 </a>
             <?php elseif ($user_role === 'admin'): ?>
                 <!-- Raccourci vers l'espace Administration -->
-                <a href="../admin/dashboard.php" class="btn-espace-admin">
+                <a href="<?php echo htmlspecialchars($app_root); ?>/admin/dashboard" class="btn-espace-admin">
                     <i class="fa-solid fa-shield-halved"></i> Espace Administration
                 </a>
             <?php endif; ?>
 
             <!-- Menu visible uniquement pour les clients connectés -->
             <?php if ($user_role === 'client'): ?>
-                <a href="devenir-promoteur.php"><i class="fa-solid fa-bullhorn"></i> Devenir Promoteur</a>
+                <a href="<?php echo htmlspecialchars($app_root); ?>/devenir-promoteur"><i class="fa-solid fa-bullhorn"></i> Devenir Promoteur</a>
             <?php endif; ?>
-            <a href="mes-commandes.php"><i class="fa-solid fa-cart-shopping"></i> Mes Commandes</a>
-            <a href="mes-tickets.php"><i class="fa-solid fa-qrcode"></i> Mes Tickets</a>
-            <a href="reclamations.php"><i class="fa-solid fa-headset"></i> Support</a>
-            <a href="../deconnexion.php" class="client-logout"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
+            <a href="<?php echo htmlspecialchars($app_root); ?>/client/mes-commandes"><i class="fa-solid fa-cart-shopping"></i> Mes Commandes</a>
+            <a href="<?php echo htmlspecialchars($app_root); ?>/client/mes-tickets"><i class="fa-solid fa-qrcode"></i> Mes Tickets</a>
+            <a href="<?php echo htmlspecialchars($app_root); ?>/client/reclamations"><i class="fa-solid fa-headset"></i> Support</a>
+            <a href="<?php echo htmlspecialchars($app_root); ?>/deconnexion" class="client-logout"><i class="fa-solid fa-right-from-bracket"></i> Déconnexion</a>
         <?php else: ?>
             <!-- Menu pour les visiteurs non connectés -->
-            <a href="devenir-promoteur.php"><i class="fa-solid fa-bullhorn"></i> Devenir Promoteur</a>
-            <a href="../connexion.php"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
-            <a href="../inscription.php" class="client-register"><i class="fa-solid fa-user-plus"></i> Inscription</a>
+            <a href="<?php echo htmlspecialchars($app_root); ?>/devenir-promoteur"><i class="fa-solid fa-bullhorn"></i> Devenir Promoteur</a>
+            <a href="<?php echo htmlspecialchars($app_root); ?>/connexion"><i class="fa-solid fa-right-to-bracket"></i> Connexion</a>
+            <a href="<?php echo htmlspecialchars($app_root); ?>/inscription" class="client-register"><i class="fa-solid fa-user-plus"></i> Inscription</a>
         <?php endif; ?>
     </nav>
 </header>

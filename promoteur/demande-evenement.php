@@ -69,10 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($categorie === 'Autre' || !empty($categorie_custom)) {
         if (!empty($categorie_custom)) {
             $categorie = $categorie_custom;
+        } else {
+            $categorie = 'Autre';
         }
     }
     if (empty($categorie)) {
-        $categorie = 'Concert';
+        $categorie = 'Autre';
     }
 
     $date_evenement = $_POST['date_evenement'] ?? '';
@@ -541,12 +543,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'suppr
     $del_row = $chk_del->fetch();
 
     if ($del_row) {
-        if (!empty($del_row['photo']) && file_exists('../uploads/candidats/' . $del_row['photo'])) {
-            @unlink('../uploads/candidats/' . $del_row['photo']);
-        }
-        $del_stmt = $pdo->prepare("DELETE FROM event_candidats WHERE id = ?");
+        $del_stmt = $pdo->prepare("UPDATE event_candidats SET deleted_at = NOW() WHERE id = ?");
         $del_stmt->execute([$cand_del_id]);
-        $message = "Le candidat / choix « " . htmlspecialchars($del_row['nom']) . " » a été supprimé.";
+        $message = "Le candidat / choix « " . htmlspecialchars($del_row['nom']) . " » a été supprimé avec succès.";
         $msg_type = "success";
     } else {
         $message = "Candidat introuvable ou non autorisé.";
@@ -562,7 +561,7 @@ try {
         SELECT e.id, e.nom, e.date_evenement, e.prix_vote, e.type_vote, e.vote_question,
                (SELECT COUNT(*) FROM event_votes v WHERE v.event_id = e.id AND v.candidat_id IS NULL) AS nb_votes_realisation
         FROM events e
-        WHERE e.user_id = ? AND e.statut = 'actif'
+        WHERE e.user_id = ? AND e.statut = 'actif' AND e.deleted_at IS NULL
         ORDER BY e.nom ASC
     ");
     $stmt_ev->execute([$_SESSION['user_id']]);
@@ -576,7 +575,7 @@ try {
                    (SELECT COUNT(*) FROM event_votes v WHERE v.candidat_id = c.id) AS nb_votes
             FROM event_candidats c
             JOIN events e ON e.id = c.event_id
-            WHERE c.event_id IN ($in_ids)
+            WHERE c.event_id IN ($in_ids) AND c.deleted_at IS NULL
             ORDER BY c.event_id ASC, nb_votes DESC, c.nom ASC
         ");
         $candidats_promoteur = $stmt_cand_prom->fetchAll();
@@ -812,6 +811,127 @@ try {
         width: auto !important;
         margin: 0 !important;
         flex-shrink: 0;
+    }
+
+    /* Visibilité et Cartes d'Options Radio (Style Suisse Épuré, Zéro Sticker) */
+    .dash-visibility-group {
+        background: #FAFAFA;
+        border: 1px solid var(--dash-border, #E5E5E5);
+        border-radius: 12px;
+        padding: 1.15rem 1.25rem;
+        margin-top: 0.5rem;
+        margin-bottom: 1.25rem;
+        box-sizing: border-box;
+    }
+
+    .dash-visibility-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 0.85rem;
+        font-size: 0.88rem;
+        font-weight: 800;
+        color: #000000;
+        letter-spacing: -0.01em;
+    }
+
+    .dash-visibility-options {
+        display: flex;
+        gap: 0.85rem;
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+
+    .dash-visibility-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.75rem 1.25rem;
+        border: 1.5px solid #CBD5E1;
+        border-radius: 9px;
+        background: #FFFFFF;
+        color: #0F172A;
+        font-size: 0.86rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        user-select: none;
+        line-height: 1.35;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        box-sizing: border-box;
+    }
+
+    .dash-visibility-card:hover {
+        border-color: #94A3B8;
+        background: #F8FAFC;
+    }
+
+    .dash-visibility-card input[type="radio"] {
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        max-width: 18px !important;
+        margin: 0 !important;
+        accent-color: #FF4A0D !important;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .dash-visibility-card .option-title {
+        font-weight: 800;
+        color: inherit;
+        white-space: nowrap;
+    }
+
+    .dash-visibility-card .option-desc {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #64748B;
+        margin-left: 2px;
+    }
+
+    /* État Actif / Coché */
+    .dash-visibility-card:has(input[type="radio"]:checked),
+    .dash-visibility-card.is-active {
+        border-color: #0F172A !important;
+        background: #0F172A !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+    }
+
+    .dash-visibility-card:has(input[type="radio"]:checked) .option-title,
+    .dash-visibility-card.is-active .option-title {
+        color: #FFFFFF !important;
+    }
+
+    .dash-visibility-card:has(input[type="radio"]:checked) .option-desc,
+    .dash-visibility-card.is-active .option-desc {
+        color: #CBD5E1 !important;
+    }
+
+    .dash-visibility-card:has(input[type="radio"]:checked) input[type="radio"],
+    .dash-visibility-card.is-active input[type="radio"] {
+        accent-color: #FF4A0D !important;
+    }
+
+    .dash-visibility-hint {
+        display: block;
+        margin-top: 0.75rem;
+        color: #64748B;
+        font-size: 0.76rem;
+        line-height: 1.45;
+    }
+
+    @media (max-width: 680px) {
+        .dash-visibility-options {
+            flex-direction: column;
+        }
+        .dash-visibility-card {
+            width: 100%;
+        }
+        .dash-visibility-card .option-title {
+            white-space: normal;
+        }
     }
 
     .venue-details-grid {
@@ -1332,7 +1452,7 @@ try {
         </div>
 
         <div class="dash-filter-bar">
-            <a href="mes-evenements.php" class="dash-btn-action" style="padding: 0.5rem 1rem;">
+            <a href="mes-evenements" class="dash-btn-action" style="padding: 0.5rem 1rem;">
                 <i class="fa-solid fa-calendar-days"></i>
                 <span>Mes Événements</span>
             </a>
@@ -1349,7 +1469,7 @@ try {
                 <?php echo htmlspecialchars($message); ?>
                 <?php if ($msg_type === 'success'): ?>
                     <div style="margin-top: 0.35rem;">
-                        <a href="mes-evenements.php"
+                        <a href="mes-evenements"
                             style="color: inherit; text-decoration: underline; font-weight: 800;">Suivre l'approbation dans Mes
                             Événements →</a>
                     </div>
@@ -1360,16 +1480,16 @@ try {
 
     <!-- Navigation par Onglets Épurée -->
     <div class="events-creation-tabs">
-        <a href="demande-evenement.php" class="dash-chart-tab <?php echo $onglet === 'evenement' ? 'active' : ''; ?>"
+        <a href="demande-evenement" class="dash-chart-tab <?php echo $onglet === 'evenement' ? 'active' : ''; ?>"
             style="text-decoration: none; border-radius: 8px; padding: 0.5rem 1.15rem; font-size: 0.85rem;">
             <i class="fa-solid fa-calendar-plus" style="margin-right: 5px;"></i> Événement & Billetterie
         </a>
-        <a href="demande-evenement.php?onglet=cotisation"
+        <a href="demande-evenement?onglet=cotisation"
             class="dash-chart-tab <?php echo $onglet === 'cotisation' ? 'active' : ''; ?>"
             style="text-decoration: none; border-radius: 8px; padding: 0.5rem 1.15rem; font-size: 0.85rem;">
             <i class="fa-solid fa-hand-holding-heart" style="margin-right: 5px;"></i> Campagne de Cotisation
         </a>
-        <a href="demande-evenement.php?onglet=vote"
+        <a href="demande-evenement?onglet=vote"
             class="dash-chart-tab <?php echo $onglet === 'vote' ? 'active' : ''; ?>"
             style="text-decoration: none; border-radius: 8px; padding: 0.5rem 1.15rem; font-size: 0.85rem;">
             <i class="fa-solid fa-vote-yea" style="margin-right: 5px;"></i> Concours & Vote Payant
@@ -1458,7 +1578,7 @@ try {
                             <option value="Autre">✏️ Autre / Saisir ma propre catégorie...</option>
                         </select>
                         <div id="container_custom_cat" style="display: none; margin-top: 6px;">
-                            <input type="text" id="categorie_custom" name="categorie_custom" placeholder="Tapez votre propre catégorie (Ex: Mode, Dédicace, Masterclass...)" style="font-size: 0.85rem; padding: 0.55rem 0.75rem; border: 1px solid #FF4A0D; background: #FFF2ED; border-radius: 8px;">
+                            <input type="text" id="categorie_custom" name="categorie_custom" placeholder="Tapez votre propre catégorie (ou laisser vide pour 'Autre')" style="font-size: 0.85rem; padding: 0.55rem 0.75rem; border: 1px solid #FF4A0D; background: #FFF2ED; border-radius: 8px;">
                             <small style="color: #FF4A0D; font-size: 0.72rem; display: block; margin-top: 3px;">
                                 <i class="fa-solid fa-circle-check"></i> Cette catégorie personnalisée sera affichée sur la billetterie.
                             </small>
@@ -1827,19 +1947,23 @@ try {
                 <input type="hidden" name="commission_rate" id="form_commission_rate" value="5.0">
 
                 <!-- Visibilité souhaitée -->
-                <div style="background: #F5F5F5; border: 1px solid var(--dash-border, #E5E5E5); border-radius: 12px; padding: 1rem 1.15rem; margin-top: 1rem; margin-bottom: 1rem;">
-                    <div style="font-size: 0.82rem; font-weight: 800; color: #000; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité souhaitée pour cet événement
+                <div class="dash-visibility-group">
+                    <div class="dash-visibility-label">
+                        <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité souhaitée pour cet événement *
                     </div>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
-                            <input type="radio" name="visibilite" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public (visible sur la plateforme)
+                    <div class="dash-visibility-options">
+                        <label class="dash-visibility-card">
+                            <input type="radio" name="visibilite" value="public" checked onchange="syncVisibilityCards(this)">
+                            <span class="option-title">Public</span>
+                            <span class="option-desc">(visible sur la plateforme)</span>
                         </label>
-                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
-                            <input type="radio" name="visibilite" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct + invités uniquement)
+                        <label class="dash-visibility-card">
+                            <input type="radio" name="visibilite" value="prive" onchange="syncVisibilityCards(this)">
+                            <span class="option-title">Privé</span>
+                            <span class="option-desc">(lien direct + invités uniquement)</span>
                         </label>
                     </div>
-                    <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                    <small class="dash-visibility-hint">
                         Un événement <strong>privé</strong> ne sera pas listé publiquement. L'admin le configurera en accès restreint lors de la validation.
                     </small>
                 </div>
@@ -1907,19 +2031,23 @@ try {
                     </div>
 
                     <!-- Visibilité de la cotisation -->
-                    <div style="background: #F5F5F5; border: 1px solid var(--dash-border, #E5E5E5); border-radius: 12px; padding: 1rem 1.15rem; margin-top: 0.5rem; margin-bottom: 1rem;">
-                        <div style="font-size: 0.82rem; font-weight: 800; color: #000; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité de la campagne
+                    <div class="dash-visibility-group">
+                        <div class="dash-visibility-label">
+                            <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité de la campagne *
                         </div>
-                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
-                                <input type="radio" name="visibilite_cotisation" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Publique (listée sur la plateforme)
+                        <div class="dash-visibility-options">
+                            <label class="dash-visibility-card">
+                                <input type="radio" name="visibilite_cotisation" value="public" checked onchange="syncVisibilityCards(this)">
+                                <span class="option-title">Publique</span>
+                                <span class="option-desc">(listée sur la plateforme)</span>
                             </label>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.85rem; padding: 0.55rem 1rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
-                                <input type="radio" name="visibilite_cotisation" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privée (confidentielle, lien direct)
+                            <label class="dash-visibility-card">
+                                <input type="radio" name="visibilite_cotisation" value="prive" onchange="syncVisibilityCards(this)">
+                                <span class="option-title">Privée</span>
+                                <span class="option-desc">(confidentielle, lien direct)</span>
                             </label>
                         </div>
-                        <small style="display: block; margin-top: 6px; color: #737373; font-size: 0.75rem;">
+                        <small class="dash-visibility-hint">
                             Une campagne <strong>privée</strong> ne sera pas affichée publiquement. Elle sera accessible uniquement via lien sécurisé.
                         </small>
                     </div>
@@ -2060,19 +2188,23 @@ try {
                         </div>
 
                         <!-- Visibilité du Concours -->
-                        <div style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1rem;">
-                            <div style="font-size: 0.8rem; font-weight: 800; color: #000; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
-                                <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du concours
+                        <div class="dash-visibility-group">
+                            <div class="dash-visibility-label">
+                                <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du concours *
                             </div>
-                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.83rem; padding: 0.5rem 0.9rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
-                                    <input type="radio" name="visibilite_concours" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public
+                            <div class="dash-visibility-options">
+                                <label class="dash-visibility-card">
+                                    <input type="radio" name="visibilite_concours" value="public" checked onchange="syncVisibilityCards(this)">
+                                    <span class="option-title">Public</span>
+                                    <span class="option-desc">(affiché sur la plateforme)</span>
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.83rem; padding: 0.5rem 0.9rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
-                                    <input type="radio" name="visibilite_concours" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct)
+                                <label class="dash-visibility-card">
+                                    <input type="radio" name="visibilite_concours" value="prive" onchange="syncVisibilityCards(this)">
+                                    <span class="option-title">Privé</span>
+                                    <span class="option-desc">(lien direct + whitelist)</span>
                                 </label>
                             </div>
-                            <small style="display: block; margin-top: 5px; color: #737373; font-size: 0.73rem;">Un concours privé ne sera pas listé publiquement. L'admin générera un lien sécurisé à la validation.</small>
+                            <small class="dash-visibility-hint">Un concours privé ne sera pas listé publiquement. L'admin générera un lien sécurisé à la validation.</small>
                         </div>
 
                         <button type="submit" class="dash-btn-action btn-primary btn-submit-large">
@@ -2191,19 +2323,23 @@ try {
                         </div>
 
                         <!-- Visibilité du Vote de Réalisation -->
-                        <div style="background: #F5F5F5; border: 1px solid var(--dash-border); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1rem;">
-                            <div style="font-size: 0.8rem; font-weight: 800; color: #000; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
-                                <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du vote
+                        <div class="dash-visibility-group">
+                            <div class="dash-visibility-label">
+                                <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité du vote *
                             </div>
-                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.83rem; padding: 0.5rem 0.9rem; border: 2px solid #000; border-radius: 8px; background: #000; color: #fff;">
-                                    <input type="radio" name="visibilite_realisation" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Public
+                            <div class="dash-visibility-options">
+                                <label class="dash-visibility-card">
+                                    <input type="radio" name="visibilite_realisation" value="public" checked onchange="syncVisibilityCards(this)">
+                                    <span class="option-title">Public</span>
+                                    <span class="option-desc">(ouvert à tous)</span>
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700; font-size: 0.83rem; padding: 0.5rem 0.9rem; border: 2px solid #E5E5E5; border-radius: 8px; background: #fff; color: #000;">
-                                    <input type="radio" name="visibilite_realisation" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privé (lien direct)
+                                <label class="dash-visibility-card">
+                                    <input type="radio" name="visibilite_realisation" value="prive" onchange="syncVisibilityCards(this)">
+                                    <span class="option-title">Privé</span>
+                                    <span class="option-desc">(lien direct uniquement)</span>
                                 </label>
                             </div>
-                            <small style="display: block; margin-top: 5px; color: #737373; font-size: 0.73rem;">Un vote privé ne sera pas listé publiquement — seuls les invités via lien pourront y accéder.</small>
+                            <small class="dash-visibility-hint">Un vote privé ne sera pas listé publiquement — seuls les invités via lien pourront y accéder.</small>
                         </div>
 
                         <button type="submit" class="dash-btn-action btn-primary btn-submit-large">
@@ -2350,13 +2486,27 @@ try {
 </div>
 
 <script>
+    // Synchronisation d'état pour les cartes de visibilité (avec fallback pour tout navigateur)
+    function syncVisibilityCards(radio) {
+        if (!radio) return;
+        const group = radio.closest('.dash-visibility-options') || radio.closest('.dash-radio-cards');
+        if (!group) return;
+        group.querySelectorAll('.dash-visibility-card, .dash-radio-card').forEach(card => {
+            const input = card.querySelector('input[type="radio"]');
+            if (input && input.checked) {
+                card.classList.add('is-active');
+            } else {
+                card.classList.remove('is-active');
+            }
+        });
+    }
+
     // Gestion de la Catégorie Personnalisée
     function onCategorySelectChange(sel) {
         const box = document.getElementById('container_custom_cat');
         const input = document.getElementById('categorie_custom');
         if (sel.value === 'Autre') {
             box.style.display = 'block';
-            input.required = true;
             input.focus();
         } else {
             box.style.display = 'none';
@@ -2375,7 +2525,6 @@ try {
         } else {
             sel.value = 'Autre';
             box.style.display = 'block';
-            input.required = true;
             input.focus();
         }
     }

@@ -15,7 +15,7 @@ $message = "";
 $msg_type = "";
 
 // 1. Événements de l'organisateur (tous, mais seuls les événements PRIVÉS exploitent la whitelist)
-$stmt_events = $pdo->prepare("SELECT id, nom, date_evenement, visibilite, access_token FROM events WHERE user_id = ? ORDER BY date_evenement DESC");
+$stmt_events = $pdo->prepare("SELECT id, nom, date_evenement, visibilite, access_token FROM events WHERE user_id = ? AND deleted_at IS NULL AND statut != 'supprime' ORDER BY date_evenement DESC");
 $stmt_events->execute([$user_id]);
 $my_events = $stmt_events->fetchAll();
 
@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_import'])) {
     }
 }
 
-// 4. Suppression d'un invité
+// 4. Suppression d'un invité (Suppression logique)
 if (isset($_GET['delete'])) {
     $del_id = filter_input(INPUT_GET, 'delete', FILTER_VALIDATE_INT);
     $stmt_chk = $pdo->prepare("
@@ -188,8 +188,8 @@ if (isset($_GET['delete'])) {
     $stmt_chk->execute([$del_id, $user_id]);
     $row = $stmt_chk->fetch();
     if ($row) {
-        $pdo->prepare("DELETE FROM event_guest_whitelist WHERE id = ?")->execute([$del_id]);
-        $message = "Invité retiré de la liste.";
+        $pdo->prepare("UPDATE event_guest_whitelist SET deleted_at = NOW() WHERE id = ?")->execute([$del_id]);
+        $message = "Invité retiré de la liste avec succès.";
         $msg_type = "success";
         $selected_event_id = (int) $row['event_id'];
     }
@@ -201,7 +201,7 @@ $selected_event = $selected_event_id ? ownsEvent($my_events, $selected_event_id)
 // 5. Liste des invités de l'événement sélectionné
 $guests = [];
 if ($selected_event) {
-    $stmt_g = $pdo->prepare("SELECT * FROM event_guest_whitelist WHERE event_id = ? ORDER BY created_at DESC");
+    $stmt_g = $pdo->prepare("SELECT * FROM event_guest_whitelist WHERE event_id = ? AND deleted_at IS NULL ORDER BY created_at DESC");
     $stmt_g->execute([$selected_event['id']]);
     $guests = $stmt_g->fetchAll();
 }
@@ -221,7 +221,7 @@ if ($selected_event) {
         </div>
 
         <div class="dash-filter-bar">
-            <form method="GET" action="liste-invites.php" style="margin: 0;">
+            <form method="GET" action="liste-invites" style="margin: 0;">
                 <div class="dash-control-select" style="padding: 0.4rem 0.8rem;">
                     <i class="fa-solid fa-calendar-days" style="color: var(--dash-primary);"></i>
                     <select name="event_id" onchange="this.form.submit()"
@@ -244,7 +244,7 @@ if ($selected_event) {
                     <i class="fa-solid fa-file-csv" style="color: #FF4A0D;"></i>
                     <span>Importer un CSV</span>
                 </button>
-                <a href="export.php?type=invites&event_id=<?php echo (int) $selected_event['id']; ?>" class="dash-btn-action" style="text-decoration: none;" title="Exporter la liste complète au format CSV compatible Excel">
+                <a href="export?type=invites&event_id=<?php echo (int) $selected_event['id']; ?>" class="dash-btn-action" style="text-decoration: none;" title="Exporter la liste complète au format CSV compatible Excel">
                     <i class="fa-solid fa-file-export" style="color: #10B981;"></i>
                     <span>Exporter la liste</span>
                 </a>
@@ -334,7 +334,7 @@ if ($selected_event) {
                                             title="Modifier l'invité">
                                             <i class="fa-solid fa-pen-to-square"></i>
                                         </button>
-                                        <a href="liste-invites.php?event_id=<?php echo (int) $selected_event['id']; ?>&delete=<?php echo (int) $g['id']; ?>"
+                                        <a href="liste-invites?event_id=<?php echo (int) $selected_event['id']; ?>&delete=<?php echo (int) $g['id']; ?>"
                                             class="dash-btn-action btn-danger" style="padding: 4px 8px; font-size: 0.76rem;"
                                             onclick="return confirm('Retirer cet invité de la liste ?')" title="Retirer">
                                             <i class="fa-solid fa-trash"></i>
@@ -366,7 +366,7 @@ if ($selected_event) {
             </h3>
             <button type="button" onclick="toggleAddModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
-        <form method="POST" action="liste-invites.php" style="padding: 1.5rem;">
+        <form method="POST" action="liste-invites" style="padding: 1.5rem;">
             <input type="hidden" name="action_add" value="1">
             <input type="hidden" name="event_id" value="<?php echo (int) $selected_event_id; ?>">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
@@ -410,7 +410,7 @@ if ($selected_event) {
             </h3>
             <button type="button" onclick="toggleImportModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
-        <form method="POST" action="liste-invites.php" enctype="multipart/form-data" style="padding: 1.5rem;">
+        <form method="POST" action="liste-invites" enctype="multipart/form-data" style="padding: 1.5rem;">
             <input type="hidden" name="action_import" value="1">
             <input type="hidden" name="event_id" value="<?php echo (int) $selected_event_id; ?>">
             <p style="font-size: 0.8rem; color: var(--dash-muted); margin: 0 0 1rem;">
@@ -438,7 +438,7 @@ if ($selected_event) {
             </h3>
             <button type="button" onclick="closeEditGuestModal()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
-        <form method="POST" action="liste-invites.php" style="padding: 1.5rem;">
+        <form method="POST" action="liste-invites" style="padding: 1.5rem;">
             <input type="hidden" name="action_edit" value="1">
             <input type="hidden" name="event_id" value="<?php echo (int) $selected_event_id; ?>">
             <input type="hidden" name="guest_id" id="edit_guest_id" value="">

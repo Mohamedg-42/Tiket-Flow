@@ -56,7 +56,7 @@ $pct_guichet = 100 - $pct_web;
                 des gares routières.</p>
         </div>
         <div class="dash-filter-bar">
-            <a href="gares.php" class="dash-btn-action" style="text-decoration: none;">
+            <a href="gares" class="dash-btn-action" style="text-decoration: none;">
                 <i class="fa-solid fa-bus"></i>
                 <span>Gérer les Gares</span>
             </a>

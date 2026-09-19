@@ -36,12 +36,12 @@ if (!empty($token)) {
 } elseif ($ticket_id && empty($code)) {
     // Redirection automatique 301 pour masquer l'ID numérique
     $secure_token = get_or_create_resource_token($pdo, 'ticket', $ticket_id);
-    header('Location: telecharger-ticket.php?token=' . urlencode($secure_token), true, 301);
+    header('Location: telecharger-ticket?token=' . urlencode($secure_token), true, 301);
     exit();
 } elseif ($order_id && empty($code)) {
     // Redirection automatique 301 pour masquer l'order_id numérique
     $secure_token = get_or_create_resource_token($pdo, 'order', $order_id);
-    header('Location: telecharger-ticket.php?token=' . urlencode($secure_token), true, 301);
+    header('Location: telecharger-ticket?token=' . urlencode($secure_token), true, 301);
     exit();
 }
 
@@ -71,7 +71,7 @@ if (!empty($code)) {
 
     if (!$order_info) {
         http_response_code(404);
-        die("Commande introuvable. <a href='accueil.php'>Retour à l'accueil</a>");
+        die("Commande introuvable. <a href='accueil'>Retour à l'accueil</a>");
     }
 
     $is_owner = ($session_user_id > 0 && (int) $order_info['user_id'] === $session_user_id);
@@ -82,7 +82,7 @@ if (!empty($code)) {
 
     if (!$is_admin && !$is_owner && !$in_session && !$token_valid && !$is_paid) {
         http_response_code(403);
-        die("Accès refusé. Cette commande nécessite une connexion ou n'est pas encore validée. <a href='../connexion.php'>Connexion</a>");
+        die("Accès refusé. Cette commande nécessite une connexion ou n'est pas encore validée. <a href='../connexion'>Connexion</a>");
     }
 
     $sql = "
@@ -120,14 +120,14 @@ if (!empty($code)) {
         $is_sold = ($first['statut'] === 'vendu');
         if (!$is_admin && !$is_owner && !$is_sold) {
             http_response_code(403);
-            die("Accès refusé. Veuillez vous connecter pour accéder à ce billet. <a href='../connexion.php'>Connexion</a>");
+            die("Accès refusé. Veuillez vous connecter pour accéder à ce billet. <a href='../connexion'>Connexion</a>");
         }
     }
 }
 
 if (empty($tickets)) {
     http_response_code(404);
-    die("Billet introuvable ou référence invalide. <a href='accueil.php'>Retour à l'accueil</a>");
+    die("Billet introuvable ou référence invalide. <a href='accueil'>Retour à l'accueil</a>");
 }
 ?>
 <!DOCTYPE html>
@@ -467,7 +467,7 @@ if (empty($tickets)) {
     <?php endif; ?>
 
     <div class="action-bar">
-        <a href="accueil.php" class="btn-action btn-back">
+        <a href="accueil" class="btn-action btn-back">
             <i class="fa-solid fa-arrow-left"></i> Retour au site
         </a>
 
@@ -493,7 +493,7 @@ if (empty($tickets)) {
                 $pdf_query .= "?token=" . urlencode($sec_o_token);
                 $pdf_filename = "billets-commande-" . ($order_info['numero_commande'] ?? $order_id) . ".pdf";
             } else {
-                $pdf_filename = "billet-tikeli.pdf";
+                $pdf_filename = "billet-tikewa.pdf";
             }
 
             $first_tk = $tickets[0] ?? [];
@@ -534,7 +534,7 @@ if (empty($tickets)) {
                 <div class="ticket-main">
                     <div class="ticket-header">
                         <div class="ticket-brand">
-                            <i class="fa-solid fa-ticket"></i> TIKÉLI
+                            <i class="fa-solid fa-ticket"></i> TikeWA
                         </div>
                         <div class="ticket-badge">
                             <i class="fa-solid fa-circle-check"></i> <?php echo strtoupper($t['statut']); ?>

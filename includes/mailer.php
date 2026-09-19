@@ -35,7 +35,7 @@ function sendTikeliEmail(
 
     if (!empty($attachment_data) && !empty($attachment_filename)) {
         // Message MIME multipart/mixed (HTML + Pièce jointe)
-        $boundary = 'TIKÉLI_' . md5(uniqid((string) time(), true));
+        $boundary = 'TIKEWA_' . md5(uniqid((string) time(), true));
 
         $headers = "MIME-Version: 1.0\r\n";
         $headers .= "From: {$from_name} <{$from_email}>\r\n";
@@ -73,11 +73,42 @@ function sendTikeliEmail(
 }
 
 /**
+ * Détermine l'URL de base absolue de la plateforme (compatible Desktop, Réseau Local LAN & Production)
+ */
+function getTikeliBaseUrl(): string
+{
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+
+    // 1. Si la requête provient d'un hôte explicite (nom de domaine ou IP réseau local)
+    if (!empty($host) && $host !== 'localhost' && $host !== '127.0.0.1') {
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+        $sub = (strpos($_SERVER['REQUEST_URI'] ?? '', '/ticket-platform') !== false || strpos($_SERVER['SCRIPT_NAME'] ?? '', '/ticket-platform') !== false) ? '/ticket-platform' : '';
+        return rtrim($protocol . $host . $sub, '/');
+    }
+
+    // 2. En production ou configuration explicite dans .env
+    $env_url = getenv('APP_URL') ?: (defined('APP_URL') ? APP_URL : '');
+    if (!empty($env_url) && filter_var($env_url, FILTER_VALIDATE_URL) && strpos($env_url, 'localhost') === false) {
+        return rtrim($env_url, '/');
+    }
+
+    // 3. Sur machine locale en développement : Détecter l'IP réseau (Wi-Fi / Ethernet)
+    // Permet aux smartphones sur le même réseau d'ouvrir les liens des emails sans blocage loopback
+    $local_ip = $_SERVER['SERVER_ADDR'] ?? gethostbyname(gethostname());
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+    if (!empty($local_ip) && $local_ip !== '127.0.0.1' && filter_var($local_ip, FILTER_VALIDATE_IP)) {
+        return "{$protocol}{$local_ip}/ticket-platform";
+    }
+
+    return "http://localhost/ticket-platform";
+}
+
+/**
  * Enveloppe HTML standardisée aux couleurs TikeWA (Navy & Ambre)
  */
 function wrapTikeliTemplate(string $title, string $content_html): string
 {
-    $site_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform";
+    $site_url = getTikeliBaseUrl();
     $year = date('Y');
 
     return "
@@ -87,13 +118,26 @@ function wrapTikeliTemplate(string $title, string $content_html): string
         <meta charset='UTF-8'>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <title>" . htmlspecialchars($title) . "</title>
+        <style>
+            body { margin: 0 !important; padding: 16px 8px !important; }
+            .email-wrap { width: 100% !important; max-width: 600px !important; margin: 0 auto !important; }
+            .email-body { padding: 26px 20px !important; }
+            @media only screen and (max-width: 520px) {
+                body { padding: 10px 6px !important; }
+                .email-wrap { border-radius: 8px !important; }
+                .email-header { padding: 20px 14px !important; }
+                .email-body { padding: 18px 12px !important; }
+                .email-title { font-size: 22px !important; }
+                .email-stack-btn { width: 100% !important; max-width: 100% !important; display: block !important; }
+            }
+        </style>
     </head>
-    <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 30px 15px; color: #0f172a;'>
-        <div style='max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0;'>
+    <body style='font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px 10px; color: #0f172a;'>
+        <div class='email-wrap' style='max-width: 600px; width: 100%; margin: 0 auto; background: #ffffff; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); border: 1px solid #e2e8f0; box-sizing: border-box;'>
             
             <!-- En-tête de marque TikeWA -->
-            <div style='background: #000000; color: #ffffff; padding: 28px 24px; text-align: center; border-bottom: 3px solid #FF4A0D;'>
-                <div style='font-size: 26px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 8px;'>
+            <div class='email-header' style='background: #000000; color: #ffffff; padding: 26px 20px; text-align: center; border-bottom: 3px solid #FF4A0D;'>
+                <div class='email-title' style='font-size: 26px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 4px; display: inline-flex; align-items: center; gap: 8px;'>
                     TikeWA
                 </div>
                 <div style='color: #a3a3a3; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;'>
@@ -102,17 +146,17 @@ function wrapTikeliTemplate(string $title, string $content_html): string
             </div>
 
             <!-- Contenu principal -->
-            <div style='padding: 30px 24px; background: #ffffff;'>
+            <div class='email-body' style='padding: 28px 22px; background: #ffffff; box-sizing: border-box;'>
                 {$content_html}
             </div>
 
             <!-- Pied de page -->
-            <div style='background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;'>
+            <div style='background: #f8fafc; padding: 18px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; box-sizing: border-box;'>
                 <p style='margin: 0 0 6px;'>© {$year} TikeWA. Tous droits réservés.</p>
                 <p style='margin: 0;'>Paiements sécurisés par Mobile Money (Wave, Orange, MTN, Moov).</p>
                 <div style='margin-top: 10px;'>
-                    <a href='{$site_url}/client/accueil.php' style='color: #16233f; text-decoration: none; font-weight: 700; margin: 0 8px;'>Accueil</a> ·
-                    <a href='{$site_url}/connexion.php' style='color: #FF4A0D; text-decoration: none; font-weight: 700; margin: 0 8px;'>Connexion</a>
+                    <a href='{$site_url}/client/accueil' style='color: #16233f; text-decoration: none; font-weight: 700; margin: 0 8px;'>Accueil</a> ·
+                    <a href='{$site_url}/connexion' style='color: #FF4A0D; text-decoration: none; font-weight: 700; margin: 0 8px;'>Connexion</a>
                 </div>
             </div>
 
@@ -150,7 +194,7 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
         $tickets_html .= "
         <div style='background: #ffffff; border: 1.5px solid #0f172a; border-radius: 20px; margin-bottom: 22px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.06);'>
             <div style='padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;'>
-                <span style='font-size: 15px; font-weight: 800; color: #0d9488; letter-spacing: 0.5px;'>TIKÉLI</span>
+                <span style='font-size: 15px; font-weight: 800; color: #FF4A0D; letter-spacing: 0.5px;'>TikeWA</span>
                 <span style='background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: bold;'>✔ VENDU</span>
             </div>
             <div style='padding: 20px; text-align: left;'>
@@ -258,27 +302,31 @@ function sendTicketEmail(string $to_email, string $to_name, string $order_number
 function sendWelcomeClientEmail(string $to_email, string $to_name): bool
 {
     $subject = "Bienvenue sur TikeWA, " . $to_name . " !";
-    $site_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform";
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $site_url = !empty($_SERVER['HTTP_HOST'])
+        ? ($protocol . $host . (strpos($_SERVER['REQUEST_URI'] ?? '', '/ticket-platform') !== false ? '/ticket-platform' : ''))
+        : (getenv('APP_URL') ?: 'https://tikewa.com');
 
     $content = "
-        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Bienvenue dans la communauté TikeWA !</h2>
-        <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
+        <h2 style='margin: 0 0 12px; color: #000000; font-size: 22px; font-weight: 800; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif;'>Bienvenue dans la communauté TikeWA !</h2>
+        <p style='font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 18px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Votre compte client a été créé avec succès sur <strong>TikeWA</strong>. Vous pouvez désormais réserver vos places de concert, festivals, spectacles et conférences en quelques clics par Mobile Money.
+            Votre compte client a été créé avec succès sur <strong>TikeWA</strong>. Vous pouvez désormais réserver vos places pour tous les concerts, festivals, spectacles et conférences en quelques clics par Mobile Money (Wave, Orange Money, MTN, Moov).
         </p>
 
-        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin: 20px 0;'>
-            <strong style='color: #16233f; font-size: 14px; display: block; margin-bottom: 8px;'>Ce que vous pouvez faire dès maintenant :</strong>
+        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;'>
+            <strong style='color: #000000; font-size: 14.5px; display: block; margin-bottom: 10px; font-weight: 700;'>Ce que vous pouvez faire dès maintenant :</strong>
             <ul style='margin: 0; padding-left: 20px; color: #475569; font-size: 13.5px; line-height: 1.6;'>
-                <li>Explorer les événements à l'affiche et filtrer par ville ou catégorie.</li>
-                <li>Choisir précisément votre place sur le plan de salle interactif.</li>
-                <li>Retrouver l'historique de vos commandes et télécharger vos billets dans votre espace personnel.</li>
+                <li>Explorer les événements officiels à l'affiche et filtrer par catégorie ou ville.</li>
+                <li>Choisir précisément votre place sur nos plans de salle interactifs.</li>
+                <li>Accéder instantanément à vos billets sécurisés avec QR Codes uniques.</li>
                 <li>Participer aux campagnes de cotisation et voter pour vos candidats préférés.</li>
             </ul>
         </div>
 
-        <div style='text-align: center; margin: 24px 0;'>
-            <a href='{$site_url}/client/accueil.php' style='background: #d97706; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block;'>
+        <div style='text-align: center; margin: 26px 0;'>
+            <a href='{$site_url}/client/accueil' style='background: #FF4A0D; color: #ffffff; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 800; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);'>
                 Découvrir les Événements à l'Affiche
             </a>
         </div>
@@ -351,10 +399,8 @@ function sendAdminCreatedAccountEmail(
     }
 
     $subject = "Votre compte d'accès à la plateforme TikeWA a été créé";
-    $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $site_url = "{$scheme}://{$host}/ticket-platform";
-    $login_url = "{$site_url}/connexion.php";
+    $site_url = getTikeliBaseUrl();
+    $login_url = "{$site_url}/connexion";
 
     // Génération automatique d'un jeton sécurisé de réinitialisation (valide 24h)
     $reset_url = $custom_reset_url;
@@ -369,14 +415,14 @@ function sendAdminCreatedAccountEmail(
                 VALUES (?, ?, NOW() + INTERVAL '24 hours', 0)
             ");
             $stmt_ins->execute([$to_email, $token]);
-            $reset_url = "{$site_url}/reinitialiser-mot-de-passe.php?token=" . urlencode($token) . "&email=" . urlencode($to_email);
+            $reset_url = "{$site_url}/reinitialiser-mot-de-passe?token=" . urlencode($token) . "&email=" . urlencode($to_email);
         } catch (\Throwable $e) {
             error_log("[sendAdminCreatedAccountEmail Token Error] " . $e->getMessage());
-            $reset_url = "{$site_url}/mot-de-passe-oublie.php";
+            $reset_url = "{$site_url}/mot-de-passe-oublie";
         }
     }
     if (empty($reset_url)) {
-        $reset_url = "{$site_url}/mot-de-passe-oublie.php";
+        $reset_url = "{$site_url}/mot-de-passe-oublie";
     }
 
     $role_labels = [
@@ -387,42 +433,53 @@ function sendAdminCreatedAccountEmail(
     ];
     $role_label = $role_labels[$role] ?? ucfirst($role);
 
+    $pwd_display = !empty($password)
+        ? "<code style='background: #FFF2ED; color: #FF4A0D; padding: 4px 10px; border-radius: 6px; font-size: 13.5px; font-weight: 800; letter-spacing: 0.5px; word-break: break-all;'>" . htmlspecialchars($password) . "</code>"
+        : "<span style='background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-style: italic;'>Défini par l'administrateur</span>";
+
     $content = "
-        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px;'>Votre compte TikeWA a été créé</h2>
+        <h2 style='margin: 0 0 12px; color: #16233f; font-size: 20px; line-height: 1.3;'>Votre compte TikeWA a été créé</h2>
         <p style='font-size: 15px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
             Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
-            Un administrateur de la plateforme <strong>TikeWA</strong> vient de vous ouvrir un compte d'accès officiel. Pour des raisons strictes de sécurité et de confidentialité, votre mot de passe n'est pas transmis en clair dans cet e-mail.
+            Un administrateur de la plateforme <strong>TikeWA</strong> vient de vous ouvrir un compte d'accès officiel. Vos identifiants de connexion figurent ci-dessous :
         </p>
 
-        <!-- Boîte des identifiants sécurisée -->
-        <div style='background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 20px; margin: 20px 0;'>
+        <!-- Boîte des identifiants sécurisée (Responsive & Zero Troncature) -->
+        <div style='background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 16px 14px; margin: 18px 0; box-sizing: border-box;'>
             <table style='width: 100%; font-size: 14px; border-collapse: collapse;'>
-                <tr>
-                    <td style='padding: 8px 0; color: #64748b; width: 150px;'>Identifiant / Email :</td>
-                    <td style='padding: 8px 0; color: #000000; font-weight: bold;'>" . htmlspecialchars($to_email) . "</td>
+                <tr class='email-row'>
+                    <td style='padding: 6px 0; color: #64748b; width: 38%; min-width: 110px; font-weight: 600; vertical-align: top;'>Identifiant / Email :</td>
+                    <td style='padding: 6px 0; color: #000000; font-weight: bold; word-break: break-word; overflow-wrap: break-word;'>" . htmlspecialchars($to_email) . "</td>
                 </tr>
-                <tr>
-                    <td style='padding: 8px 0; color: #64748b;'>Rôle d'accès :</td>
-                    <td style='padding: 8px 0; color: #000000; font-weight: 600;'>{$role_label}" . (!empty($profile_nom) && strcasecmp($profile_nom, $role_label) !== 0 ? " — <span style='color: #64748b; font-weight: normal;'>(Profil : " . htmlspecialchars($profile_nom) . ")</span>" : "") . "</td>
+                <tr class='email-row'>
+                    <td style='padding: 6px 0; color: #64748b; font-weight: 600; vertical-align: top;'>Rôle d'accès :</td>
+                    <td style='padding: 6px 0; color: #000000; font-weight: 600; word-break: break-word;'>{$role_label}" . (!empty($profile_nom) && strcasecmp($profile_nom, $role_label) !== 0 ? " — <span style='color: #64748b; font-weight: normal;'>(Profil : " . htmlspecialchars($profile_nom) . ")</span>" : "") . "</td>
                 </tr>
-                <tr>
-                    <td style='padding: 8px 0; color: #64748b;'>Mot de passe :</td>
-                    <td style='padding: 8px 0;'><span style='background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-style: italic;'>Configuré par l'administrateur (protégé)</span></td>
+                <tr class='email-row'>
+                    <td style='padding: 6px 0; color: #64748b; font-weight: 600; vertical-align: middle;'>Mot de passe :</td>
+                    <td style='padding: 6px 0; word-break: break-word;'>{$pwd_display}</td>
                 </tr>
             </table>
         </div>
 
-        <!-- Boutons d'action : Connexion & Réinitialisation -->
-        <div style='text-align: center; margin: 28px 0;'>
-            <table align='center' border='0' cellpadding='0' cellspacing='0' style='margin: 0 auto;'>
+        <!-- Boutons d'action : Connexion & Réinitialisation (Stacké, 100% Fluid Mobile) -->
+        <div style='text-align: center; margin: 24px 0;'>
+            <!-- Bouton Principal Connexion -->
+            <table align='center' border='0' cellpadding='0' cellspacing='0' style='width: 100%; max-width: 320px; margin: 0 auto 12px;'>
                 <tr>
-                    <td align='center' style='padding: 6px;'>
-                        <a href='{$login_url}' style='background: #FF4A0D; color: #ffffff; padding: 13px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);'>
+                    <td align='center' style='border-radius: 8px; background: #FF4A0D;'>
+                        <a href='{$login_url}' class='email-stack-btn' style='background: #FF4A0D; color: #ffffff; padding: 13px 22px; border-radius: 8px; text-decoration: none; font-weight: 800; font-size: 15px; display: block; box-sizing: border-box; text-align: center; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.35);'>
                             Me Connecter à TikeWA
                         </a>
                     </td>
-                    <td align='center' style='padding: 6px;'>
-                        <a href='{$reset_url}' style='background: #ffffff; color: #0f172a; border: 2px solid #cbd5e1; padding: 11px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block;'>
+                </tr>
+            </table>
+
+            <!-- Bouton Secondaire Réinitialisation -->
+            <table align='center' border='0' cellpadding='0' cellspacing='0' style='width: 100%; max-width: 320px; margin: 0 auto;'>
+                <tr>
+                    <td align='center' style='border-radius: 8px; background: #ffffff; border: 2px solid #cbd5e1;'>
+                        <a href='{$reset_url}' class='email-stack-btn' style='background: #ffffff; color: #0f172a; padding: 11px 20px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; display: block; box-sizing: border-box; text-align: center;'>
                             Réinitialiser mon mot de passe
                         </a>
                     </td>
@@ -491,7 +548,7 @@ function sendAccountStatusNotificationEmail(
 function sendPromoterApprovalEmail(string $to_email, string $to_name, string $structure_name = ''): bool
 {
     $subject = "Félicitations ! Votre compte Promoteur TikeWA est activé";
-    $login_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform/connexion.php";
+    $login_url = getTikeliBaseUrl() . "/connexion";
 
     $nom_aff = !empty($structure_name) ? $structure_name : $to_name;
 
@@ -607,7 +664,7 @@ function sendPasswordResetEmail(
 function sendPasswordChangedConfirmationEmail(string $to_email, string $to_name): bool
 {
     $subject = "Votre mot de passe TikeWA a été modifié";
-    $login_url = "http://" . ($_SERVER['HTTP_HOST'] ?? 'localhost') . "/ticket-platform/connexion.php";
+    $login_url = getTikeliBaseUrl() . "/connexion";
 
     $content = "
         <h2 style='margin: 0 0 12px; color: #16a34a; font-size: 20px;'>Mot de passe mis à jour avec succès</h2>
@@ -686,7 +743,7 @@ function sendSeatChangedConfirmationEmail(
         </div>
 
         <div style='text-align: center; margin: 24px 0;'>
-            <a href='{$site_url}/client/mes-tickets.php' style='background: #d97706; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block;'>
+            <a href='{$site_url}/client/mes-tickets' style='background: #d97706; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14.5px; display: inline-block;'>
                 Voir mon billet actualisé
             </a>
         </div>
@@ -724,4 +781,71 @@ function sendSeatChangedConfirmationEmail(
 
     return sendTikeliEmail($to_email, $to_name, $subject, $body_html, $pdf_data ?: null, $pdf_filename);
 }
+
+/**
+ * 12. NOTIFICATION DE CRÉATION DE PROFIL MÉTIER (sendProfileCreatedNotificationEmail)
+ * Informe l'administrateur de la création d'un profil métier et des permissions associées
+ */
+function sendProfileCreatedNotificationEmail(
+    string $to_email,
+    string $to_name,
+    string $profile_nom,
+    string $description,
+    array $permissions = []
+): bool {
+    $subject = "Nouveau profil métier créé : " . $profile_nom;
+    $scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $site_url = "{$scheme}://{$host}/ticket-platform";
+    $manage_url = "{$site_url}/admin/profils";
+
+    $perms_html = "";
+    if (!empty($permissions)) {
+        $perms_html .= "<ul style='margin: 8px 0; padding-left: 20px; color: #334155; font-size: 13px; line-height: 1.6;'>";
+        foreach ($permissions as $p) {
+            $p_label = is_array($p) ? ($p['nom'] ?? $p['code'] ?? '') : (string)$p;
+            $perms_html .= "<li>" . htmlspecialchars($p_label) . "</li>";
+        }
+        $perms_html .= "</ul>";
+    } else {
+        $perms_html = "<p style='color: #94A3B8; font-style: italic; font-size: 13px;'>Aucune permission spécifique associée.</p>";
+    }
+
+    $desc_text = !empty($description) ? htmlspecialchars($description) : "<span style='color: #94A3B8; font-style: italic;'>Aucune description fournie</span>";
+
+    $content = "
+        <h2 style='margin: 0 0 12px; color: #0F172A; font-size: 20px;'>Création d'un Profil Métier</h2>
+        <p style='font-size: 14.5px; line-height: 1.55; color: #334155; margin: 0 0 16px;'>
+            Bonjour <strong>" . htmlspecialchars($to_name) . "</strong>,<br><br>
+            Le profil métier <strong>« " . htmlspecialchars($profile_nom) . " »</strong> vient d'être créé et configuré dans le système d'administration de la plateforme TikeWA.
+        </p>
+
+        <div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin: 18px 0;'>
+            <table style='width: 100%; font-size: 13.5px; border-collapse: collapse;'>
+                <tr>
+                    <td style='padding: 6px 0; color: #64748b; width: 140px; font-weight: 600;'>Nom du Profil :</td>
+                    <td style='padding: 6px 0; color: #0F172A; font-weight: bold;'>" . htmlspecialchars($profile_nom) . "</td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 0; color: #64748b; font-weight: 600;'>Description :</td>
+                    <td style='padding: 6px 0; color: #334155;'>{$desc_text}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 6px 0; color: #64748b; font-weight: 600;'>Permissions (" . count($permissions) . ") :</td>
+                    <td style='padding: 6px 0;'>{$perms_html}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style='text-align: center; margin: 24px 0;'>
+            <a href='{$manage_url}' style='background: #FF4A0D; color: #ffffff; padding: 12px 26px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(255, 74, 13, 0.25);'>
+                Accéder à la Gestion des Profils
+            </a>
+        </div>
+    ";
+
+    $body_html = wrapTikeliTemplate("Nouveau Profil Métier - TikeWA", $content);
+    return sendTikeliEmail($to_email, $to_name, $subject, $body_html);
+}
+
 

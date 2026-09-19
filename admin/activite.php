@@ -69,9 +69,9 @@ $logs = $stmt->fetchAll();
 
 // Statistiques rapides
 $tot_logs_today = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE DATE(created_at) = CURRENT_DATE")->fetchColumn();
-$tot_logins = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action = 'connexion'")->fetchColumn();
+$tot_logins = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action='connexion'")->fetchColumn();
 $tot_updates = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action LIKE '%.update'")->fetchColumn();
-$tot_suspensions = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action = 'user.suspend'")->fetchColumn();
+$tot_suspensions = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE action='user.suspend'")->fetchColumn();
 ?>
 <style>
 /* ==============================================================================
@@ -401,10 +401,10 @@ $tot_suspensions = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE a
         </div>
 
         <div class="activite-header-actions">
-            <a href="export.php?type=activite&action=<?php echo urlencode($filtre_action); ?>&search=<?php echo urlencode($search); ?>&date_debut=<?php echo urlencode($date_debut); ?>&date_fin=<?php echo urlencode($date_fin); ?>" class="dash-btn-action" style="text-decoration: none;" title="Exporter les logs d'activité sur Excel (CSV)">
+            <a href="export?type=activite&action=<?php echo urlencode($filtre_action); ?>&search=<?php echo urlencode($search); ?>&date_debut=<?php echo urlencode($date_debut); ?>&date_fin=<?php echo urlencode($date_fin); ?>" class="dash-btn-action" style="text-decoration: none;" title="Exporter les logs d'activité sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="utilisateurs.php" class="dash-btn-action" style="text-decoration: none;">
+            <a href="utilisateurs" class="dash-btn-action" style="text-decoration: none;">
                 <i class="fa-solid fa-users"></i> Gestion des Comptes
             </a>
             <button type="button" class="dash-btn-action" onclick="window.print()" title="Imprimer le rapport d'audit">
@@ -450,7 +450,7 @@ $tot_suspensions = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE a
 
     <!-- Barre de Filtres et Recherche Responsive -->
     <div class="activite-filter-card">
-        <form method="GET" action="activite.php" class="activite-filter-form">
+        <form method="GET" action="activite" class="activite-filter-form">
             <!-- Auteur -->
             <div class="activite-filter-group">
                 <label class="activite-filter-label">Utilisateur</label>
@@ -502,7 +502,7 @@ $tot_suspensions = (int) $pdo->query("SELECT COUNT(*) FROM activity_logs WHERE a
                     <i class="fa-solid fa-filter"></i> Filtrer
                 </button>
                 <?php if ($filtre_user > 0 || !empty($filtre_action) || !empty($search) || !empty($date_debut) || !empty($date_fin)): ?>
-                    <a href="activite.php" class="activite-reset-link" title="Réinitialiser tous les filtres">
+                    <a href="activite" class="activite-reset-link" title="Réinitialiser tous les filtres">
                         <i class="fa-solid fa-xmark"></i> Effacer
                     </a>
                 <?php endif; ?>

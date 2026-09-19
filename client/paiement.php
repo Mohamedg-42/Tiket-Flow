@@ -32,11 +32,11 @@ if (!empty($token)) {
     $order_id = (int) $_GET['order_id'];
     $sec_token = get_or_create_resource_token($pdo, 'order', $order_id);
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header('Location: paiement.php?token=' . urlencode($sec_token), true, 301);
+        header('Location: paiement?token=' . urlencode($sec_token), true, 301);
         exit();
     }
 } else {
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
@@ -49,15 +49,42 @@ $order = $stmt->fetch();
 
 if (!$order || $order['statut'] !== 'en_attente') {
     $_SESSION['order_message'] = "Cette commande est introuvable ou a déjà été réglée.";
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
+}
+
+// Vérification stricte : clôture du paiement 4 heures avant le début ou si l'événement est déjà arrivé
+if (!empty($order['event_id'])) {
+    try {
+        $stmt_ev = $pdo->prepare("SELECT id, nom, date_evenement, heure, statut, slug FROM events WHERE id = ?");
+        $stmt_ev->execute([$order['event_id']]);
+        $ev_order = $stmt_ev->fetch();
+        if ($ev_order) {
+            $ev_time_str = !empty($ev_order['heure']) ? ($ev_order['date_evenement'] . ' ' . $ev_order['heure']) : ($ev_order['date_evenement'] . ' 00:00:00');
+            $ev_ts = strtotime($ev_time_str);
+            $cutoff_ts = ($ev_ts !== false) ? ($ev_ts - (4 * 3600)) : false;
+
+            if ($ev_order['statut'] === 'termine' || ($cutoff_ts !== false && $cutoff_ts <= time())) {
+                if ($ev_ts !== false && $ev_ts <= time()) {
+                    try {
+                        $pdo->prepare("UPDATE events SET statut = 'termine' WHERE id = ?")->execute([$ev_order['id']]);
+                    } catch (\Throwable $t) {}
+                }
+
+                $_SESSION['order_message'] = "Les ventes sont clôturées pour cet événement (fermeture de la billetterie 4h avant le début). Le règlement ne peut plus être effectué.";
+                $ev_url = !empty($ev_order['slug']) ? ('evenement/' . rawurlencode($ev_order['slug'])) : 'accueil';
+                header('Location: ' . $ev_url);
+                exit();
+            }
+        }
+    } catch (\Throwable $t) {}
 }
 
 // Génération de la signature cryptographique sécurisée du paiement
 if (!defined('APP_SECRET_KEY')) {
     error_log("TikeWA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
     $_SESSION['order_message'] = "Erreur de configuration serveur. Veuillez contacter l'administrateur.";
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 $pay_secret = APP_SECRET_KEY;
@@ -154,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement'])) 
     }
 
     if ($charge['success'] && !empty($charge['redirectUrl'])) {
-        header('Location: ' . $charge['redirectUrl']);
+        header('Location:  ' . $charge['redirectUrl']);
         exit();
     } else {
         $error_msg = $charge['error'] ?? "Impossible d'initialiser la session de paiement sécurisée Bictorys.";
@@ -244,7 +271,7 @@ include 'header.php';
         </div>
 
         <!-- Formulaire de Paiement Harmonisé -->
-        <form method="POST" action="paiement.php?token=<?php echo urlencode($cur_order_token); ?>" id="bictorys-pay-form"
+        <form method="POST" action="paiement?token=<?php echo urlencode($cur_order_token); ?>" id="bictorys-pay-form"
             class="payment-form">
             <input type="hidden" name="initier_paiement" value="1">
             <input type="hidden" name="provider" id="selected_provider" value="wave_money">

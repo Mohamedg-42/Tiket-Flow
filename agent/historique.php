@@ -68,7 +68,7 @@ $kpi_total = (int) $stmt_total->fetchColumn();
             </p>
         </div>
 
-        <a href="verification.php" class="eventia-btn-primary" style="padding: 0.55rem 1.15rem; font-size: 0.86rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 800; border-radius: 10px;">
+        <a href="verification" class="eventia-btn-primary" style="padding: 0.55rem 1.15rem; font-size: 0.86rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 800; border-radius: 10px;">
             <i class="fa-solid fa-camera"></i> Retour au Scanner
         </a>
     </div>
@@ -96,7 +96,7 @@ $kpi_total = (int) $stmt_total->fetchColumn();
 
     <!-- Filtres & Recherche Simple -->
     <div style="background: var(--eventia-white, #ffffff); border: 1px solid var(--eventia-border, #E5E5E5); border-radius: 14px; padding: 0.85rem 1rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-        <form method="GET" action="historique.php" style="display: flex; gap: 8px; align-items: center; margin: 0; flex-wrap: wrap;">
+        <form method="GET" action="historique" style="display: flex; gap: 8px; align-items: center; margin: 0; flex-wrap: wrap;">
             <select name="periode" onchange="this.form.submit()" style="padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.84rem; font-weight: 700; background: #ffffff; color: var(--eventia-navy, #000000); cursor: pointer;">
                 <option value="toutes" <?php echo $filter_period === 'toutes' ? 'selected' : ''; ?>>Toutes les dates</option>
                 <option value="aujourd_hui" <?php echo $filter_period === 'aujourd_hui' ? 'selected' : ''; ?>>Aujourd'hui</option>
@@ -113,7 +113,7 @@ $kpi_total = (int) $stmt_total->fetchColumn();
             </button>
 
             <?php if ($filter_period !== 'toutes' || !empty($search_q)): ?>
-                <a href="historique.php" style="color: var(--eventia-danger, #000000); font-size: 0.82rem; font-weight: 600; text-decoration: underline; margin-left: 4px;">Réinitialiser</a>
+                <a href="historique" style="color: var(--eventia-danger, #000000); font-size: 0.82rem; font-weight: 600; text-decoration: underline; margin-left: 4px;">Réinitialiser</a>
             <?php endif; ?>
         </form>
     </div>
@@ -179,7 +179,7 @@ $kpi_total = (int) $stmt_total->fetchColumn();
                 <i class="fa-solid fa-ticket" style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                 <strong style="display: block; font-size: 1rem; color: var(--eventia-navy, #000000); margin-bottom: 0.25rem;">Aucun billet trouvé</strong>
                 <p style="font-size: 0.84rem; margin: 0 0 1rem;">Aucune validation enregistrée pour les filtres sélectionnés.</p>
-                <a href="verification.php" class="eventia-btn-primary" style="display: inline-flex; text-decoration: none; font-size: 0.85rem; font-weight: 800; border-radius: 8px;">
+                <a href="verification" class="eventia-btn-primary" style="display: inline-flex; text-decoration: none; font-size: 0.85rem; font-weight: 800; border-radius: 8px;">
                     <i class="fa-solid fa-camera"></i> Ouvrir le Scanner
                 </a>
             </div>

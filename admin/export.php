@@ -9,7 +9,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/auth.php';
 
 // Authentification & contrôle d'accès strict (Admin uniquement)
-checkRole(['admin'], '../connexion.php');
+checkRole(['admin'], '../connexion');
 
 $type = trim($_GET['type'] ?? 'tickets');
 $date_now = date('Y-m-d_H-i');
@@ -1011,5 +1011,5 @@ if ($type === 'salles') {
 }
 
 // Redirection par défaut
-header("Location: tickets.php");
+header("Location: tickets");
 exit();

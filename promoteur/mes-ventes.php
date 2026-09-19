@@ -322,7 +322,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
             </a>
 
             <!-- Export Excel -->
-            <a href="export.php?type=ventes&event_id=<?php echo (int) $filter_event; ?>&type_nom=<?php echo urlencode($filter_type); ?>&statut=<?php echo urlencode($filter_status); ?>&period=<?php echo urlencode($filter_period); ?>&q=<?php echo urlencode($q); ?>"
+            <a href="export?type=ventes&event_id=<?php echo (int) $filter_event; ?>&type_nom=<?php echo urlencode($filter_type); ?>&statut=<?php echo urlencode($filter_status); ?>&period=<?php echo urlencode($filter_period); ?>&q=<?php echo urlencode($q); ?>"
                 class="dash-btn-action" style="padding: 0.55rem 1.05rem; font-size: 0.82rem; text-decoration: none;"
                 title="Télécharger la liste des ventes au format Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
@@ -343,7 +343,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
          ============================================================================== -->
     <div class="dash-kpi-grid-6">
         <!-- 1. Recettes Brutes -->
-        <a href="mes-ventes.php" class="dash-kpi-card"
+        <a href="mes-ventes" class="dash-kpi-card"
             style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
             title="Cliquez pour réinitialiser et voir toutes les recettes">
             <div class="dash-kpi-top">
@@ -362,7 +362,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
         </a>
 
         <!-- 2. Revenu Net Promoteur -->
-        <a href="solde.php" class="dash-kpi-card"
+        <a href="solde" class="dash-kpi-card"
             style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
             title="Cliquez pour accéder à votre Solde et demander un retrait">
             <div class="dash-kpi-top">
@@ -382,7 +382,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
         </a>
 
         <!-- 3. Frais & Commissions -->
-        <a href="solde.php" class="dash-kpi-card"
+        <a href="solde" class="dash-kpi-card"
             style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
             title="Cliquez pour voir le barème et l'historique des commissions">
             <div class="dash-kpi-top">
@@ -420,7 +420,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
         </a>
 
         <!-- 5. Taux d'Entrée & Scans -->
-        <a href="mes-ventes.php?statut=utilise#table-acheteurs" class="dash-kpi-card"
+        <a href="mes-ventes?statut=utilise#table-acheteurs" class="dash-kpi-card"
             style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
             title="Cliquez pour filtrer uniquement les billets scannés aux portes">
             <div class="dash-kpi-top">
@@ -517,7 +517,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                         }
                     }
                     ?>
-                    <a href="mes-ventes.php?event_id=<?php echo $matched_ev_id; ?>" class="dash-legend-entry"
+                    <a href="mes-ventes?event_id=<?php echo $matched_ev_id; ?>" class="dash-legend-entry"
                         style="text-decoration: none; color: inherit; cursor: pointer; border-radius: 6px; padding: 3px 6px; transition: background 0.15s;"
                         onmouseover="this.style.background='#F5F5F5'" onmouseout="this.style.background='transparent'"
                         title="Filtrer cet événement">
@@ -578,7 +578,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                             ?>
                             <tr>
                                 <td data-label="Événement">
-                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>"
+                                    <a href="mes-ventes?event_id=<?php echo $stk['event_id']; ?>"
                                         style="color: var(--dash-text); text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"
                                         title="Filtrer les ventes de cet événement">
                                         <span><?php echo htmlspecialchars($stk['event_nom']); ?></span>
@@ -586,7 +586,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                                     </a>
                                 </td>
                                 <td data-label="Catégorie">
-                                    <a href="mes-ventes.php?type=<?php echo urlencode($stk['category_name']); ?>"
+                                    <a href="mes-ventes?type=<?php echo urlencode($stk['category_name']); ?>"
                                         style="text-decoration: none;"
                                         title="Filtrer toutes les ventes de catégorie <?php echo htmlspecialchars($stk['category_name']); ?>">
                                         <span
@@ -604,7 +604,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                                         F</strong>
                                 </td>
                                 <td data-label="Billets Vendus">
-                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs"
+                                    <a href="mes-ventes?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs"
                                         style="text-decoration: none; color: #10b981;"
                                         title="Voir les acheteurs de cette catégorie">
                                         <strong
@@ -630,7 +630,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                                     <?php endif; ?>
                                 </td>
                                 <td data-label="Jauge & Quota Global">
-                                    <a href="mes-ventes.php?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs"
+                                    <a href="mes-ventes?event_id=<?php echo $stk['event_id']; ?>&type=<?php echo urlencode($stk['category_name']); ?>#table-acheteurs"
                                         style="text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-wrap: nowrap;"
                                         title="Cliquez pour filtrer cette formule">
                                         <span class="dash-gauge-track" style="width: clamp(60px, 8vw, 85px); flex-shrink: 0;">
@@ -683,7 +683,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
 
         <!-- BARRE DE FILTRAGE DYNAMIQUE PLACÉE EN BAS (AU NIVEAU DU TABLEAU DES BILLETS) -->
         <div class="dash-filter-bar-bottom">
-            <form method="GET" action="mes-ventes.php#table-acheteurs" id="ventesFilterForm"
+            <form method="GET" action="mes-ventes#table-acheteurs" id="ventesFilterForm"
                 style="display: flex; align-items: center; gap: 0.55rem; margin: 0; flex-wrap: wrap;">
                 <!-- Recherche libre (Nom, Email, Téléphone, Code billet) -->
                 <div style="position: relative; flex: 1; min-width: 200px;">
@@ -758,7 +758,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                 </button>
 
                 <?php if (!empty($filter_type) || $filter_event || !empty($filter_status) || !empty($filter_period) || !empty($q)): ?>
-                    <a href="mes-ventes.php#table-acheteurs" class="dash-btn-action"
+                    <a href="mes-ventes#table-acheteurs" class="dash-btn-action"
                         style="padding: 0.45rem 0.75rem; color: #000000; text-decoration: none;"
                         title="Réinitialiser tous les filtres">
                         <i class="fa-solid fa-rotate-left"></i> Effacer
@@ -800,7 +800,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                                     </div>
                                 </td>
                                 <td data-label="Événement">
-                                    <a href="mes-ventes.php?event_id=<?php echo $s['event_id']; ?>"
+                                    <a href="mes-ventes?event_id=<?php echo $s['event_id']; ?>"
                                         style="color: var(--dash-text); text-decoration: none; font-weight: 700; display: block;"
                                         title="Filtrer cet événement">
                                         <?php echo htmlspecialchars($s['event_name']); ?>
@@ -812,7 +812,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                                     <?php endif; ?>
                                 </td>
                                 <td data-label="Catégorie">
-                                    <a href="mes-ventes.php?type=<?php echo urlencode($s['type_ticket']); ?>"
+                                    <a href="mes-ventes?type=<?php echo urlencode($s['type_ticket']); ?>"
                                         style="text-decoration: none;"
                                         title="Filtrer par catégorie <?php echo htmlspecialchars($s['type_ticket']); ?>">
                                         <span
@@ -861,7 +861,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                                 </td>
                                 <td data-label="Statut aux Portes">
                                     <?php if ($s['statut'] === 'vendu'): ?>
-                                        <a href="mes-ventes.php?statut=vendu#table-acheteurs" style="text-decoration: none;"
+                                        <a href="mes-ventes?statut=vendu#table-acheteurs" style="text-decoration: none;"
                                             title="Filtrer tous les billets valides">
                                             <span
                                                 style="display: inline-flex; align-items: center; gap: 5px; background: #FFF2ED; color: #FF4A0D; border: 1px solid #FFF2ED; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
@@ -869,7 +869,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
                                             </span>
                                         </a>
                                     <?php elseif ($s['statut'] === 'utilise'): ?>
-                                        <a href="mes-ventes.php?statut=utilise#table-acheteurs" style="text-decoration: none;"
+                                        <a href="mes-ventes?statut=utilise#table-acheteurs" style="text-decoration: none;"
                                             title="Filtrer tous les billets scannés">
                                             <span
                                                 style="display: inline-flex; align-items: center; gap: 5px; background: #FFF2ED; color: #FF4A0D; border: 1px solid #FFF2ED; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700;">
@@ -918,7 +918,7 @@ $donut_colors = ['#FF4A0D', '#000000', '#FF6B38', '#262626', '#E03E08', '#4b4b4b
             <span>Dernière mise à jour : <strong><?php echo date('d/m/Y à H:i:s'); ?></strong></span>
         </div>
         <div>
-            <a href="mes-ventes.php"
+            <a href="mes-ventes"
                 style="color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                 <i class="fa-solid fa-rotate"></i> Actualiser instantanément
             </a>

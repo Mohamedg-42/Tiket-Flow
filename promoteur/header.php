@@ -107,7 +107,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
 
     <!-- Styles CSS -->
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/dashboard-pro.css">
+    <link rel="stylesheet" href="../css/dashboard-pro.css?v=<?php echo @filemtime(__DIR__ . '/../css/dashboard-pro.css'); ?>">
     <!-- TikeWA Brand Design System -->
     <link rel="stylesheet" href="../css/eventia-brand.css">
     <!-- Responsive Professional CSS -->
@@ -737,7 +737,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
     <div class="ctrl-mobile-topbar">
         <div
             style="display: flex; align-items: center; gap: 8px; color: #ffffff; font-weight: 800; font-size: 0.92rem; overflow: hidden; min-width: 0;">
-            <a href="dashboard.php"
+            <a href="dashboard"
                 style="display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0;">
                 <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA"
                     style="height: 28px; width: auto; max-width: 110px; object-fit: contain;">
@@ -764,7 +764,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
         <aside class="sidebar" id="ctrlPromoterSidebar">
             <!-- 1. En-tête de Marque / Centre de Contrôle -->
             <div class="ctrl-brand">
-                <a href="dashboard.php" class="ctrl-brand-logo"
+                <a href="dashboard" class="ctrl-brand-logo"
                     style="text-decoration: none; display: flex; align-items: center;">
                     <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA"
                         style="height: 40px; width: auto; max-width: 160px; object-fit: contain;">
@@ -781,7 +781,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
             </div>
 
             <!-- 2. Profil Promoteur Connecté -->
-            <a href="profil.php" class="ctrl-user-card" data-title="Mon Profil Promoteur"
+            <a href="profil" class="ctrl-user-card" data-title="Mon Profil Promoteur"
                 data-desc="Consulter et mettre à jour vos coordonnées commerciales et statut KYC."
                 data-category="Compte">
                 <div class="ctrl-avatar"><?php echo htmlspecialchars($initiales); ?></div>
@@ -808,7 +808,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                 <span class="ctrl-section-label">Pilotage & Événements</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="dashboard.php" class="<?php echo $current_page === 'dashboard.php' ? 'active' : ''; ?>"
+                        <a href="dashboard" class="<?php echo $current_page === 'dashboard.php' ? 'active' : ''; ?>"
                             data-title="Tableau de Bord"
                             data-desc="Suivi des ventes, revenus nets et jauges de vos événements en temps réel."
                             data-category="Pilotage">
@@ -819,7 +819,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         </a>
                     </li>
                     <li>
-                        <a href="mes-evenements.php"
+                        <a href="mes-evenements"
                             class="<?php echo in_array($current_page, ['mes-evenements.php', 'ticket-types.php'], true) ? 'active' : ''; ?>"
                             data-title="Mes Événements"
                             data-desc="Créer, modifier, tarifer et gérer vos événements et types de billets."
@@ -831,7 +831,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         </a>
                     </li>
                     <li>
-                        <a href="liste-invites.php" class="<?php echo $current_page === 'liste-invites.php' ? 'active' : ''; ?>"
+                        <a href="liste-invites" class="<?php echo $current_page === 'liste-invites.php' ? 'active' : ''; ?>"
                             data-title="Liste d'Invités"
                             data-desc="Importez ou saisissez la liste des bénéficiaires autorisés pour vos événements privés."
                             data-category="Événements">
@@ -842,7 +842,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         </a>
                     </li>
                     <li>
-                        <a href="votes.php" class="<?php echo $current_page === 'votes.php' ? 'active' : ''; ?>"
+                        <a href="votes" class="<?php echo $current_page === 'votes.php' ? 'active' : ''; ?>"
                             data-title="Concours & Votes"
                             data-desc="Créer des concours de vote payants, ajouter des candidats et suivre le classement."
                             data-category="Engagement">
@@ -853,7 +853,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         </a>
                     </li>
                     <li>
-                        <a href="demande-evenement.php"
+                        <a href="demande-evenement"
                             class="<?php echo $current_page === 'demande-evenement.php' ? 'active' : ''; ?>"
                             data-title="Proposer un Événement"
                             data-desc="Soumettre un nouvel événement à la validation de l'administration TikeWA."
@@ -865,7 +865,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         </a>
                     </li>
                     <li>
-                        <a href="demandes.php" class="<?php echo $current_page === 'demandes.php' ? 'active' : ''; ?>"
+                        <a href="demandes" class="<?php echo $current_page === 'demandes.php' ? 'active' : ''; ?>"
                             data-title="Mes Demandes de Validation"
                             data-desc="Statut de validation de vos demandes d'événements et retours de modération."
                             data-category="Suivi">
@@ -884,7 +884,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                 <span class="ctrl-section-label">Finances & Recettes</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="mes-ventes.php"
+                        <a href="mes-ventes"
                             class="<?php echo $current_page === 'mes-ventes.php' ? 'active' : ''; ?>"
                             data-title="Ventes & Billetterie"
                             data-desc="Liste des participants, commandes validées et export des listes d'acheteurs."
@@ -896,7 +896,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         </a>
                     </li>
                     <li>
-                        <a href="cotisations.php"
+                        <a href="cotisations"
                             class="<?php echo $current_page === 'cotisations.php' ? 'active' : ''; ?>"
                             data-title="Mes Cotisations"
                             data-desc="Créer des cagnottes, tontines et collectes pour financer vos projets."
@@ -908,7 +908,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         </a>
                     </li>
                     <li>
-                        <a href="solde.php" class="<?php echo $current_page === 'solde.php' ? 'active' : ''; ?>"
+                        <a href="solde" class="<?php echo $current_page === 'solde.php' ? 'active' : ''; ?>"
                             data-title="Solde & Retraits"
                             data-desc="Consulter vos recettes nettes et demander un virement Mobile Money instantané."
                             data-category="Trésorerie">
@@ -924,7 +924,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                 <span class="ctrl-section-label">Opérations Terrain</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="agents.php" class="<?php echo $current_page === 'agents.php' ? 'active' : ''; ?>"
+                        <a href="agents" class="<?php echo $current_page === 'agents.php' ? 'active' : ''; ?>"
                             data-title="Agents de Contrôle"
                             data-desc="Créer des comptes agents et les assigner pour scanner les QR codes aux entrées."
                             data-category="Contrôle">
@@ -940,7 +940,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                 <span class="ctrl-section-label">Image & Assistance</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="profil.php" class="<?php echo $current_page === 'profil.php' ? 'active' : ''; ?>"
+                        <a href="profil" class="<?php echo $current_page === 'profil.php' ? 'active' : ''; ?>"
                             data-title="Mon Profil Public"
                             data-desc="Gérer votre logo, description d'organisateur et coordonnées publiques."
                             data-category="Profil">
@@ -951,7 +951,7 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
                         </a>
                     </li>
                     <li>
-                        <a href="reclamations.php"
+                        <a href="reclamations"
                             class="<?php echo $current_page === 'reclamations.php' ? 'active' : ''; ?>"
                             data-title="Support & Réclamations"
                             data-desc="Contacter l'administration TikeWA en cas de litige ou assistance technique."
@@ -971,13 +971,13 @@ $badge_claims_promoteur = (int) $stmt_cl->fetchColumn();
 
             <!-- 5. Pied du Centre de Contrôle -->
             <div class="ctrl-footer">
-                <a href="../client/accueil.php" target="_blank" class="ctrl-btn-site" data-title="Voir le Site Public"
+                <a href="../client/accueil" target="_blank" class="ctrl-btn-site" data-title="Voir le Site Public"
                     data-desc="Consulter la vitrine publique TikeWA et les événements en ligne."
                     data-category="Raccourci">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     <span>Voir le Site Public</span>
                 </a>
-                <a href="../deconnexion.php" class="ctrl-btn-logout" data-title="Déconnexion"
+                <a href="../deconnexion" class="ctrl-btn-logout" data-title="Déconnexion"
                     data-desc="Fermer votre session promoteur en toute sécurité." data-category="Sécurité"
                     onclick="return confirm('Voulez-vous vous déconnecter de votre espace promoteur ?');">
                     <i class="fa-solid fa-right-from-bracket"></i>

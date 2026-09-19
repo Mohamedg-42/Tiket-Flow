@@ -85,7 +85,7 @@ $page_title = $page_title ?? 'Espace Agent - Tike WA';
 
     <header class="client-header shared-client-header"
         style="background: var(--tikeli-black, #000000); color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0.85rem clamp(1rem, 4vw, 2.5rem); display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.12);">
-        <a href="verification.php" class="client-brand" style="text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
+        <a href="verification" class="client-brand" style="text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
             <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA" style="height: 38px; width: auto; max-width: 140px; object-fit: contain;">
             <span style="font-size: 0.72rem; font-weight: 800; background: rgba(255, 74, 13, 0.18); color: var(--tikeli-orange, #FF4A0D); border: 1px solid rgba(255, 74, 13, 0.35); padding: 2px 7px; border-radius: 6px; letter-spacing: 0.5px;">AGENT</span>
         </a>
@@ -97,15 +97,15 @@ $page_title = $page_title ?? 'Espace Agent - Tike WA';
         </button>
 
         <nav class="client-nav" id="clientNav" style="display: flex; align-items: center; gap: 8px;">
-            <a href="verification.php" class="<?php echo $current_page === 'verification.php' ? 'active' : ''; ?>"
+            <a href="verification" class="<?php echo $current_page === 'verification.php' ? 'active' : ''; ?>"
                 style="display: inline-flex; align-items: center; gap: 7px; padding: 0.5rem 0.9rem; border-radius: 8px; font-size: 0.86rem; font-weight: 600; text-decoration: none; color: <?php echo $current_page === 'verification.php' ? '#ffffff' : '#737373'; ?>; background: <?php echo $current_page === 'verification.php' ? 'rgba(255,255,255,0.1)' : 'transparent'; ?>; border-bottom: <?php echo $current_page === 'verification.php' ? '2px solid var(--tikeli-orange, #FF4A0D)' : '2px solid transparent'; ?>;">
                 <i class="fa-solid fa-camera" style="<?php echo $current_page === 'verification.php' ? 'color: var(--tikeli-orange, #FF4A0D);' : ''; ?>"></i> Scanner / Vérifier
             </a>
-            <a href="historique.php" class="<?php echo $current_page === 'historique.php' ? 'active' : ''; ?>"
+            <a href="historique" class="<?php echo $current_page === 'historique.php' ? 'active' : ''; ?>"
                 style="display: inline-flex; align-items: center; gap: 7px; padding: 0.5rem 0.9rem; border-radius: 8px; font-size: 0.86rem; font-weight: 600; text-decoration: none; color: <?php echo $current_page === 'historique.php' ? '#ffffff' : '#737373'; ?>; background: <?php echo $current_page === 'historique.php' ? 'rgba(255,255,255,0.1)' : 'transparent'; ?>; border-bottom: <?php echo $current_page === 'historique.php' ? '2px solid var(--tikeli-orange, #FF4A0D)' : '2px solid transparent'; ?>;">
                 <i class="fa-solid fa-clock-rotate-left" style="<?php echo $current_page === 'historique.php' ? 'color: var(--tikeli-orange, #FF4A0D);' : ''; ?>"></i> Historique des scans
             </a>
-            <a href="../deconnexion.php" class="client-logout" style="color: #E5E5E5; background: rgba(239, 68, 68, 0.12); padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <a href="../deconnexion" class="client-logout" style="color: #E5E5E5; background: rgba(239, 68, 68, 0.12); padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
             </a>
         </nav>

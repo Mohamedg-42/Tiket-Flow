@@ -25,5 +25,5 @@ session_regenerate_id(true);
 $_SESSION['logout_success'] = true;
 
 // 4. On redirige vers la page d'accueil du site
-header("Location: client/accueil.php");
+header("Location: client/accueil");
 exit();

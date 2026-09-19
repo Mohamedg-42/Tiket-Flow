@@ -1,0 +1,875 @@
+/* ==============================================================================
+   TIKÉLI / TIKEWA — SEATING & BOOKING DESIGN SYSTEM (Css/seating-booking.css)
+   Modèle d'interface de réservation en 3 colonnes :
+   Fiche Événement | Plan Interactif de la Salle | Panier "Vos places" & Paiement
+   ============================================================================== */
+
+:root {
+    --sb-bg: #F8FAFC;
+    --sb-card-bg: #FFFFFF;
+    --sb-border: #E2E8F0;
+    --sb-border-light: #F1F5F9;
+    --sb-navy: #0F172A;
+    --sb-navy-light: #1E293B;
+    --sb-muted: #64748B;
+    --sb-primary-orange: #FF4A0D;
+    --sb-primary-orange-hover: #E03E05;
+    --sb-vip: #F97316;
+    --sb-premium: #2563EB;
+    --sb-standard: #93C5FD;
+    --sb-occupied: #475569;
+    --sb-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --sb-font-heading: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    --sb-font-mono: 'Space Mono', monospace;
+    --sb-radius-card: 16px;
+    --sb-radius-btn: 10px;
+    --sb-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+    --sb-shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+body.booking-model-body {
+    background-color: var(--sb-bg) !important;
+    font-family: var(--sb-font) !important;
+    color: var(--sb-navy) !important;
+    margin: 0;
+    padding: 0;
+}
+
+/* Conteneur principal plein écran centré */
+.booking-page-wrap {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 3rem;
+    box-sizing: border-box;
+}
+
+/* Grille 3 Colonnes */
+.booking-layout-grid {
+    display: grid;
+    grid-template-columns: 290px 1fr 340px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* Style de carte unifié */
+.sb-card {
+    background: var(--sb-card-bg);
+    border: 1px solid var(--sb-border);
+    border-radius: var(--sb-radius-card);
+    box-shadow: var(--sb-shadow);
+    box-sizing: border-box;
+}
+
+/* ==============================================================================
+   COLONNE 1 : FICHE ÉVÉNEMENT & TARIFS (GAUCHE)
+   ============================================================================== */
+.event-summary-card {
+    padding: 1.25rem;
+    position: sticky;
+    top: 1.5rem;
+}
+
+.event-summary-img-wrap {
+    position: relative;
+    width: 100%;
+    height: 165px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0F172A;
+    margin-bottom: 1rem;
+}
+
+.event-summary-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.event-summary-title {
+    font-family: var(--sb-font-heading);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--sb-navy);
+    line-height: 1.3;
+    margin: 0 0 0.75rem;
+}
+
+.event-summary-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-bottom: 0.85rem;
+}
+
+.event-summary-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.84rem;
+    color: var(--sb-muted);
+    font-weight: 500;
+}
+
+.event-summary-meta-item i {
+    color: #94A3B8;
+    width: 16px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.event-summary-cat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    align-self: flex-start;
+    background: #EFF6FF;
+    color: #2563EB;
+    border: 1px solid #DBEAFE;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.event-summary-desc {
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: #475569;
+    margin: 0 0 1.25rem;
+    max-height: 120px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.event-summary-divider {
+    height: 1px;
+    background: var(--sb-border-light);
+    margin: 1rem 0;
+}
+
+.event-tarifs-section {
+    margin-top: 0.5rem;
+}
+
+.event-tarifs-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--sb-navy);
+    margin: 0 0 0.85rem;
+    letter-spacing: -0.01em;
+}
+
+.event-tarifs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.event-tarif-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.84rem;
+}
+
+.event-tarif-name-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #334155;
+    font-weight: 600;
+}
+
+.event-tarif-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.event-tarif-dot.dot-vip { background: var(--sb-vip); }
+.event-tarif-dot.dot-premium { background: var(--sb-premium); }
+.event-tarif-dot.dot-standard { background: var(--sb-standard); }
+
+.event-tarif-price {
+    font-family: var(--sb-font-heading);
+    font-weight: 800;
+    color: var(--sb-navy);
+    font-size: 0.88rem;
+}
+
+/* ==============================================================================
+   COLONNE 2 : PLAN INTERACTIF DE LA SALLE (CENTRE)
+   ============================================================================== */
+.seating-plan-card {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 720px;
+    position: relative;
+    overflow: hidden;
+}
+
+.seating-plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+}
+
+.seating-plan-heading {
+    margin: 0 0 0.25rem;
+    font-family: var(--sb-font-heading);
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--sb-navy);
+}
+
+.seating-plan-sub {
+    font-size: 0.85rem;
+    color: var(--sb-muted);
+    margin: 0;
+}
+
+/* Orientation badge en haut à droite */
+.seating-orientation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #F8FAFC;
+    border: 1px solid var(--sb-border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--sb-navy);
+}
+
+.seating-orientation-badge i {
+    color: #0F172A;
+    font-size: 0.8rem;
+}
+
+/* Zone d'affichage du plan SVG / Canvas */
+.seating-stage-container {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #FAFCFF;
+    border: 1px solid #EEF2F6;
+    border-radius: 12px;
+    padding: 1rem 0.5rem;
+    user-select: none;
+    overflow: hidden;
+}
+
+/* Scène officielle avec projecteurs lumineux */
+.sb-stage-box {
+    position: relative;
+    width: 260px;
+    height: 48px;
+    background: #1E293B;
+    border-radius: 8px 8px 18px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    font-family: var(--sb-font-heading);
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    z-index: 5;
+}
+
+/* SVG interactif de la salle */
+.sb-amphitheatre-svg {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    z-index: 2;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: center center;
+}
+
+/* Style des sièges SVG */
+.seat-node {
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.seat-node:hover:not(.seat-occupied) {
+    transform: scale(1.35);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+    z-index: 10;
+}
+
+.seat-node.seat-selected {
+    transform: scale(1.25);
+    filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.6));
+}
+
+.seat-node.seat-occupied {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+/* Infobulle de siège sélectionné (ex: A12, A13) */
+.seat-selected-bubble {
+    pointer-events: none;
+    animation: popBubble 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popBubble {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Badges de zones sur le plan */
+.sb-zone-badge {
+    font-family: var(--sb-font-heading);
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.sb-zone-badge.badge-vip {
+    background: #FFF7ED;
+    color: #EA580C;
+    border: 1px solid #FDBA74;
+}
+
+.sb-zone-badge.badge-premium {
+    background: #EFF6FF;
+    color: #2563EB;
+    border: 1px solid #93C5FD;
+}
+
+.sb-zone-badge.badge-standard {
+    background: #F0FDF4;
+    color: #059669;
+    border: 1px solid #A7F3D0;
+}
+
+/* Cabine RÉGIE en bas */
+.sb-regie-box {
+    width: 90px;
+    height: 32px;
+    background: #1E293B;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    font-family: var(--sb-font-heading);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    margin-top: 1.5rem;
+    z-index: 5;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+}
+
+/* Contrôles de zoom flottants */
+.sb-zoom-controls {
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    background: #FFFFFF;
+    border: 1px solid var(--sb-border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--sb-shadow-sm);
+    z-index: 10;
+}
+
+.sb-zoom-btn {
+    width: 32px;
+    height: 32px;
+    background: #FFFFFF;
+    border: none;
+    color: #334155;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+
+.sb-zoom-btn:hover {
+    background: #F1F5F9;
+    color: var(--sb-navy);
+}
+
+.sb-zoom-btn:first-child {
+    border-bottom: 1px solid var(--sb-border);
+}
+
+/* Barre de Légende Inférieure */
+.seating-legend-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    background: #F8FAFC;
+    border: 1px solid var(--sb-border);
+    border-radius: 999px;
+    padding: 0.65rem 1.25rem;
+    margin-top: 1.25rem;
+}
+
+.seating-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.78rem;
+    color: #475569;
+    font-weight: 600;
+}
+
+.seating-legend-item .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.legend-dot.dot-disp { background: var(--sb-standard); }
+.legend-dot.dot-sel { background: var(--sb-premium); }
+.legend-dot.dot-occ { background: var(--sb-occupied); }
+.legend-dot.dot-vip { background: var(--sb-vip); }
+
+/* ==============================================================================
+   COLONNE 3 : PANIER "VOS PLACES" & PAIEMENT (DROITE)
+   ============================================================================== */
+.cart-summary-card {
+    padding: 1.5rem;
+    position: sticky;
+    top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.cart-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+}
+
+.cart-header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #EFF6FF;
+    color: #2563EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.cart-header-title {
+    font-family: var(--sb-font-heading);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--sb-navy);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cart-count-badge {
+    background: #2563EB;
+    color: #FFFFFF;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-size: 0.76rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Liste des places choisies */
+.cart-seats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 2px;
+    margin-bottom: 1.25rem;
+}
+
+.cart-empty-state {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--sb-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    background: #F8FAFC;
+    border: 1px dashed var(--sb-border);
+    border-radius: 12px;
+}
+
+.cart-seat-item {
+    background: #F8FAFC;
+    border: 1px solid var(--sb-border);
+    border-radius: 10px;
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color 0.15s ease;
+}
+
+.cart-seat-item:hover {
+    border-color: #CBD5E1;
+}
+
+.cart-seat-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cart-seat-name-wrap {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--sb-navy);
+}
+
+.cart-seat-remove-btn {
+    background: none;
+    border: none;
+    color: #94A3B8;
+    font-size: 1.1rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+    border-radius: 4px;
+    transition: color 0.15s ease;
+}
+
+.cart-seat-remove-btn:hover {
+    color: #EF4444;
+}
+
+.cart-seat-item-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    margin-top: 2px;
+}
+
+.cart-seat-category-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--sb-muted);
+}
+
+.cart-seat-price {
+    font-family: var(--sb-font-heading);
+    font-weight: 800;
+    color: var(--sb-navy);
+    font-size: 0.85rem;
+}
+
+/* Lignes de décompte financier */
+.cart-financial-breakdown {
+    border-top: 1px solid var(--sb-border-light);
+    padding-top: 1rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.cart-fin-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.cart-fin-row .price {
+    font-family: var(--sb-font-heading);
+    font-weight: 700;
+    color: var(--sb-navy);
+}
+
+.cart-fin-divider {
+    height: 1px;
+    background: var(--sb-border);
+    margin: 0.5rem 0;
+}
+
+.cart-fin-row.total-row {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--sb-navy);
+}
+
+.cart-fin-row.total-row .price {
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: var(--sb-navy);
+}
+
+/* Bouton principal Orange "Continuer vers le paiement" */
+.btn-continue-payment {
+    width: 100%;
+    background: var(--sb-primary-orange);
+    color: #FFFFFF;
+    border: none;
+    border-radius: var(--sb-radius-btn);
+    padding: 0.95rem 1rem;
+    font-family: var(--sb-font-heading);
+    font-size: 0.98rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 14px rgba(255, 74, 13, 0.28);
+    transition: all 0.2s ease;
+}
+
+.btn-continue-payment:hover:not(:disabled) {
+    background: var(--sb-primary-orange-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(255, 74, 13, 0.35);
+}
+
+.btn-continue-payment:disabled {
+    background: #CBD5E1;
+    color: #64748B;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Bloc réassurance paiement sécurisé */
+.sb-security-badge {
+    margin-top: 1.25rem;
+    background: #F8FAFC;
+    border: 1px solid #EEF2F6;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sb-security-icon {
+    font-size: 1.25rem;
+    color: #2563EB;
+    flex-shrink: 0;
+}
+
+.sb-security-title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--sb-navy);
+    margin: 0 0 2px;
+}
+
+.sb-security-sub {
+    font-size: 0.74rem;
+    color: var(--sb-muted);
+    margin: 0;
+    line-height: 1.35;
+}
+
+/* ==============================================================================
+   BARRE INFÉRIEURE : RETOUR & ASSISTANCE
+   ============================================================================== */
+.booking-bottom-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding: 0.5rem 0.25rem;
+}
+
+.booking-back-link {
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s ease;
+}
+
+.booking-back-link:hover {
+    color: var(--sb-primary-orange);
+}
+
+.booking-help-link {
+    color: var(--sb-muted);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s ease;
+}
+
+.booking-help-link:hover {
+    color: var(--sb-navy);
+}
+
+/* Modale intégrée de saisie des coordonnées acheteur */
+.sb-checkout-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.sb-checkout-modal {
+    background: #FFFFFF;
+    border-radius: 16px;
+    max-width: 460px;
+    width: 100%;
+    padding: 1.75rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    position: relative;
+    animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.sb-checkout-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.sb-checkout-modal-title {
+    font-family: var(--sb-font-heading);
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--sb-navy);
+    margin: 0;
+}
+
+.sb-checkout-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: #94A3B8;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.sb-form-group {
+    margin-bottom: 1rem;
+}
+
+.sb-form-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--sb-navy);
+    margin-bottom: 0.35rem;
+}
+
+.sb-form-input {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--sb-border);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+}
+
+.sb-form-input:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* ==============================================================================
+   RESPONSIVE DESIGN (TABLETTE & MOBILE)
+   ============================================================================== */
+@media (max-width: 1100px) {
+    .booking-layout-grid {
+        grid-template-columns: 260px 1fr 300px;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 950px) {
+    .booking-layout-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .event-summary-card {
+        position: static;
+    }
+
+    .cart-summary-card {
+        position: static;
+    }
+}
+
+@media (max-width: 600px) {
+    .booking-page-wrap {
+        padding: 1rem 0.75rem 2.5rem;
+    }
+
+    .seating-plan-card {
+        padding: 1rem;
+    }
+
+    .seating-legend-bar {
+        gap: 0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+}

@@ -160,7 +160,7 @@ $sql_events = "
            COALESCE((SELECT COUNT(*) FROM agent_assignments aa WHERE aa.event_id = e.id), 0) AS nb_agents,
            COALESCE((SELECT COUNT(*) FROM event_votes ev WHERE ev.event_id = e.id), 0) AS nb_votes
     FROM events e 
-    WHERE e.user_id = ?
+    WHERE e.user_id = ? AND e.deleted_at IS NULL AND e.statut != 'supprime'
 ";
 $params_events = [$user_id];
 
@@ -578,10 +578,10 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
         </div>
 
         <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
-            <a href="export.php?type=evenements" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter le bilan de tous les événements sur Excel">
+            <a href="export?type=evenements" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter le bilan de tous les événements sur Excel">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="demande-evenement.php" class="dash-btn-action btn-primary" style="padding: 0.6rem 1.15rem; text-decoration: none;">
+            <a href="demande-evenement" class="dash-btn-action btn-primary" style="padding: 0.6rem 1.15rem; text-decoration: none;">
                 <i class="fa-solid fa-plus"></i> Proposer un Événement
             </a>
         </div>
@@ -689,7 +689,7 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
             </button>
 
             <?php if ($periode !== 'toutes' || $search_q !== '' || $filter_statut !== 'tous'): ?>
-                <a href="mes-evenements.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
+                <a href="mes-evenements" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -706,7 +706,7 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
                 </h3>
                 <small style="color: var(--dash-muted); font-size: 0.78rem;">Suivi en direct des ventes, entrées scannées et pilotage de la billetterie.</small>
             </div>
-            <a href="demandes.php" style="font-size: 0.82rem; color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+            <a href="demandes" style="font-size: 0.82rem; color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fa-solid fa-folder-open"></i> Voir mes propositions en attente
             </a>
         </div>
@@ -835,7 +835,7 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
                                 <td style="padding: 0.75rem 0.85rem; text-align: right; white-space: nowrap; width: 170px;">
                                     <div class="table-actions-group">
                                         <!-- Voir côté public -->
-                                        <a href="../client/accueil.php" target="_blank" class="table-action-icon" title="Voir côté public" aria-label="Voir côté public">
+                                        <a href="../client/accueil" target="_blank" class="table-action-icon" title="Voir côté public" aria-label="Voir côté public">
                                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                         </a>
 
@@ -845,12 +845,12 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
                                         </button>
 
                                         <!-- Agents -->
-                                        <a href="agents.php?event_id=<?php echo $ev['id']; ?>" class="table-action-icon" title="Gérer les agents de scan" aria-label="Agents">
+                                        <a href="agents?event_id=<?php echo $ev['id']; ?>" class="table-action-icon" title="Gérer les agents de scan" aria-label="Agents">
                                             <i class="fa-solid fa-shield-halved"></i>
                                         </a>
 
                                         <!-- Ventes -->
-                                        <a href="mes-ventes.php?event_id=<?php echo $ev['id']; ?>" class="table-action-icon action-primary" title="Consulter les ventes & recettes" aria-label="Ventes">
+                                        <a href="mes-ventes?event_id=<?php echo $ev['id']; ?>" class="table-action-icon action-primary" title="Consulter les ventes & recettes" aria-label="Ventes">
                                             <i class="fa-solid fa-chart-pie"></i>
                                         </a>
 
@@ -991,7 +991,7 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
 
                         <!-- Barre d'actions tactiles -->
                         <div class="card-actions-grid">
-                            <a href="../client/accueil.php" target="_blank" class="card-action-btn" title="Voir côté public" aria-label="Voir côté public">
+                            <a href="../client/accueil" target="_blank" class="card-action-btn" title="Voir côté public" aria-label="Voir côté public">
                                 <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                 <span>Voir</span>
                             </a>
@@ -999,11 +999,11 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
                                 <i class="fa-solid fa-pen-to-square"></i>
                                 <span>Modifier</span>
                             </button>
-                            <a href="agents.php?event_id=<?php echo $ev['id']; ?>" class="card-action-btn" title="Gérer les agents" aria-label="Agents">
+                            <a href="agents?event_id=<?php echo $ev['id']; ?>" class="card-action-btn" title="Gérer les agents" aria-label="Agents">
                                 <i class="fa-solid fa-shield-halved"></i>
                                 <span>Agents</span>
                             </a>
-                            <a href="mes-ventes.php?event_id=<?php echo $ev['id']; ?>" class="card-action-btn action-primary" title="Consulter les ventes" aria-label="Ventes">
+                            <a href="mes-ventes?event_id=<?php echo $ev['id']; ?>" class="card-action-btn action-primary" title="Consulter les ventes" aria-label="Ventes">
                                 <i class="fa-solid fa-chart-pie"></i>
                                 <span>Ventes</span>
                             </a>
@@ -1040,7 +1040,7 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
                 <i class="fa-solid fa-calendar-xmark" style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                 <strong style="display: block; font-size: 1rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucun événement trouvé</strong>
                 <p style="font-size: 0.82rem; margin: 0 0 1rem;">Vous n'avez aucun événement correspondant aux filtres sélectionnés.</p>
-                <a href="demande-evenement.php" class="dash-btn-action btn-primary" style="display: inline-flex; text-decoration: none;">
+                <a href="demande-evenement" class="dash-btn-action btn-primary" style="display: inline-flex; text-decoration: none;">
                     <i class="fa-solid fa-plus"></i> Proposer un Événement
                 </a>
             </div>
@@ -1060,7 +1060,7 @@ $taux_remplissage_global = $total_places_sum > 0 ? round(($total_billets_vendus_
             <button type="button" onclick="closeEditModal()" style="border: 0; background: transparent; font-size: 1.2rem; color: var(--dash-muted); cursor: pointer;">&times;</button>
         </div>
 
-        <form method="POST" action="mes-evenements.php" enctype="multipart/form-data" style="padding: 1.5rem; overflow-y: auto;">
+        <form method="POST" action="mes-evenements" enctype="multipart/form-data" style="padding: 1.5rem; overflow-y: auto;">
             <input type="hidden" name="action_modifier" value="1">
             <input type="hidden" name="event_id" id="edit_event_id" value="">
 

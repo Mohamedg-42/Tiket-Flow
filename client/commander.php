@@ -10,14 +10,14 @@ require_once '../includes/whitelist.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
 // Les promoteurs et administrateurs ne peuvent pas acheter de billets (réservé aux clients)
 if (isset($_SESSION['user_id']) && in_array($_SESSION['user_role'] ?? '', ['promoteur', 'admin'], true)) {
     $_SESSION['order_message'] = "L'achat de billets est réservé aux clients. Votre compte " . ($_SESSION['user_role'] ?? '') . " ne peut pas réserver.";
-    header('Location: accueil.php?onglet=evenements');
+    header('Location: accueil?onglet=evenements');
     exit();
 }
 
@@ -58,24 +58,45 @@ if (empty($tickets_input) && isset($_POST['ticket_type'])) {
 
 if (!$event_id || empty($tickets_input)) {
     $_SESSION['order_message'] = "Données de réservation invalides.";
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
-if (empty($client_nom) || empty($client_email)) {
-    $_SESSION['order_message'] = "Veuillez renseigner votre nom et votre adresse email pour recevoir vos billets.";
-    header('Location: accueil.php');
+if (empty($client_nom)) {
+    $_SESSION['order_message'] = "Veuillez renseigner votre nom pour réserver vos billets.";
+    header('Location: accueil');
     exit();
 }
 
-// 1. Vérification que l'événement est actif
-$stmt = $pdo->prepare("SELECT id, nom, visibilite FROM events WHERE id = ? AND statut = 'actif'");
+// 1. Vérification que l'événement est actif et non arrivé
+$stmt = $pdo->prepare("SELECT id, nom, visibilite, date_evenement, heure, statut, slug FROM events WHERE id = ?");
 $stmt->execute([$event_id]);
 $event = $stmt->fetch();
 
-if (!$event) {
+if (!$event || $event['statut'] !== 'actif') {
     $_SESSION['order_message'] = "Cet événement n'est plus disponible à la réservation.";
-    header('Location: accueil.php');
+    header('Location: accueil');
+    exit();
+}
+
+$event_slug = (string) ($event['slug'] ?? '');
+$event_back_url = !empty($event_slug) ? ('evenement/' . rawurlencode($event_slug)) : ('evenement.php?id=' . $event_id);
+
+// Vérification de sécurité stricte : clôture des ventes 4 heures avant le début ou si l'événement est déjà arrivé
+$event_time_str = !empty($event['heure']) ? ($event['date_evenement'] . ' ' . $event['heure']) : ($event['date_evenement'] . ' 00:00:00');
+$event_ts = strtotime($event_time_str);
+$cutoff_ts = ($event_ts !== false) ? ($event_ts - (4 * 3600)) : false;
+
+if ($event['statut'] === 'termine' || ($cutoff_ts !== false && $cutoff_ts <= time())) {
+    // Si l'événement a déjà réellement commencé ou dépassé son heure, synchronisation 'termine'
+    if ($event_ts !== false && $event_ts <= time()) {
+        try {
+            $pdo->prepare("UPDATE events SET statut = 'termine' WHERE id = ?")->execute([$event['id']]);
+        } catch (\Throwable $t) {}
+    }
+
+    $_SESSION['order_message'] = "Les ventes de billets pour cet événement sont fermées (la billetterie ferme 4 heures avant le début de l'événement).";
+    header('Location: ' . $event_back_url);
     exit();
 }
 
@@ -90,24 +111,16 @@ if (($event['visibilite'] ?? 'public') === 'prive') {
         && (int) ($verified['expires'] ?? 0) >= time()
         && normalizePhone($client_telephone) === $verified['telephone'];
 
-    $event_slug = '';
-    try {
-        $stmt_s = $pdo->prepare("SELECT slug FROM events WHERE id = ?");
-        $stmt_s->execute([$event_id]);
-        $event_slug = (string) $stmt_s->fetchColumn();
-    } catch (\Throwable $e) {}
-    $event_back_url = !empty($event_slug) ? ('evenement/' . rawurlencode($event_slug)) : ('evenement.php?id=' . $event_id);
-
     if (!$verified_ok) {
         $_SESSION['order_message'] = "Veuillez d'abord vérifier votre éligibilité (téléphone + code SMS) pour cet événement privé.";
-        header('Location: ' . $event_back_url);
+        header('Location:  ' . $event_back_url);
         exit();
     }
 
     $eligibility = checkWhitelistEligibility($pdo, $event_id, $client_telephone);
     if (!$eligibility['eligible']) {
         $_SESSION['order_message'] = $eligibility['message'];
-        header('Location: ' . $event_back_url);
+        header('Location:  ' . $event_back_url);
         exit();
     }
     $whitelist_guest = $eligibility;
@@ -136,14 +149,14 @@ foreach ($all_type_ids as $ticket_type_id) {
 
     if (!$ticket) {
         $_SESSION['order_message'] = "Un des types de billet sélectionnés est invalide.";
-        header('Location: accueil.php');
+        header('Location: accueil');
         exit();
     }
 
     $stock_disponible = (int) $ticket['quantite'] - (int) $ticket['quantite_vendue'];
     if ($qty > $stock_disponible) {
         $_SESSION['order_message'] = "Stock insuffisant pour « " . htmlspecialchars($ticket['nom']) . " » (reste " . $stock_disponible . " place(s)).";
-        header('Location: accueil.php');
+        header('Location: accueil');
         exit();
     }
 
@@ -168,7 +181,7 @@ foreach ($all_type_ids as $ticket_type_id) {
 
             if (count($valid_places) !== count(array_unique($seat_ids))) {
                 $_SESSION['order_message'] = "Une des places choisies n'est plus disponible. Veuillez en sélectionner d'autres.";
-                header('Location: accueil.php');
+                header('Location: accueil');
                 exit();
             }
 
@@ -203,13 +216,13 @@ foreach ($all_type_ids as $ticket_type_id) {
 
 if ($total_places_choisies <= 0 || empty($order_items_to_create)) {
     $_SESSION['order_message'] = "Veuillez sélectionner au moins un billet pour continuer.";
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
 if ($whitelist_guest !== null && $total_places_choisies > (int) $whitelist_guest['remaining']) {
     $_SESSION['order_message'] = "Vous ne pouvez commander que " . (int) $whitelist_guest['remaining'] . " billet(s) au maximum pour cet événement (quota d'invitation).";
-    header('Location: ' . $event_back_url);
+    header('Location:  ' . $event_back_url);
     exit();
 }
 
@@ -225,8 +238,8 @@ try {
     $stmt_order->execute([
         $user_id,
         $client_nom,
-        $client_email,
-        $client_telephone,
+        !empty($client_email) ? $client_email : null,
+        !empty($client_telephone) ? $client_telephone : null,
         $numero_commande,
         $montant_total_commande
     ]);
@@ -263,7 +276,7 @@ try {
 
     // 5. Redirection vers le paiement Mobile Money sécurisé par token (masquage d'ID)
     $order_token = get_or_create_resource_token($pdo, 'order', $order_id);
-    header('Location: paiement.php?token=' . urlencode($order_token));
+    header('Location: paiement?token=' . urlencode($order_token));
     exit();
 
 } catch (PDOException $e) {
@@ -271,6 +284,6 @@ try {
         $pdo->rollBack();
     }
     $_SESSION['order_message'] = friendly_db_error($e, 'commande', "Impossible de créer votre commande. Les billets sélectionnés ne sont peut-être plus disponibles.");
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }

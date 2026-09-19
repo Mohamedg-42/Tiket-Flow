@@ -530,13 +530,13 @@ if (isset($_GET['resend_tickets'])) {
         </div>
 
         <div class="commandes-header-actions">
-            <a href="export.php?type=commandes&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>"
+            <a href="export?type=commandes&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>"
                 class="dash-btn-action"
                 style="padding: 0.6rem 1.15rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;"
                 title="Exporter les commandes sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="paiements.php" class="dash-btn-action btn-primary"
+            <a href="paiements" class="dash-btn-action btn-primary"
                 style="padding: 0.6rem 1.2rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-credit-card"></i> Voir les Flux Mobile Money
             </a>
@@ -572,7 +572,7 @@ if (isset($_GET['resend_tickets'])) {
         </div>
 
         <!-- À DROITE : RECHERCHE -->
-        <form class="commandes-search-form" method="GET" action="commandes.php">
+        <form class="commandes-search-form" method="GET" action="commandes">
             <input type="hidden" name="statut" value="<?php echo htmlspecialchars($statut_f); ?>">
             <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>"
                 placeholder="N° commande, client..."
@@ -582,7 +582,7 @@ if (isset($_GET['resend_tickets'])) {
                 Filtrer
             </button>
             <?php if ($statut_f !== 'tous' || $search !== ''): ?>
-                <a href="commandes.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
+                <a href="commandes" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -734,7 +734,7 @@ if (isset($_GET['resend_tickets'])) {
                                 <td class="card-actions" style="text-align: right;">
                                     <div class="cell-actions-group">
                                         <?php if ($o['statut'] === 'payee'): ?>
-                                            <a href="../client/telecharger-ticket.php?order_id=<?php echo (int) $o['id']; ?>"
+                                            <a href="../client/telecharger-ticket?order_id=<?php echo (int) $o['id']; ?>"
                                                 target="_blank" class="dash-btn-action"
                                                 style="padding: 0.35rem 0.65rem; font-size: 0.76rem; background: #F5F5F5; color: var(--dash-text); text-decoration: none; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;"
                                                 title="Télécharger le PDF officiel des billets">

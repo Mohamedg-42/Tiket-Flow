@@ -247,33 +247,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_add_zone'])) {
 if (isset($_GET['delete_zone'])) {
     $del_z_id = (int)$_GET['delete_zone'];
     try {
-        $pdo->prepare("DELETE FROM salle_zones WHERE id = ?")->execute([$del_z_id]);
-        $message = "La zone a été supprimée.";
+        $pdo->prepare("UPDATE salle_zones SET deleted_at = NOW() WHERE id = ?")->execute([$del_z_id]);
+        $message = "La zone a été supprimée avec succès.";
         $msg_type = "success";
     } catch (PDOException $e) {
-        $message = friendly_db_error($e, 'salle', "Impossible de supprimer cette zone. Elle est peut-être liée à des événements existants.");
+        $message = friendly_db_error($e, 'salle', "Erreur lors de la suppression de la zone.");
         $msg_type = "error";
     }
 }
 
 // ------------------------------------------------------------------------------
-// 4. TRAITEMENT : SUPPRESSION D'UNE SALLE
+// 4. TRAITEMENT : SUPPRESSION D'UNE SALLE (SUPPRESSION LOGIQUE)
 // ------------------------------------------------------------------------------
 if (isset($_GET['delete_salle'])) {
     $del_s_id = (int)$_GET['delete_salle'];
     try {
-        $stmt_s = $pdo->prepare("SELECT nom FROM salles WHERE id = ?");
+        $stmt_s = $pdo->prepare("SELECT nom FROM salles WHERE id = ? AND deleted_at IS NULL");
         $stmt_s->execute([$del_s_id]);
         $s_to_del = $stmt_s->fetch();
 
         if ($s_to_del) {
-            $pdo->prepare("DELETE FROM salles WHERE id = ?")->execute([$del_s_id]);
-            logActivity('salle.delete', 'salle', $del_s_id, "Suppression de la salle #$del_s_id (« {$s_to_del['nom']} »)");
-            $message = "La salle « " . htmlspecialchars($s_to_del['nom']) . " » a été supprimée.";
+            $pdo->prepare("UPDATE salles SET statut = 'supprime', deleted_at = NOW() WHERE id = ?")->execute([$del_s_id]);
+            logActivity('salle.soft_delete', 'salle', $del_s_id, "Suppression logique de la salle #$del_s_id (« {$s_to_del['nom']} »)");
+            $message = "La salle « " . htmlspecialchars($s_to_del['nom']) . " » a été supprimée avec succès.";
             $msg_type = "success";
         }
     } catch (PDOException $e) {
-        $message = friendly_db_error($e, 'salle', "Impossible de supprimer cette salle car elle est liée à des événements ou billets existants.");
+        $message = friendly_db_error($e, 'salle', "Erreur lors de la suppression de la salle.");
         $msg_type = "error";
     }
 }
@@ -286,7 +286,7 @@ $ville_f  = $_GET['ville'] ?? 'toutes';
 $type_f   = $_GET['type_salle'] ?? 'tous';
 $search   = trim($_GET['q'] ?? '');
 
-$sql = "SELECT s.*, (SELECT COUNT(*) FROM salle_zones sz WHERE sz.salle_id = s.id) AS nb_zones FROM salles s WHERE 1=1";
+$sql = "SELECT s.*, (SELECT COUNT(*) FROM salle_zones sz WHERE sz.salle_id = s.id AND sz.deleted_at IS NULL) AS nb_zones FROM salles s WHERE s.deleted_at IS NULL AND s.statut != 'supprime'";
 $params = [];
 
 if ($statut_f !== 'tous' && in_array($statut_f, ['active', 'maintenance', 'inactive'], true)) {
@@ -316,18 +316,18 @@ $stmt->execute($params);
 $salles_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Récupération de toutes les zones groupées par salle
-$all_zones_raw = $pdo->query("SELECT * FROM salle_zones ORDER BY capacite DESC")->fetchAll(PDO::FETCH_ASSOC);
+$all_zones_raw = $pdo->query("SELECT * FROM salle_zones WHERE deleted_at IS NULL ORDER BY capacite DESC")->fetchAll(PDO::FETCH_ASSOC);
 $salle_zones_map = [];
 foreach ($all_zones_raw as $z) {
     $salle_zones_map[$z['salle_id']][] = $z;
 }
 
 // Villes distinctes pour le sélecteur
-$villes_disponibles = $pdo->query("SELECT DISTINCT ville FROM salles WHERE ville IS NOT NULL AND ville != '' ORDER BY ville ASC")->fetchAll(PDO::FETCH_COLUMN);
+$villes_disponibles = $pdo->query("SELECT DISTINCT ville FROM salles WHERE ville IS NOT NULL AND ville != '' AND deleted_at IS NULL ORDER BY ville ASC")->fetchAll(PDO::FETCH_COLUMN);
 
 // Calculs KPI Globaux
-$tot_salles      = (int)$pdo->query("SELECT COUNT(*) FROM salles")->fetchColumn();
-$tot_capacite    = (int)$pdo->query("SELECT COALESCE(SUM(capacite), 0) FROM salles WHERE statut = 'active'")->fetchColumn();
+$tot_salles      = (int)$pdo->query("SELECT COUNT(*) FROM salles WHERE deleted_at IS NULL AND statut != 'supprime'")->fetchColumn();
+$tot_capacite    = (int)$pdo->query("SELECT COALESCE(SUM(capacite), 0) FROM salles WHERE statut = 'active' AND deleted_at IS NULL")->fetchColumn();
 $tot_actives     = (int)$pdo->query("SELECT COUNT(*) FROM salles WHERE statut = 'active'")->fetchColumn();
 $tot_maintenance = (int)$pdo->query("SELECT COUNT(*) FROM salles WHERE statut = 'maintenance'")->fetchColumn();
 
@@ -400,7 +400,7 @@ function get_type_salle_label($type) {
         </div>
 
         <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
-            <a href="export.php?type=salles&statut=<?php echo urlencode($statut_f); ?>&ville=<?php echo urlencode($ville_f); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter le catalogue des salles sur Excel (CSV)">
+            <a href="export?type=salles&statut=<?php echo urlencode($statut_f); ?>&ville=<?php echo urlencode($ville_f); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter le catalogue des salles sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
             <button type="button" onclick="openCreateSalleModal()" class="dash-btn-action btn-primary" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
@@ -498,7 +498,7 @@ function get_type_salle_label($type) {
             <button type="submit" class="dash-btn-action" style="padding: 0.4rem 0.75rem;"><i class="fa-solid fa-arrow-right"></i></button>
 
             <?php if ($search !== '' || $ville_f !== 'toutes' || $statut_f !== 'tous'): ?>
-                <a href="salles.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Réinitialiser</a>
+                <a href="salles" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Réinitialiser</a>
             <?php endif; ?>
         </form>
     </div>

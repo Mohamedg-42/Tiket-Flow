@@ -930,5 +930,5 @@ if ($type === 'reclamations') {
 }
 
 // Type inconnu
-header("Location: mes-ventes.php");
+header("Location: mes-ventes");
 exit();

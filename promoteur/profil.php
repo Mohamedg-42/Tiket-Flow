@@ -163,7 +163,7 @@ if (empty($initials)) {
         </div>
 
         <div>
-            <a href="../client/promoteur.php?token=<?php echo urlencode($promoter_token); ?>" target="_blank" class="dash-btn-action btn-primary" style="padding: 0.6rem 1.15rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <a href="../client/promoteur?token=<?php echo urlencode($promoter_token); ?>" target="_blank" class="dash-btn-action btn-primary" style="padding: 0.6rem 1.15rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Voir mon Profil Public
             </a>
         </div>
@@ -256,7 +256,7 @@ if (empty($initials)) {
                 <small style="color: var(--dash-muted); font-size: 0.78rem;">Ces éléments sont visibles par tous les acheteurs sur votre vitrine d'organisateur.</small>
             </div>
 
-            <form method="POST" action="profil.php" style="padding: 1.5rem;">
+            <form method="POST" action="profil" style="padding: 1.5rem;">
                 <input type="hidden" name="update_profile" value="1">
 
                 <div style="margin-bottom: 1rem;">

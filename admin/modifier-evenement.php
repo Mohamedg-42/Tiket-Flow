@@ -9,7 +9,7 @@ include 'header.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
-    header('Location: evenements.php');
+    header('Location: evenements');
     exit();
 }
 
@@ -18,7 +18,7 @@ $stmt->execute([$id]);
 $event = $stmt->fetch();
 
 if (!$event) {
-    header('Location: evenements.php');
+    header('Location: evenements');
     exit();
 }
 
@@ -135,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p>Mettez à jour les caractéristiques, le statut ou la tarification de l'événement.</p>
         </div>
 
-        <a href="evenements.php" class="dash-btn-action"
+        <a href="evenements" class="dash-btn-action"
             style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
             <i class="fa-solid fa-arrow-left"></i> Retour à la Liste
         </a>
@@ -449,7 +449,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     style="padding: 0.75rem 1.8rem; font-size: 0.9rem;">
                     <i class="fa-solid fa-floppy-disk"></i> Enregistrer les Modifications
                 </button>
-                <a href="evenements.php" class="dash-btn-action"
+                <a href="evenements" class="dash-btn-action"
                     style="text-decoration: none; padding: 0.75rem 1.2rem;">
                     Annuler
                 </a>

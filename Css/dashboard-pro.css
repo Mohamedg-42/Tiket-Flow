@@ -1449,7 +1449,7 @@ th:nth-last-child(2):has(+ th:last-child) {
     word-break: break-word;
 }
 
-.dash-form-group input,
+.dash-form-group input:not([type="radio"]):not([type="checkbox"]):not([type="button"]):not([type="submit"]),
 .dash-form-group select,
 .dash-form-group textarea,
 .dash-form-group input[type="file"],
@@ -1462,6 +1462,143 @@ th:nth-last-child(2):has(+ th:last-child) {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
+}
+
+.dash-form-group input[type="radio"],
+.dash-form-group input[type="checkbox"],
+input[type="radio"].radio-custom,
+.radio-card input[type="radio"] {
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    accent-color: #FF4A0D;
+    cursor: pointer;
+}
+
+/* ==============================================================================
+   9. VISIBILITY & SELECTION RADIO CARDS (MÜLLER-BROCKMANN & TIKEWA STANDARD)
+   ============================================================================== */
+.dash-visibility-group {
+    background: #F8FAFC;
+    border: 1px solid var(--dash-border, #E2E8F0);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1.15rem;
+    box-sizing: border-box;
+}
+
+.dash-visibility-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #0F172A;
+}
+
+.dash-visibility-options {
+    display: flex;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.dash-visibility-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1.15rem;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 9px;
+    background: #FFFFFF;
+    color: #1E293B;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+    line-height: 1.35;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dash-visibility-card:hover {
+    border-color: #94A3B8;
+    background: #F1F5F9;
+}
+
+.dash-visibility-card input[type="radio"] {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    max-width: 18px !important;
+    margin: 0 !important;
+    accent-color: #FF4A0D !important;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.dash-visibility-card .option-title {
+    font-weight: 800;
+    color: inherit;
+    white-space: nowrap;
+}
+
+.dash-visibility-card .option-desc {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #64748B;
+    margin-left: 2px;
+}
+
+/* Active checked state (via :has and fallback class) */
+.dash-visibility-card:has(input[type="radio"]:checked),
+.dash-visibility-card.is-active {
+    border-color: #0F172A !important;
+    background: #0F172A !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+}
+
+.dash-visibility-card:has(input[type="radio"]:checked) .option-title,
+.dash-visibility-card.is-active .option-title {
+    color: #FFFFFF !important;
+}
+
+.dash-visibility-card:has(input[type="radio"]:checked) .option-desc,
+.dash-visibility-card.is-active .option-desc {
+    color: #CBD5E1 !important;
+}
+
+.dash-visibility-card:has(input[type="radio"]:checked) input[type="radio"],
+.dash-visibility-card.is-active input[type="radio"] {
+    accent-color: #FF4A0D !important;
+}
+
+.dash-visibility-hint {
+    display: block;
+    margin-top: 0.65rem;
+    color: #64748B;
+    font-size: 0.76rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 680px) {
+    .dash-visibility-options {
+        flex-direction: column;
+    }
+    .dash-visibility-card {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .dash-visibility-card .option-title {
+        white-space: normal;
+    }
 }
 
 /* ==============================================================================
@@ -1687,4 +1824,108 @@ th:nth-last-child(2):has(+ th:last-child) {
         text-align: center !important;
         gap: 8px !important;
     }
+}
+
+/* ==============================================================================
+   10. UNIVERSAL DASHBOARD MODAL SYSTEM (FIXED OVERLAY & CENTERED VIEWPORT)
+   ============================================================================== */
+.dash-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.dash-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(4px) !important;
+    z-index: 1;
+}
+
+.dash-modal-dialog {
+    position: relative !important;
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    max-width: 640px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    overflow: hidden;
+    animation: dashModalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2 !important;
+    box-sizing: border-box;
+    margin: auto;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+@keyframes dashModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dash-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.15rem 1.4rem;
+    border-bottom: 1px solid var(--dash-border, #e2e8f0);
+    background: #ffffff;
+}
+
+.dash-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--dash-text, #0f172a);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+}
+
+.dash-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--dash-muted, #64748b);
+    cursor: pointer;
+    padding: 0 4px;
+    transition: color 0.15s ease;
+}
+
+.dash-modal-close:hover {
+    color: #0f172a;
+}
+
+.dash-modal-body {
+    padding: 1.4rem;
+    max-height: calc(85vh - 120px);
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.dash-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.4rem;
+    background: #F8FAFC;
+    border-top: 1px solid var(--dash-border, #e2e8f0);
 }

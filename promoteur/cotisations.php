@@ -121,7 +121,8 @@ if (isset($_GET['supprimer_participant'])) {
     $part_id = filter_input(INPUT_GET, 'supprimer_participant', FILTER_VALIDATE_INT);
     if ($part_id) {
         $stmt_del = $pdo->prepare("
-            DELETE FROM cotisation_whitelist 
+            UPDATE cotisation_whitelist 
+            SET deleted_at = NOW()
             WHERE id = ? AND campagne_id IN (SELECT id FROM cotisation_campagnes WHERE user_id = ?)
         ");
         $stmt_del->execute([$part_id, $user_id]);
@@ -189,10 +190,10 @@ $sql_camp = "
                       WHERE ct.campagne_id = c.id AND ct.statut IN ('en_attente', 'payee')), 0) AS montant_collecte,
            COALESCE((SELECT COUNT(*) FROM cotisations ct
                       WHERE ct.campagne_id = c.id AND ct.statut IN ('en_attente', 'payee')), 0) AS nb_contributeurs,
-           COALESCE((SELECT COUNT(*) FROM cotisation_whitelist cw
-                      WHERE cw.campagne_id = c.id), 0) AS nb_participants_whitelist
+            COALESCE((SELECT COUNT(*) FROM cotisation_whitelist cw
+                       WHERE cw.campagne_id = c.id AND cw.deleted_at IS NULL), 0) AS nb_participants_whitelist
     FROM cotisation_campagnes c
-    WHERE c.user_id = ?
+    WHERE c.user_id = ? AND c.deleted_at IS NULL AND c.statut != 'supprime'
 ";
 $params_camp = [$user_id];
 
@@ -240,7 +241,7 @@ try {
     $stmt_wl_p = $pdo->prepare("
         SELECT id, nom, prenom, telephone, email, created_at
         FROM cotisation_whitelist
-        WHERE campagne_id = ?
+        WHERE campagne_id = ? AND deleted_at IS NULL
         ORDER BY id DESC
     ");
 
@@ -322,7 +323,7 @@ function get_cotisation_badge($statut) {
         </div>
 
         <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
-            <a href="export.php?type=cotisations" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les campagnes et contributions sur Excel (CSV)">
+            <a href="export?type=cotisations" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les campagnes et contributions sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: var(--tikeli-black, #000000);"></i> Exporter Excel
             </a>
             <button type="button" onclick="openNewCampagneModal()" class="eventia-btn-primary" style="padding: 0.6rem 1.15rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;">
@@ -429,7 +430,7 @@ function get_cotisation_badge($statut) {
             </button>
 
             <?php if ($periode !== 'toutes' || $search_q !== '' || $filter_statut !== 'tous'): ?>
-                <a href="cotisations.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
+                <a href="cotisations" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -467,7 +468,7 @@ function get_cotisation_badge($statut) {
                                         <?php echo $vis_pc === 'prive' ? 'Privée' : 'Publique'; ?>
                                     </span>
                                     <?php if ($vis_pc === 'prive' && !empty($camp['access_token']) && $camp['statut'] === 'active'): ?>
-                                        <a href="../client/cotisation.php?id=<?php echo (int)$camp['id']; ?>&token=<?php echo htmlspecialchars($camp['access_token']); ?>" target="_blank" style="font-size: 0.68rem; color: #FF4A0D; text-decoration: underline; display: inline-flex; align-items: center; gap: 3px;" title="Lien privé à partager">
+                                        <a href="../client/cotisation?id=<?php echo (int)$camp['id']; ?>&token=<?php echo htmlspecialchars($camp['access_token']); ?>" target="_blank" style="font-size: 0.68rem; color: #FF4A0D; text-decoration: underline; display: inline-flex; align-items: center; gap: 3px;" title="Lien privé à partager">
                                             <i class="fa-solid fa-link"></i> Lien privé
                                         </a>
                                     <?php endif; ?>
@@ -582,7 +583,7 @@ function get_cotisation_badge($statut) {
                                             <i class="fa-solid fa-link"></i> Copier le lien privé
                                         </button>
                                     <?php endif; ?>
-                                    <a href="export.php?type=invites_cotisation&campagne_id=<?php echo (int)$camp['id']; ?>" class="dash-btn-action" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; border: 1px solid var(--dash-border); background: #ffffff; color: var(--dash-text); border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-weight: 700;" title="Télécharger la liste des invités autorisés en CSV (Excel)">
+                                    <a href="export?type=invites_cotisation&campagne_id=<?php echo (int)$camp['id']; ?>" class="dash-btn-action" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; border: 1px solid var(--dash-border); background: #ffffff; color: var(--dash-text); border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-weight: 700;" title="Télécharger la liste des invités autorisés en CSV (Excel)">
                                         <i class="fa-solid fa-file-export" style="color: #10B981;"></i> Exporter la liste
                                     </a>
                                 </div>
@@ -594,7 +595,7 @@ function get_cotisation_badge($statut) {
                                 </summary>
 
                                 <!-- Formulaire d'ajout rapide -->
-                                <form method="POST" action="cotisations.php" style="margin-top: 0.75rem; background: #ffffff; border: 1px solid var(--dash-border); border-radius: 8px; padding: 0.85rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) auto; gap: 8px; align-items: end;">
+                                <form method="POST" action="cotisations" style="margin-top: 0.75rem; background: #ffffff; border: 1px solid var(--dash-border); border-radius: 8px; padding: 0.85rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) auto; gap: 8px; align-items: end;">
                                     <input type="hidden" name="action" value="ajouter_participant_whitelist">
                                     <input type="hidden" name="campagne_id" value="<?php echo (int)$camp['id']; ?>">
 
@@ -663,7 +664,7 @@ function get_cotisation_badge($statut) {
                                                                 title="Modifier l'invité">
                                                                 <i class="fa-solid fa-pen-to-square"></i>
                                                             </button>
-                                                            <a href="cotisations.php?supprimer_participant=<?php echo (int)$part['id']; ?>" onclick="return confirm('Retirer cet invité de la liste autorisée ?');" style="color: #ef4444; text-decoration: none; font-size: 0.75rem;" title="Retirer l'invité">
+                                                            <a href="cotisations?supprimer_participant=<?php echo (int)$part['id']; ?>" onclick="return confirm('Retirer cet invité de la liste autorisée ?');" style="color: #ef4444; text-decoration: none; font-size: 0.75rem;" title="Retirer l'invité">
                                                                 <i class="fa-solid fa-trash-can"></i>
                                                             </a>
                                                         </td>
@@ -707,7 +708,7 @@ function get_cotisation_badge($statut) {
             <button type="button" onclick="closeNewCampagneModal()" style="border: 0; background: transparent; font-size: 1.2rem; color: var(--dash-muted); cursor: pointer;">&times;</button>
         </div>
 
-        <form method="POST" action="cotisations.php" enctype="multipart/form-data" style="padding: 1.5rem; overflow-y: auto;">
+        <form method="POST" action="cotisations" enctype="multipart/form-data" style="padding: 1.5rem; overflow-y: auto;">
             <input type="hidden" name="action" value="creer_campagne">
 
             <div style="margin-bottom: 1rem;">
@@ -747,19 +748,23 @@ function get_cotisation_badge($statut) {
             </div>
 
             <!-- Visibilité -->
-            <div style="background: #F5F5F5; border: 1px solid #E5E5E5; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 1rem;">
-                <div style="font-size: 0.8rem; font-weight: 800; color: #000; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
-                    <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité de la campagne
+            <div class="dash-visibility-group" style="margin-bottom: 1.25rem;">
+                <div class="dash-visibility-label">
+                    <i class="fa-solid fa-eye" style="color: #FF4A0D;"></i> Visibilité de la campagne *
                 </div>
-                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                    <label style="display: flex; align-items: center; gap: 7px; cursor: pointer; font-weight: 700; font-size: 0.82rem; padding: 0.45rem 0.85rem; border: 2px solid #000; border-radius: 7px; background: #000; color: #fff;">
-                        <input type="radio" name="visibilite_camp" value="public" checked style="accent-color: #FF4A0D;"> 🌐 Publique
+                <div class="dash-visibility-options">
+                    <label class="dash-visibility-card">
+                        <input type="radio" name="visibilite_camp" value="public" checked onchange="syncVisibilityCards(this)">
+                        <span class="option-title">Publique</span>
+                        <span class="option-desc">(listée sur la plateforme)</span>
                     </label>
-                    <label style="display: flex; align-items: center; gap: 7px; cursor: pointer; font-weight: 700; font-size: 0.82rem; padding: 0.45rem 0.85rem; border: 2px solid #E5E5E5; border-radius: 7px; background: #fff; color: #000;">
-                        <input type="radio" name="visibilite_camp" value="prive" style="accent-color: #FF4A0D;"> 🔒 Privée
+                    <label class="dash-visibility-card">
+                        <input type="radio" name="visibilite_camp" value="prive" onchange="syncVisibilityCards(this)">
+                        <span class="option-title">Privée</span>
+                        <span class="option-desc">(lien direct uniquement)</span>
                     </label>
                 </div>
-                <small style="display: block; margin-top: 5px; color: #737373; font-size: 0.72rem;">Une campagne privée n'est pas listée publiquement &mdash; lien unique généré après validation.</small>
+                <small class="dash-visibility-hint">Une campagne <strong>privée</strong> n'est pas listée publiquement &mdash; lien unique généré après validation.</small>
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid var(--dash-border); padding-top: 1rem;">
@@ -781,7 +786,7 @@ function get_cotisation_badge($statut) {
             </h3>
             <button type="button" onclick="closeEditCotisationGuestModal()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
-        <form method="POST" action="cotisations.php" style="padding: 1.5rem;">
+        <form method="POST" action="cotisations" style="padding: 1.5rem;">
             <input type="hidden" name="action" value="modifier_participant_whitelist">
             <input type="hidden" name="campagne_id" id="edit_cot_campagne_id" value="">
             <input type="hidden" name="participant_id" id="edit_cot_participant_id" value="">
@@ -852,6 +857,20 @@ function copyPrivateLink(url, btn) {
     } else {
         prompt('Copiez ce lien privé d\'accès :', url);
     }
+}
+
+function syncVisibilityCards(radio) {
+    if (!radio) return;
+    const group = radio.closest('.dash-visibility-options') || radio.closest('.dash-radio-cards');
+    if (!group) return;
+    group.querySelectorAll('.dash-visibility-card, .dash-radio-card').forEach(card => {
+        const input = card.querySelector('input[type="radio"]');
+        if (input && input.checked) {
+            card.classList.add('is-active');
+        } else {
+            card.classList.remove('is-active');
+        }
+    });
 }
 
 window.addEventListener('click', function(e) {

@@ -15,7 +15,7 @@ $methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kade
 
 if (!$order_id || !in_array($methode, $methodes_autorisees, true)) {
     $_SESSION['order_message'] = "Paiement non validé, annulé ou méthode non reconnue.";
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
@@ -26,7 +26,7 @@ $order = $stmt->fetch();
 
 if (!$order) {
     $_SESSION['order_message'] = 'Cette commande est introuvable.';
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
@@ -36,7 +36,7 @@ $is_already_paid = in_array($order['statut'], ['paye', 'payee'], true);
 
 if (!$is_already_paid && $order['statut'] !== 'en_attente') {
     $_SESSION['order_message'] = 'Cette commande est introuvable ou a été annulée.';
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
@@ -275,7 +275,7 @@ try {
     // Redirection immédiate vers la page officielle de téléchargement des billets
     require_once '../includes/secure_token.php';
     $order_sec_token = get_or_create_resource_token($pdo, 'order', (int) $order_id);
-    header('Location: telecharger-ticket.php?token=' . urlencode($order_sec_token) . '&payment_success=1');
+    header('Location: telecharger-ticket?token=' . urlencode($order_sec_token) . '&payment_success=1');
     exit();
 
 } catch (Exception $e) {
@@ -285,7 +285,7 @@ try {
     require_once '../includes/auth.php';
     logActivity('payment.callback_failed', 'order', $order_id, "Erreur validation commande : " . $e->getMessage());
     $_SESSION['order_message'] = friendly_db_error($e, 'billet', "Une erreur technique est survenue lors de l'émission de vos billets. Votre paiement est sécurisé, veuillez contacter le support avec votre référence.");
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
@@ -337,12 +337,12 @@ include 'header.php';
                 <i class="fa-brands fa-whatsapp" style="font-size: 1.1rem;"></i> Partager par WhatsApp (PDF)
             </button>
 
-            <a href="telecharger-ticket.php?order_id=<?php echo $order_id; ?>&token=<?php echo $download_token; ?>"
+            <a href="telecharger-ticket?order_id=<?php echo $order_id; ?>&token=<?php echo $download_token; ?>"
                 target="_blank" class="btn-submit"
                 style="width: auto; padding: 0.65rem 1.4rem; background: var(--primary); text-decoration: none;">
                 <i class="fa-solid fa-file-pdf"></i> Télécharger tous mes Billets (PDF)
             </a>
-            <a href="accueil.php" class="btn-submit"
+            <a href="accueil" class="btn-submit"
                 style="width: auto; padding: 0.65rem 1.25rem; background: transparent; color: var(--navy); border: 1px solid var(--line); text-decoration: none;">
                 Retour à l'accueil
             </a>
@@ -420,7 +420,7 @@ include 'header.php';
                             . "📥 *Télécharger le PDF :* " . $ticket_url;
                         ?>
                         <div style="display: flex; gap: 0.5rem;">
-                            <a href="telecharger-ticket.php?code=<?php echo urlencode($tk['code_unique']); ?>"
+                            <a href="telecharger-ticket?code=<?php echo urlencode($tk['code_unique']); ?>"
                                 target="_blank" class="btn-submit"
                                 style="flex: 1; padding: 0.55rem; font-size: 0.8rem; text-decoration: none;">
                                 <i class="fa-solid fa-download"></i> PDF

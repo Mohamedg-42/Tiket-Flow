@@ -396,11 +396,11 @@ $tot_moov = (float) ($stmt_m['moov_money'] ?? 0);
         </div>
 
         <div class="paiements-header-actions">
-            <a href="export.php?type=commandes" class="dash-btn-action"
+            <a href="export?type=commandes" class="dash-btn-action"
                 style="padding: 0.6rem 1.15rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;" title="Exporter les paiements et commandes sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="retraits.php" class="dash-btn-action btn-primary"
+            <a href="retraits" class="dash-btn-action btn-primary"
                 style="padding: 0.6rem 1.2rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-money-bill-transfer"></i> Gérer les Retraits Promoteurs
             </a>
@@ -440,7 +440,7 @@ $tot_moov = (float) ($stmt_m['moov_money'] ?? 0);
         </div>
 
         <!-- À DROITE : RECHERCHE -->
-        <form method="GET" action="paiements.php" class="paiements-search-form">
+        <form method="GET" action="paiements" class="paiements-search-form">
             <input type="hidden" name="methode" value="<?php echo htmlspecialchars($methode_filter); ?>">
             <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>"
                 placeholder="Réf, n° commande, client..."
@@ -450,7 +450,7 @@ $tot_moov = (float) ($stmt_m['moov_money'] ?? 0);
                 Filtrer
             </button>
             <?php if ($methode_filter !== '' || $search !== ''): ?>
-                <a href="paiements.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline; padding-left: 4px;">Effacer</a>
+                <a href="paiements" style="color: #000000; font-size: 0.78rem; text-decoration: underline; padding-left: 4px;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>

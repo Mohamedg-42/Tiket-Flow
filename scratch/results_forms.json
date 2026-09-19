@@ -74,7 +74,7 @@
         "feature": "Espace Promoteur",
         "test": "Tentative de retrait d'un montant supérieur au solde disponible",
         "expected": "Rejet de la demande de retrait avec message \"Solde insuffisant\"",
-        "obtained": "Solde insuffisant pour effectuer ce retrait (solde: 799,900 FCFA).",
+        "obtained": "Solde insuffisant pour effectuer ce retrait (solde: 814,150 FCFA).",
         "status": "RÉUSSI",
         "priority": "Haute",
         "details": ""

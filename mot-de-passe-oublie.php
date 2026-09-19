@@ -111,13 +111,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         body {
             font-family: var(--font-body);
-            background: linear-gradient(135deg, #000000 0%, #000000 50%, #000000 100%);
+            background: var(--eventia-bg, #F5F5F5);
             min-height: 100vh;
             margin: 0;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem 1rem;
+            padding: 2rem 1rem;
             box-sizing: border-box;
             position: relative;
         }
@@ -125,9 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .auth-container {
             width: 100%;
             max-width: 440px;
-            background: var(--eventia-card-bg);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px -15px rgba(11, 29, 58, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid var(--eventia-border, #E5E5E5);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(11, 29, 58, 0.06);
             padding: 2.25rem 2rem;
             box-sizing: border-box;
             position: relative;
@@ -155,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 8px;
             background: var(--eventia-amber);
-            color: #000000;
+            color: #ffffff;
             font-family: var(--font-heading);
             text-decoration: none;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -176,10 +178,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
+    <!-- Bouton Retour hors de la section -->
+    <div style="width: 100%; max-width: 440px; margin: 0 auto 0.85rem; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;">
+        <a href="connexion"
+            style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 700; color: #000000; text-decoration: none; padding: 7px 14px; border-radius: 10px; background: #ffffff; border: 1px solid var(--eventia-border, #E5E5E5); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04); transition: all 0.2s;"
+            onmouseover="this.style.background='#F5F5F5'; this.style.color='var(--eventia-amber, #FF4A0D)'; this.style.transform='translateX(-2px)';"
+            onmouseout="this.style.background='#ffffff'; this.style.color='#000000'; this.style.transform='none';">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Retour à la connexion</span>
+        </a>
+        <a href="client/accueil"
+            style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; color: var(--eventia-muted, #737373); text-decoration: none; padding: 7px 10px; transition: color 0.2s;"
+            onmouseover="this.style.color='#000000';"
+            onmouseout="this.style.color='var(--eventia-muted, #737373)';">
+            <i class="fa-solid fa-house"></i> Accueil
+        </a>
+    </div>
+
     <div class="auth-container">
         <!-- Logo & Titre -->
         <div style="text-align: center; margin-bottom: 1.75rem;">
-            <a href="client/accueil.php" title="Retour à l'accueil" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-bottom: 0.5rem;">
+            <a href="client/accueil" title="Retour à l'accueil" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-bottom: 0.5rem;">
                 <img src="images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA" style="height: 52px; width: auto; max-width: 190px; object-fit: contain;">
             </a>
             <h1 style="font-size: 1.35rem; font-weight: 800; color: #000000; margin: 0.5rem 0 0.25rem; font-family: var(--font-heading);">
@@ -209,16 +228,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <a href="connexion.php" class="eventia-btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; font-weight: 800; border-radius: 12px; justify-content: center; box-sizing: border-box; text-align: center;">
+                <a href="connexion" class="eventia-btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; font-weight: 800; border-radius: 12px; justify-content: center; box-sizing: border-box; text-align: center;">
                     <i class="fa-solid fa-right-to-bracket"></i> Retour à la connexion
                 </a>
-                <a href="mot-de-passe-oublie.php" style="text-align: center; font-size: 0.82rem; color: var(--eventia-muted); text-decoration: underline; padding: 0.25rem;">
+                <a href="mot-de-passe-oublie" style="text-align: center; font-size: 0.82rem; color: var(--eventia-muted); text-decoration: underline; padding: 0.25rem;">
                     Renvoyer un autre lien
                 </a>
             </div>
         <?php else: ?>
             <!-- Formulaire de demande de réinitialisation -->
-            <form method="POST" action="mot-de-passe-oublie.php" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <form method="POST" action="mot-de-passe-oublie" style="display: flex; flex-direction: column; gap: 1.25rem;">
                 <div class="eventia-form-group" style="display: flex; flex-direction: column; gap: 6px;">
                     <label for="email" style="display: flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: #000000;">
                         <i class="fa-solid fa-envelope" style="color: var(--eventia-navy-light); font-size: 0.82rem;"></i>
@@ -240,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Lien de retour vers la connexion -->
         <div class="auth-footer"
             style="margin-top: 1.75rem; padding-top: 1.15rem; border-top: 1px solid var(--eventia-border); text-align: center; font-size: 0.86rem; color: var(--eventia-muted);">
-            Vous vous souvenez de votre mot de passe ? <a href="connexion.php"
+            Vous vous souvenez de votre mot de passe ? <a href="connexion"
                 style="color: #000000; font-weight: 800; text-decoration: none;">Se connecter</a>
         </div>
     </div>

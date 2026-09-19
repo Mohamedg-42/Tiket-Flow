@@ -485,7 +485,7 @@ $nb_campagnes_pending = count(array_filter($campagnes_list, fn($c) => $c['statut
             <p>Examinez les propositions d'événements, validez les campagnes de cotisation et suivez les votes du public.</p>
         </div>
         <div>
-            <a href="export.php?type=demandes&tab=<?php echo urlencode($tab); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les demandes sur Excel (CSV)">
+            <a href="export?type=demandes&tab=<?php echo urlencode($tab); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les demandes sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
         </div>
@@ -814,7 +814,7 @@ $nb_campagnes_pending = count(array_filter($campagnes_list, fn($c) => $c['statut
                                                 </form>
                                             </div>
                                         <?php else: ?>
-                                            <a href="../client/accueil.php" target="_blank" class="dash-btn-action"
+                                            <a href="../client/accueil" target="_blank" class="dash-btn-action"
                                                 style="padding: 0.38rem 0.75rem; font-size: 0.76rem;" title="Voir la vitrine publique">
                                                 <i class="fa-solid fa-eye"></i> Voir vitrine
                                             </a>

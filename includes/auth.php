@@ -85,7 +85,8 @@ function getAuthPDO() {
  * @param string|array $roles_autorises Un rôle (ex: 'admin') ou un tableau de rôles (ex: ['admin', 'agent'])
  * @param string $redirect_url URL de redirection en cas d'accès refusé
  */
-function checkRole($roles_autorises, $redirect_url = '../connexion.php') {
+function checkRole($roles_autorises, $redirect_url = '../connexion') {
+    $redirect_url = preg_replace('/\.php$/i', '', $redirect_url);
     if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
         header("Location: " . $redirect_url);
         exit();
@@ -116,7 +117,8 @@ function checkRole($roles_autorises, $redirect_url = '../connexion.php') {
  * Vérifie simplement si l'utilisateur est connecté (quel que soit son rôle).
  * @param string $redirect_url
  */
-function requireLogin($redirect_url = '../connexion.php') {
+function requireLogin($redirect_url = '../connexion') {
+    $redirect_url = preg_replace('/\.php$/i', '', $redirect_url);
     if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
         header("Location: " . $redirect_url);
         exit();
@@ -153,16 +155,18 @@ function checkAccountStatus($user_or_id) {
         $u = $user_or_id;
         // Si role ou est_verifie ne sont pas présents dans le tableau fourni, les récupérer si id est présent
         if (!isset($u['role']) && isset($u['id'])) {
-            $st_sup = $db->prepare("SELECT role, est_verifie FROM users WHERE id = ?");
+            $st_sup = $db->prepare("SELECT role, est_verifie, statut, deleted_at FROM users WHERE id = ?");
             $st_sup->execute([(int)$u['id']]);
             $extra = $st_sup->fetch();
             if ($extra) {
                 $u['role'] = $extra['role'];
                 $u['est_verifie'] = $extra['est_verifie'];
+                $u['statut'] = $extra['statut'] ?? ($u['statut'] ?? 'actif');
+                $u['deleted_at'] = $extra['deleted_at'] ?? null;
             }
         }
     } else {
-        $stmt = $db->prepare("SELECT id, nom, prenom, email, role, est_verifie, statut, suspended_from, suspended_until, suspension_reason FROM users WHERE id = ?");
+        $stmt = $db->prepare("SELECT id, nom, prenom, email, role, est_verifie, statut, deleted_at, suspended_from, suspended_until, suspension_reason FROM users WHERE id = ?");
         $stmt->execute([(int)$user_or_id]);
         $u = $stmt->fetch();
     }
@@ -174,8 +178,18 @@ function checkAccountStatus($user_or_id) {
     $statut = $u['statut'] ?? 'actif';
     $role   = $u['role'] ?? '';
     $est_verifie = (int)($u['est_verifie'] ?? 1);
+    $deleted_at = $u['deleted_at'] ?? null;
 
-    // 0. Compte promoteur en attente de validation administrative
+    // 0. Compte supprimé logiquement (Soft Delete)
+    if ($statut === 'supprime' || !empty($deleted_at)) {
+        return [
+            'allowed' => false,
+            'message' => "Ce compte utilisateur a été supprimé. Veuillez contacter le support si vous pensez qu'il s'agit d'une erreur.",
+            'statut'  => 'supprime'
+        ];
+    }
+
+    // 0.bis Compte promoteur en attente de validation administrative
     if ($statut === 'en_attente' || ($role === 'promoteur' && $est_verifie === 0)) {
         return [
             'allowed' => false,

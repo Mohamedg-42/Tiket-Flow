@@ -1,6 +1,6 @@
 <?php
 // Redirection transparente vers le Tableau de Bord complet
-header('Location: dashboard.php');
+header('Location: dashboard');
 exit();
 
 // ── 1. KPIs globaux ──────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ $mm_colors = ['#FF4A0D','#FF4A0D','#FF4A0D','#FF4A0D'];
         <p>Vue complète de vos ventes par événement, par type de ticket et par moyen de paiement.</p>
     </div>
     <div>
-        <a href="export.php?type=ventes" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les données analytiques de vente sur Excel (CSV)">
+        <a href="export?type=ventes" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les données analytiques de vente sur Excel (CSV)">
             <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
         </a>
     </div>
@@ -211,7 +211,7 @@ $mm_colors = ['#FF4A0D','#FF4A0D','#FF4A0D','#FF4A0D'];
         <div class="kpi-icon"><i class="fa-solid fa-wallet" style="color: #FF4A0D;"></i></div>
         <div class="kpi-label">Solde Disponible</div>
         <div class="kpi-value" style="color:#FF4A0D;"><?php echo number_format($solde_actuel, 0, ',', ' '); ?> <small style="font-size:.9rem;">F</small></div>
-        <div class="kpi-sub"><a href="solde.php" style="color:var(--primary); font-weight:700;">Retirer →</a></div>
+        <div class="kpi-sub"><a href="solde" style="color:var(--primary); font-weight:700;">Retirer →</a></div>
     </div>
 </div>
 
@@ -409,7 +409,7 @@ $mm_colors = ['#FF4A0D','#FF4A0D','#FF4A0D','#FF4A0D'];
             </table>
             <?php else: ?>
                 <div style="padding:1.25rem; text-align:center; color:var(--muted); font-size:.88rem;">
-                    Aucun type de ticket configuré. <a href="ticket-types.php?event_id=<?php echo $ev['id']; ?>" style="color:var(--primary); font-weight:700;">Configurer →</a>
+                    Aucun type de ticket configuré. <a href="ticket-types?event_id=<?php echo $ev['id']; ?>" style="color:var(--primary); font-weight:700;">Configurer →</a>
                 </div>
             <?php endif; ?>
         </div>

@@ -20,7 +20,8 @@ function openEventModal(button) {
 
     // Détection PC / Desktop (> 768px) : redirection vers la page dédiée complète
     if (window.innerWidth > 768 && eventId) {
-        window.location.href = 'evenement.php?id=' + encodeURIComponent(eventId) + '#billets';
+        const targetSlug = button.getAttribute('data-event-slug') || (button.dataset ? button.dataset.eventSlug : '') || eventId;
+        window.location.href = 'evenement/' + encodeURIComponent(targetSlug) + '#billets';
         return;
     }
 
@@ -1245,6 +1246,7 @@ function openEventDetailsModal(target) {
     if (!modal) return;
 
     let id = '';
+    let slug = '';
     let name = 'Événement';
     let date = '';
     let time = '';
@@ -1290,6 +1292,7 @@ function openEventDetailsModal(target) {
         if (!btn && typeof target === 'object' && target.nodeType) btn = target;
         if (btn) {
             id = btn.getAttribute('data-event-id') || btn.dataset.eventId || id;
+            slug = btn.getAttribute('data-event-slug') || btn.dataset.eventSlug || slug;
             name = btn.getAttribute('data-event-name') || btn.dataset.eventName || name;
             date = btn.getAttribute('data-event-date') || btn.dataset.eventDate || date;
             time = btn.getAttribute('data-event-time') || btn.dataset.eventTime || time;
@@ -1308,6 +1311,10 @@ function openEventDetailsModal(target) {
     }
 
     if (!id && target) id = target;
+    if (!slug && id && window.EVENTS_DATA && Array.isArray(window.EVENTS_DATA)) {
+        const evFound = window.EVENTS_DATA.find(e => Number(e.id) === Number(id));
+        if (evFound && evFound.slug) slug = evFound.slug;
+    }
 
     const bannerImg = document.getElementById('detailEventBanner') || document.getElementById('eventDetailImg');
     if (bannerImg && image) bannerImg.src = image;
@@ -1434,14 +1441,29 @@ function openEventDetailsModal(target) {
         bookBtn.onclick = function () {
             closeEventDetailsModal();
             const bookingTrigger = document.querySelector(`button[data-event-id="${id}"][data-ticket-options]`);
-            if (bookingTrigger) {
+            if (bookingTrigger && typeof handleReservationAction === 'function') {
+                handleReservationAction(bookingTrigger);
+                return;
+            }
+            const targetSlug = slug || id;
+            if (targetSlug) {
+                window.location.href = 'evenement/' + encodeURIComponent(targetSlug) + '#billets';
+                return;
+            }
+            if (bookingTrigger && typeof openEventModal === 'function') {
                 openEventModal(bookingTrigger);
             } else {
                 const card = document.getElementById('event-card-' + id);
                 if (card) {
                     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     const btnOnCard = card.querySelector('button[data-ticket-options]');
-                    if (btnOnCard) openEventModal(btnOnCard);
+                    if (btnOnCard) {
+                        if (typeof handleReservationAction === 'function') {
+                            handleReservationAction(btnOnCard);
+                        } else {
+                            openEventModal(btnOnCard);
+                        }
+                    }
                 }
             }
         };

@@ -301,7 +301,7 @@ if (isset($_GET['reactivate'])) {
     $msg_type = "success";
 }
 
-// Action E : Suppression d'un utilisateur
+// Action E : Suppression d'un utilisateur (Suppression logique)
 if (isset($_GET['delete'])) {
     requirePermission('users.delete');
     $del_id = (int) $_GET['delete'];
@@ -310,16 +310,38 @@ if (isset($_GET['delete'])) {
         $msg_type = "error";
     } else {
         try {
-            $stmt_del = $pdo->prepare("DELETE FROM users WHERE id = ?");
+            $stmt_del = $pdo->prepare("UPDATE users SET statut = 'supprime', deleted_at = NOW() WHERE id = ?");
             $stmt_del->execute([$del_id]);
 
-            logActivity('user.delete', 'user', $del_id, "Suppression définitive du compte #$del_id");
-            $message = "Utilisateur supprimé avec succès.";
+            // Désactiver également le profil promoteur s'il existe
+            $pdo->prepare("UPDATE promoters SET statut = 'supprime', deleted_at = NOW() WHERE user_id = ?")->execute([$del_id]);
+
+            logActivity('user.soft_delete', 'user', $del_id, "Suppression logique du compte #$del_id");
+            $message = "Utilisateur supprimé avec succès (archivé de manière sécurisée).";
             $msg_type = "success";
         } catch (PDOException $e) {
-            $message = friendly_db_error($e, 'utilisateur', "Impossible de supprimer cet utilisateur car il est rattaché à des commandes, événements ou opérations existants.");
+            $message = friendly_db_error($e, 'utilisateur', "Erreur lors de la suppression du compte.");
             $msg_type = "error";
         }
+    }
+}
+
+// Action F : Restauration d'un utilisateur supprimé
+if (isset($_GET['restore'])) {
+    requirePermission('users.edit');
+    $rest_id = (int) $_GET['restore'];
+    try {
+        $stmt_rest = $pdo->prepare("UPDATE users SET statut = 'actif', deleted_at = NULL WHERE id = ?");
+        $stmt_rest->execute([$rest_id]);
+
+        $pdo->prepare("UPDATE promoters SET statut = 'approuve', deleted_at = NULL WHERE user_id = ?")->execute([$rest_id]);
+
+        logActivity('user.restore', 'user', $rest_id, "Restauration du compte #$rest_id");
+        $message = "Utilisateur restauré avec succès !";
+        $msg_type = "success";
+    } catch (PDOException $e) {
+        $message = friendly_db_error($e, 'utilisateur', "Erreur lors de la restauration du compte.");
+        $msg_type = "error";
     }
 }
 
@@ -353,9 +375,14 @@ if (!empty($role_filter) && in_array($role_filter, ['client', 'promoteur', 'agen
     $params[] = $role_filter;
 }
 
-if (!empty($statut_filt) && in_array($statut_filt, ['actif', 'inactif', 'suspendu_temp', 'suspendu_def'], true)) {
-    $sql .= " AND u.statut = ?";
-    $params[] = $statut_filt;
+if ($statut_filt === 'supprime') {
+    $sql .= " AND (u.deleted_at IS NOT NULL OR u.statut = 'supprime')";
+} else {
+    $sql .= " AND u.deleted_at IS NULL AND u.statut != 'supprime'";
+    if (!empty($statut_filt) && in_array($statut_filt, ['actif', 'inactif', 'suspendu_temp', 'suspendu_def'], true)) {
+        $sql .= " AND u.statut = ?";
+        $params[] = $statut_filt;
+    }
 }
 
 if ($prof_filter > 0) {
@@ -692,11 +719,11 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
         </div>
 
         <div class="users-header-actions">
-            <a href="export.php?type=utilisateurs" class="dash-btn-action" style="text-decoration: none;"
+            <a href="export?type=utilisateurs" class="dash-btn-action" style="text-decoration: none;"
                 title="Exporter tous les utilisateurs sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="profils.php" class="dash-btn-action" style="text-decoration: none;">
+            <a href="profils" class="dash-btn-action" style="text-decoration: none;">
                 <i class="fa-solid fa-user-shield" style="color: var(--primary);"></i> Profils & Permissions
             </a>
             <?php if (hasPermission('users.create')): ?>
@@ -806,7 +833,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
         </div>
 
         <!-- Recherche et statut -->
-        <form method="GET" action="utilisateurs.php" class="users-search-form"
+        <form method="GET" action="utilisateurs" class="users-search-form"
             style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 0;">
             <input type="hidden" name="role" value="<?php echo htmlspecialchars($role_filter); ?>">
 
@@ -819,6 +846,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                 <option value="suspendu_def" <?php echo $statut_filt === 'suspendu_def' ? 'selected' : ''; ?>>Suspendu
                     définitivement</option>
                 <option value="inactif" <?php echo $statut_filt === 'inactif' ? 'selected' : ''; ?>>Inactif</option>
+                <option value="supprime" <?php echo $statut_filt === 'supprime' ? 'selected' : ''; ?>>Supprimé (Archivé)</option>
             </select>
 
             <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>"
@@ -830,7 +858,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                 Filtrer
             </button>
             <?php if ($role_filter !== '' || $statut_filt !== '' || $search !== ''): ?>
-                <a href="utilisateurs.php"
+                <a href="utilisateurs"
                     style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 4px;">Réinitialiser</a>
             <?php endif; ?>
         </form>
@@ -884,9 +912,11 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                                 'actif' => ['Actif', 'background: #FFF2ED; color: #000000;', 'fa-circle-check'],
                                 'inactif' => ['Inactif', 'background: #F5F5F5; color: #737373;', 'fa-circle-pause'],
                                 'suspendu_temp' => ['Suspendu temp.', 'background: #FFF2ED; color: #FF4A0D;', 'fa-clock'],
-                                'suspendu_def' => ['Désactivé', 'background: #F5F5F5; color: #000000;', 'fa-ban']
+                                'suspendu_def' => ['Désactivé', 'background: #F5F5F5; color: #000000;', 'fa-ban'],
+                                'supprime' => ['Supprimé', 'background: #FEE2E2; color: #DC2626;', 'fa-trash-can']
                             ];
-                            [$s_text, $s_style, $s_ico] = $statut_badges[$u['statut'] ?? 'actif'] ?? ['Actif', 'background: #FFF2ED; color: #000000;', 'fa-circle-check'];
+                            $u_effective_statut = (!empty($u['deleted_at']) || ($u['statut'] ?? '') === 'supprime') ? 'supprime' : ($u['statut'] ?? 'actif');
+                            [$s_text, $s_style, $s_ico] = $statut_badges[$u_effective_statut] ?? ['Actif', 'background: #FFF2ED; color: #000000;', 'fa-circle-check'];
 
                             $full_name = trim(($u['prenom'] ?? '') . ' ' . $u['nom']);
                             ?>
@@ -1002,7 +1032,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                                             <!-- Activer / Désactiver -->
                                             <?php if (hasPermission('users.status') && $u['id'] !== (int) $_SESSION['user_id']): ?>
                                                 <?php if (in_array($u['statut'] ?? '', ['suspendu_temp', 'suspendu_def', 'inactif'], true)): ?>
-                                                    <a href="utilisateurs.php?reactivate=<?php echo $u['id']; ?>" class="action-item"
+                                                    <a href="utilisateurs?reactivate=<?php echo $u['id']; ?>" class="action-item"
                                                         onclick="return confirm('Voulez-vous réactiver immédiatement ce compte ?');"
                                                         style="color: #000000;">
                                                         <i class="fa-solid fa-circle-check"></i> Réactiver le compte
@@ -1019,27 +1049,38 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                                             </div>
 
                                             <!-- Voir les tâches -->
-                                            <a href="taches.php?user_id=<?php echo $u['id']; ?>" class="action-item"
+                                            <a href="taches?user_id=<?php echo $u['id']; ?>" class="action-item"
                                                 style="color: var(--dash-text); text-decoration: none;">
                                                 <i class="fa-solid fa-list-check" style="color: var(--accent);"></i> Voir les
                                                 tâches
                                             </a>
 
                                             <!-- Voir l'activité -->
-                                            <a href="activite.php?user_id=<?php echo $u['id']; ?>" class="action-item"
+                                            <a href="activite?user_id=<?php echo $u['id']; ?>" class="action-item"
                                                 style="color: var(--dash-text); text-decoration: none;">
                                                 <i class="fa-solid fa-clock-rotate-left" style="color: #FF4A0D;"></i> Voir
                                                 l'activité
                                             </a>
 
-                                            <?php if (hasPermission('users.delete') && $u['id'] !== (int) $_SESSION['user_id']): ?>
-                                                <div style="height: 1px; background: var(--dash-border-light); margin: 4px 0;">
-                                                </div>
-                                                <a href="utilisateurs.php?delete=<?php echo $u['id']; ?>" class="action-item"
-                                                    style="color: #000000;"
-                                                    onclick="return confirm('Confirmez-vous la suppression irréversible de cet utilisateur ?');">
-                                                    <i class="fa-solid fa-trash"></i> Supprimer
-                                                </a>
+                                            <?php if ($u['id'] !== (int) $_SESSION['user_id']): ?>
+                                                <div style="height: 1px; background: var(--dash-border-light); margin: 4px 0;"></div>
+                                                <?php if (!empty($u['deleted_at']) || ($u['statut'] ?? '') === 'supprime'): ?>
+                                                    <?php if (hasPermission('users.edit')): ?>
+                                                        <a href="utilisateurs?restore=<?php echo $u['id']; ?>" class="action-item"
+                                                            style="color: #16A34A;"
+                                                            onclick="return confirm('Voulez-vous restaurer cet utilisateur ?');">
+                                                            <i class="fa-solid fa-rotate-left"></i> Restaurer le compte
+                                                        </a>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    <?php if (hasPermission('users.delete')): ?>
+                                                        <a href="utilisateurs?delete=<?php echo $u['id']; ?>" class="action-item"
+                                                            style="color: #DC2626;"
+                                                            onclick="return confirm('Confirmez-vous la suppression de cet utilisateur ?');">
+                                                            <i class="fa-solid fa-trash"></i> Supprimer
+                                                        </a>
+                                                    <?php endif; ?>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -1144,7 +1185,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
 
                             <?php if (hasPermission('users.status') && $u['id'] !== (int) $_SESSION['user_id']): ?>
                                 <?php if (in_array($u['statut'] ?? '', ['suspendu_temp', 'suspendu_def', 'inactif'], true)): ?>
-                                    <a href="utilisateurs.php?reactivate=<?php echo $u['id']; ?>" class="umc-btn umc-btn-reactivate"
+                                    <a href="utilisateurs?reactivate=<?php echo $u['id']; ?>" class="umc-btn umc-btn-reactivate"
                                         onclick="return confirm('Voulez-vous réactiver immédiatement ce compte ?');">
                                         <i class="fa-solid fa-circle-check"></i> Réactiver
                                     </a>
@@ -1164,21 +1205,33 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
                                 </button>
                                 <div id="menu-m-<?php echo $u['id']; ?>" class="action-popover"
                                     style="display: none; position: absolute; right: 0; bottom: 100%; margin-bottom: 4px; background: #ffffff; border: 1px solid var(--dash-border); border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); width: 180px; z-index: 50; padding: 4px 0; text-align: left;">
-                                    <a href="taches.php?user_id=<?php echo $u['id']; ?>" class="action-item"
+                                    <a href="taches?user_id=<?php echo $u['id']; ?>" class="action-item"
                                         style="color: var(--dash-text); text-decoration: none;">
                                         <i class="fa-solid fa-list-check" style="color: var(--accent);"></i> Tâches
                                     </a>
-                                    <a href="activite.php?user_id=<?php echo $u['id']; ?>" class="action-item"
+                                    <a href="activite?user_id=<?php echo $u['id']; ?>" class="action-item"
                                         style="color: var(--dash-text); text-decoration: none;">
                                         <i class="fa-solid fa-clock-rotate-left" style="color: #FF4A0D;"></i> Activité
                                     </a>
-                                    <?php if (hasPermission('users.delete') && $u['id'] !== (int) $_SESSION['user_id']): ?>
+                                    <?php if ($u['id'] !== (int) $_SESSION['user_id']): ?>
                                         <div style="height: 1px; background: var(--dash-border-light); margin: 4px 0;"></div>
-                                        <a href="utilisateurs.php?delete=<?php echo $u['id']; ?>" class="action-item"
-                                            style="color: #000000;"
-                                            onclick="return confirm('Confirmez-vous la suppression irréversible de cet utilisateur ?');">
-                                            <i class="fa-solid fa-trash"></i> Supprimer
-                                        </a>
+                                        <?php if (!empty($u['deleted_at']) || ($u['statut'] ?? '') === 'supprime'): ?>
+                                            <?php if (hasPermission('users.edit')): ?>
+                                                <a href="utilisateurs?restore=<?php echo $u['id']; ?>" class="action-item"
+                                                    style="color: #16A34A;"
+                                                    onclick="return confirm('Voulez-vous restaurer cet utilisateur ?');">
+                                                    <i class="fa-solid fa-rotate-left"></i> Restaurer
+                                                </a>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <?php if (hasPermission('users.delete')): ?>
+                                                <a href="utilisateurs?delete=<?php echo $u['id']; ?>" class="action-item"
+                                                    style="color: #DC2626;"
+                                                    onclick="return confirm('Confirmez-vous la suppression de cet utilisateur ?');">
+                                                    <i class="fa-solid fa-trash"></i> Supprimer
+                                                </a>
+                                            <?php endif; ?>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -1200,7 +1253,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
             <h3><i class="fa-solid fa-user-plus" style="color: var(--primary);"></i> Créer un Nouveau Compte</h3>
             <button type="button" class="dash-modal-close" onclick="closeCreateUserModal()">&times;</button>
         </div>
-        <form method="POST" action="utilisateurs.php">
+        <form method="POST" action="utilisateurs">
             <?php echo csrfField(); ?>
             <input type="hidden" name="create_user" value="1">
             <div class="dash-modal-body" style="display: grid; gap: 0.9rem;">
@@ -1316,7 +1369,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
             <h3><i class="fa-solid fa-pen-to-square" style="color: var(--primary);"></i> Modifier le Compte</h3>
             <button type="button" class="dash-modal-close" onclick="closeEditUserModal()">&times;</button>
         </div>
-        <form method="POST" action="utilisateurs.php"
+        <form method="POST" action="utilisateurs"
             onsubmit="return confirm('Confirmez-vous l\'enregistrement de ces modifications ?');">
             <?php echo csrfField(); ?>
             <input type="hidden" name="update_user" value="1">
@@ -1419,7 +1472,7 @@ $tot_agents = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'agent'
             <h3 style="color: #FF4A0D;"><i class="fa-solid fa-user-slash"></i> Suspendre le Compte</h3>
             <button type="button" class="dash-modal-close" onclick="closeSuspendUserModal()">&times;</button>
         </div>
-        <form method="POST" action="utilisateurs.php"
+        <form method="POST" action="utilisateurs"
             onsubmit="return confirm('Confirmez-vous la suspension de cet utilisateur ?');">
             <?php echo csrfField(); ?>
             <input type="hidden" name="suspend_user" value="1">

@@ -132,7 +132,7 @@ $stations = $pdo->query("
                 leurs performances séparément des ventes en ligne.</p>
         </div>
         <div class="dash-filter-bar">
-            <a href="gares-ventes.php" class="dash-btn-action" style="text-decoration: none;">
+            <a href="gares-ventes" class="dash-btn-action" style="text-decoration: none;">
                 <i class="fa-solid fa-chart-column" style="color: #FF4A0D;"></i>
                 <span>Ventes & Clôtures</span>
             </a>
@@ -218,17 +218,17 @@ $stations = $pdo->query("
                                         <i class="fa-solid fa-pen-to-square" style="color: #FF4A0D;"></i>
                                     </button>
                                     <?php if ($s['statut'] !== 'active'): ?>
-                                        <a href="gares.php?id=<?php echo (int) $s['id']; ?>&set_statut=active" class="dash-btn-action" style="padding: 4px 8px; font-size: 0.76rem; margin-left: 4px;" title="Activer">
+                                        <a href="gares?id=<?php echo (int) $s['id']; ?>&set_statut=active" class="dash-btn-action" style="padding: 4px 8px; font-size: 0.76rem; margin-left: 4px;" title="Activer">
                                             <i class="fa-solid fa-play" style="color: #16A34A;"></i>
                                         </a>
                                     <?php endif; ?>
                                     <?php if ($s['statut'] !== 'suspendue'): ?>
-                                        <a href="gares.php?id=<?php echo (int) $s['id']; ?>&set_statut=suspendue" class="dash-btn-action" style="padding: 4px 8px; font-size: 0.76rem; margin-left: 4px;" title="Suspendre temporairement" onclick="return confirm('Suspendre les ventes de cette gare ?')">
+                                        <a href="gares?id=<?php echo (int) $s['id']; ?>&set_statut=suspendue" class="dash-btn-action" style="padding: 4px 8px; font-size: 0.76rem; margin-left: 4px;" title="Suspendre temporairement" onclick="return confirm('Suspendre les ventes de cette gare ?')">
                                             <i class="fa-solid fa-pause" style="color: #D97706;"></i>
                                         </a>
                                     <?php endif; ?>
                                     <?php if ($s['statut'] !== 'stoppee'): ?>
-                                        <a href="gares.php?id=<?php echo (int) $s['id']; ?>&set_statut=stoppee" class="dash-btn-action btn-danger" style="padding: 4px 8px; font-size: 0.76rem; margin-left: 4px;" title="Arrêter définitivement" onclick="return confirm('Arrêter les ventes de cette gare ? Les agents ne pourront plus émettre de billets.')">
+                                        <a href="gares?id=<?php echo (int) $s['id']; ?>&set_statut=stoppee" class="dash-btn-action btn-danger" style="padding: 4px 8px; font-size: 0.76rem; margin-left: 4px;" title="Arrêter définitivement" onclick="return confirm('Arrêter les ventes de cette gare ? Les agents ne pourront plus émettre de billets.')">
                                             <i class="fa-solid fa-stop"></i>
                                         </a>
                                     <?php endif; ?>
@@ -259,7 +259,7 @@ $stations = $pdo->query("
             </h3>
             <button type="button" onclick="toggleAddModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
-        <form method="POST" action="gares.php" style="padding: 1.5rem;">
+        <form method="POST" action="gares" style="padding: 1.5rem;">
             <input type="hidden" name="action_create_station" value="1">
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Nom de la gare *</label>
@@ -302,7 +302,7 @@ $stations = $pdo->query("
             </h3>
             <button type="button" onclick="toggleEditModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
-        <form method="POST" action="gares.php" style="padding: 1.5rem;">
+        <form method="POST" action="gares" style="padding: 1.5rem;">
             <input type="hidden" name="action_edit_station" value="1">
             <input type="hidden" name="station_id" id="edit_station_id">
             <div style="margin-bottom: 1rem;">
@@ -346,7 +346,7 @@ $stations = $pdo->query("
             </h3>
             <button type="button" onclick="toggleAgentModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
-        <form method="POST" action="gares.php" style="padding: 1.5rem;">
+        <form method="POST" action="gares" style="padding: 1.5rem;">
             <input type="hidden" name="action_create_agent" value="1">
             <input type="hidden" name="station_id" id="agent_station_id">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">

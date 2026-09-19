@@ -166,7 +166,7 @@ function get_claim_badge($statut) {
         </div>
 
         <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
-            <a href="export.php?type=reclamations" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les réclamations sur Excel (CSV)">
+            <a href="export?type=reclamations" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les réclamations sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
             <button type="button" onclick="openNewTicketModal()" class="dash-btn-action btn-primary" style="padding: 0.6rem 1.15rem; display: inline-flex; align-items: center; gap: 6px;">
@@ -281,7 +281,7 @@ function get_claim_badge($statut) {
             </button>
 
             <?php if ($periode !== 'toutes' || $search_q !== '' || $filter_statut !== 'tous'): ?>
-                <a href="reclamations.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
+                <a href="reclamations" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -380,7 +380,7 @@ function get_claim_badge($statut) {
             <button type="button" onclick="closeNewTicketModal()" style="border: 0; background: transparent; font-size: 1.2rem; color: var(--dash-muted); cursor: pointer;">&times;</button>
         </div>
 
-        <form method="POST" action="reclamations.php" style="padding: 1.5rem;">
+        <form method="POST" action="reclamations" style="padding: 1.5rem;">
             <input type="hidden" name="send_claim" value="1">
 
             <div style="margin-bottom: 1rem;">

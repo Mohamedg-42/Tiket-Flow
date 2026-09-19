@@ -16,6 +16,17 @@ require_once 'includes/auth.php';
 $is_logged_in = isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 $user_role = $_SESSION['user_role'] ?? 'client';
 
+if ($is_logged_in) {
+    if ($user_role === 'admin') {
+        header("Location: admin/dashboard");
+    } elseif ($user_role === 'promoteur') {
+        header("Location: promoteur/dashboard");
+    } else {
+        header("Location: client/accueil");
+    }
+    exit();
+}
+
 $message = "";
 $msg_type = "";
 
@@ -49,11 +60,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $full_name = trim("$prenom $nom");
 
             // Envoi de l'e-mail de bienvenue au client
-            sendWelcomeClientEmail($email, $full_name);
+            try {
+                sendWelcomeClientEmail($email, $full_name);
+            } catch (Throwable $e) {
+                error_log("[Inscription] Erreur envoi email bienvenue : " . $e->getMessage());
+            }
+
             logActivity('inscription_client', 'user', $new_user_id, "Nouveau compte client créé par $full_name ($email)", $new_user_id);
 
-            $message = "Votre compte client a été créé avec succès ! Un e-mail de bienvenue vous a été envoyé. Vous pouvez maintenant vous connecter.";
-            $msg_type = "success";
+            // Mise à jour de la dernière connexion
+            try {
+                $stmt_last = $pdo->prepare("UPDATE users SET derniere_connexion = NOW() WHERE id = ?");
+                $stmt_last->execute([$new_user_id]);
+            } catch (Throwable $ignore) {
+            }
+
+            // Régénération de session & Authentification automatique du client
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = $new_user_id;
+            $_SESSION['user_nom'] = $nom;
+            $_SESSION['user_prenom'] = $prenom;
+            $_SESSION['nom'] = $nom;
+            $_SESSION['prenom'] = $prenom;
+            $_SESSION['user_email'] = $email;
+            $_SESSION['user_telephone'] = $telephone;
+            $_SESSION['user_phone'] = $telephone;
+            $_SESSION['user_role'] = 'client';
+            $_SESSION['user_profile_id'] = 0;
+            $_SESSION['est_verifie'] = 1;
+            $_SESSION['inscription_success'] = "Bienvenue " . $full_name . " ! Votre compte a été créé avec succès et un e-mail de confirmation vous a été envoyé.";
+
+            // Redirection immédiate vers la page d'accueil
+            header("Location: client/accueil?inscription=success");
+            exit();
 
         } catch (PDOException $e) {
             $message = friendly_db_error($e, 'inscription_client', "Impossible de créer votre compte pour le moment. Veuillez vérifier vos informations et réessayer.");
@@ -182,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Bouton Retour hors de la section -->
     <div style="width: 100%; max-width: 520px; margin: 0 auto 0.85rem; box-sizing: border-box;">
-        <a href="client/accueil.php"
+        <a href="client/accueil"
             style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 700; color: var(--eventia-navy, #000000); text-decoration: none; padding: 7px 14px; border-radius: 10px; background: #ffffff; border: 1px solid var(--eventia-border, #E5E5E5); box-shadow: 0 2px 5px rgba(11, 29, 58, 0.04); transition: all 0.2s;"
             onmouseover="this.style.background='#F5F5F5'; this.style.color='var(--eventia-amber-dark, #FF4A0D)'; this.style.transform='translateX(-2px)';"
             onmouseout="this.style.background='#ffffff'; this.style.color='var(--eventia-navy, #000000)'; this.style.transform='none';">
@@ -195,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Logo & Titre Identique -->
         <div style="text-align: center; margin-bottom: 1.75rem;">
-            <a href="client/accueil.php"
+            <a href="client/accueil"
                 style="display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; text-decoration: none;">
                 <img src="images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA"
                     style="height: 56px; width: auto; max-width: 200px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));">
@@ -220,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <!-- Formulaire d'inscription -->
-        <form method="POST" action="inscription.php" style="display: flex; flex-direction: column; gap: 1rem;">
+        <form method="POST" action="inscription" style="display: flex; flex-direction: column; gap: 1rem;">
 
             <div class="form-grid-2">
                 <!-- Nom -->
@@ -298,7 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Bouton Inscription -->
             <button type="submit" class="eventia-btn-primary"
                 style="width: 100%; padding: 0.85rem; margin-top: 0.35rem; font-size: 0.98rem; font-weight: 800; border-radius: 12px; justify-content: center; box-shadow: 0 4px 14px rgba(255, 74, 13, 0.3); border: none; cursor: pointer;">
-                <i class="fa-solid fa-user-plus"></i> Créer mon compte Client
+                <i class="fa-solid fa-user-plus"></i> Créer mon compte
             </button>
         </form>
 
@@ -308,7 +347,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <strong>Vous êtes organisateur ?</strong><br>
                 <span style="color: var(--eventia-muted, #737373);">Créez et vendez vos événements officiels.</span>
             </div>
-            <a href="client/devenir-promoteur.php" class="promoteur-invite-btn">
+            <a href="devenir-promoteur" class="promoteur-invite-btn">
                 <i class="fa-solid fa-bullhorn"></i> Devenir Promoteur
             </a>
         </div>
@@ -316,7 +355,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Footer Connexion -->
         <div class="auth-footer"
             style="margin-top: 1.5rem; padding-top: 1.15rem; border-top: 1px solid var(--eventia-border, #E5E5E5); text-align: center; font-size: 0.86rem; color: var(--eventia-muted, #737373);">
-            Vous avez déjà un compte ? <a href="connexion.php"
+            Vous avez déjà un compte ? <a href="connexion"
                 style="color: var(--eventia-navy, #000000); font-weight: 800; text-decoration: none;">Se connecter</a>
         </div>
     </div>

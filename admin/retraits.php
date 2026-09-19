@@ -188,7 +188,7 @@ function render_momo_icon($methode, $size = 24) {
         </a>
 
         <!-- Export Excel des retraits -->
-        <a href="export.php?type=retraits&tab=<?php echo urlencode($tab); ?>"
+        <a href="export?type=retraits&tab=<?php echo urlencode($tab); ?>"
             class="dash-btn-action"
             style="margin-left: auto; padding: 0.45rem 0.95rem; font-size: 0.83rem; text-decoration: none;" title="Exporter la liste des retraits sur Excel">
             <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>

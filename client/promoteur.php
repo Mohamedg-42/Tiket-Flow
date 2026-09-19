@@ -25,10 +25,10 @@ if (!empty($promoter_token)) {
     // Redirection sécurisée (301) vers le lien avec token pour masquer l'ID
     $legacy_id = (int) $_GET['id'];
     $secure_token = get_or_create_resource_token($pdo, 'promoter', $legacy_id);
-    header('Location: promoteur.php?token=' . urlencode($secure_token), true, 301);
+    header('Location: promoteur?token=' . urlencode($secure_token), true, 301);
     exit();
 } else {
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
@@ -45,7 +45,7 @@ $stmt->execute([$promoter_user_id]);
 $promoter = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$promoter) {
-    header('Location: accueil.php');
+    header('Location: accueil');
     exit();
 }
 
@@ -298,7 +298,7 @@ $initials = strtoupper(substr($words[0] ?? 'O', 0, 1) . substr($words[1] ?? '', 
                                     </span>
                                 <?php endif; ?>
 
-                                <a href="accueil.php?q=<?php echo urlencode($ev['nom']); ?>" class="eventia-btn-primary" style="text-decoration: none; padding: 0.45rem 1rem; font-size: 0.82rem;">
+                                <a href="accueil?q=<?php echo urlencode($ev['nom']); ?>" class="eventia-btn-primary" style="text-decoration: none; padding: 0.45rem 1rem; font-size: 0.82rem;">
                                     Réserver mon billet
                                 </a>
                             </div>

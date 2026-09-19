@@ -48,7 +48,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_profile'])) {
             }
 
             logActivity('profile.create', 'profile', $new_prof_id, "Création du profil « $nom » avec " . count($perms_ids) . " permission(s)");
-            $message = "Le profil « " . htmlspecialchars($nom) . " » a été créé avec succès !";
+
+            // Envoi d'un email de confirmation de création du profil métier
+            require_once __DIR__ . '/../includes/mailer.php';
+            $admin_email = $_SESSION['user_email'] ?? '';
+            $admin_name = trim(($_SESSION['user_prenom'] ?? '') . ' ' . ($_SESSION['user_nom'] ?? 'Administrateur'));
+            if (empty($admin_email) && !empty($_SESSION['user_id'])) {
+                $st_adm = $pdo->prepare("SELECT email, nom, prenom FROM users WHERE id = ?");
+                $st_adm->execute([(int)$_SESSION['user_id']]);
+                if ($adm_row = $st_adm->fetch()) {
+                    $admin_email = $adm_row['email'];
+                    $admin_name = trim(($adm_row['prenom'] ?? '') . ' ' . ($adm_row['nom'] ?? ''));
+                }
+            }
+            if (!empty($admin_email)) {
+                $perm_names = [];
+                if (!empty($perms_ids)) {
+                    $in_p = implode(',', array_map('intval', $perms_ids));
+                    $st_pnames = $pdo->query("SELECT nom, code FROM permissions WHERE id IN ($in_p)");
+                    $perm_names = $st_pnames->fetchAll(PDO::FETCH_ASSOC);
+                }
+                @sendProfileCreatedNotificationEmail($admin_email, $admin_name, $nom, $description, $perm_names);
+            }
+
+            $message = "Le profil « " . htmlspecialchars($nom) . " » a été créé avec succès ! Un e-mail de notification a été envoyé.";
             $msg_type = "success";
         } catch (PDOException $e) {
             $message = friendly_db_error($e, 'profil', "Impossible d'enregistrer ce profil d'accès. Veuillez vérifier le nom saisi.");
@@ -129,16 +152,15 @@ if (isset($_GET['delete_profile'])) {
             $msg_type = "error";
         } else {
             try {
-            $pdo->prepare("DELETE FROM profile_permissions WHERE profile_id = ?")->execute([$del_id]);
-            $pdo->prepare("DELETE FROM profiles WHERE id = ?")->execute([$del_id]);
+                $pdo->prepare("UPDATE profiles SET deleted_at = NOW() WHERE id = ?")->execute([$del_id]);
 
-            logActivity('profile.delete', 'profile', $del_id, "Suppression du profil « {$prof_to_del['nom']} »");
-            $message = "Le profil a été supprimé avec succès.";
-            $msg_type = "success";
-        } catch (PDOException $e) {
-            $message = friendly_db_error($e, 'profil', "Impossible de supprimer ce profil car il est encore lié à des utilisateurs ou des permissions.");
-            $msg_type = "error";
-        }
+                logActivity('profile.soft_delete', 'profile', $del_id, "Suppression logique du profil « {$prof_to_del['nom']} »");
+                $message = "Le profil a été supprimé avec succès.";
+                $msg_type = "success";
+            } catch (PDOException $e) {
+                $message = friendly_db_error($e, 'profil', "Erreur lors de la suppression du profil.");
+                $msg_type = "error";
+            }
         }
     }
 }
@@ -148,8 +170,9 @@ if (isset($_GET['delete_profile'])) {
 // ==============================================================================
 $profiles_list = $pdo->query("
     SELECT p.*,
-           (SELECT COUNT(*) FROM users u WHERE u.profile_id = p.id) AS nb_utilisateurs
+           (SELECT COUNT(*) FROM users u WHERE u.profile_id = p.id AND u.deleted_at IS NULL) AS nb_utilisateurs
     FROM profiles p
+    WHERE p.deleted_at IS NULL
     ORDER BY p.is_system DESC, p.nom ASC
 ")->fetchAll();
 
@@ -160,6 +183,110 @@ foreach ($res_pp as $row) {
     $prof_perms_map[(int) $row['profile_id']][] = (int) $row['permission_id'];
 }
 ?>
+
+<style>
+    /* Modals & Dropdown Styles (Garantie de centrage viewport fixe) */
+    .dash-modal {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 99999 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+
+    .dash-modal-backdrop {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(15, 23, 42, 0.65) !important;
+        backdrop-filter: blur(4px) !important;
+        z-index: 1;
+    }
+
+    .dash-modal-dialog {
+        position: relative !important;
+        background: #ffffff !important;
+        border-radius: 14px !important;
+        width: 100% !important;
+        max-width: 680px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+        overflow: hidden;
+        animation: dashModalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 2 !important;
+        box-sizing: border-box;
+        margin: auto;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    @keyframes dashModalIn {
+        from {
+            opacity: 0;
+            transform: translateY(-12px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .dash-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.15rem 1.4rem;
+        border-bottom: 1px solid var(--dash-border, #e2e8f0);
+        background: #ffffff;
+    }
+
+    .dash-modal-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: var(--dash-text, #0f172a);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 800;
+    }
+
+    .dash-modal-close {
+        background: transparent;
+        border: none;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: var(--dash-muted, #64748b);
+        cursor: pointer;
+        padding: 0 4px;
+        transition: color 0.15s ease;
+    }
+
+    .dash-modal-close:hover {
+        color: #0f172a;
+    }
+
+    .dash-modal-body {
+        padding: 1.4rem;
+        max-height: calc(85vh - 120px);
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+
+    .dash-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding: 1rem 1.4rem;
+        background: #F8FAFC;
+        border-top: 1px solid var(--dash-border, #e2e8f0);
+    }
+</style>
 
 <div class="dash-container">
     <!-- En-tête -->
@@ -174,7 +301,7 @@ foreach ($res_pp as $row) {
         </div>
 
         <div style="display: flex; gap: 0.75rem;">
-            <a href="utilisateurs.php" class="dash-btn-action" style="text-decoration: none;">
+            <a href="utilisateurs" class="dash-btn-action" style="text-decoration: none;">
                 <i class="fa-solid fa-users"></i> Gestion des Comptes
             </a>
             <?php if (hasPermission('profiles.manage')): ?>
@@ -266,7 +393,7 @@ foreach ($res_pp as $row) {
                 <!-- Actions de bas de carte -->
                 <div
                     style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--line);">
-                    <a href="utilisateurs.php?profile_id=<?php echo $prof['id']; ?>"
+                    <a href="utilisateurs?profile_id=<?php echo $prof['id']; ?>"
                         style="font-size: 0.78rem; color: var(--primary); text-decoration: none; font-weight: 700;">
                         Voir les comptes associés →
                     </a>
@@ -279,7 +406,7 @@ foreach ($res_pp as $row) {
                             </button>
 
                             <?php if (empty($prof['is_system']) && (int) $prof['nb_utilisateurs'] === 0): ?>
-                                <a href="profils.php?delete_profile=<?php echo $prof['id']; ?>" class="dash-btn-action"
+                                <a href="profils?delete_profile=<?php echo $prof['id']; ?>" class="dash-btn-action"
                                     style="padding: 0.35rem 0.65rem; font-size: 0.76rem; color: #000000;"
                                     onclick="return confirm('Confirmez-vous la suppression de ce profil ?');">
                                     <i class="fa-solid fa-trash"></i>
@@ -296,15 +423,14 @@ foreach ($res_pp as $row) {
 <!-- ==============================================================================
      MODALE : CRÉATION D'UN PROFIL
      ============================================================================== -->
-<div id="createProfileModal" class="dash-modal" style="display: none;">
-    <div class="dash-modal-backdrop" onclick="closeCreateProfileModal()"></div>
-    <div class="dash-modal-dialog" style="max-width: 680px;">
-        <div class="dash-modal-header">
-            <h3><i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> Créer un Nouveau Profil Métier
+<div id="createProfileModal" class="dash-modal" style="display: none; position: fixed; inset: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); z-index: 999999; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box; overflow-y: auto;">
+    <div style="background: #ffffff; width: 100%; max-width: 680px; border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; margin: auto; position: relative; z-index: 2; max-height: 92vh; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.15rem 1.4rem; border-bottom: 1px solid #E5E5E5; background: #000000; color: #ffffff;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: #ffffff; display: flex; align-items: center; gap: 8px; font-weight: 800;"><i class="fa-solid fa-shield-halved" style="color: #FF4A0D;"></i> Créer un Nouveau Profil Métier
             </h3>
-            <button type="button" class="dash-modal-close" onclick="closeCreateProfileModal()">&times;</button>
+            <button type="button" onclick="closeCreateProfileModal()" style="background: none; border: none; font-size: 1.5rem; line-height: 1; color: #94A3B8; cursor: pointer; padding: 0 4px; transition: color 0.15s ease;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94A3B8'">&times;</button>
         </div>
-        <form method="POST" action="profils.php">
+        <form method="POST" action="profils">
             <input type="hidden" name="create_profile" value="1">
             <div class="dash-modal-body" style="display: grid; gap: 1rem;">
                 <div class="form-group">
@@ -374,14 +500,13 @@ foreach ($res_pp as $row) {
 <!-- ==============================================================================
      MODALE : MODIFICATION D'UN PROFIL
      ============================================================================== -->
-<div id="editProfileModal" class="dash-modal" style="display: none;">
-    <div class="dash-modal-backdrop" onclick="closeEditProfileModal()"></div>
-    <div class="dash-modal-dialog" style="max-width: 680px;">
-        <div class="dash-modal-header">
-            <h3><i class="fa-solid fa-pen-to-square" style="color: var(--primary);"></i> Modifier le Profil</h3>
-            <button type="button" class="dash-modal-close" onclick="closeEditProfileModal()">&times;</button>
+<div id="editProfileModal" class="dash-modal" style="display: none; position: fixed; inset: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); z-index: 999999; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box; overflow-y: auto;">
+    <div style="background: #ffffff; width: 100%; max-width: 680px; border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; margin: auto; position: relative; z-index: 2; max-height: 92vh; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.15rem 1.4rem; border-bottom: 1px solid #E5E5E5; background: #000000; color: #ffffff;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: #ffffff; display: flex; align-items: center; gap: 8px; font-weight: 800;"><i class="fa-solid fa-pen-to-square" style="color: #FF4A0D;"></i> Modifier le Profil</h3>
+            <button type="button" onclick="closeEditProfileModal()" style="background: none; border: none; font-size: 1.5rem; line-height: 1; color: #94A3B8; cursor: pointer; padding: 0 4px; transition: color 0.15s ease;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94A3B8'">&times;</button>
         </div>
-        <form method="POST" action="profils.php">
+        <form method="POST" action="profils">
             <input type="hidden" name="update_profile" value="1">
             <input type="hidden" name="profile_id" id="edit_prof_id">
             <div class="dash-modal-body" style="display: grid; gap: 1rem;">
@@ -450,10 +575,18 @@ foreach ($res_pp as $row) {
 
 <script>
     function openCreateProfileModal() {
-        document.getElementById('createProfileModal').style.display = 'flex';
+        const m = document.getElementById('createProfileModal');
+        if (!m) return;
+        if (m.parentElement !== document.body) {
+            document.body.appendChild(m);
+        }
+        m.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
     function closeCreateProfileModal() {
-        document.getElementById('createProfileModal').style.display = 'none';
+        const m = document.getElementById('createProfileModal');
+        if (m) m.style.display = 'none';
+        document.body.style.overflow = '';
     }
 
     function openEditProfileModal(prof, assignedPermIds) {
@@ -472,10 +605,18 @@ foreach ($res_pp as $row) {
             });
         }
 
-        document.getElementById('editProfileModal').style.display = 'flex';
+        const m = document.getElementById('editProfileModal');
+        if (!m) return;
+        if (m.parentElement !== document.body) {
+            document.body.appendChild(m);
+        }
+        m.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
     function closeEditProfileModal() {
-        document.getElementById('editProfileModal').style.display = 'none';
+        const m = document.getElementById('editProfileModal');
+        if (m) m.style.display = 'none';
+        document.body.style.overflow = '';
     }
 
     function toggleAllCheckboxes(modalId, checked) {

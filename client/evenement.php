@@ -27,7 +27,14 @@ if (!empty($event_slug)) {
     $stmt_slug->execute([$event_slug]);
     $event_id = (int) $stmt_slug->fetchColumn();
 
-    // Si non trouvé par slug exact, vérifier s'il s'agit d'un token sécurisé passé en slug
+    // Si non trouvé par slug exact, vérifier s'il s'agit d'un ID numérique direct
+    if (!$event_id && is_numeric($event_slug)) {
+        $stmt_id = $pdo->prepare("SELECT id FROM events WHERE id = ? LIMIT 1");
+        $stmt_id->execute([(int) $event_slug]);
+        $event_id = (int) $stmt_id->fetchColumn();
+    }
+
+    // Si non trouvé, vérifier s'il s'agit d'un token sécurisé passé en slug
     if (!$event_id) {
         $resolved_tok_id = resolve_resource_token($pdo, $event_slug, 'event');
         if ($resolved_tok_id) {
@@ -83,7 +90,7 @@ $stmt = $pdo->prepare("
     FROM events e 
     LEFT JOIN users u ON e.user_id = u.id 
     LEFT JOIN promoters p ON e.user_id = p.user_id 
-    WHERE e.id = ? AND e.statut IN ('actif', 'termine')
+    WHERE e.id = ? AND e.statut IN ('actif', 'termine') AND e.deleted_at IS NULL
 ");
 $stmt->execute([$event_id]);
 $event = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -91,6 +98,26 @@ $event = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$event) {
     header('Location: accueil');
     exit();
+}
+
+// 1.0 Détection stricte : fermeture des ventes 4 heures avant le début ou si l'événement est déjà arrivé / terminé
+$event_time_str = !empty($event['heure']) ? ($event['date_evenement'] . ' ' . $event['heure']) : ($event['date_evenement'] . ' 00:00:00');
+$event_ts = strtotime($event_time_str);
+$event_cutoff_ts = ($event_ts !== false) ? ($event_ts - (4 * 3600)) : false;
+
+// L'événement en lui-même est arrivé / passé
+$is_event_passed = ($event_ts !== false && $event_ts <= time()) || ($event['statut'] === 'termine');
+
+// Les ventes sont fermées (4h avant le début OU événement déjà passé)
+$is_ventes_fermees = $is_event_passed || ($event_cutoff_ts !== false && $event_cutoff_ts <= time());
+$is_event_arrived = $is_ventes_fermees; // Maintien de compatibilité avec les contrôles d'interface existants
+
+// Synchronisation en base de données si l'événement est réellement débuté / passé
+if ($is_event_passed && $event['statut'] !== 'termine') {
+    try {
+        $pdo->prepare("UPDATE events SET statut = 'termine' WHERE id = ?")->execute([$event['id']]);
+        $event['statut'] = 'termine';
+    } catch (\Throwable $t) {}
 }
 
 // 1.0 Masquage des ID : si l'accès a été fait via un paramètre numérique (?id= ou ?event_id=),
@@ -102,7 +129,7 @@ if ((isset($_GET['id']) || isset($_GET['event_id'])) && empty($event_slug) && !e
     if (!empty($otherParams)) {
         $cleanUrl .= '?' . http_build_query($otherParams);
     }
-    header('Location: ' . $cleanUrl, true, 301);
+    header('Location:  ' . $cleanUrl, true, 301);
     exit();
 }
 
@@ -137,7 +164,7 @@ if ($is_private_event) {
                 <i>🔒</i>
                 <h1>Accès restreint</h1>
                 <p>Cet événement est privé. Vous devez utiliser le lien d'invitation exact fourni par l'organisateur pour y accéder.</p>
-                <a href="accueil.php">← Retour à l'accueil</a>
+                <a href="accueil">← Retour à l'accueil</a>
             </div>
         </body>
         </html>
@@ -150,7 +177,7 @@ if ($is_private_event) {
 $stmt_tickets = $pdo->prepare("
     SELECT id, event_id, nom, description, prix, frais_place, quantite, quantite_vendue, places_choisies 
     FROM ticket_types 
-    WHERE event_id = ? 
+    WHERE event_id = ? AND deleted_at IS NULL
     ORDER BY prix ASC
 ");
 $stmt_tickets->execute([$event_id]);
@@ -224,12 +251,45 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
+if (!function_exists('get_event_cat_icon')) {
+    function get_event_cat_icon($cat)
+    {
+        $c = mb_strtolower(trim((string) $cat));
+        if (strpos($c, 'concert') !== false || strpos($c, 'musique') !== false)
+            return 'fa-solid fa-music';
+        if (strpos($c, 'festival') !== false)
+            return 'fa-solid fa-umbrella-beach';
+        if (strpos($c, 'spectacle') !== false || strpos($c, 'humour') !== false || strpos($c, 'théâtre') !== false || strpos($c, 'theatre') !== false)
+            return 'fa-solid fa-masks-theater';
+        if (strpos($c, 'conf') !== false || strpos($c, 'seminaire') !== false || strpos($c, 'forum') !== false)
+            return 'fa-solid fa-microphone';
+        if (strpos($c, 'sport') !== false || strpos($c, 'tournoi') !== false || strpos($c, 'match') !== false)
+            return 'fa-solid fa-futbol';
+        if (strpos($c, 'soir') !== false || strpos($c, 'gala') !== false || strpos($c, 'clubbing') !== false)
+            return 'fa-solid fa-champagne-glasses';
+        if (strpos($c, 'foire') !== false || strpos($c, 'salon') !== false || strpos($c, 'expo') !== false)
+            return 'fa-solid fa-store';
+        if (strpos($c, 'ciné') !== false || strpos($c, 'cine') !== false || strpos($c, 'film') !== false || strpos($c, 'projection') !== false)
+            return 'fa-solid fa-film';
+        if (strpos($c, 'anniversaire') !== false || strpos($c, 'fete') !== false || strpos($c, 'fête') !== false)
+            return 'fa-solid fa-cake-candles';
+        if (strpos($c, 'mode') !== false || strpos($c, 'defile') !== false || strpos($c, 'défilé') !== false)
+            return 'fa-solid fa-shirt';
+        if (strpos($c, 'vote') !== false || strpos($c, 'concours') !== false)
+            return 'fa-solid fa-trophy';
+        if (strpos($c, 'autre') !== false)
+            return 'fa-solid fa-shapes';
+        return 'fa-solid fa-tag';
+    }
+}
+
 $page_title = htmlspecialchars($event['nom']) . " — Détails & Billetterie | Tike WA";
 $body_class = "client-page event-detail-page";
 include __DIR__ . '/header.php';
 ?>
 
 <link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo file_exists(__DIR__ . '/../Css/accueil-client.css') ? filemtime(__DIR__ . '/../Css/accueil-client.css') : '1.2.0'; ?>">
+<link rel="stylesheet" href="../Css/seating-booking.css?v=<?php echo file_exists(__DIR__ . '/../Css/seating-booking.css') ? filemtime(__DIR__ . '/../Css/seating-booking.css') : time(); ?>">
 
 <style>
     /* Correction contraste bouton actif filtre 3D */
@@ -595,6 +655,7 @@ include __DIR__ . '/header.php';
         padding: clamp(1.25rem, 3vw, 2rem);
         margin-bottom: 2.5rem;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        scroll-margin-top: 90px;
     }
 
     .section-title-wrap {
@@ -1270,9 +1331,9 @@ include __DIR__ . '/header.php';
     <!-- BARRE HAUTE DE NAVIGATION -->
     <div class="event-topbar">
         <div class="event-breadcrumb">
-            <a href="accueil.php"><i class="fa-solid fa-house"></i> Accueil</a>
+            <a href="accueil"><i class="fa-solid fa-house"></i> Accueil</a>
             <span>/</span>
-            <a href="accueil.php?onglet=evenements">Événements</a>
+            <a href="accueil?onglet=evenements">Événements</a>
             <span>/</span>
             <span style="color: var(--ev-dark); font-weight: 700;"><?php echo htmlspecialchars($event['nom']); ?></span>
         </div>
@@ -1292,484 +1353,284 @@ include __DIR__ . '/header.php';
         </div>
     </div>
 
-    <!-- CARTE HÉRO PRINCIPALE DE L'ÉVÉNEMENT -->
-    <article class="event-hero-card">
-        <div class="event-hero-media">
-            <div class="event-hero-backdrop"
-                style="background-image: url('<?php echo htmlspecialchars($event_img, ENT_QUOTES, 'UTF-8'); ?>');">
-            </div>
-            <img src="<?php echo htmlspecialchars($event_img, ENT_QUOTES, 'UTF-8'); ?>"
-                alt="<?php echo htmlspecialchars($event['nom']); ?>" class="event-hero-img"
-                fetchpriority="high" decoding="async"
-                onerror="this.onerror=null; this.src='<?php echo $default_event_img; ?>';">
+    <!-- ============================================================
+         GRILLE PRINCIPALE EN 3 COLONNES CONFORME AU MODÈLE TIKÉLI
+         Fiche Événement & Tarifs | Plan Interactif | Panier & Paiement
+         ============================================================ -->
+    <div class="booking-layout-grid" id="billets">
 
-            <div class="event-hero-badges">
-                <span class="event-badge-chip orange">
-                    <i class="fa-solid fa-tag"></i> <?php echo htmlspecialchars($event['categorie']); ?>
-                </span>
-                <span class="event-badge-chip">
+        <!-- ============================================================
+             COLONNE 1 : FICHE ÉVÉNEMENT & TARIFS (GAUCHE)
+             ============================================================ -->
+        <aside class="sb-card event-summary-card">
+            <div class="event-summary-img-wrap">
+                <img src="<?php echo htmlspecialchars($event_img, ENT_QUOTES, 'UTF-8'); ?>"
+                    alt="<?php echo htmlspecialchars($event['nom']); ?>" class="event-summary-img"
+                    onerror="this.onerror=null; this.src='<?php echo $default_event_img; ?>';">
+            </div>
+
+            <h1 class="event-summary-title"><?php echo htmlspecialchars($event['nom']); ?></h1>
+
+            <div class="event-summary-meta">
+                <div class="event-summary-meta-item">
                     <i class="fa-regular fa-calendar"></i>
-                    <?php echo date('d/m/Y', strtotime($event['date_evenement'])); ?>
-                </span>
-                <?php if ($event['statut'] === 'termine'): ?>
-                    <span class="event-badge-chip" style="background: #475569;">
-                        <i class="fa-solid fa-flag-checkered"></i> Événement Terminé
-                    </span>
-                <?php else: ?>
-                    <span class="event-badge-chip green">
-                        <i class="fa-solid fa-circle-check"></i> Billetterie Ouverte
-                    </span>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <div class="event-hero-content">
-            <div>
-                <span class="event-kicker">
-                    <i class="fa-solid fa-calendar-check"></i> Événement Officiel Tike WA
-                </span>
-
-                <h1 class="event-title"><?php echo htmlspecialchars($event['nom']); ?></h1>
-
-                <!-- Grille Métrique des caractéristiques clés -->
-                <div class="event-metrics-grid">
-                    <div class="event-metric-box">
-                        <span class="event-metric-label"><i class="fa-regular fa-clock"></i> Date & Heure</span>
-                        <strong class="event-metric-val">
-                            <?php echo date('d/m/Y', strtotime($event['date_evenement'])); ?> à
-                            <?php echo substr($event['heure'], 0, 5); ?>
-                        </strong>
-                    </div>
-
-                    <div class="event-metric-box">
-                        <span class="event-metric-label"><i class="fa-solid fa-location-dot"></i> Lieu / Salle</span>
-                        <strong class="event-metric-val" title="<?php echo htmlspecialchars($event['lieu']); ?>">
-                            <?php echo htmlspecialchars($event['lieu']); ?>
-                        </strong>
-                    </div>
-
-                    <div class="event-metric-box">
-                        <span class="event-metric-label"><i class="fa-solid fa-user-tie"></i> Organisateur</span>
-                        <strong class="event-metric-val"
-                            title="<?php echo htmlspecialchars($event['promoteur_nom'] ?? 'Organisateur officiel'); ?>">
-                            <?php echo htmlspecialchars($event['promoteur_nom'] ?? 'Organisateur officiel'); ?>
-                        </strong>
-                    </div>
-
-                    <div class="event-metric-box">
-                        <span class="event-metric-label"><i class="fa-solid fa-ticket"></i> Tarif d'entrée</span>
-                        <strong class="event-metric-val price">
-                            <?php echo ($prix_min > 0) ? number_format($prix_min, 0, ',', ' ') . ' F' : 'Entrée Libre'; ?>
-                        </strong>
-                    </div>
-
-                    <div class="event-metric-box">
-                        <span class="event-metric-label"><i class="fa-solid fa-users"></i> Disponibilité</span>
-                        <strong class="event-metric-val"
-                            style="color: <?php echo ($stock_total > 0) ? '#059669' : '#DC2626'; ?>;">
-                            <?php echo ($stock_total > 0) ? $stock_total . ' place(s)' : 'Complet'; ?>
-                        </strong>
-                    </div>
-                </div>
-
-                <!-- Présentation détaillée -->
-                <div class="event-desc-box">
-                    <h4><i class="fa-solid fa-align-left" style="color: var(--ev-orange);"></i> À propos de l'événement
-                    </h4>
-                    <?php if (!empty($event['description'])): ?>
-                        <p><?php echo nl2br(htmlspecialchars($event['description'])); ?></p>
-                    <?php else: ?>
-                        <p style="font-style: italic;">Aucune description supplémentaire fournie pour cet événement.</p>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Boutons d'appel à l'action -->
-            <div class="event-hero-cta">
-                <?php if ($event['statut'] !== 'termine' && $stock_total > 0 && $peut_agir): ?>
-                    <a href="#billets" class="btn-primary-reserve">
-                        <i class="fa-solid fa-ticket"></i> Réserver mes Billets
-                    </a>
-                    <button type="button" class="btn-secondary-share"
-                        onclick="openClient3DSeating(null, <?php echo (int) $event['id']; ?>)"
-                        style="background: #0F172A; color: #FFFFFF; border: 1.5px solid #FF4A0D; font-weight: 800;"
-                        title="Visualiser la salle et choisir vos places en 3D">
-                        <i class="fa-solid fa-cube" style="color: #FF4A0D;"></i> Choisir mes Places en 3D
-                    </button>
-                <?php elseif ($event['statut'] === 'termine'): ?>
-                    <span class="btn-secondary-share" style="background: #F1F5F9; color: #64748B;">
-                        <i class="fa-solid fa-flag-checkered"></i> Événement Terminé
-                    </span>
-                <?php elseif (!$peut_agir): ?>
-                    <span class="btn-secondary-share" style="background: #F1F5F9; color: #64748B;"
-                        title="Réservé aux clients">
-                        <i class="fa-solid fa-lock"></i> Réservé aux comptes clients
-                    </span>
-                <?php endif; ?>
-
-                <?php if (!empty($candidats)): ?>
-                    <a href="#candidats" class="btn-secondary-share">
-                        <i class="fa-solid fa-users"></i> Voir les Candidats (<?php echo count($candidats); ?>)
-                    </a>
-                <?php endif; ?>
-
-                <button type="button" class="btn-secondary-share" onclick="openShareEventModal()">
-                    <i class="fa-solid fa-share-nodes"></i> Partager l'événement
-                </button>
-            </div>
-        </div>
-    </article>
-
-    <!-- SECTION BILLETTERIE & TYPES DE PLACES -->
-    <section class="event-tickets-section" id="billets">
-        <div class="section-title-wrap">
-            <div>
-                <h2 class="section-title">
-                    <i class="fa-solid fa-tags" style="color: var(--ev-orange);"></i> Billets Disponibles
-                </h2>
-                <small style="color: var(--ev-gray-muted); font-size: 0.88rem;">
-                    Sélectionnez vos catégories de places ci-dessous pour finaliser votre commande en ligne.
-                </small>
-            </div>
-            <div
-                style="font-family: var(--ev-font-mono); font-size: 0.85rem; font-weight: 700; color: var(--ev-gray-muted);">
-                <?php echo count($tickets); ?> formule(s) d'accès
-            </div>
-        </div>
-
-        <?php if (!empty($tickets)): ?>
-            <form id="eventCheckoutForm" action="commander.php?id=<?php echo (int) $event['id']; ?>" method="POST">
-                <input type="hidden" name="event_id" id="event_id" value="<?php echo (int) $event['id']; ?>">
-                <div id="seat-hidden-inputs"></div>
-
-                <div class="tickets-grid">
-                    <?php foreach ($tickets as $tk):
-                        $t_id = (int) $tk['id'];
-                        $t_prix = (float) $tk['prix'];
-                        $t_frais_place = (float) ($tk['frais_place'] ?? 0);
-                        $t_qte = (int) $tk['quantite'];
-                        $t_vendus = (int) ($tk['quantite_vendue'] ?? 0);
-                        $t_rest = max(0, $t_qte - $t_vendus);
-                        $is_sold_out = ($t_rest <= 0);
-                        $pct_vendus = ($t_qte > 0) ? min(100, round(($t_vendus / $t_qte) * 100)) : 0;
+                    <span>
+                        <?php 
+                        $ts_ev = strtotime($event['date_evenement']);
+                        $jours = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
+                        $mois = ['', 'Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
+                        $j_sem = $jours[(int)date('w', $ts_ev)];
+                        $m_nom = $mois[(int)date('n', $ts_ev)];
+                        echo $j_sem . ' ' . date('d', $ts_ev) . ' ' . $m_nom . ' ' . date('Y', $ts_ev);
+                        if (!empty($event['heure'])) {
+                            echo ' · ' . str_replace(':', 'h', substr($event['heure'], 0, 5));
+                        }
                         ?>
-                        <div class="ticket-card <?php echo $is_sold_out ? 'is-sold-out' : ''; ?>"
-                            id="ticket-tier-<?php echo $t_id; ?>">
-                            <div>
-                                <div class="ticket-top">
-                                    <h3 class="ticket-name"><?php echo htmlspecialchars($tk['nom']); ?></h3>
-                                    <span class="ticket-status-tag <?php echo $is_sold_out ? 'soldout' : 'available'; ?>">
-                                        <?php echo $is_sold_out ? 'Épuisé' : $t_rest . ' restant(s)'; ?>
-                                    </span>
-                                </div>
-
-                                <p class="ticket-desc">
-                                    <?php echo !empty($tk['description']) ? htmlspecialchars($tk['description']) : "Accès officiel garanti avec badge et billet sécurisé par QR code."; ?>
-                                </p>
-
-                                <div class="ticket-price-wrap">
-                                    <span class="ticket-price"><?php echo number_format($t_prix, 0, ',', ' '); ?>
-                                        <small>FCFA</small></span>
-                                    <?php if ($t_frais_place > 0): ?>
-                                        <small
-                                            style="display: block; font-size: 0.74rem; color: var(--ev-orange); font-weight: 700; margin-top: 2px;">
-                                            +<?php echo number_format($t_frais_place, 0, ',', ' '); ?> F (choix de place)
-                                        </small>
-                                    <?php endif; ?>
-                                </div>
-
-                                <!-- Jauge de vente du type de billet -->
-                                <div class="ticket-progress-wrap">
-                                    <div class="ticket-progress-stats">
-                                        <span><?php echo $t_vendus; ?> vendu(s)</span>
-                                        <span><?php echo $pct_vendus; ?>%</span>
-                                    </div>
-                                    <div class="ticket-progress-bar">
-                                        <div class="ticket-progress-fill" style="width: <?php echo $pct_vendus; ?>%;"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Contrôle de quantité -->
-                            <div>
-                                <?php if (!$is_sold_out && $event['statut'] !== 'termine' && $peut_agir): ?>
-                                    <div class="ticket-qty-control">
-                                        <button type="button" class="qty-btn"
-                                            onclick="updateTicketQty(<?php echo $t_id; ?>, -1, <?php echo $t_rest; ?>)">-</button>
-                                        <input type="number" name="tickets[<?php echo $t_id; ?>]"
-                                            id="qty-input-<?php echo $t_id; ?>" value="0" min="0"
-                                            max="<?php echo min(20, $t_rest); ?>" class="qty-input"
-                                            data-price="<?php echo $t_prix; ?>" data-frais-place="<?php echo $t_frais_place; ?>"
-                                            onchange="calculateEventTotal()">
-                                        <button type="button" class="qty-btn"
-                                            onclick="updateTicketQty(<?php echo $t_id; ?>, 1, <?php echo $t_rest; ?>)">+</button>
-                                    </div>
-
-                                    <!-- Option Choix de Place & Vue Scène 3D -->
-                                    <div class="seat-choice-block"
-                                        style="margin-top: 0.9rem; border-top: 1px dashed var(--ev-border); padding-top: 0.75rem;">
-                                        <label class="seat-choice-label" for="seat_toggle_<?php echo $t_id; ?>"
-                                            style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer;">
-                                            <input type="checkbox" id="seat_toggle_<?php echo $t_id; ?>"
-                                                class="seat-choice-checkbox"
-                                                style="margin-top: 3px; accent-color: var(--ev-orange); width: 16px; height: 16px; cursor: pointer;"
-                                                onchange="toggleSeatMap(<?php echo $t_id; ?>, <?php echo (int) $event['id']; ?>)">
-                                            <div style="flex: 1;">
-                                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                                    <span style="font-weight: 700; font-size: 0.82rem; color: var(--ev-dark);">
-                                                        <i class="fa-solid fa-chair" style="color: var(--ev-orange);"></i> Choisir
-                                                        mes places
-                                                    </span>
-                                                    <?php if ($t_frais_place > 0): ?>
-                                                        <span
-                                                            style="font-family: var(--ev-font-mono); font-weight: 800; font-size: 0.74rem; color: var(--ev-orange); background: var(--ev-orange-subtle); padding: 2px 6px; border-radius: 4px;">
-                                                            +<?php echo number_format($t_frais_place, 0, ',', ' '); ?> F
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <small
-                                                    style="display: block; font-size: 0.72rem; color: var(--ev-gray-muted); line-height: 1.3; margin-top: 2px;">
-                                                    Sélectionnez précisément vos sièges en 3D face à la scène.
-                                                </small>
-                                            </div>
-                                        </label>
-
-                                        <!-- VUE DE SCÈNE INTERACTIVE (RENDU 3D) -->
-                                        <div class="scene-view-card" id="scene_view_<?php echo $t_id; ?>" hidden
-                                            style="margin-top: 0.75rem;">
-                                            <div class="scene-stage-banner">
-                                                <div class="scene-stage-podium">
-                                                    <i class="fa-solid fa-masks-theater"></i> SCÈNE PRINCIPALE / PODIUM
-                                                </div>
-                                                <div class="scene-stage-sub">
-                                                    <i class="fa-solid fa-arrow-up"></i> Orientation face à la scène
-                                                </div>
-                                            </div>
-
-                                            <button type="button" class="btn-scene-interactive"
-                                                onclick="openClient3DSeating(<?php echo $t_id; ?>, <?php echo (int) $event['id']; ?>)"
-                                                title="Ouvrir le Rendu 3D de la salle">
-                                                <div class="btn-scene-left">
-                                                    <span class="btn-scene-icon-box">
-                                                        <i class="fa-solid fa-cube"></i>
-                                                    </span>
-                                                    <div class="btn-scene-labels">
-                                                        <span class="btn-scene-main-text">Ouvrir le Rendu 3D Immersif</span>
-                                                        <span class="btn-scene-sub-text">Immersion temps réel · Cliquez pour
-                                                            sélectionner</span>
-                                                    </div>
-                                                </div>
-                                                <span class="scene-tag-badge">
-                                                    <i class="fa-solid fa-cube"></i> Rendu 3D
-                                                </span>
-                                            </button>
-
-                                            <div class="scene-selected-summary" id="scene_summary_<?php echo $t_id; ?>">
-                                                <div style="color: #94A3B8; font-size: 0.76rem; text-align: center;">
-                                                    <i class="fa-solid fa-hand-pointer"
-                                                        style="color: #FF4A0D; margin-right: 4px;"></i> Cliquez sur le bouton
-                                                    <strong>Rendu 3D</strong> ci-dessus pour sélectionner vos places.
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php else: ?>
-                                    <button type="button" class="btn-secondary-share" style="width: 100%;" disabled>
-                                        <?php echo $is_sold_out ? 'Épuisé' : 'Non disponible'; ?>
-                                    </button>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                    </span>
                 </div>
 
-                <!-- Panier et coordonnées de l'acheteur -->
-                <?php if ($event['statut'] !== 'termine' && $stock_total > 0 && $peut_agir): ?>
+                <div class="event-summary-meta-item">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span title="<?php echo htmlspecialchars($event['lieu']); ?>">
+                        <?php echo htmlspecialchars($event['lieu']); ?>
+                    </span>
+                </div>
+            </div>
 
-                    <?php if ($is_private_event): ?>
-                        <!-- ÉVÉNEMENT PRIVÉ : Vérification whitelist + OTP obligatoire avant paiement -->
-                        <div class="event-checkout-panel" id="whitelistGatePanel">
-                            <div class="checkout-header">
-                                <div>
-                                    <h3 style="margin: 0 0 0.25rem; font-size: 1.15rem; color: var(--ev-dark); font-weight: 800;">
-                                        <i class="fa-solid fa-user-shield" style="color: var(--ev-orange);"></i> Événement sur
-                                        invitation
-                                    </h3>
-                                    <small style="color: var(--ev-gray-muted);">Saisissez le numéro de téléphone sur lequel vous
-                                        avez été invité(e) pour vérifier votre accès.</small>
-                                </div>
-                            </div>
+            <div class="event-summary-cat-pill">
+                <i class="<?php echo get_event_cat_icon($event['categorie']); ?>"></i>
+                <span><?php echo htmlspecialchars($event['categorie']); ?></span>
+            </div>
 
-                            <div class="checkout-form-grid" id="wlStep1">
-                                <div class="checkout-field" style="grid-column: 1 / -1;">
-                                    <label for="wl_telephone">Numéro de Téléphone Invité *</label>
-                                    <input type="tel" id="wl_telephone" placeholder="Ex: +225 07 00 00 00 00">
-                                </div>
-                            </div>
-                            <div id="wlMsg" style="font-size: 0.85rem; margin-bottom: 0.75rem;"></div>
-                            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                                <button type="button" id="wlBtnCheck" class="btn-primary-reserve"
-                                    onclick="wlCheckEligibility()" style="font-size: 0.95rem; padding: 0.8rem 1.6rem;">
-                                    <i class="fa-solid fa-magnifying-glass"></i> Vérifier mon accès
-                                </button>
-                            </div>
+            <div class="event-summary-desc">
+                <?php if (!empty($event['description'])): ?>
+                    <?php echo nl2br(htmlspecialchars($event['description'])); ?>
+                <?php else: ?>
+                    Vivez une expérience unique et inoubliable avec cet événement officiel sur la billetterie Tike WA.
+                <?php endif; ?>
+            </div>
 
-                            <div id="wlStep2" hidden>
-                                <div class="checkout-form-grid">
-                                    <div class="checkout-field" style="grid-column: 1 / -1;">
-                                        <label for="wl_otp_code">Code reçu par SMS *</label>
-                                        <input type="text" id="wl_otp_code" inputmode="numeric" maxlength="6"
-                                            placeholder="Ex: 123456">
-                                    </div>
+            <div class="event-summary-divider"></div>
+
+            <!-- Liste des Tarifs -->
+            <div class="event-tarifs-section">
+                <h3 class="event-tarifs-title">Tarifs</h3>
+                <div class="event-tarifs-list">
+                    <?php if (!empty($tickets)): 
+                        $sorted_tickets = $tickets;
+                        usort($sorted_tickets, function($a, $b) {
+                            return (float)$b['prix'] <=> (float)$a['prix'];
+                        });
+                    ?>
+                        <?php foreach ($sorted_tickets as $idx => $tk): 
+                            $tk_name = mb_strtolower($tk['nom']);
+                            $dot_cls = 'dot-standard';
+                            if (strpos($tk_name, 'vip') !== false || strpos($tk_name, 'vvip') !== false) {
+                                $dot_cls = 'dot-vip';
+                            } elseif (strpos($tk_name, 'prem') !== false || strpos($tk_name, 'or') !== false) {
+                                $dot_cls = 'dot-premium';
+                            } elseif ($idx === 0) {
+                                $dot_cls = 'dot-vip';
+                            } elseif ($idx === 1) {
+                                $dot_cls = 'dot-premium';
+                            }
+                        ?>
+                            <div class="event-tarif-row">
+                                <div class="event-tarif-name-wrap">
+                                    <span class="event-tarif-dot <?php echo $dot_cls; ?>"></span>
+                                    <span><?php echo htmlspecialchars($tk['nom']); ?></span>
                                 </div>
-                                <div id="wlOtpMsg" style="font-size: 0.85rem; margin-bottom: 0.75rem;"></div>
-                                <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                                    <button type="button" id="wlBtnResend" class="btn-secondary-share"
-                                        onclick="wlSendOtp()">Renvoyer le code</button>
-                                    <button type="button" id="wlBtnVerify" class="btn-primary-reserve"
-                                        onclick="wlVerifyOtp()" style="font-size: 0.95rem; padding: 0.8rem 1.6rem;">
-                                        <i class="fa-solid fa-shield-halved"></i> Vérifier le code
-                                    </button>
-                                </div>
+                                <strong class="event-tarif-price"><?php echo number_format($tk['prix'], 0, ',', ' '); ?> FCFA</strong>
                             </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="event-tarif-row">
+                            <div class="event-tarif-name-wrap">
+                                <span class="event-tarif-dot dot-standard"></span>
+                                <span style="text-transform: capitalize;">Entrée Standard</span>
+                            </div>
+                            <strong class="event-tarif-price">Gratuit</strong>
                         </div>
                     <?php endif; ?>
-
-                    <div class="event-checkout-panel" id="checkoutFieldsWrap"
-                        <?php echo $is_private_event ? 'style="display:none;"' : ''; ?>>
-                        <div class="checkout-header">
-                            <div>
-                                <h3 style="margin: 0 0 0.25rem; font-size: 1.15rem; color: var(--ev-dark); font-weight: 800;">
-                                    <i class="fa-solid fa-cart-shopping" style="color: var(--ev-orange);"></i> Vos Coordonnées &
-                                    Confirmation
-                                </h3>
-                                <small style="color: var(--ev-gray-muted);">Renseignez vos coordonnées pour la génération et
-                                    l'envoi de vos billets QR Code.</small>
-                            </div>
-                            <div style="text-align: right;">
-                                <small
-                                    style="display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--ev-gray-muted); font-weight: 700;">Total
-                                    à payer</small>
-                                <span class="checkout-total-val" id="checkoutTotalDisplay">0 FCFA</span>
-                            </div>
-                        </div>
-
-                        <div class="checkout-form-grid">
-                            <div class="checkout-field">
-                                <label for="client_nom">Nom & Prénoms *</label>
-                                <input type="text" id="client_nom" name="client_nom" required
-                                    value="<?php echo htmlspecialchars($_SESSION['user_nom'] ?? ''); ?>"
-                                    placeholder="Ex: Kouamé Jean">
-                            </div>
-
-                            <div class="checkout-field">
-                                <label for="client_email">Adresse Email *</label>
-                                <input type="email" id="client_email" name="client_email" required
-                                    value="<?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?>"
-                                    placeholder="Ex: jean.kouame@gmail.com">
-                            </div>
-
-                            <div class="checkout-field">
-                                <label for="client_telephone">Numéro de Téléphone *</label>
-                                <input type="tel" id="client_telephone" name="client_telephone" required
-                                    <?php echo $is_private_event ? 'readonly' : ''; ?>
-                                    value="<?php echo htmlspecialchars($_SESSION['user_telephone'] ?? ''); ?>"
-                                    placeholder="Ex: +225 07 00 00 00 00">
-                            </div>
-                        </div>
-
-                        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                            <button type="submit" id="btnSubmitCheckout" class="btn-primary-reserve"
-                                style="font-size: 1rem; padding: 0.9rem 2rem;">
-                                <i class="fa-solid fa-lock"></i> Valider et Payer ma Commande
-                            </button>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <?php if ($is_private_event): ?>
-                    <script>
-                        const WL_EVENT_ID = <?php echo (int) $event['id']; ?>;
-
-                        async function wlPostJSON(url, params) {
-                            const body = new URLSearchParams(params);
-                            const res = await fetch(url, { method: 'POST', body });
-                            return res.json();
-                        }
-
-                        function wlSetMsg(elId, text, ok) {
-                            const el = document.getElementById(elId);
-                            el.textContent = text;
-                            el.style.color = ok ? '#16A34A' : '#DC2626';
-                        }
-
-                        async function wlCheckEligibility() {
-                            const tel = document.getElementById('wl_telephone').value.trim();
-                            if (!tel) { wlSetMsg('wlMsg', 'Veuillez saisir un numéro de téléphone.', false); return; }
-                            document.getElementById('wlBtnCheck').disabled = true;
-                            try {
-                                const data = await wlPostJSON('../ajax/whitelist_check.php', { event_id: WL_EVENT_ID, telephone: tel });
-                                if (!data.success || !data.eligible) {
-                                    wlSetMsg('wlMsg', data.message || "Numéro non autorisé pour cet événement.", false);
-                                    document.getElementById('wlStep2').hidden = true;
-                                    return;
-                                }
-                                wlSetMsg('wlMsg', `Numéro éligible (${data.remaining} billet(s) disponible(s)). Envoi du code...`, true);
-                                await wlSendOtp();
-                            } catch (e) {
-                                wlSetMsg('wlMsg', "Erreur réseau, veuillez réessayer.", false);
-                            } finally {
-                                document.getElementById('wlBtnCheck').disabled = false;
-                            }
-                        }
-
-                        async function wlSendOtp() {
-                            const tel = document.getElementById('wl_telephone').value.trim();
-                            try {
-                                const data = await wlPostJSON('../ajax/otp_send.php', { event_id: WL_EVENT_ID, telephone: tel });
-                                if (!data.success) {
-                                    wlSetMsg('wlMsg', data.message || "Impossible d'envoyer le code.", false);
-                                    return;
-                                }
-                                document.getElementById('wlStep2').hidden = false;
-                                wlSetMsg('wlMsg', "Code envoyé par SMS. Saisissez-le ci-dessous.", true);
-                            } catch (e) {
-                                wlSetMsg('wlMsg', "Erreur réseau, veuillez réessayer.", false);
-                            }
-                        }
-
-                        async function wlVerifyOtp() {
-                            const tel = document.getElementById('wl_telephone').value.trim();
-                            const code = document.getElementById('wl_otp_code').value.trim();
-                            if (!code) { wlSetMsg('wlOtpMsg', 'Veuillez saisir le code reçu.', false); return; }
-                            document.getElementById('wlBtnVerify').disabled = true;
-                            try {
-                                const data = await wlPostJSON('../ajax/otp_verify.php', { event_id: WL_EVENT_ID, telephone: tel, code });
-                                if (!data.success) {
-                                    wlSetMsg('wlOtpMsg', data.message || "Code invalide.", false);
-                                    return;
-                                }
-                                document.getElementById('client_telephone').value = tel;
-                                document.getElementById('whitelistGatePanel').style.display = 'none';
-                                document.getElementById('checkoutFieldsWrap').style.display = '';
-                            } catch (e) {
-                                wlSetMsg('wlOtpMsg', "Erreur réseau, veuillez réessayer.", false);
-                            } finally {
-                                document.getElementById('wlBtnVerify').disabled = false;
-                            }
-                        }
-                    </script>
-                <?php endif; ?>
-            </form>
-        <?php else: ?>
-            <div style="text-align: center; padding: 3rem 1rem; color: var(--ev-gray-muted);">
-                <i class="fa-solid fa-ticket"
-                    style="font-size: 2.5rem; color: #CBD5E1; margin-bottom: 0.8rem; display: block;"></i>
-                <h3 style="color: var(--ev-dark); margin: 0 0 0.5rem;">Aucun type de billet enregistré</h3>
-                <p style="margin: 0;">L'organisateur n'a pas encore configuré les tarifs d'entrée pour cet événement.</p>
+                </div>
             </div>
-        <?php endif; ?>
-    </section>
+        </aside>
+
+        <!-- ============================================================
+             COLONNE 2 : PLAN INTERACTIF DE LA SALLE (CENTRE)
+             ============================================================ -->
+        <main class="sb-card seating-plan-card">
+            <div class="seating-plan-header">
+                <div>
+                    <h2 class="seating-plan-heading">Choisissez vos places</h2>
+                    <p class="seating-plan-sub">Sélectionnez vos sièges sur le plan de la salle. Vous pouvez zoomer et déplacer la vue.</p>
+                </div>
+                <div class="seating-orientation-badge">
+                    <i class="fa-solid fa-location-arrow" style="transform: rotate(-45deg); color: #0F172A;"></i>
+                    <span>Vue de face</span>
+                </div>
+            </div>
+
+            <?php if ($is_ventes_fermees): ?>
+                <!-- Bannière d'alerte de fermeture (H-4 ou arrivé) -->
+                <div style="background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 12px; color: #991B1B;">
+                    <i class="fa-solid fa-lock" style="font-size: 1.3rem; color: #DC2626;"></i>
+                    <div style="font-size: 0.88rem; line-height: 1.45;">
+                        <strong>Ventes clôturées pour cet événement :</strong>
+                        <?php if ($is_event_passed): ?>
+                            La date ou l'heure de cet événement est déjà arrivée. Les réservations sont terminées.
+                        <?php else: ?>
+                            La billetterie ferme automatiquement 4 heures avant le début de l'événement. Les réservations et paiements sont désormais clos.
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Scène et Plan Vectoriel Amphithéâtre -->
+            <div class="seating-stage-container">
+                <!-- Conteneur SVG du plan amphithéâtre -->
+                <div id="amphitheatrePlanContainer" style="width: 100%; display: flex; justify-content: center; position: relative; overflow: hidden;">
+                    <!-- Rendu dynamique complet via js/seating-booking.js -->
+                </div>
+
+                <!-- Contrôles flottants de Zoom -->
+                <div class="sb-zoom-controls">
+                    <button type="button" class="sb-zoom-btn" onclick="handlePlanZoom('in')" title="Zoom avant">+</button>
+                    <button type="button" class="sb-zoom-btn" onclick="handlePlanZoom('out')" title="Zoom arrière">−</button>
+                </div>
+            </div>
+
+            <!-- Barre de Légende Inférieure -->
+            <div class="seating-legend-bar">
+                <div class="seating-legend-item">
+                    <span class="legend-dot dot-disp"></span>
+                    <span>Siège disponible</span>
+                </div>
+                <div class="seating-legend-item">
+                    <span class="legend-dot dot-sel"></span>
+                    <span>Siège sélectionné</span>
+                </div>
+                <div class="seating-legend-item">
+                    <span class="legend-dot dot-occ"></span>
+                    <span>Siège occupé</span>
+                </div>
+                <div class="seating-legend-item">
+                    <span class="legend-dot dot-vip"></span>
+                    <span>Siège VIP</span>
+                </div>
+                <div class="seating-legend-item">
+                    <i class="fa-solid fa-wheelchair" style="color: #2563EB; font-size: 0.95rem;"></i>
+                    <span>Place PMR</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- ============================================================
+             COLONNE 3 : PANIER "VOS PLACES" & PAIEMENT (DROITE)
+             ============================================================ -->
+        <aside class="sb-card cart-summary-card">
+            <div class="cart-header">
+                <div class="cart-header-icon">
+                    <i class="fa-solid fa-chair"></i>
+                </div>
+                <h3 class="cart-header-title">
+                    <span>Vos places</span>
+                    <span id="sbCartCountBadge" class="cart-count-badge">0</span>
+                </h3>
+            </div>
+
+            <!-- Liste dynamique des sièges -->
+            <div id="sbCartSeatsList" class="cart-seats-list">
+                <!-- Rempli en temps réel par js/seating-booking.js -->
+            </div>
+
+            <!-- Décompte Financier -->
+            <div class="cart-financial-breakdown">
+                <div class="cart-fin-row">
+                    <span id="sbCartSubtotalLabel">Sous-total (0 billet)</span>
+                    <strong id="sbCartSubtotal" class="price">0 FCFA</strong>
+                </div>
+                <div class="cart-fin-row">
+                    <span>Frais de service <i class="fa-solid fa-circle-info" style="color: #94A3B8; font-size: 0.78rem;" title="Frais de traitement billetterie"></i></span>
+                    <strong id="sbCartFees" class="price">0 FCFA</strong>
+                </div>
+                <div class="cart-fin-divider"></div>
+                <div class="cart-fin-row total-row">
+                    <span>Total</span>
+                    <strong id="sbCartTotal" class="price">0 FCFA</strong>
+                </div>
+            </div>
+
+            <!-- Bouton d'action Continuer vers le paiement -->
+            <button type="button" id="sbBtnContinuePay" class="btn-continue-payment" onclick="proceedToCheckout()" <?php echo $is_ventes_fermees ? 'disabled' : ''; ?>>
+                <span>Continuer vers le paiement</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+
+            <!-- Réassurance Sécurité -->
+            <div class="sb-security-badge">
+                <i class="fa-solid fa-shield-halved sb-security-icon"></i>
+                <div>
+                    <div class="sb-security-title">Paiement sécurisé</div>
+                    <p class="sb-security-sub">Vos informations sont protégées et cryptées.</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ============================================================
+         BARRE INFÉRIEURE : RETOUR & BESOIN D'AIDE
+         ============================================================ -->
+    <div class="booking-bottom-bar">
+        <a href="accueil?onglet=evenements" class="booking-back-link">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Retour aux événements</span>
+        </a>
+        <a href="reclamations" class="booking-help-link">
+            <i class="fa-regular fa-circle-question"></i>
+            <span>Besoin d'aide ?</span>
+        </a>
+    </div>
+
+    <!-- Formulaire caché de commande (soumis directement vers client/commander.php) -->
+    <form id="sbOrderHiddenForm" method="POST" action="commander.php?id=<?php echo (int) $event['id']; ?>" style="display:none;">
+        <input type="hidden" name="event_id" value="<?php echo (int) $event['id']; ?>">
+        <input type="hidden" name="client_nom" id="sbHiddenClientNom" value="<?php echo htmlspecialchars($_SESSION['user_nom'] ?? ''); ?>">
+        <input type="hidden" name="client_telephone" id="sbHiddenClientTel" value="<?php echo htmlspecialchars($_SESSION['user_telephone'] ?? ($_SESSION['user_phone'] ?? '')); ?>">
+        <input type="hidden" name="client_email" id="sbHiddenClientEmail" value="<?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?>">
+        <div id="sbHiddenInputsContainer"></div>
+    </form>
+
+    <!-- Modale de coordonnées acheteur pour visiteur non connecté -->
+    <div id="sbCheckoutModal" class="sb-checkout-modal-overlay" style="display:none;">
+        <div class="sb-checkout-modal">
+            <div class="sb-checkout-modal-header">
+                <h3 class="sb-checkout-modal-title">Finaliser votre réservation</h3>
+                <button type="button" class="sb-checkout-modal-close" onclick="closeCheckoutModal()">&times;</button>
+            </div>
+            <form onsubmit="return submitGuestCheckout(event)">
+                <p style="font-size: 0.84rem; color: #64748B; margin: 0 0 1.25rem;">
+                    Renseignez vos coordonnées pour recevoir vos billets officiels avec QR Code sécurisé.
+                </p>
+                <div class="sb-form-group">
+                    <label class="sb-form-label" for="sbModalClientNom">Nom & Prénoms *</label>
+                    <input type="text" id="sbModalClientNom" class="sb-form-input" required placeholder="Ex: Jean Kouassi">
+                </div>
+                <div class="sb-form-group">
+                    <label class="sb-form-label" for="sbModalClientTel">Numéro de Téléphone *</label>
+                    <input type="tel" id="sbModalClientTel" class="sb-form-input" required placeholder="Ex: 07 00 00 00 00">
+                </div>
+                <div class="sb-form-group">
+                    <label class="sb-form-label" for="sbModalClientEmail">Adresse Email (facultatif)</label>
+                    <input type="email" id="sbModalClientEmail" class="sb-form-input" placeholder="Ex: jean.kouassi@gmail.com">
+                </div>
+                <button type="submit" class="btn-continue-payment" style="margin-top: 1rem;">
+                    <span>Procéder au règlement</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- SECTION CANDIDATS EN COMPÉTITION (Si présents) -->
     <?php if (!empty($candidats)): ?>
@@ -1852,7 +1713,7 @@ include __DIR__ . '/header.php';
                                 </div>
 
                                 <div class="vote-cand-actions" style="display: grid; grid-template-columns: 1fr; gap: 0;">
-                                    <a href="vote.php?id=<?php echo (int) $event['id']; ?>&candidat_id=<?php echo $cid; ?>#candidat-<?php echo $cid; ?>"
+                                    <a href="vote?id=<?php echo (int) $event['id']; ?>&candidat_id=<?php echo $cid; ?>#candidat-<?php echo $cid; ?>"
                                         class="btn-cand-vote" style="width: 100%; justify-content: center; padding: 0.55rem 0.75rem; font-size: 0.82rem;"
                                         onclick="event.stopPropagation();"
                                         title="Voter pour <?php echo htmlspecialchars($cand['nom']); ?>">
@@ -2062,7 +1923,7 @@ include __DIR__ . '/header.php';
             : "Candidat(e) officiel(le) en lice. Soutenez sa candidature avec votre vote !";
 
         const voteBtn = document.getElementById('evCandModalVoteBtn');
-        voteBtn.href = `vote.php?id=${window.EV_EVENT_ID}&candidat_id=${candId}#candidat-${candId}`;
+        voteBtn.href = `vote?id=${window.EV_EVENT_ID}&candidat_id=${candId}#candidat-${candId}`;
 
         modal.style.display = 'flex';
     }
@@ -2121,6 +1982,44 @@ include __DIR__ . '/header.php';
         }
     }
 
+    // Navigation fluide sécurisée vers la billetterie sans déviation par <base href>
+    function scrollToBillets(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const el = document.getElementById('billets');
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            try {
+                if (window.history && window.history.pushState) {
+                    window.history.pushState(null, '', '#billets');
+                }
+            } catch (_) {}
+        }
+        return false;
+    }
+    window.scrollToBillets = scrollToBillets;
+
+    // Navigation fluide vers la section des candidats
+    function scrollToCandidats(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        const el = document.getElementById('candidats');
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            try {
+                if (window.history && window.history.pushState) {
+                    window.history.pushState(null, '', '#candidats');
+                }
+            } catch (_) {}
+        }
+        return false;
+    }
+    window.scrollToCandidats = scrollToCandidats;
+
     // Initialisation au chargement
     document.addEventListener('DOMContentLoaded', () => {
         calculateEventTotal();
@@ -2130,6 +2029,32 @@ include __DIR__ . '/header.php';
         if (firstAvailableInput) {
             firstAvailableInput.value = 1;
             calculateEventTotal();
+        }
+
+        // Si l'URL contient #billets ou #candidats, défiler fluidement vers la section
+        if (window.location.hash === '#billets') {
+            setTimeout(() => { scrollToBillets(); }, 300);
+        } else if (window.location.hash === '#candidats') {
+            setTimeout(() => { scrollToCandidats(); }, 300);
+        }
+    });
+
+    // Interception globale des ancres internes de la page pour neutraliser <base href>
+    document.addEventListener('click', (e) => {
+        const a = e.target.closest('a[href^="#"]');
+        if (!a) return;
+        const targetHash = a.getAttribute('href');
+        if (targetHash && targetHash.length > 1 && targetHash !== '#') {
+            const targetEl = document.querySelector(targetHash);
+            if (targetEl) {
+                e.preventDefault();
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                try {
+                    if (window.history && window.history.pushState) {
+                        window.history.pushState(null, '', targetHash);
+                    }
+                } catch (_) {}
+            }
         }
     });
 
@@ -2381,8 +2306,28 @@ include __DIR__ . '/header.php';
 
 <script>
     window.EV_EVENT_ID = <?php echo (int) $event['id']; ?>;
+    window.BOOKING_EVENT_ID = <?php echo (int) $event['id']; ?>;
+    window.BOOKING_IS_VENTES_FERMEES = <?php echo $is_ventes_fermees ? 'true' : 'false'; ?>;
+    window.BOOKING_TICKETS = <?php echo json_encode(array_values(array_map(function($t) {
+        return [
+            'id' => (int) $t['id'],
+            'nom' => $t['nom'],
+            'prix' => (float) $t['prix'],
+            'frais_place' => (float) ($t['frais_place'] ?? 0),
+            'quantite' => (int) $t['quantite'],
+            'quantite_vendue' => (int) ($t['quantite_vendue'] ?? 0),
+            'disponible' => max(0, (int) $t['quantite'] - (int) ($t['quantite_vendue'] ?? 0))
+        ];
+    }, $tickets)), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    window.BOOKING_CONFIG = {
+        has_user: <?php echo !empty($_SESSION['user_id']) ? 'true' : 'false'; ?>,
+        user_nom: <?php echo json_encode($_SESSION['user_nom'] ?? ''); ?>,
+        user_tel: <?php echo json_encode($_SESSION['user_telephone'] ?? ($_SESSION['user_phone'] ?? '')); ?>,
+        user_email: <?php echo json_encode($_SESSION['user_email'] ?? ''); ?>
+    };
 </script>
 <script src="../js/venue-3d-engine.js?v=<?php echo file_exists(__DIR__ . '/../js/venue-3d-engine.js') ? filemtime(__DIR__ . '/../js/venue-3d-engine.js') : time(); ?>"></script>
 <script src="../js/accueil-client.js?v=<?php echo file_exists(__DIR__ . '/../js/accueil-client.js') ? filemtime(__DIR__ . '/../js/accueil-client.js') : time(); ?>"></script>
+<script src="../js/seating-booking.js?v=<?php echo file_exists(__DIR__ . '/../js/seating-booking.js') ? filemtime(__DIR__ . '/../js/seating-booking.js') : time(); ?>"></script>
 
 <?php include __DIR__ . '/footer.php'; ?>

@@ -89,7 +89,7 @@ if ($active_event) {
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> Tester le Lien Direct
                 </a>
             <?php endif; ?>
-            <a href="mes-evenements.php" class="dash-btn-action"
+            <a href="mes-evenements" class="dash-btn-action"
                style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-arrow-left"></i> Mes Événements
             </a>
@@ -101,7 +101,7 @@ if ($active_event) {
             <i class="fa-solid fa-calendar-xmark" style="font-size: 3rem; color: #CBD5E1; margin-bottom: 1rem; display: block;"></i>
             <h3 style="margin: 0 0 0.5rem; color: #0F172A; font-weight: 800;">Aucun événement actif</h3>
             <p style="color: #64748B; max-width: 420px; margin: 0 auto 1.5rem;">Vous devez créer ou faire approuver au moins un événement avant de configurer une liste d'invités privée.</p>
-            <a href="demande-evenement.php" class="dash-btn-action" style="background: var(--tikeli-orange, #FF4A0D); color: #fff; text-decoration: none;">
+            <a href="demande-evenement" class="dash-btn-action" style="background: var(--tikeli-orange, #FF4A0D); color: #fff; text-decoration: none;">
                 <i class="fa-solid fa-plus-circle"></i> Créer un Événement
             </a>
         </div>

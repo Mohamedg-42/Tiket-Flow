@@ -439,7 +439,7 @@ td[data-label="Statut"],
         </div>
 
         <div>
-            <a href="verification.php" class="dash-btn-action btn-primary"
+            <a href="verification" class="dash-btn-action btn-primary"
                 style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-qrcode"></i> Ouvrir le Scanner Direct
             </a>
@@ -480,7 +480,7 @@ td[data-label="Statut"],
         </div>
 
         <!-- À DROITE : SÉLECTEUR ÉVÉNEMENT & RECHERCHE -->
-        <form method="GET" action="tickets.php" class="tickets-search-form">
+        <form method="GET" action="tickets" class="tickets-search-form">
             <input type="hidden" name="statut" value="<?php echo htmlspecialchars($filter_status); ?>">
 
             <select name="event_id" onchange="this.form.submit()"
@@ -503,14 +503,14 @@ td[data-label="Statut"],
             </button>
 
             <!-- Export Excel des billets -->
-            <a href="export.php?type=tickets&event_id=<?php echo (int)$filter_event; ?>&statut=<?php echo urlencode($filter_status); ?>&q=<?php echo urlencode($filter_search); ?>" class="dash-btn-action"
+            <a href="export?type=tickets&event_id=<?php echo (int)$filter_event; ?>&statut=<?php echo urlencode($filter_status); ?>&q=<?php echo urlencode($filter_search); ?>" class="dash-btn-action"
                 style="padding: 0.42rem 0.85rem; font-size: 0.82rem; text-decoration: none;" title="Exporter tous les billets sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
                 <span>Exporter Excel</span>
             </a>
 
             <?php if ($filter_status !== '' || $filter_event || $filter_search !== ''): ?>
-                <a href="tickets.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
+                <a href="tickets" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>

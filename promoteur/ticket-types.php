@@ -80,12 +80,13 @@ if (isset($_GET['delete'])) {
     if (!$tt_row) {
         $message  = "Type de billet introuvable ou non autorisé.";
         $msg_type = "error";
-    } elseif ((int)$tt_row['quantite_vendue'] > 0) {
-        $message  = "Impossible de supprimer « " . htmlspecialchars($tt_row['nom']) . " » car des billets ont déjà été vendus.";
-        $msg_type = "error";
     } else {
-        $pdo->prepare("DELETE FROM ticket_types WHERE id = ?")->execute([$del_id]);
-        $message  = "Type de billet supprimé avec succès.";
+        $pdo->prepare("UPDATE ticket_types SET deleted_at = NOW() WHERE id = ?")->execute([$del_id]);
+        if ((int)$tt_row['quantite_vendue'] > 0) {
+            $message  = "Le type de billet « " . htmlspecialchars($tt_row['nom']) . " » a été retiré de la vente (les billets déjà vendus restent valides).";
+        } else {
+            $message  = "Type de billet supprimé avec succès.";
+        }
         $msg_type = "success";
     }
 }
@@ -96,7 +97,7 @@ $sql_list = "
     SELECT tt.*, e.nom AS event_nom, e.date_evenement, e.lieu
     FROM ticket_types tt
     JOIN events e ON tt.event_id = e.id
-    WHERE e.user_id = ?
+    WHERE e.user_id = ? AND tt.deleted_at IS NULL AND e.deleted_at IS NULL
 ";
 $params_list = [$user_id];
 if ($filter_event) {
@@ -124,7 +125,7 @@ $ticket_types = $stmt_list->fetchAll();
 
         <div class="dash-filter-bar">
             <!-- Filtre par événement -->
-            <form method="GET" action="ticket-types.php" style="margin: 0;">
+            <form method="GET" action="ticket-types" style="margin: 0;">
                 <div class="dash-control-select" style="padding: 0.4rem 0.8rem;">
                     <i class="fa-solid fa-calendar-days" style="color: var(--dash-primary);"></i>
                     <select name="event_id" onchange="this.form.submit()" style="border: none; background: transparent; font-weight: 700; color: var(--dash-text); outline: none; cursor: pointer; max-width: 100%; text-overflow: ellipsis; box-sizing: border-box;">
@@ -138,7 +139,7 @@ $ticket_types = $stmt_list->fetchAll();
                 </div>
             </form>
 
-            <a href="export.php?type=evenements" class="dash-btn-action" style="text-decoration: none;" title="Exporter les jauges et tarifs sur Excel (CSV)">
+            <a href="export?type=evenements" class="dash-btn-action" style="text-decoration: none;" title="Exporter les jauges et tarifs sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
                 <span>Exporter Excel</span>
             </a>
@@ -198,7 +199,7 @@ $ticket_types = $stmt_list->fetchAll();
                             ?>
                             <tr>
                                 <td>
-                                    <a href="mes-evenements.php" style="color: var(--dash-text); text-decoration: none; font-weight: 700;" title="Voir l'événement">
+                                    <a href="mes-evenements" style="color: var(--dash-text); text-decoration: none; font-weight: 700;" title="Voir l'événement">
                                         <?php echo htmlspecialchars($tt['event_nom']); ?>
                                         <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.65rem; color: var(--dash-muted); margin-left: 2px;"></i>
                                     </a>
@@ -207,7 +208,7 @@ $ticket_types = $stmt_list->fetchAll();
                                     </small>
                                 </td>
                                 <td>
-                                    <a href="mes-ventes.php?type=<?php echo urlencode($tt['nom']); ?>" style="text-decoration: none;" title="Voir les ventes de cette formule">
+                                    <a href="mes-ventes?type=<?php echo urlencode($tt['nom']); ?>" style="text-decoration: none;" title="Voir les ventes de cette formule">
                                         <span style="background: #FFF2ED; color: #FF4A0D; padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 0.82rem;">
                                             <i class="fa-solid fa-tag" style="font-size: 0.7rem; margin-right: 4px;"></i><?php echo htmlspecialchars($tt['nom']); ?>
                                         </span>
@@ -222,7 +223,7 @@ $ticket_types = $stmt_list->fetchAll();
                                     <strong style="color: var(--dash-text); font-size: 0.9rem;"><?php echo number_format($tt['prix'], 0, ',', ' '); ?> F</strong>
                                 </td>
                                 <td>
-                                    <a href="mes-ventes.php?event_id=<?php echo $tt['event_id']; ?>&type=<?php echo urlencode($tt['nom']); ?>" style="text-decoration: none; color: #FF4A0D;" title="Voir les acheteurs de cette catégorie">
+                                    <a href="mes-ventes?event_id=<?php echo $tt['event_id']; ?>&type=<?php echo urlencode($tt['nom']); ?>" style="text-decoration: none; color: #FF4A0D;" title="Voir les acheteurs de cette catégorie">
                                         <strong style="font-size: 0.9rem; display: inline-flex; align-items: center; gap: 3px;">
                                             <i class="fa-solid fa-circle-check" style="font-size: 0.75rem;"></i> <?php echo $v; ?>
                                             <i class="fa-solid fa-arrow-right" style="font-size: 0.65rem;"></i>
@@ -250,7 +251,7 @@ $ticket_types = $stmt_list->fetchAll();
                                         <i class="fa-solid fa-pen-to-square" style="color: #FF4A0D;"></i> Modifier
                                     </button>
                                     <?php if ($v === 0): ?>
-                                        <a href="ticket-types.php?delete=<?php echo $tt['id']; ?>" class="dash-btn-action btn-danger" style="padding: 4px 8px; font-size: 0.76rem; margin-left: 4px;" onclick="return confirm('Voulez-vous vraiment supprimer ce type de ticket ?')" title="Supprimer">
+                                        <a href="ticket-types?delete=<?php echo $tt['id']; ?>" class="dash-btn-action btn-danger" style="padding: 4px 8px; font-size: 0.76rem; margin-left: 4px;" onclick="return confirm('Voulez-vous vraiment supprimer ce type de ticket ?')" title="Supprimer">
                                             <i class="fa-solid fa-trash"></i>
                                         </a>
                                     <?php else: ?>
@@ -285,7 +286,7 @@ $ticket_types = $stmt_list->fetchAll();
             </h3>
             <button type="button" onclick="toggleAddModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
-        <form method="POST" action="ticket-types.php" style="padding: 1.5rem;">
+        <form method="POST" action="ticket-types" style="padding: 1.5rem;">
             <input type="hidden" name="action_add" value="1">
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Événement *</label>
@@ -330,7 +331,7 @@ $ticket_types = $stmt_list->fetchAll();
             </h3>
             <button type="button" onclick="toggleEditModal(false)" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #737373;">&times;</button>
         </div>
-        <form method="POST" action="ticket-types.php" style="padding: 1.5rem;">
+        <form method="POST" action="ticket-types" style="padding: 1.5rem;">
             <input type="hidden" name="action_edit" value="1">
             <input type="hidden" name="tt_id" id="edit_tt_id">
             <div style="margin-bottom: 1rem;">

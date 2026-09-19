@@ -8,7 +8,7 @@ require_once '../config/database.php';
 require_once '../includes/auth.php';
 require_once '../includes/secure_token.php';
 
-requireLogin('../connexion.php');
+requireLogin('../connexion');
 
 $page_title = "Mes Commandes - TikeWA";
 $body_class = "client-page";
@@ -232,7 +232,7 @@ if ($filtre_v_categorie !== '') {
                 <h1 class="swiss-headline">Mes Commandes</h1>
                 <p>Retrouvez l'historique de vos réservations avec le détail de chaque événement et accédez à vos billets.</p>
             </div>
-            <a href="accueil.php" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.35rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+            <a href="accueil" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.35rem; display: inline-flex; align-items: center; gap: 0.5rem;">
                 <i class="fa-solid fa-plus"></i> Découvrir d'autres événements
             </a>
         </div>
@@ -309,7 +309,7 @@ if ($filtre_v_categorie !== '') {
                 </select>
 
                 <?php if ($filtre_event > 0 || $filtre_type > 0 || $filtre_statut !== ''): ?>
-                    <a href="mes-commandes.php" class="filter-reset-btn">
+                    <a href="mes-commandes" class="filter-reset-btn">
                         <i class="fa-solid fa-xmark"></i> Réinitialiser
                     </a>
                 <?php endif; ?>
@@ -416,15 +416,15 @@ if ($filtre_v_categorie !== '') {
                                     <td style="text-align: right;">
                                         <?php if ($is_paid): ?>
                                             <div style="display: inline-flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
-                                                <a href="mes-tickets.php" class="btn-action-primary" title="Voir mes QR Codes">
+                                                <a href="mes-tickets" class="btn-action-primary" title="Voir mes QR Codes">
                                                     <i class="fa-solid fa-qrcode"></i> Billets (<?php echo (int)$ord['total_billets']; ?>)
                                                 </a>
-                                                <a href="telecharger-ticket.php?order_id=<?php echo $ord['id']; ?>" target="_blank" class="btn-action-secondary" title="Télécharger mes billets en PDF">
+                                                <a href="telecharger-ticket?order_id=<?php echo $ord['id']; ?>" target="_blank" class="btn-action-secondary" title="Télécharger mes billets en PDF">
                                                     <i class="fa-solid fa-file-pdf"></i> PDF
                                                 </a>
                                             </div>
                                         <?php elseif ($is_pending): ?>
-                                            <a href="paiement.php?token=<?php echo urlencode(get_or_create_resource_token($pdo, 'order', (int)$ord['id'])); ?>" class="btn-action-orange">
+                                            <a href="paiement?token=<?php echo urlencode(get_or_create_resource_token($pdo, 'order', (int)$ord['id'])); ?>" class="btn-action-orange">
                                                 <i class="fa-solid fa-credit-card"></i> Payer maintenant
                                             </a>
                                         <?php else: ?>
@@ -443,7 +443,7 @@ if ($filtre_v_categorie !== '') {
                                     <p style="color: var(--muted); font-size: 0.9rem; max-width: 450px; margin: 0 auto 1.25rem;">
                                         Vos réservations et billets avec QR Code apparaîtront ici dès votre premier achat.
                                     </p>
-                                    <a href="accueil.php" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.4rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                                    <a href="accueil" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.4rem; display: inline-flex; align-items: center; gap: 0.5rem;">
                                         <i class="fa-solid fa-ticket"></i> Découvrir les événements
                                     </a>
                                 </td>
@@ -484,7 +484,7 @@ if ($filtre_v_categorie !== '') {
                 </select>
 
                 <?php if ($filtre_c_campagne > 0 || $filtre_c_statut !== ''): ?>
-                    <a href="mes-commandes.php?zone=cotisations" class="filter-reset-btn">
+                    <a href="mes-commandes?zone=cotisations" class="filter-reset-btn">
                         <i class="fa-solid fa-xmark"></i> Réinitialiser
                     </a>
                 <?php endif; ?>
@@ -567,7 +567,7 @@ if ($filtre_v_categorie !== '') {
                                                 <?php echo htmlspecialchars($cot['reference'] ?? '—'); ?>
                                             </span>
                                         <?php elseif ($cot_attente): ?>
-                                            <a href="paiement-cotisation.php?token=<?php echo urlencode(get_or_create_resource_token($pdo, 'cotisation_payment', (int)$cot['id'])); ?>" class="btn-action-orange">
+                                            <a href="paiement-cotisation?token=<?php echo urlencode(get_or_create_resource_token($pdo, 'cotisation_payment', (int)$cot['id'])); ?>" class="btn-action-orange">
                                                 <i class="fa-solid fa-credit-card"></i> Payer maintenant
                                             </a>
                                         <?php else: ?>
@@ -586,7 +586,7 @@ if ($filtre_v_categorie !== '') {
                                     <p style="color: var(--muted); font-size: 0.9rem; max-width: 450px; margin: 0 auto 1.25rem;">
                                         Vos contributions aux campagnes de financement apparaîtront ici.
                                     </p>
-                                    <a href="accueil.php?onglet=cotisations" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.4rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                                    <a href="accueil?onglet=cotisations" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.4rem; display: inline-flex; align-items: center; gap: 0.5rem;">
                                         <i class="fa-solid fa-hand-holding-heart"></i> Découvrir les campagnes
                                     </a>
                                 </td>
@@ -620,7 +620,7 @@ if ($filtre_v_categorie !== '') {
                 </select>
 
                 <?php if ($filtre_v_categorie !== ''): ?>
-                    <a href="mes-commandes.php?zone=votes" class="filter-reset-btn">
+                    <a href="mes-commandes?zone=votes" class="filter-reset-btn">
                         <i class="fa-solid fa-xmark"></i> Réinitialiser
                     </a>
                 <?php endif; ?>
@@ -676,7 +676,7 @@ if ($filtre_v_categorie !== '') {
                                         </small>
                                     </td>
                                     <td style="text-align: right;">
-                                        <a href="accueil.php?onglet=voter" class="btn-action-primary">
+                                        <a href="accueil?onglet=voter" class="btn-action-primary">
                                             <i class="fa-solid fa-chart-simple"></i> Voir les votes
                                         </a>
                                     </td>
@@ -692,7 +692,7 @@ if ($filtre_v_categorie !== '') {
                                     <p style="color: var(--muted); font-size: 0.9rem; max-width: 450px; margin: 0 auto 1.25rem;">
                                         Votez pour les événements que vous aimeriez voir organisés : vos votes apparaîtront ici.
                                     </p>
-                                    <a href="accueil.php?onglet=voter" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.4rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                                    <a href="accueil?onglet=voter" class="btn-submit" style="width: auto; text-decoration: none; padding: 0.65rem 1.4rem; display: inline-flex; align-items: center; gap: 0.5rem;">
                                         <i class="fa-solid fa-vote-yea"></i> Voter maintenant
                                     </a>
                                 </td>

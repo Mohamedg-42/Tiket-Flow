@@ -28,6 +28,18 @@ if (!empty($_SESSION['logout_success'])) {
     $logout_msg = true;
 }
 
+// Message flash de bienvenue après inscription (affiché une seule fois, disparaît à l'actualisation)
+$inscription_msg = "";
+if (!empty($_SESSION['inscription_success'])) {
+    $inscription_msg = $_SESSION['inscription_success'];
+    unset($_SESSION['inscription_success']);
+} elseif (isset($_GET['inscription']) && $_GET['inscription'] === 'success') {
+    $user_display = !empty($_SESSION['nom']) ? trim(($_SESSION['prenom'] ?? '') . ' ' . $_SESSION['nom']) : '';
+    $inscription_msg = !empty($user_display)
+        ? "Bienvenue " . htmlspecialchars($user_display) . " ! Votre compte client a été créé avec succès et un e-mail de confirmation vous a été envoyé."
+        : "Bienvenue sur TikeWA ! Votre compte client a été créé avec succès et un e-mail de confirmation vous a été envoyé.";
+}
+
 // Rôle du visiteur : les promoteurs et administrateurs ne peuvent pas effectuer
 // d'actions client (achat de billets, cotisation, vote, like) — consultation seule
 $user_role = $_SESSION['user_role'] ?? '';
@@ -46,6 +58,34 @@ $peut_agir = !$is_logged_in || $user_role === 'client';
         // Nettoie l'URL pour empêcher le réaffichage lors d'une actualisation (F5)
         if (window.history && window.history.replaceState) {
             const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]logout=[^&]*/, '').replace(/^&/, '?');
+            window.history.replaceState(null, '', cleanUrl || window.location.pathname);
+        }
+    </script>
+<?php endif; ?>
+
+<?php if (!empty($inscription_msg)): ?>
+    <div id="inscriptionAlertBox" style="max-width: 1200px; margin: 1.25rem auto 0; padding: 0 1rem;">
+        <div
+            style="background: #ECFDF5; border: 1px solid #10B981; border-radius: 12px; padding: 1rem 1.25rem; color: #064E3B; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.92rem; font-weight: 600; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: #D1FAE5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fa-solid fa-circle-check" style="color: #059669; font-size: 1.15rem;"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 0.98rem; color: #064E3B; margin-bottom: 2px;">Inscription réussie !</div>
+                    <div style="color: #047857; font-size: 0.88rem; font-weight: 500;"><?php echo htmlspecialchars($inscription_msg); ?></div>
+                </div>
+            </div>
+            <button onclick="document.getElementById('inscriptionAlertBox').style.display='none'" aria-label="Fermer"
+                style="background: none; border: none; color: #059669; cursor: pointer; font-size: 1.25rem; padding: 4px 8px; border-radius: 6px; line-height: 1;">
+                &times;
+            </button>
+        </div>
+    </div>
+    <script>
+        // Nettoie l'URL pour empêcher le réaffichage lors d'une actualisation (F5)
+        if (window.history && window.history.replaceState) {
+            const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]inscription=[^&]*/, '').replace(/^&/, '?');
             window.history.replaceState(null, '', cleanUrl || window.location.pathname);
         }
     </script>
@@ -70,14 +110,108 @@ $q = trim($_GET['q'] ?? '');
 $lieu = trim($_GET['lieu'] ?? '');
 $categorie = trim($_GET['categorie'] ?? '');
 
-// 2. Requête SQL
+// 2. Définition des icônes de catégories
+if (!function_exists('get_event_cat_icon')) {
+    function get_event_cat_icon($cat)
+    {
+        $c = mb_strtolower(trim((string) $cat));
+        if (strpos($c, 'concert') !== false || strpos($c, 'musique') !== false)
+            return 'fa-solid fa-music';
+        if (strpos($c, 'festival') !== false)
+            return 'fa-solid fa-umbrella-beach';
+        if (strpos($c, 'spectacle') !== false || strpos($c, 'humour') !== false || strpos($c, 'théâtre') !== false || strpos($c, 'theatre') !== false)
+            return 'fa-solid fa-masks-theater';
+        if (strpos($c, 'conf') !== false || strpos($c, 'seminaire') !== false || strpos($c, 'forum') !== false)
+            return 'fa-solid fa-microphone';
+        if (strpos($c, 'sport') !== false || strpos($c, 'tournoi') !== false || strpos($c, 'match') !== false)
+            return 'fa-solid fa-futbol';
+        if (strpos($c, 'soir') !== false || strpos($c, 'gala') !== false || strpos($c, 'clubbing') !== false)
+            return 'fa-solid fa-champagne-glasses';
+        if (strpos($c, 'foire') !== false || strpos($c, 'salon') !== false || strpos($c, 'expo') !== false)
+            return 'fa-solid fa-store';
+        if (strpos($c, 'ciné') !== false || strpos($c, 'cine') !== false || strpos($c, 'film') !== false || strpos($c, 'projection') !== false)
+            return 'fa-solid fa-film';
+        if (strpos($c, 'anniversaire') !== false || strpos($c, 'fete') !== false || strpos($c, 'fête') !== false)
+            return 'fa-solid fa-cake-candles';
+        if (strpos($c, 'mode') !== false || strpos($c, 'defile') !== false || strpos($c, 'défilé') !== false)
+            return 'fa-solid fa-shirt';
+        if (strpos($c, 'vote') !== false || strpos($c, 'concours') !== false)
+            return 'fa-solid fa-trophy';
+        if (strpos($c, 'autre') !== false)
+            return 'fa-solid fa-shapes';
+        return 'fa-solid fa-tag';
+    }
+}
+
+// 3. Récupération dynamique des catégories (Standard + Personnalisées/Autre de la base de données)
+$base_categories = [
+    'Concert'    => ['label' => 'Concert', 'icon' => 'fa-solid fa-music'],
+    'Festival'   => ['label' => 'Festival', 'icon' => 'fa-solid fa-umbrella-beach'],
+    'Spectacle'  => ['label' => 'Spectacle', 'icon' => 'fa-solid fa-masks-theater'],
+    'Conférence' => ['label' => 'Conférence', 'icon' => 'fa-solid fa-microphone'],
+    'Sport'      => ['label' => 'Sport', 'icon' => 'fa-solid fa-futbol'],
+    'Soirée'     => ['label' => 'Soirée', 'icon' => 'fa-solid fa-champagne-glasses'],
+];
+
+$db_categories = [];
+try {
+    $stmt_cats = $pdo->query("
+        SELECT DISTINCT categorie 
+        FROM events 
+        WHERE categorie IS NOT NULL 
+          AND TRIM(categorie) != '' 
+          AND deleted_at IS NULL
+          AND statut != 'supprime'
+        ORDER BY categorie ASC
+    ");
+    $db_categories = $stmt_cats->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    $db_categories = [];
+}
+
+$all_display_categories = [];
+$known_cat_keys = [];
+
+foreach ($base_categories as $b_key => $b_info) {
+    $low = mb_strtolower($b_key);
+    $known_cat_keys[$low] = true;
+    $all_display_categories[] = [
+        'value' => $b_key,
+        'label' => $b_info['label'],
+        'icon'  => $b_info['icon'],
+    ];
+}
+
+foreach ($db_categories as $dbc) {
+    $clean_dbc = trim((string)$dbc);
+    if ($clean_dbc === '') continue;
+    $low = mb_strtolower($clean_dbc);
+    if ($low === 'autre') continue; // On positionne Autre à la fin
+    if (!isset($known_cat_keys[$low])) {
+        $known_cat_keys[$low] = true;
+        $all_display_categories[] = [
+            'value' => $clean_dbc,
+            'label' => $clean_dbc,
+            'icon'  => get_event_cat_icon($clean_dbc),
+        ];
+    }
+}
+
+// Catégorie "Autre" toujours ajoutée en fin de liste (icône fa-shapes)
+$all_display_categories[] = [
+    'value' => 'Autre',
+    'label' => 'Autre',
+    'icon'  => 'fa-solid fa-shapes',
+];
+
+// 4. Requête SQL des événements
 $sql = "SELECT e.*, 
                COALESCE(p.nom_commercial, u.nom) AS promoteur_nom, 
                COALESCE(p.telephone_contact, u.telephone) AS promoteur_tel 
         FROM events e
         LEFT JOIN users u ON e.user_id = u.id
         LEFT JOIN promoters p ON e.user_id = p.user_id
-        WHERE e.statut = 'actif' AND e.visibilite = 'public'";
+        WHERE e.statut = 'actif' AND e.visibilite = 'public' AND e.deleted_at IS NULL";
 $params = [];
 
 if (!empty($q)) {
@@ -91,17 +225,22 @@ if (!empty($lieu)) {
     $params[] = "%$lieu%";
 }
 
-if (!empty($categorie) && $categorie !== 'Toutes') {
-    $sql .= " AND e.categorie = ?";
-    $params[] = $categorie;
-}
-
+// NOTE : Chargement complet des événements actifs pour filtrage instantané par bulles sans rechargement (0ms)
 $sql .= " ORDER BY e.date_evenement ASC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $events = $stmt->fetchAll();
 $all_event_ids = array_map('intval', array_column($events, 'id'));
+
+// Nombre d'événements visibles initialement selon la catégorie dans l'URL
+$visible_initial_events = 0;
+foreach ($events as $ev_item) {
+    $ev_cat = trim($ev_item['categorie'] ?? '');
+    if (empty($categorie) || $categorie === 'Toutes' || $categorie === 'Tous' || strcasecmp($ev_cat, $categorie) === 0) {
+        $visible_initial_events++;
+    }
+}
 
 // Compteurs de likes & événements déjà likés par le visiteur courant
 $visitor_id = session_id();
@@ -127,7 +266,7 @@ try {
 if (isset($_GET['vote_id']) && !empty($_GET['vote_id'])) {
     $v_id = (int) $_GET['vote_id'];
     $c_id = !empty($_GET['candidat_id']) ? '&candidat_id=' . (int) $_GET['candidat_id'] : '';
-    header("Location: vote.php?id={$v_id}{$c_id}");
+    header("Location: vote?id={$v_id}{$c_id}");
     exit();
 }
 
@@ -329,7 +468,7 @@ $tickets_by_event = [];
 if (!empty($all_event_ids)) {
     try {
         $in_event_ids = implode(',', $all_event_ids);
-        $all_tickets_stmt = $pdo->query("SELECT id, event_id, nom, description, prix, frais_place, quantite, quantite_vendue, places_choisies FROM ticket_types WHERE event_id IN ($in_event_ids) ORDER BY prix ASC");
+        $all_tickets_stmt = $pdo->query("SELECT id, event_id, nom, description, prix, frais_place, quantite, quantite_vendue, places_choisies FROM ticket_types WHERE event_id IN ($in_event_ids) AND deleted_at IS NULL ORDER BY prix ASC");
         foreach ($all_tickets_stmt->fetchAll() as $t) {
             $tickets_by_event[(int) $t['event_id']][] = $t;
         }
@@ -342,26 +481,6 @@ if (!empty($all_event_ids)) {
 $nb_events_total = count($events);
 $nb_campagnes_total = count($campagnes);
 $nb_votes_total = count($classement);
-
-if (!function_exists('get_event_cat_icon')) {
-    function get_event_cat_icon($cat)
-    {
-        $c = mb_strtolower(trim((string) $cat));
-        if (strpos($c, 'concert') !== false || strpos($c, 'musique') !== false)
-            return 'fa-solid fa-music';
-        if (strpos($c, 'festival') !== false)
-            return 'fa-solid fa-umbrella-beach';
-        if (strpos($c, 'spectacle') !== false || strpos($c, 'humour') !== false)
-            return 'fa-solid fa-masks-theater';
-        if (strpos($c, 'conf') !== false || strpos($c, 'seminaire') !== false)
-            return 'fa-solid fa-microphone';
-        if (strpos($c, 'sport') !== false)
-            return 'fa-solid fa-futbol';
-        if (strpos($c, 'soir') !== false || strpos($c, 'gala') !== false)
-            return 'fa-solid fa-champagne-glasses';
-        return 'fa-solid fa-tag';
-    }
-}
 ?>
 
 <link rel="stylesheet" href="../Css/accueil-client.css?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.2.0'; ?>">
@@ -877,21 +996,21 @@ if (!function_exists('get_event_cat_icon')) {
     <div class="main-tabs-wrapper">
         <div class="main-tabs-scroll-container" id="mainTabsScrollContainer">
             <div class="main-tabs" id="mainTabs">
-                <a href="accueil.php?onglet=evenements"
+                <a href="accueil?onglet=evenements"
                     class="main-tab <?php echo ($onglet === 'evenements') ? 'active' : ''; ?>">
                     <span class="main-tab-badge"
                         title="<?php echo $nb_events_total; ?> événements disponibles"><?php echo $nb_events_total; ?></span>
                     <i class="fa-solid fa-calendar-days"></i>
                     <span>Événements</span>
                 </a>
-                <a href="accueil.php?onglet=cotisations"
+                <a href="accueil?onglet=cotisations"
                     class="main-tab <?php echo ($onglet === 'cotisations') ? 'active' : ''; ?>">
                     <span class="main-tab-badge"
                         title="<?php echo $nb_campagnes_total; ?> collectes en cours"><?php echo $nb_campagnes_total; ?></span>
                     <i class="fa-solid fa-hand-holding-heart"></i>
                     <span>Cotisations</span>
                 </a>
-                <a href="accueil.php?onglet=voter"
+                <a href="accueil?onglet=voter"
                     class="main-tab <?php echo ($onglet === 'voter') ? 'active' : ''; ?>">
                     <span class="main-tab-badge"
                         title="<?php echo $nb_votes_total; ?> concours de vote"><?php echo $nb_votes_total; ?></span>
@@ -918,7 +1037,7 @@ if (!function_exists('get_event_cat_icon')) {
 
             <!-- Zone de Recherche Cotisations -->
             <div style="max-width: 820px; margin: 0 auto 2.25rem;">
-                <form method="GET" action="accueil.php" class="search-box-wrapper"
+                <form method="GET" action="accueil" class="search-box-wrapper"
                     style="box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08); border: 1px solid var(--line); border-radius: 14px; background: #ffffff; padding: 0.5rem 0.65rem;">
                     <input type="hidden" name="onglet" value="cotisations">
 
@@ -952,7 +1071,7 @@ if (!function_exists('get_event_cat_icon')) {
                                 »</strong> :
                             <strong style="color: var(--navy);"><?php echo count($campagnes); ?></strong> collecte(s) trouvée(s)
                         </span>
-                        <a href="accueil.php?onglet=cotisations"
+                        <a href="accueil?onglet=cotisations"
                             style="color: #FF4A0D; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-xmark"></i> Réinitialiser la recherche
                         </a>
@@ -993,7 +1112,7 @@ if (!function_exists('get_event_cat_icon')) {
                         ?>
                         <article class="event-card-item" id="campagne-card-<?php echo (int) $campagne['id']; ?>"
                             style="cursor: pointer; display: flex; flex-direction: column;"
-                            onclick="window.location.href='cotisation.php?id=<?php echo (int) $campagne['id']; ?>'">
+                            onclick="window.location.href='cotisation?id=<?php echo (int) $campagne['id']; ?>'">
                             <div
                                 style="position: relative; overflow: hidden; background: #0f172a; border-radius: 12px 12px 0 0; height: 190px;">
                                 <img src="<?php echo htmlspecialchars($campagne_img, ENT_QUOTES, 'UTF-8'); ?>"
@@ -1019,7 +1138,7 @@ if (!function_exists('get_event_cat_icon')) {
                                 </div>
                                 <h3
                                     style="margin: 0 0 0.35rem; color: var(--navy); font-size: 1.08rem; line-height: 1.25; font-weight: 800;">
-                                    <a href="cotisation.php?id=<?php echo (int) $campagne['id']; ?>"
+                                    <a href="cotisation?id=<?php echo (int) $campagne['id']; ?>"
                                         style="color: inherit; text-decoration: none;">
                                         <?php echo htmlspecialchars($campagne['titre']); ?>
                                     </a>
@@ -1064,7 +1183,7 @@ if (!function_exists('get_event_cat_icon')) {
                                     </span>
                                     <div>
                                         <?php if ($peut_contribuer && $peut_agir): ?>
-                                            <a href="cotisation.php?id=<?php echo (int) $campagne['id']; ?>" class="btn-submit"
+                                            <a href="cotisation?id=<?php echo (int) $campagne['id']; ?>" class="btn-submit"
                                                 style="width: auto; margin: 0; padding: 0.45rem 0.9rem; font-size: 0.8rem; font-weight: 700; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"
                                                 onclick="event.stopPropagation();">
                                                 <i class="fa-solid fa-paper-plane"></i> Contribuer
@@ -1101,7 +1220,7 @@ if (!function_exists('get_event_cat_icon')) {
                             <strong><?php echo htmlspecialchars(!empty($q_cotisation) ? $q_cotisation : $filtre_cotisation); ?></strong>
                             ».
                         </p>
-                        <a href="accueil.php?onglet=cotisations" class="btn-submit"
+                        <a href="accueil?onglet=cotisations" class="btn-submit"
                             style="display: inline-flex; align-items: center; gap: 6px; width: auto; text-decoration: none; padding: 0.65rem 1.5rem; margin: 0 auto;">
                             <i class="fa-solid fa-rotate-left"></i> Voir toutes les collectes
                         </a>
@@ -1110,7 +1229,7 @@ if (!function_exists('get_event_cat_icon')) {
                     <!-- Aucune campagne : formulaire de contribution générale -->
                     <div class="cotisation-card">
                         <?php if ($peut_agir): ?>
-                            <form method="POST" action="cotisation.php">
+                            <form method="POST" action="cotisation">
 
                                 <?php if ($is_logged_in): ?>
                                     <!-- Client connecté : aucune saisie d'identité, uniquement le montant -->
@@ -1202,7 +1321,7 @@ if (!function_exists('get_event_cat_icon')) {
 
             <!-- Zone de Recherche Scrutins, Concours & Votes -->
             <div style="max-width: 820px; margin: 0 auto 2.25rem;">
-                <form method="GET" action="accueil.php" class="search-box-wrapper"
+                <form method="GET" action="accueil" class="search-box-wrapper"
                     style="box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08); border: 1px solid var(--line); border-radius: 14px; background: #ffffff; padding: 0.5rem 0.65rem;">
                     <input type="hidden" name="onglet" value="voter">
 
@@ -1235,7 +1354,7 @@ if (!function_exists('get_event_cat_icon')) {
                                 »</strong> :
                             <strong style="color: var(--navy);"><?php echo count($classement); ?></strong> scrutin(s) trouvé(s)
                         </span>
-                        <a href="accueil.php?onglet=voter"
+                        <a href="accueil?onglet=voter"
                             style="color: #FF4A0D; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-xmark"></i> Réinitialiser la recherche
                         </a>
@@ -1266,7 +1385,7 @@ if (!function_exists('get_event_cat_icon')) {
                         ?>
                         <article class="event-card-item" id="vote-card-<?php echo (int) $ev['id']; ?>"
                             style="cursor: pointer; display: flex; flex-direction: column;"
-                            onclick="window.location.href='vote.php?id=<?php echo (int) $ev['id']; ?>'">
+                            onclick="window.location.href='vote?id=<?php echo (int) $ev['id']; ?>'">
                             <div
                                 style="display: block; position: relative; overflow: hidden; background: #0f172a; border-radius: 12px 12px 0 0; height: 200px;">
                                 <img src="<?php echo htmlspecialchars($ev_img, ENT_QUOTES, 'UTF-8'); ?>"
@@ -1369,7 +1488,7 @@ if (!function_exists('get_event_cat_icon')) {
                                         vote<?php echo ((int) $ev['nb_votes'] > 1) ? 's' : ''; ?>
                                     </span>
 
-                                    <a href="vote.php?id=<?php echo (int) $ev['id']; ?>"
+                                    <a href="vote?id=<?php echo (int) $ev['id']; ?>"
                                         class="vote-btn <?php echo $deja_vote ? 'voted' : ''; ?>"
                                         style="margin: 0; padding: 0.45rem 0.85rem; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border-radius: 6px;">
                                         <i class="fa-solid fa-check-to-slot"></i>
@@ -1391,7 +1510,7 @@ if (!function_exists('get_event_cat_icon')) {
                             correspond à votre recherche «
                             <strong><?php echo htmlspecialchars(!empty($q_vote) ? $q_vote : $type_vote); ?></strong> ».
                         </p>
-                        <a href="accueil.php?onglet=voter" class="btn-submit"
+                        <a href="accueil?onglet=voter" class="btn-submit"
                             style="display: inline-flex; align-items: center; gap: 6px; width: auto; text-decoration: none; padding: 0.65rem 1.5rem; margin: 0 auto;">
                             <i class="fa-solid fa-rotate-left"></i> Voir tous les scrutins
                         </a>
@@ -1403,7 +1522,7 @@ if (!function_exists('get_event_cat_icon')) {
                             style="font-size: 3rem; color: var(--line); margin-bottom: 1rem; display: block;"></i>
                         <h3 style="color: var(--navy); margin-bottom: 0.5rem;">Aucun événement à voter pour le moment</h3>
                         <p style="color: var(--muted); margin-bottom: 1.5rem;">Revenez dès qu'un événement est publié !</p>
-                        <a href="accueil.php?onglet=evenements" class="btn-submit"
+                        <a href="accueil?onglet=evenements" class="btn-submit"
                             style="display: inline-block; width: auto; text-decoration: none; padding: 0.65rem 1.5rem;">
                             Voir les événements
                         </a>
@@ -1428,7 +1547,7 @@ if (!function_exists('get_event_cat_icon')) {
             <h1>Vivez des Événements Inoubliables</h1>
             <p>Réservez vos places de concert, festival et spectacle en quelques secondes par Mobile Money.</p>
 
-            <form method="GET" action="accueil.php" class="search-box-wrapper">
+            <form method="GET" action="accueil" class="search-box-wrapper">
                 <div class="search-input-field">
                     <i class="fa-solid fa-magnifying-glass"></i>
                     <input type="text" name="q" placeholder="Artiste, groupe, concert..."
@@ -1443,14 +1562,17 @@ if (!function_exists('get_event_cat_icon')) {
 
                 <div class="search-input-field">
                     <i class="fa-solid fa-layer-group"></i>
-                    <select name="categorie" class="fa-enhanced-select">
+                    <select name="categorie" class="fa-enhanced-select" onchange="syncSearchSelectWithChips(this.value)">
                         <option value="" data-icon="fa-solid fa-layer-group">Toutes les catégories</option>
-                        <option value="Concert" data-icon="fa-solid fa-music" <?php echo ($categorie === 'Concert') ? 'selected' : ''; ?>>Concert / Musique</option>
-                        <option value="Festival" data-icon="fa-solid fa-umbrella-beach" <?php echo ($categorie === 'Festival') ? 'selected' : ''; ?>>Festival</option>
-                        <option value="Spectacle" data-icon="fa-solid fa-masks-theater" <?php echo ($categorie === 'Spectacle') ? 'selected' : ''; ?>>Spectacle / Humour</option>
-                        <option value="Conférence" data-icon="fa-solid fa-microphone" <?php echo ($categorie === 'Conférence') ? 'selected' : ''; ?>>Conférence</option>
-                        <option value="Sport" data-icon="fa-solid fa-futbol" <?php echo ($categorie === 'Sport') ? 'selected' : ''; ?>>Sport</option>
-                        <option value="Soirée" data-icon="fa-solid fa-champagne-glasses" <?php echo ($categorie === 'Soirée') ? 'selected' : ''; ?>>Soirée & Gala</option>
+                        <?php foreach ($all_display_categories as $cat_item): 
+                            $is_sel = (!empty($categorie) && strcasecmp($categorie, $cat_item['value']) === 0);
+                        ?>
+                            <option value="<?php echo htmlspecialchars($cat_item['value']); ?>" 
+                                    data-icon="<?php echo htmlspecialchars($cat_item['icon']); ?>" 
+                                    <?php echo $is_sel ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($cat_item['label']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 
@@ -1460,28 +1582,23 @@ if (!function_exists('get_event_cat_icon')) {
             </form>
         </section>
 
-        <!-- Bulles de filtre par catégorie (harmonisées sous la recherche) -->
+        <!-- Bulles de filtre par catégorie (dynamiques : Standard + Personnalisées + Autre) -->
         <div class="category-chips" style="margin-top: 1.5rem; margin-bottom: 2rem;">
-            <a href="accueil.php" class="category-chip <?php echo empty($categorie) ? 'active' : ''; ?>"><i
+            <a href="accueil" class="category-chip <?php echo (empty($categorie) || $categorie === 'Toutes' || $categorie === 'Tous') ? 'active' : ''; ?>"
+               data-category-value="Tous"
+               onclick="filterEventsByCategory('Tous', this, event)"><i
                     class="fa-solid fa-border-all"></i> Tous</a>
-            <a href="accueil.php?categorie=Concert"
-                class="category-chip <?php echo ($categorie === 'Concert') ? 'active' : ''; ?>"><i
-                    class="fa-solid fa-music"></i> Concert</a>
-            <a href="accueil.php?categorie=Festival"
-                class="category-chip <?php echo ($categorie === 'Festival') ? 'active' : ''; ?>"><i
-                    class="fa-solid fa-umbrella-beach"></i> Festival</a>
-            <a href="accueil.php?categorie=Spectacle"
-                class="category-chip <?php echo ($categorie === 'Spectacle') ? 'active' : ''; ?>"><i
-                    class="fa-solid fa-masks-theater"></i> Spectacle</a>
-            <a href="accueil.php?categorie=Conférence"
-                class="category-chip <?php echo ($categorie === 'Conférence') ? 'active' : ''; ?>"><i
-                    class="fa-solid fa-microphone"></i> Conférence</a>
-            <a href="accueil.php?categorie=Sport"
-                class="category-chip <?php echo ($categorie === 'Sport') ? 'active' : ''; ?>"><i
-                    class="fa-solid fa-futbol"></i> Sport</a>
-            <a href="accueil.php?categorie=Soirée"
-                class="category-chip <?php echo ($categorie === 'Soirée') ? 'active' : ''; ?>"><i
-                    class="fa-solid fa-champagne-glasses"></i> Soirée</a>
+            <?php foreach ($all_display_categories as $cat_item): 
+                $is_active = (!empty($categorie) && strcasecmp($categorie, $cat_item['value']) === 0);
+            ?>
+                <a href="accueil?categorie=<?php echo urlencode($cat_item['value']); ?>"
+                   class="category-chip <?php echo $is_active ? 'active' : ''; ?>"
+                   data-category-value="<?php echo htmlspecialchars($cat_item['value'], ENT_QUOTES, 'UTF-8'); ?>"
+                   onclick="filterEventsByCategory('<?php echo htmlspecialchars($cat_item['value'], ENT_QUOTES, 'UTF-8'); ?>', this, event)">
+                    <i class="<?php echo htmlspecialchars($cat_item['icon']); ?>"></i>
+                    <?php echo htmlspecialchars($cat_item['label']); ?>
+                </a>
+            <?php endforeach; ?>
         </div>
 
         <!-- 2. Catalogue des Événements -->
@@ -1490,17 +1607,17 @@ if (!function_exists('get_event_cat_icon')) {
                 style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;">
                 <div>
                     <span class="page-kicker">À l'affiche en ce moment</span>
-                    <h2 style="margin: 0; font-size: 1.6rem; color: var(--navy);">
+                    <h2 id="events-section-title" style="margin: 0; font-size: 1.6rem; color: var(--navy);">
                         <?php echo (!empty($q) || !empty($lieu) || !empty($categorie)) ? 'Résultats de votre recherche' : 'Événements Populaires'; ?>
                     </h2>
                 </div>
-                <span style="color: var(--muted); font-size: 0.9rem; font-weight: 600;">
-                    <strong><?php echo count($events); ?></strong> événement(s) disponible(s)
+                <span id="events-count-display" style="color: var(--muted); font-size: 0.9rem; font-weight: 600;">
+                    <strong><?php echo $visible_initial_events; ?></strong> événement(s) disponible(s)
                 </span>
             </div>
 
             <?php if (count($events) > 0): ?>
-                <div
+                <div id="events-grid-container"
                     style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: clamp(1rem, 2.5vw, 1.75rem);">
                     <?php foreach ($events as $event): ?>
                         <?php
@@ -1521,10 +1638,21 @@ if (!function_exists('get_event_cat_icon')) {
                         $img_url = resolve_media_url($event['image'] ?? '', $default_event_img, ['events']);
                         $event_slug_identifier = !empty($event['slug']) ? $event['slug'] : (string)$event['id'];
                         $event_friendly_link = 'evenement/' . rawurlencode($event_slug_identifier);
+
+                        // Visibilité initiale de la carte selon le filtre actif
+                        $is_cat_match = empty($categorie) || ($categorie === 'Toutes') || ($categorie === 'Tous') || (strcasecmp(trim($event['categorie']), $categorie) === 0);
+                        $card_display_style = $is_cat_match ? 'display: flex;' : 'display: none;';
+
+                        // Détection stricte de clôture des ventes (4h avant le début ou événement terminé)
+                        $ev_time_str = !empty($event['heure']) ? ($event['date_evenement'] . ' ' . $event['heure']) : ($event['date_evenement'] . ' 00:00:00');
+                        $ev_ts = strtotime($ev_time_str);
+                        $ev_cutoff_ts = ($ev_ts !== false) ? ($ev_ts - (4 * 3600)) : false;
+                        $is_ev_arrived = ($event['statut'] === 'termine') || ($ev_cutoff_ts !== false && $ev_cutoff_ts <= time());
                         ?>
                         <article class="event-card-item" id="event-card-<?php echo (int) $event['id']; ?>"
                             data-event-slug="<?php echo htmlspecialchars($event_slug_identifier, ENT_QUOTES, 'UTF-8'); ?>"
-                            style="cursor: pointer; display: flex; flex-direction: column;"
+                            data-category="<?php echo htmlspecialchars(mb_strtolower(trim($event['categorie'])), ENT_QUOTES, 'UTF-8'); ?>"
+                            style="cursor: pointer; <?php echo $card_display_style; ?> flex-direction: column;"
                             onclick="handleEventCardClick('<?php echo htmlspecialchars($event_slug_identifier, ENT_QUOTES, 'UTF-8'); ?>', this, event)">
                             <div
                                 style="display: block; position: relative; text-decoration: none; overflow: hidden; background: #0f172a; border-radius: 12px 12px 0 0; height: 190px;">
@@ -1557,6 +1685,12 @@ if (!function_exists('get_event_cat_icon')) {
                                         <i class="fa-solid fa-location-dot" style="color: #000000;"></i>
                                         <?php echo htmlspecialchars($event['lieu']); ?>
                                     </span>
+                                    <?php if ($is_ev_arrived): ?>
+                                        <span style="color: var(--line-dark, #CBD5E1);">·</span>
+                                        <span style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; padding: 1px 6px; border-radius: 4px; font-weight: 800; font-size: 0.68rem; text-transform: uppercase;">
+                                            <i class="fa-solid fa-lock"></i> Ventes Closes
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <h3
@@ -1591,8 +1725,8 @@ if (!function_exists('get_event_cat_icon')) {
                                             catégorie<?php echo $nb_types > 1 ? 's' : ''; ?>
                                         </span>
                                         <span
-                                            style="font-weight: 700; color: <?php echo $all_sold_out ? '#000000' : 'var(--primary-dark)'; ?>;">
-                                            <?php echo $all_sold_out ? 'Épuisé' : ($stock_total . ' place' . ($stock_total > 1 ? 's' : '') . ' dispo'); ?>
+                                            style="font-weight: 700; color: <?php echo ($all_sold_out || $is_ev_arrived) ? '#000000' : 'var(--primary-dark)'; ?>;">
+                                            <?php echo $is_ev_arrived ? 'Ventes closes' : ($all_sold_out ? 'Épuisé' : ($stock_total . ' place' . ($stock_total > 1 ? 's' : '') . ' dispo')); ?>
                                         </span>
                                     </div>
                                 <?php endif; ?>
@@ -1602,7 +1736,7 @@ if (!function_exists('get_event_cat_icon')) {
                                 if (!empty($event_cands)):
                                     $cand_total_v = array_sum(array_column($event_cands, 'nb_votes_cand'));
                                     ?>
-                                    <a href="vote.php?id=<?php echo (int) $event['id']; ?>#candidats"
+                                    <a href="vote?id=<?php echo (int) $event['id']; ?>#candidats"
                                         style="display: flex; align-items: center; justify-content: space-between; background: #FFF2ED; border: 1px solid #FFD8CC; border-radius: 8px; padding: 0.35rem 0.65rem; margin-bottom: 0.65rem; text-decoration: none; color: inherit;"
                                         onclick="event.stopPropagation();">
                                         <span
@@ -1630,10 +1764,10 @@ if (!function_exists('get_event_cat_icon')) {
                                     </div>
 
                                     <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                        <?php if ($event['statut'] === 'termine'): ?>
+                                        <?php if ($is_ev_arrived): ?>
                                             <span
-                                                style="background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5; padding: 0.45rem 0.85rem; border-radius: 8px; font-weight: 800; font-size: 0.78rem; text-transform: uppercase;">
-                                                <i class="fa-solid fa-flag-checkered"></i> Terminé
+                                                style="background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; padding: 0.45rem 0.85rem; border-radius: 8px; font-weight: 800; font-size: 0.78rem; text-transform: uppercase;">
+                                                <i class="fa-solid fa-lock"></i> Ventes Closes
                                             </span>
                                         <?php else: ?>
                                             <button type="button" class="btn-submit"
@@ -1671,7 +1805,7 @@ if (!function_exists('get_event_cat_icon')) {
                     <h3 style="color: var(--navy); margin-bottom: 0.5rem;">Aucun événement ne correspond à votre recherche</h3>
                     <p style="color: var(--muted); margin-bottom: 1.5rem;">Modifiez vos filtres ou réessayez avec d'autres
                         mots-clés.</p>
-                    <a href="accueil.php" class="btn-submit"
+                    <a href="accueil" class="btn-submit"
                         style="display: inline-block; width: auto; text-decoration: none; padding: 0.75rem 1.75rem;">
                         Voir tous les événements
                     </a>
@@ -1706,7 +1840,7 @@ if (!function_exists('get_event_cat_icon')) {
                 </p>
 
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-                    <a href="devenir-promoteur.php" class="btn-submit"
+                    <a href="<?php echo htmlspecialchars($app_root); ?>/devenir-promoteur" class="btn-submit"
                         style="width: auto; margin: 0; padding: 0.85rem 1.75rem; font-size: 0.95rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-paper-plane"></i> Déposer mon Dossier d'Éligibilité
                     </a>
@@ -1755,7 +1889,7 @@ if (!function_exists('get_event_cat_icon')) {
                     id="clientModalCapacity" style="color: var(--navy);"></strong></div>
         </div>
 
-        <form id="clientOrderForm" method="POST" action="commander.php">
+        <form id="clientOrderForm" method="POST" action="commander">
             <input type="hidden" name="event_id" id="clientModalEventId">
             <!-- Places choisies sur le plan (rempli dynamiquement en JS) -->
             <div id="seat-hidden-inputs"></div>
@@ -1807,10 +1941,9 @@ if (!function_exists('get_event_cat_icon')) {
 
                     <div class="form-group" style="margin-bottom: 0.75rem;">
                         <label for="client_email" style="font-size: 0.8rem;"><i class="fa-regular fa-envelope"
-                                style="color: var(--primary); margin-right: 4px;"></i> Adresse Email (réception des billets
-                            & QR codes)</label>
-                        <input type="email" id="client_email" name="client_email" required
-                            placeholder="votre.email@exemple.com">
+                                style="color: var(--primary); margin-right: 4px;"></i> Adresse Email <span style="font-size: 0.75rem; font-weight: normal; color: var(--muted);">(facultatif)</span></label>
+                        <input type="email" id="client_email" name="client_email"
+                            placeholder="votre.email@exemple.com (optionnel)">
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
@@ -2471,7 +2604,7 @@ if (!function_exists('get_event_cat_icon')) {
         var targetSlug = eventSlug || eventId;
         // Redirection directe vers la billetterie sans ID visible
         if (targetSlug) {
-            window.location.href = 'evenement/' + encodeURIComponent(targetSlug) + '#billets';
+            window.location.href='evenement/' + encodeURIComponent(targetSlug) + '#billets';
             return;
         }
         // Fallback modale si l'identifiant n'est pas résolu
@@ -2489,10 +2622,137 @@ if (!function_exists('get_event_cat_icon')) {
 
         // Navigation directe et fluide vers l'URL conviviale de l'événement sans ID
         if (eventSlugOrId) {
-            window.location.href = 'evenement/' + encodeURIComponent(eventSlugOrId);
+            window.location.href='evenement/' + encodeURIComponent(eventSlugOrId);
         }
     }
     window.handleEventCardClick = handleEventCardClick;
+
+    // =========================================================================
+    // FILTRAGE INSTANTANÉ PAR BULLES DE CATÉGORIE (0ms — Zéro rechargement)
+    // =========================================================================
+    function filterEventsByCategory(targetCategory, chipElement, ev, updateHistory) {
+        if (typeof updateHistory === 'undefined') updateHistory = true;
+        if (ev && typeof ev.preventDefault === 'function') {
+            ev.preventDefault();
+        }
+
+        var normTarget = (targetCategory || '').trim().toLowerCase();
+        var isAll = (normTarget === '' || normTarget === 'tous' || normTarget === 'toutes');
+
+        // 1. Mise à jour de la puce / bulle active
+        var chips = document.querySelectorAll('.category-chips .category-chip');
+        chips.forEach(function(c) {
+            c.classList.remove('active');
+        });
+
+        if (chipElement) {
+            chipElement.classList.add('active');
+        } else {
+            chips.forEach(function(c) {
+                var val = (c.getAttribute('data-category-value') || '').trim().toLowerCase();
+                if ((isAll && (val === 'tous' || val === '')) || (!isAll && val === normTarget)) {
+                    c.classList.add('active');
+                }
+            });
+        }
+
+        // 2. Synchronisation du menu déroulant dans la barre de recherche
+        var selectCat = document.querySelector('select[name="categorie"]');
+        if (selectCat) {
+            selectCat.value = isAll ? '' : targetCategory;
+            if (typeof updateCustomSelectDisplay === 'function') {
+                updateCustomSelectDisplay(selectCat);
+            }
+        }
+
+        // 3. Filtrage instantané des cartes événements dans le DOM (affichage en même temps)
+        var cards = document.querySelectorAll('.event-card-item');
+        var visibleCount = 0;
+
+        cards.forEach(function(card) {
+            var cardCat = (card.getAttribute('data-category') || '').trim().toLowerCase();
+            if (isAll || cardCat === normTarget) {
+                card.style.display = 'flex';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // 4. Mise à jour dynamique du compteur et du titre
+        var countDisplay = document.getElementById('events-count-display');
+        if (countDisplay) {
+            countDisplay.innerHTML = '<strong>' + visibleCount + '</strong> événement(s) disponible(s)';
+        }
+
+        var sectionTitle = document.getElementById('events-section-title');
+        if (sectionTitle) {
+            if (!isAll) {
+                var prettyLabel = targetCategory ? (targetCategory.charAt(0).toUpperCase() + targetCategory.slice(1)) : '';
+                sectionTitle.textContent = 'Catégorie : ' + prettyLabel;
+            } else {
+                sectionTitle.textContent = 'Événements Populaires';
+            }
+        }
+
+        // 5. État vide propre si aucun événement dans la catégorie
+        var emptyBox = document.getElementById('events-category-empty-state');
+        var gridContainer = document.getElementById('events-grid-container');
+
+        if (visibleCount === 0 && gridContainer) {
+            if (!emptyBox) {
+                emptyBox = document.createElement('div');
+                emptyBox.id = 'events-category-empty-state';
+                emptyBox.style.cssText = 'grid-column: 1 / -1; background: #FFF8F5; border: 1.5px dashed #FFD8CC; border-radius: 14px; padding: 2.5rem 1.5rem; text-align: center; margin: 1rem 0;';
+                gridContainer.appendChild(emptyBox);
+            }
+            emptyBox.style.display = 'block';
+            var safeLabel = targetCategory ? String(targetCategory).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : '';
+            emptyBox.innerHTML = `
+                <div style="width: 52px; height: 52px; border-radius: 50%; background: #FFF2ED; color: #FF4A0D; display: inline-flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.85rem;">
+                    <i class="fa-solid fa-calendar-xmark"></i>
+                </div>
+                <h3 style="margin: 0 0 0.4rem; color: var(--navy, #0F172A); font-size: 1.15rem; font-weight: 800;">Aucun événement dans cette catégorie pour le moment</h3>
+                <p style="margin: 0 0 1.25rem; color: var(--muted, #64748B); font-size: 0.88rem;">D'autres événements seront bientôt programmés dans la catégorie <strong>` + safeLabel + `</strong>.</p>
+                <button type="button" onclick="filterEventsByCategory('Tous', document.querySelector('.category-chips .category-chip'), event)" style="background: #FF4A0D; color: #ffffff; border: none; padding: 0.6rem 1.25rem; border-radius: 9px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-border-all"></i> Voir tous les événements
+                </button>
+            `;
+        } else if (emptyBox) {
+            emptyBox.style.display = 'none';
+        }
+
+        // 6. Mise à jour fluide de l'URL sans rechargement de page (History API)
+        if (updateHistory && window.history && window.history.pushState) {
+            var url = new URL(window.location.href);
+            if (isAll) {
+                url.searchParams.delete('categorie');
+            } else {
+                url.searchParams.set('categorie', targetCategory);
+            }
+            window.history.pushState({ categorie: targetCategory }, '', url.toString());
+        }
+    }
+    window.filterEventsByCategory = filterEventsByCategory;
+
+    function syncSearchSelectWithChips(val) {
+        var targetCat = val || 'Tous';
+        var targetChip = null;
+        document.querySelectorAll('.category-chips .category-chip').forEach(function(c) {
+            if ((c.getAttribute('data-category-value') || '').toLowerCase() === targetCat.toLowerCase()) {
+                targetChip = c;
+            }
+        });
+        filterEventsByCategory(targetCat, targetChip, null, true);
+    }
+    window.syncSearchSelectWithChips = syncSearchSelectWithChips;
+
+    // Prise en charge des retours navigateur (Bouton Précédent / Suivant)
+    window.addEventListener('popstate', function() {
+        var params = new URLSearchParams(window.location.search);
+        var cat = params.get('categorie') || 'Tous';
+        filterEventsByCategory(cat, null, null, false);
+    });
 </script>
 
 <script src="../js/venue-3d-engine.js?v=<?php echo file_exists(__DIR__ . '/../js/venue-3d-engine.js') ? filemtime(__DIR__ . '/../js/venue-3d-engine.js') : time(); ?>"></script>

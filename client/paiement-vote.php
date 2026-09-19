@@ -31,11 +31,11 @@ if (!empty($token)) {
     $id = (int) $_GET['id'];
     $sec_token = get_or_create_resource_token($pdo, 'vote_payment', $id);
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header('Location: paiement-vote.php?token=' . urlencode($sec_token), true, 301);
+        header('Location: paiement-vote?token=' . urlencode($sec_token), true, 301);
         exit();
     }
 } else {
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 
@@ -65,7 +65,7 @@ $vote_pay = $stmt->fetch();
 
 if (!$vote_pay || $vote_pay['statut'] !== 'en_attente') {
     $_SESSION['vote_message'] = "Ce paiement de vote est introuvable ou a déjà été réglé.";
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 
@@ -78,7 +78,7 @@ $back_url = $is_event_prive
 if (!defined('APP_SECRET_KEY')) {
     error_log("TikeWA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
     $_SESSION['vote_message'] = "Erreur de configuration serveur. Veuillez contacter l'administrateur.";
-    header('Location: accueil.php?onglet=voter');
+    header('Location: accueil?onglet=voter');
     exit();
 }
 $pay_secret = APP_SECRET_KEY;
@@ -166,7 +166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement_vote
     }
 
     if ($charge['success'] && !empty($charge['redirectUrl'])) {
-        header('Location: ' . $charge['redirectUrl']);
+        header('Location:  ' . $charge['redirectUrl']);
         exit();
     } else {
         $error_msg = $charge['error'] ?? "Impossible d'initialiser la session de paiement de vote via Bictorys.";
@@ -315,7 +315,7 @@ include 'header.php';
         </div>
 
         <!-- Formulaire de Paiement Harmonisé -->
-        <form method="POST" action="paiement-vote.php?token=<?php echo urlencode($cur_vote_token); ?>" id="bictorys-pay-form"
+        <form method="POST" action="paiement-vote?token=<?php echo urlencode($cur_vote_token); ?>" id="bictorys-pay-form"
             class="payment-form">
             <input type="hidden" name="initier_paiement_vote" value="1">
             <input type="hidden" name="provider" id="selected_provider" value="wave_money">

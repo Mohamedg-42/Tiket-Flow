@@ -45,7 +45,8 @@ if (isset($_GET['id']) && isset($_GET['action'])) {
                         representant_legal = ?,
                         telephone_contact = ?,
                         email_contact = ?,
-                        ville = ?
+                        ville = ?,
+                        commune = ?
                     WHERE user_id = ?
                 ");
                 $stmt_p->execute([
@@ -56,12 +57,13 @@ if (isset($_GET['id']) && isset($_GET['action'])) {
                     $req['telephone'] ?? null,
                     $req['email'] ?? null,
                     $req['ville'] ?? null,
+                    $req['commune'] ?? null,
                     $user_id
                 ]);
             } else {
                 $stmt_p = $pdo->prepare("
-                    INSERT INTO promoters (user_id, type_entite, nom_commercial, numero_registre, representant_legal, telephone_contact, email_contact, ville, statut, solde)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approuve', 0.00)
+                    INSERT INTO promoters (user_id, type_entite, nom_commercial, numero_registre, representant_legal, telephone_contact, email_contact, ville, commune, statut, solde)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'approuve', 0.00)
                 ");
                 $stmt_p->execute([
                     $user_id,
@@ -71,7 +73,8 @@ if (isset($_GET['id']) && isset($_GET['action'])) {
                     $req['representant_legal'] ?? null,
                     $req['telephone'] ?? null,
                     $req['email'] ?? null,
-                    $req['ville'] ?? null
+                    $req['ville'] ?? null,
+                    $req['commune'] ?? null
                 ]);
             }
 
@@ -555,11 +558,11 @@ $nb_total = (int) $pdo->query("SELECT COUNT(*) FROM promoter_requests")->fetchCo
         </div>
 
         <div class="dp-header-actions">
-            <a href="export.php?type=demandes&tab=promoteurs" class="dash-btn-action"
+            <a href="export?type=demandes&tab=promoteurs" class="dash-btn-action"
                 style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;" title="Exporter les dossiers promoteurs sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="promoteurs.php" class="dash-btn-action btn-primary"
+            <a href="promoteurs" class="dash-btn-action btn-primary"
                 style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-user-tie"></i> Voir Tous les Promoteurs
             </a>
@@ -837,7 +840,7 @@ $nb_total = (int) $pdo->query("SELECT COUNT(*) FROM promoter_requests")->fetchCo
 
                         <!-- Formulaire de refus dépliant -->
                         <div id="reject-box-<?php echo $r['id']; ?>" class="dp-reject-panel">
-                            <form method="POST" action="demandes-promoteurs.php?id=<?php echo $r['id']; ?>&action=reject">
+                            <form method="POST" action="demandes-promoteurs?id=<?php echo $r['id']; ?>&action=reject">
                                 <label
                                     style="display: block; font-size: 0.82rem; font-weight: 700; color: #000000; margin-bottom: 6px;">Motif
                                     officiel du refus (notifié par e-mail au candidat) :</label>

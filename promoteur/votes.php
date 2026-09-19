@@ -123,7 +123,7 @@ if (isset($_GET['delete_candidat'])) {
     $c_del = $stmt_chk->fetch(PDO::FETCH_ASSOC);
 
     if ($c_del) {
-        $pdo->prepare("DELETE FROM event_candidats WHERE id = ?")->execute([$del_id]);
+        $pdo->prepare("UPDATE event_candidats SET deleted_at = NOW() WHERE id = ?")->execute([$del_id]);
         $message = "Le candidat « " . htmlspecialchars($c_del['nom']) . " » a été retiré de la compétition.";
         $msg_type = "success";
     }
@@ -183,7 +183,7 @@ $search_q = trim($_GET['q'] ?? '');
 $stmt_all_evs = $pdo->prepare("
     SELECT id, nom, type_vote 
     FROM events 
-    WHERE user_id = ? 
+    WHERE user_id = ? AND deleted_at IS NULL AND statut != 'supprime'
       AND (type_vote IS NOT NULL OR categorie IN ('concours', 'vote') OR prix_vote > 0)
     ORDER BY nom ASC
 ");
@@ -194,10 +194,10 @@ $all_promoter_events = $stmt_all_evs->fetchAll(PDO::FETCH_ASSOC);
 $sql_events = "
     SELECT e.*,
            (SELECT COUNT(*) FROM event_votes ev WHERE ev.event_id = e.id) AS total_votes,
-           (SELECT COUNT(*) FROM event_candidats ec WHERE ec.event_id = e.id) AS total_candidats,
+           (SELECT COUNT(*) FROM event_candidats ec WHERE ec.event_id = e.id AND ec.deleted_at IS NULL) AS total_candidats,
            (SELECT COALESCE(SUM(vp.montant), 0) FROM vote_paiements vp WHERE vp.event_id = e.id AND vp.statut = 'paye') AS recettes_votes
     FROM events e
-    WHERE e.user_id = ? 
+    WHERE e.user_id = ? AND e.deleted_at IS NULL AND e.statut != 'supprime'
       AND (e.type_vote IS NOT NULL OR e.categorie IN ('concours', 'vote') OR e.prix_vote > 0)
 ";
 $params_events = [$user_id];
@@ -376,7 +376,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
         </div>
 
         <div style="display: flex; gap: 0.65rem; flex-wrap: wrap; align-items: center;">
-            <a href="export.php?type=votes&event_id=<?php echo $filter_event ? (int)$filter_event : ''; ?>&type_filter=<?php echo urlencode($type_filter); ?>&statut=<?php echo urlencode($statut_filter); ?>&periode=<?php echo urlencode($periode); ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les concours, candidats et votes sur Excel (CSV)">
+            <a href="export?type=votes&event_id=<?php echo $filter_event ? (int)$filter_event : ''; ?>&type_filter=<?php echo urlencode($type_filter); ?>&statut=<?php echo urlencode($statut_filter); ?>&periode=<?php echo urlencode($periode); ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les concours, candidats et votes sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
             <button type="button" onclick="openAddCandidatModal()" class="eventia-btn-primary"
@@ -449,7 +449,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
             </button>
 
             <?php if ($type_filter !== 'tous' || $statut_filter !== 'tous' || $periode !== 'toutes' || $filter_event || $search_q !== ''): ?>
-                <a href="votes.php"
+                <a href="votes"
                     style="color: var(--eventia-danger, #000000); font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
             <?php endif; ?>
         </form>
@@ -517,7 +517,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                            (SELECT COUNT(*) FROM event_votes ev WHERE ev.candidat_id = c.id) AS nb_votes,
                            (SELECT COALESCE(SUM(vp.montant), 0) FROM vote_paiements vp WHERE vp.candidat_id = c.id AND vp.statut = 'paye') AS recettes_candidat
                     FROM event_candidats c
-                    WHERE c.event_id = ?
+                    WHERE c.event_id = ? AND c.deleted_at IS NULL
                     ORDER BY nb_votes DESC, c.id ASC
                 ");
                 $stmt_cand->execute([$ev['id']]);
@@ -586,7 +586,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                     title="Copier le lien secret d'accès direct au vote pour vos invités">
                                     <i class="fa-solid fa-link"></i> Copier le lien privé
                                 </button>
-                                <a href="liste-invites.php?event_id=<?php echo (int)$ev['id']; ?>"
+                                <a href="liste-invites?event_id=<?php echo (int)$ev['id']; ?>"
                                     class="dash-btn-action"
                                     style="padding: 0.45rem 0.85rem; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"
                                     title="Gérer les bénéficiaires autorisés à voter">
@@ -594,7 +594,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                 </a>
                             <?php endif; ?>
 
-                            <form method="POST" action="votes.php" style="margin: 0; display: inline;">
+                            <form method="POST" action="votes" style="margin: 0; display: inline;">
                                 <input type="hidden" name="action_toggle_visibilite" value="1">
                                 <input type="hidden" name="event_id" value="<?php echo (int)$ev['id']; ?>">
                                 <button type="submit" 
@@ -726,7 +726,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                                                 title="Modifier ce candidat">
                                                 <i class="fa-solid fa-pen"></i>
                                             </button>
-                                            <a href="votes.php?delete_candidat=<?php echo $c['id']; ?>" class="dash-btn-action"
+                                            <a href="votes?delete_candidat=<?php echo $c['id']; ?>" class="dash-btn-action"
                                                 style="padding: 0.35rem 0.65rem; font-size: 0.74rem; color: #000000;"
                                                 onclick="return confirm('Confirmez-vous le retrait de « <?php echo htmlspecialchars(addslashes($c['nom'])); ?> » du concours ?');"
                                                 title="Supprimer">
@@ -764,7 +764,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                 événement de vote ou concours ne correspond à vos filtres</strong>
             <p style="font-size: 0.84rem; margin: 0 0 1.25rem;">Modifiez vos critères de recherche ou réinitialisez les
                 filtres pour afficher l'ensemble de vos compétitions.</p>
-            <a href="votes.php" class="dash-btn-action btn-primary" style="display: inline-flex; text-decoration: none;">
+            <a href="votes" class="dash-btn-action btn-primary" style="display: inline-flex; text-decoration: none;">
                 <i class="fa-solid fa-rotate-left"></i> Réinitialiser les Filtres
             </a>
         </div>
@@ -789,7 +789,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                 style="border: 0; background: transparent; font-size: 1.2rem; color: var(--dash-muted); cursor: pointer;">&times;</button>
         </div>
 
-        <form method="POST" action="votes.php" enctype="multipart/form-data" style="padding: 1.5rem;">
+        <form method="POST" action="votes" enctype="multipart/form-data" style="padding: 1.5rem;">
             <input type="hidden" name="action_add_candidat" value="1">
 
             <div style="margin-bottom: 1rem;">
@@ -864,7 +864,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
                 style="border: 0; background: transparent; font-size: 1.2rem; color: var(--dash-muted); cursor: pointer;">&times;</button>
         </div>
 
-        <form method="POST" action="votes.php" enctype="multipart/form-data" style="padding: 1.5rem;">
+        <form method="POST" action="votes" enctype="multipart/form-data" style="padding: 1.5rem;">
             <input type="hidden" name="action_edit_candidat" value="1">
             <input type="hidden" name="candidat_id" id="edit_candidat_id" value="">
 
@@ -1228,8 +1228,7 @@ $kpi_recettes_votes = array_sum(array_column($vote_events, 'recettes_votes'));
             closeCandidatDetail();
             openPromoterShareCandidate(cand.event_id, cand.event_nom, cand.id, cand.nom);
         };
-        document.getElementById('cdBtnDelete').href =
-            'votes.php?delete_candidat=' + cand.id;
+        document.getElementById('cdBtnDelete').href='votes?delete_candidat=' + cand.id;
         document.getElementById('cdBtnDelete').onclick = function () {
             return confirm('Confirmez-vous le retrait de « ' + cand.nom + ' » du concours ?');
         };

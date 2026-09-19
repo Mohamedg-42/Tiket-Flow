@@ -439,10 +439,10 @@ try {
         </div>
 
         <div class="cotis-header-actions">
-            <a href="export.php?type=cotisations&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les cotisations et donateurs sur Excel (CSV)">
+            <a href="export?type=cotisations&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les cotisations et donateurs sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="creer-evenement.php?onglet=cotisation" class="eventia-btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+            <a href="creer-evenement?onglet=cotisation" class="eventia-btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-plus"></i> Nouvelle Campagne Admin
             </a>
         </div>
@@ -479,14 +479,14 @@ try {
         </div>
 
         <!-- À DROITE : RECHERCHE -->
-        <form method="GET" action="cotisations.php" style="display: inline-flex; gap: 6px; align-items: center; margin: 0; flex-wrap: wrap;">
+        <form method="GET" action="cotisations" style="display: inline-flex; gap: 6px; align-items: center; margin: 0; flex-wrap: wrap;">
             <input type="hidden" name="statut" value="<?php echo htmlspecialchars($statut_f); ?>">
             <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>" placeholder="Titre ou promoteur..." style="padding: 0.4rem 0.75rem; border-radius: 8px; border: 1px solid var(--eventia-border, #E5E5E5); font-size: 0.82rem; width: 170px; background: #ffffff;">
             <button type="submit" class="eventia-btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">
                 Filtrer
             </button>
             <?php if ($statut_f !== 'tous' || $search !== ''): ?>
-                <a href="cotisations.php" style="color: var(--eventia-danger, #000000); font-size: 0.78rem; text-decoration: underline;">Effacer</a>
+                <a href="cotisations" style="color: var(--eventia-danger, #000000); font-size: 0.78rem; text-decoration: underline;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -617,11 +617,11 @@ try {
                                         <?php echo $vis_c === 'prive' ? 'Privée' : 'Publique'; ?>
                                     </span>
                                     <?php if ($vis_c === 'prive' && !empty($camp['access_token'])): ?>
-                                        <br><a href="../client/cotisation.php?id=<?php echo (int)$camp['id']; ?>&token=<?php echo htmlspecialchars($camp['access_token']); ?>" target="_blank" style="font-size: 0.68rem; color: #FF4A0D; text-decoration: underline;" title="Lien privé"><i class="fa-solid fa-link"></i> Lien</a>
+                                        <br><a href="../client/cotisation?id=<?php echo (int)$camp['id']; ?>&token=<?php echo htmlspecialchars($camp['access_token']); ?>" target="_blank" style="font-size: 0.68rem; color: #FF4A0D; text-decoration: underline;" title="Lien privé"><i class="fa-solid fa-link"></i> Lien</a>
                                     <?php endif; ?>
                                 </td>
                                 <td data-label="Actions" style="text-align: right; white-space: nowrap;">
-                                    <form method="POST" action="cotisations.php" style="display: inline-flex; gap: 4px; margin: 0; flex-wrap: wrap; justify-content: flex-end;">
+                                    <form method="POST" action="cotisations" style="display: inline-flex; gap: 4px; margin: 0; flex-wrap: wrap; justify-content: flex-end;">
                                         <input type="hidden" name="action" value="changer_statut">
                                         <input type="hidden" name="campagne_id" value="<?php echo (int)$camp['id']; ?>">
                                         <?php if ($camp['statut'] !== 'active'): ?>
@@ -641,7 +641,7 @@ try {
                                         <?php endif; ?>
                                     </form>
                                     <!-- Toggle visibilité -->
-                                    <form method="POST" action="cotisations.php" style="display: inline-flex; margin: 0; margin-top: 3px;">
+                                    <form method="POST" action="cotisations" style="display: inline-flex; margin: 0; margin-top: 3px;">
                                         <input type="hidden" name="action" value="changer_visibilite">
                                         <input type="hidden" name="campagne_id" value="<?php echo (int)$camp['id']; ?>">
                                         <?php $vis_c = $camp['visibilite'] ?? 'public'; ?>
@@ -726,7 +726,7 @@ try {
 
                         <!-- Actions Admin -->
                         <div class="cmc-actions-row">
-                            <form method="POST" action="cotisations.php" style="display: flex; gap: 6px; width: 100%; margin: 0;">
+                            <form method="POST" action="cotisations" style="display: flex; gap: 6px; width: 100%; margin: 0;">
                                 <input type="hidden" name="action" value="changer_statut">
                                 <input type="hidden" name="campagne_id" value="<?php echo (int)$camp['id']; ?>">
                                 
@@ -763,7 +763,7 @@ try {
             </h3>
         </div>
 
-        <form method="POST" action="cotisations.php" enctype="multipart/form-data">
+        <form method="POST" action="cotisations" enctype="multipart/form-data">
             <input type="hidden" name="action" value="creer_campagne">
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
@@ -863,7 +863,7 @@ try {
                                     </span>
                                 </td>
                                 <td style="text-align: right;">
-                                    <form method="POST" action="cotisations.php" style="display: inline-flex; gap: 4px; margin: 0;">
+                                    <form method="POST" action="cotisations" style="display: inline-flex; gap: 4px; margin: 0;">
                                         <input type="hidden" name="action" value="statut_cotisation">
                                         <input type="hidden" name="cotisation_id" value="<?php echo (int)$ct['id']; ?>">
                                         <?php if ($ct['statut'] !== 'payee'): ?>
@@ -924,7 +924,7 @@ try {
                                 </small>
                             </div>
 
-                            <form method="POST" action="cotisations.php" style="display: inline-flex; gap: 4px; margin: 0;">
+                            <form method="POST" action="cotisations" style="display: inline-flex; gap: 4px; margin: 0;">
                                 <input type="hidden" name="action" value="statut_cotisation">
                                 <input type="hidden" name="cotisation_id" value="<?php echo (int)$ct['id']; ?>">
                                 <?php if ($ct['statut'] !== 'payee'): ?>

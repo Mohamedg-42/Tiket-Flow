@@ -32,11 +32,11 @@ if (!empty($token)) {
     $cotisation_id = (int) $_GET['cotisation_id'];
     $sec_token = get_or_create_resource_token($pdo, 'cotisation_payment', $cotisation_id);
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header('Location: paiement-cotisation.php?token=' . urlencode($sec_token), true, 301);
+        header('Location: paiement-cotisation?token=' . urlencode($sec_token), true, 301);
         exit();
     }
 } else {
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 
@@ -53,7 +53,7 @@ $cotisation = $stmt->fetch();
 if (!$cotisation || $cotisation['statut'] !== 'en_attente') {
     $_SESSION['cotisation_message'] = "Cette contribution est introuvable ou a déjà été réglée.";
     $_SESSION['cotisation_type'] = 'error';
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 
@@ -63,7 +63,7 @@ if ($is_private_campagne) {
     $expected_token = (string) ($cotisation['access_token'] ?? '');
     if ($expected_token === '' || !hash_equals($expected_token, $campagne_token)) {
         http_response_code(403);
-        header('Location: accueil.php?onglet=cotisations');
+        header('Location: accueil?onglet=cotisations');
         exit();
     }
 }
@@ -72,7 +72,7 @@ if (!defined('APP_SECRET_KEY')) {
     error_log("TikeWA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
     $_SESSION['cotisation_message'] = "Erreur de configuration serveur. Veuillez contacter l'administrateur.";
     $_SESSION['cotisation_type'] = 'error';
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 $pay_secret = APP_SECRET_KEY;
@@ -167,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['initier_paiement_coti
     }
 
     if ($charge['success'] && !empty($charge['redirectUrl'])) {
-        header('Location: ' . $charge['redirectUrl']);
+        header('Location:  ' . $charge['redirectUrl']);
         exit();
     } else {
         $error_msg = $charge['error'] ?? "Impossible d'initialiser la session de paiement de contribution via Bictorys.";
@@ -259,7 +259,7 @@ include 'header.php';
         </div>
 
         <!-- Formulaire de Paiement Harmonisé -->
-        <form method="POST" action="paiement-cotisation.php?token=<?php echo urlencode($cur_cotisation_token); ?>" id="bictorys-pay-form"
+        <form method="POST" action="paiement-cotisation?token=<?php echo urlencode($cur_cotisation_token); ?>" id="bictorys-pay-form"
             class="payment-form">
             <input type="hidden" name="initier_paiement_cotisation" value="1">
             <input type="hidden" name="provider" id="selected_provider" value="wave_money">

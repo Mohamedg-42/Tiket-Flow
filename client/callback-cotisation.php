@@ -16,7 +16,7 @@ $methodes_autorisees = ['wave', 'orange_money', 'mtn_money', 'moov_money', 'kade
 if (!$cotisation_id || !in_array($methode, $methodes_autorisees, true)) {
     $_SESSION['cotisation_message'] = "Paiement non validé ou méthode non reconnue.";
     $_SESSION['cotisation_type'] = 'error';
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 
@@ -33,7 +33,7 @@ $cotisation = $stmt->fetch();
 if (!$cotisation) {
     $_SESSION['cotisation_message'] = 'Cette contribution est introuvable.';
     $_SESSION['cotisation_type'] = 'error';
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 
@@ -42,7 +42,7 @@ if (!defined('APP_SECRET_KEY')) {
     error_log("TikeWA CRITIQUE: APP_SECRET_KEY non défini — inclure config/env.php");
     $_SESSION['cotisation_message'] = "Erreur de configuration serveur. Veuillez contacter l'administrateur.";
     $_SESSION['cotisation_type'] = 'error';
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 $pay_secret = APP_SECRET_KEY;
@@ -52,7 +52,7 @@ $cotisation_token = $_GET['cotisation_token'] ?? $_POST['cotisation_token'] ?? '
 if (empty($cotisation_token) || !hash_equals($expected_token, $cotisation_token)) {
     $_SESSION['cotisation_message'] = "Validation rejetée : signature de paiement de contribution invalide ou absente.";
     $_SESSION['cotisation_type'] = 'error';
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 
@@ -61,7 +61,7 @@ $is_already_paid = in_array($cotisation['statut'], ['payee', 'valide'], true);
 if (!$is_already_paid && $cotisation['statut'] !== 'en_attente') {
     $_SESSION['cotisation_message'] = 'Cette contribution est introuvable ou a été annulée.';
     $_SESSION['cotisation_type'] = 'error';
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 
@@ -101,7 +101,7 @@ try {
     }
     $_SESSION['cotisation_message'] = friendly_db_error($e, 'cotisation', "Une erreur est survenue lors de l'enregistrement de votre contribution. Veuillez contacter le support si votre compte a été débité.");
     $_SESSION['cotisation_type'] = 'error';
-    header('Location: accueil.php?onglet=cotisations');
+    header('Location: accueil?onglet=cotisations');
     exit();
 }
 
@@ -179,19 +179,19 @@ include 'header.php';
             </a>
 
             <?php if (($cotisation['campagne_visibilite'] ?? 'public') === 'prive' && !empty($cotisation['campagne_id'])): ?>
-                <a href="cotisation.php?id=<?php echo (int) $cotisation['campagne_id']; ?>&token=<?php echo urlencode($cotisation['campagne_access_token'] ?? ''); ?>"
+                <a href="cotisation?id=<?php echo (int) $cotisation['campagne_id']; ?>&token=<?php echo urlencode($cotisation['campagne_access_token'] ?? ''); ?>"
                     class="btn-submit"
                     style="width: auto; padding: 0.75rem 1.4rem; background: var(--tikeli-orange, #FF4A0D); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
                     <i class="fa-solid fa-hand-holding-heart"></i> Voir la campagne
                 </a>
             <?php else: ?>
-                <a href="accueil.php?onglet=cotisations" class="btn-submit"
+                <a href="accueil?onglet=cotisations" class="btn-submit"
                     style="width: auto; padding: 0.75rem 1.4rem; background: var(--tikeli-orange, #FF4A0D); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
                     <i class="fa-solid fa-hand-holding-heart"></i> Explorer les campagnes
                 </a>
             <?php endif; ?>
 
-            <a href="accueil.php" class="btn-submit"
+            <a href="accueil" class="btn-submit"
                 style="width: auto; padding: 0.75rem 1.25rem; background: transparent; color: var(--navy, #0f172a); border: 1px solid var(--line, #E2E8F0); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 8px;">
                 <i class="fa-solid fa-house"></i> Retour à l'accueil
             </a>

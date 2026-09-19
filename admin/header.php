@@ -9,7 +9,7 @@ require_once '../config/database.php';
 
 // 2. Vérification obligatoire du rôle 'admin'
 require_once '../includes/auth.php';
-checkRole('admin', '../connexion.php');
+checkRole('admin', '../connexion');
 
 $current_page = basename($_SERVER['PHP_SELF']);
 $admin_page_title = $admin_page_title ?? 'Administration Control Center - Tike WA';
@@ -114,7 +114,7 @@ try {
 
     <!-- CSS Platform & Dashboard Pro -->
     <link rel="stylesheet" href="../css/style.css">
-    <link rel="stylesheet" href="../css/dashboard-pro.css">
+    <link rel="stylesheet" href="../css/dashboard-pro.css?v=<?php echo @filemtime(__DIR__ . '/../css/dashboard-pro.css'); ?>">
     <!-- Tike WA Brand Design System -->
     <link rel="stylesheet" href="../css/eventia-brand.css">
     <!-- Responsive Professional CSS -->
@@ -744,7 +744,7 @@ try {
     <div class="ctrl-mobile-topbar">
         <div
             style="display: flex; align-items: center; gap: 8px; color: #ffffff; font-weight: 800; font-size: 1rem; overflow: hidden; min-width: 0;">
-            <a href="dashboard.php"
+            <a href="dashboard"
                 style="display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0;">
                 <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA"
                     style="height: 28px; width: auto; max-width: 110px; object-fit: contain;">
@@ -768,7 +768,7 @@ try {
         <aside class="sidebar" id="ctrlAdminSidebar">
             <!-- 1. Marque & Titre -->
             <div class="ctrl-brand">
-                <a href="dashboard.php" class="ctrl-brand-logo"
+                <a href="dashboard" class="ctrl-brand-logo"
                     style="text-decoration: none; display: flex; align-items: center;">
                     <img src="../images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="Tike WA"
                         style="height: 40px; width: auto; max-width: 160px; object-fit: contain;">
@@ -803,7 +803,7 @@ try {
                 <span class="ctrl-section-label">Supervision & Billetterie</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="dashboard.php" class="<?php echo $current_page === 'dashboard.php' ? 'active' : ''; ?>"
+                        <a href="dashboard" class="<?php echo $current_page === 'dashboard.php' ? 'active' : ''; ?>"
                             data-title="Dashboard Global"
                             data-desc="Vue d'ensemble des statistiques, ventes globales, revenus et jauges en direct."
                             data-category="Supervision">
@@ -814,7 +814,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="evenements.php"
+                        <a href="evenements"
                             class="<?php echo in_array($current_page, ['evenements.php', 'creer-evenement.php', 'modifier-evenement.php'], true) ? 'active' : ''; ?>"
                             data-title="Tous les Événements"
                             data-desc="Superviser, valider, modifier ou suspendre les événements publiés sur la plateforme."
@@ -826,7 +826,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="salles.php" class="<?php echo $current_page === 'salles.php' ? 'active' : ''; ?>"
+                        <a href="salles" class="<?php echo $current_page === 'salles.php' ? 'active' : ''; ?>"
                             data-title="Salles & Complexes"
                             data-desc="Créer et configurer les salles de spectacle, jauges, zones tarifaires et équipements."
                             data-category="Infrastructures">
@@ -837,7 +837,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="gares.php" class="<?php echo in_array($current_page, ['gares.php', 'gares-ventes.php'], true) ? 'active' : ''; ?>"
+                        <a href="gares" class="<?php echo in_array($current_page, ['gares.php', 'gares-ventes.php'], true) ? 'active' : ''; ?>"
                             data-title="Gares Routières"
                             data-desc="Gérer les points de vente physiques, activer/suspendre/stopper leurs flux, agents et clôtures de caisse."
                             data-category="Infrastructures">
@@ -848,7 +848,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="votes.php" class="<?php echo $current_page === 'votes.php' ? 'active' : ''; ?>"
+                        <a href="votes" class="<?php echo $current_page === 'votes.php' ? 'active' : ''; ?>"
                             data-title="Votes & Concours"
                             data-desc="Gestion des concours, candidats, sessions de vote payantes et classements."
                             data-category="Engagement">
@@ -859,7 +859,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="tickets.php" class="<?php echo $current_page === 'tickets.php' ? 'active' : ''; ?>"
+                        <a href="tickets" class="<?php echo $current_page === 'tickets.php' ? 'active' : ''; ?>"
                             data-title="Gestion des Billets"
                             data-desc="Consulter l'ensemble des billets émis, catégories de places et statuts."
                             data-category="Billetterie">
@@ -870,7 +870,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="commandes.php" class="<?php echo $current_page === 'commandes.php' ? 'active' : ''; ?>"
+                        <a href="commandes" class="<?php echo $current_page === 'commandes.php' ? 'active' : ''; ?>"
                             data-title="Commandes Clients"
                             data-desc="Historique des transactions d'achat, paniers validés et reçus électroniques."
                             data-category="Ventes">
@@ -881,7 +881,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="paiements.php" class="<?php echo $current_page === 'paiements.php' ? 'active' : ''; ?>"
+                        <a href="paiements" class="<?php echo $current_page === 'paiements.php' ? 'active' : ''; ?>"
                             data-title="Paiements Mobile Money"
                             data-desc="Suivi des transactions Wave, Orange, MTN, Moov et cartes bancaires."
                             data-category="Finances">
@@ -897,7 +897,7 @@ try {
                 <span class="ctrl-section-label">Validation & Demandes</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="demandes.php" class="<?php echo $current_page === 'demandes.php' ? 'active' : ''; ?>"
+                        <a href="demandes" class="<?php echo $current_page === 'demandes.php' ? 'active' : ''; ?>"
                             data-title="Demandes d'Événements"
                             data-desc="Examiner, approuver ou refuser les nouveaux événements soumis par les promoteurs."
                             data-category="Validation">
@@ -911,7 +911,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="demandes-promoteurs.php"
+                        <a href="demandes-promoteurs"
                             class="<?php echo $current_page === 'demandes-promoteurs.php' ? 'active' : ''; ?>"
                             data-title="Dossiers Promoteurs"
                             data-desc="Vérifier les pièces justificatives et octroyer les droits d'organisateur officiel."
@@ -931,7 +931,7 @@ try {
                 <span class="ctrl-section-label">Trésorerie & Opérations</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="cotisations.php"
+                        <a href="cotisations"
                             class="<?php echo $current_page === 'cotisations.php' ? 'active' : ''; ?>"
                             data-title="Campagnes de Cotisation"
                             data-desc="Supervision des cagnottes, tontines et collectes de fonds solidaires."
@@ -943,7 +943,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="retraits.php" class="<?php echo $current_page === 'retraits.php' ? 'active' : ''; ?>"
+                        <a href="retraits" class="<?php echo $current_page === 'retraits.php' ? 'active' : ''; ?>"
                             data-title="Retraits Promoteurs"
                             data-desc="Validation et décaissement des gains des organisateurs après leurs événements."
                             data-category="Trésorerie">
@@ -962,7 +962,7 @@ try {
                 <span class="ctrl-section-label">Utilisateurs & Sécurité</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="utilisateurs.php"
+                        <a href="utilisateurs"
                             class="<?php echo $current_page === 'utilisateurs.php' ? 'active' : ''; ?>"
                             data-title="Gestion des Comptes"
                             data-desc="Administrer les profils utilisateurs, suspendre ou réactiver des comptes."
@@ -974,7 +974,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="profils.php" class="<?php echo $current_page === 'profils.php' ? 'active' : ''; ?>"
+                        <a href="profils" class="<?php echo $current_page === 'profils.php' ? 'active' : ''; ?>"
                             data-title="Profils & Permissions"
                             data-desc="Configuration des rôles personnalisés et matrice des privilèges d'accès."
                             data-category="Sécurité">
@@ -985,7 +985,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="promoteurs.php"
+                        <a href="promoteurs"
                             class="<?php echo $current_page === 'promoteurs.php' ? 'active' : ''; ?>"
                             data-title="Comptes Promoteurs"
                             data-desc="Annuaire des organisateurs vérifiés, commissions et volumes de ventes."
@@ -997,7 +997,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="verification.php"
+                        <a href="verification"
                             class="<?php echo $current_page === 'verification.php' ? 'active' : ''; ?>"
                             data-title="Vérification Billets"
                             data-desc="Outil de contrôle d'accès universel pour tester et scanner les QR codes."
@@ -1009,7 +1009,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="reclamations.php"
+                        <a href="reclamations"
                             class="<?php echo $current_page === 'reclamations.php' ? 'active' : ''; ?>"
                             data-title="Support & Réclamations"
                             data-desc="Gestion des signalements, litiges et demandes d'assistance des utilisateurs."
@@ -1029,7 +1029,7 @@ try {
                 <span class="ctrl-section-label">Organisation & Audit</span>
                 <ul class="ctrl-menu">
                     <li>
-                        <a href="taches.php" class="<?php echo $current_page === 'taches.php' ? 'active' : ''; ?>"
+                        <a href="taches" class="<?php echo $current_page === 'taches.php' ? 'active' : ''; ?>"
                             data-title="Toutes les Tâches"
                             data-desc="Suivi de la feuille de route, assignation des tâches et to-do list d'équipe."
                             data-category="Organisation">
@@ -1044,7 +1044,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="mes-taches.php"
+                        <a href="mes-taches"
                             class="<?php echo $current_page === 'mes-taches.php' ? 'active' : ''; ?>"
                             data-title="Mes Tâches Personnelles"
                             data-desc="Consulter et marquer comme terminées vos tâches administratives assignées."
@@ -1059,7 +1059,7 @@ try {
                         </a>
                     </li>
                     <li>
-                        <a href="activite.php" class="<?php echo $current_page === 'activite.php' ? 'active' : ''; ?>"
+                        <a href="activite" class="<?php echo $current_page === 'activite.php' ? 'active' : ''; ?>"
                             data-title="Journal d'Activité"
                             data-desc="Historique en temps réel des connexions, modifications et validations."
                             data-category="Audit">
@@ -1074,13 +1074,13 @@ try {
 
             <!-- 4. Pied de Page Sidebar -->
             <div class="ctrl-footer">
-                <a href="../client/accueil.php" target="_blank" class="ctrl-btn-site" data-title="Voir le Site Public"
+                <a href="../client/accueil" target="_blank" class="ctrl-btn-site" data-title="Voir le Site Public"
                     data-desc="Consulter la vitrine publique Tike WA et les événements en ligne."
                     data-category="Raccourci">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     <span>Voir le Site Public</span>
                 </a>
-                <a href="../deconnexion.php" class="ctrl-btn-logout" data-title="Déconnexion"
+                <a href="../deconnexion" class="ctrl-btn-logout" data-title="Déconnexion"
                     data-desc="Fermer votre session administrateur en toute sécurité." data-category="Sécurité"
                     onclick="return confirm('Voulez-vous vous déconnecter de l\'administration ?');">
                     <i class="fa-solid fa-right-from-bracket"></i>

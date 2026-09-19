@@ -28,6 +28,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_status'])) {
     }
 }
 
+// 1.c Action de restauration d'un événement supprimé logiquement
+if (isset($_GET['restore_id'])) {
+    requirePermission('events.delete', 'evenements');
+    $rest_id = (int) $_GET['restore_id'];
+    if ($rest_id > 0) {
+        $stmt_rest = $pdo->prepare("UPDATE events SET statut = 'actif', deleted_at = NULL WHERE id = ?");
+        $stmt_rest->execute([$rest_id]);
+        logActivity('event.restore', 'event', $rest_id, "Restauration de l'événement #$rest_id");
+        $_SESSION['event_message'] = "L'événement a été restauré avec succès.";
+        $_SESSION['event_msg_type'] = "success";
+        header("Location: evenements?statut=supprime");
+        exit();
+    }
+}
+
 // 1.b Action complète : Mise à jour de l'événement via la modale
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_event'])) {
     $ev_id = (int) ($_POST['event_id'] ?? 0);
@@ -103,9 +118,14 @@ if (!empty($search)) {
     $params[] = "%$search%";
 }
 
-if (!empty($status_f) && in_array($status_f, ['actif', 'termine', 'annule', 'en_attente'], true)) {
-    $sql .= " AND e.statut = ?";
-    $params[] = $status_f;
+if ($status_f === 'supprime') {
+    $sql .= " AND (e.deleted_at IS NOT NULL OR e.statut = 'supprime')";
+} else {
+    $sql .= " AND e.deleted_at IS NULL AND e.statut != 'supprime'";
+    if (!empty($status_f) && in_array($status_f, ['actif', 'termine', 'annule', 'en_attente'], true)) {
+        $sql .= " AND e.statut = ?";
+        $params[] = $status_f;
+    }
 }
 
 if (!empty($category)) {
@@ -127,14 +147,14 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $events = $stmt->fetchAll();
 
-// 3. Calcul des compteurs globaux
-$total_events = (int) $pdo->query("SELECT COUNT(*) FROM events")->fetchColumn();
-$active_events = (int) $pdo->query("SELECT COUNT(*) FROM events WHERE statut = 'actif'")->fetchColumn();
-$ended_events = (int) $pdo->query("SELECT COUNT(*) FROM events WHERE statut = 'termine'")->fetchColumn();
+// 3. Calcul des compteurs globaux (excluant les événements supprimés logiquement)
+$total_events = (int) $pdo->query("SELECT COUNT(*) FROM events WHERE deleted_at IS NULL AND statut != 'supprime'")->fetchColumn();
+$active_events = (int) $pdo->query("SELECT COUNT(*) FROM events WHERE statut = 'actif' AND deleted_at IS NULL")->fetchColumn();
+$ended_events = (int) $pdo->query("SELECT COUNT(*) FROM events WHERE statut = 'termine' AND deleted_at IS NULL")->fetchColumn();
 $total_tickets = (int) $pdo->query("SELECT COUNT(*) FROM tickets WHERE statut != 'annule'")->fetchColumn();
 
 // Catégories disponibles pour le filtre
-$categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE categorie IS NOT NULL AND categorie != '' ORDER BY categorie ASC")->fetchAll(PDO::FETCH_COLUMN);
+$categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE categorie IS NOT NULL AND categorie != '' AND deleted_at IS NULL AND statut != 'supprime' ORDER BY categorie ASC")->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
 <style>
@@ -715,11 +735,11 @@ $categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE cate
         </div>
 
         <div class="events-header-actions">
-            <a href="export.php?type=evenements" class="dash-btn-action"
+            <a href="export?type=evenements" class="dash-btn-action"
                 style="padding: 0.6rem 1.15rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;" title="Exporter tous les événements sur Excel">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="creer-evenement.php" class="dash-btn-action btn-primary"
+            <a href="creer-evenement" class="dash-btn-action btn-primary"
                 style="padding: 0.6rem 1.2rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-plus"></i> Créer un Événement
             </a>
@@ -761,10 +781,14 @@ $categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE cate
                 style="<?php echo $status_f === 'en_attente' ? 'background: #000000; color: #ffffff; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);' : 'background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5;'; ?>">
                 <i class="fa-solid fa-clock" style="color: #FF4A0D;"></i> En attente
             </a>
+            <a class="events-pill" href="?statut=supprime&categorie=<?php echo urlencode($category); ?>&periode=<?php echo $period; ?>&q=<?php echo urlencode($search); ?>"
+                style="<?php echo $status_f === 'supprime' ? 'background: #DC2626; color: #ffffff; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);' : 'background: #F5F5F5; color: #737373; border: 1px solid #E5E5E5;'; ?>">
+                <i class="fa-solid fa-trash-can" style="color: <?php echo $status_f === 'supprime' ? '#ffffff' : '#DC2626'; ?>;"></i> Supprimés
+            </a>
         </div>
 
         <!-- À DROITE : SÉLECTEURS CATÉGORIE, PÉRIODE & RECHERCHE -->
-        <form class="events-search-form" method="GET" action="evenements.php">
+        <form class="events-search-form" method="GET" action="evenements">
             <input type="hidden" name="statut" value="<?php echo htmlspecialchars($status_f); ?>">
 
             <!-- Sélecteur Catégorie -->
@@ -802,7 +826,7 @@ $categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE cate
             </button>
 
             <?php if ($status_f !== '' || $category !== '' || $period !== '' || $search !== ''): ?>
-                <a href="evenements.php"
+                <a href="evenements"
                     style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
             <?php endif; ?>
         </form>
@@ -867,7 +891,7 @@ $categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE cate
                 <i class="fa-solid fa-calendar-xmark"
                     style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                 Aucun événement ne correspond à vos critères de recherche.<br>
-                <a href="evenements.php"
+                <a href="evenements"
                     style="color: var(--dash-primary); font-weight: 700; text-decoration: underline; margin-top: 0.5rem; display: inline-block;">Réinitialiser les filtres</a>
             </div>
         <?php else: ?>
@@ -979,7 +1003,7 @@ $categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE cate
                                 </td>
                                 <td class="card-actions" style="text-align: right;">
                                     <div class="cell-actions-group">
-                                        <a href="../client/accueil.php" target="_blank" class="dash-btn-action"
+                                        <a href="../client/accueil" target="_blank" class="dash-btn-action"
                                             style="padding: 0.35rem 0.6rem; font-size: 0.74rem;"
                                             title="Voir la vitrine publique">
                                             <i class="fa-solid fa-eye"></i> <span>Vitrine</span>
@@ -989,12 +1013,21 @@ $categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE cate
                                             style="padding: 0.35rem 0.6rem; font-size: 0.74rem; cursor: pointer;" title="Modifier cet événement (Modale)">
                                             <i class="fa-solid fa-pen"></i> <span>Modifier</span>
                                         </button>
-                                        <a href="supprimer-evenement.php?id=<?php echo $ev['id']; ?>&csrf_token=<?php echo urlencode(getCsrfToken()); ?>" class="dash-btn-action"
-                                            style="padding: 0.35rem 0.6rem; font-size: 0.74rem; color: #000000;"
-                                            onclick="return confirm('Confirmez-vous la suppression définitive de cet événement ?');"
-                                            title="Supprimer">
-                                            <i class="fa-solid fa-trash"></i> <span>Supprimer</span>
-                                        </a>
+                                        <?php if (!empty($ev['deleted_at']) || $ev['statut'] === 'supprime'): ?>
+                                            <a href="evenements?restore_id=<?php echo $ev['id']; ?>&csrf_token=<?php echo urlencode(getCsrfToken()); ?>" class="dash-btn-action"
+                                                style="padding: 0.35rem 0.6rem; font-size: 0.74rem; color: #16A34A; border-color: #86EFAC;"
+                                                onclick="return confirm('Voulez-vous restaurer cet événement ?');"
+                                                title="Restaurer l'événement">
+                                                <i class="fa-solid fa-rotate-left"></i> <span>Restaurer</span>
+                                            </a>
+                                        <?php else: ?>
+                                            <a href="supprimer-evenement?id=<?php echo $ev['id']; ?>&csrf_token=<?php echo urlencode(getCsrfToken()); ?>" class="dash-btn-action"
+                                                style="padding: 0.35rem 0.6rem; font-size: 0.74rem; color: #000000;"
+                                                onclick="return confirm('Confirmez-vous la suppression de cet événement ?');"
+                                                title="Supprimer">
+                                                <i class="fa-solid fa-trash"></i> <span>Supprimer</span>
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -1011,7 +1044,7 @@ $categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE cate
      ============================================================================== -->
 <div id="editEventModal" class="dash-modal" style="display: none;">
     <div class="dash-modal-backdrop" onclick="closeEditEventModal()"></div>
-    <form method="POST" action="evenements.php" enctype="multipart/form-data" class="dash-modal-dialog">
+    <form method="POST" action="evenements" enctype="multipart/form-data" class="dash-modal-dialog">
         <input type="hidden" name="update_event" value="1">
         <input type="hidden" name="event_id" id="edit_event_id">
 
@@ -1041,7 +1074,7 @@ $categories_list = $pdo->query("SELECT DISTINCT categorie FROM events WHERE cate
                         <option value="Autre">✏️ Autre catégorie personnalisée...</option>
                     </select>
                     <div id="edit_custom_cat_box" style="display: none; margin-top: 6px;">
-                        <input type="text" name="categorie_custom" id="edit_categorie_custom" class="form-field-input" placeholder="Précisez la catégorie...">
+                        <input type="text" name="categorie_custom" id="edit_categorie_custom" class="form-field-input" placeholder="Précisez la catégorie (ou laisser vide pour 'Autre')...">
                     </div>
                 </div>
 

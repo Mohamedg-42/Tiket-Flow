@@ -6,7 +6,7 @@
                 <span style="color: var(--eventia-muted, #737373);">Espace Administration Sécurisé</span>
             </div>
             <div style="display: flex; gap: 14px; align-items: center;">
-                <a href="../client/accueil.php" target="_blank" style="color: var(--eventia-navy, #000000); text-decoration: none; font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px;">
+                <a href="../client/accueil" target="_blank" style="color: var(--eventia-navy, #000000); text-decoration: none; font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px;">
                     <i class="fa-solid fa-arrow-up-right-from-square" style="color: var(--eventia-amber-dark, #FF4A0D);"></i> Voir le site
                 </a>
                 <span style="color: var(--eventia-border, #E5E5E5);">|</span>

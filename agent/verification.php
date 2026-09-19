@@ -345,7 +345,7 @@ $kpi_scans_today = (int) $stmt_scans_today->fetchColumn();
                     </div>
 
                     <?php if ($result['status'] === 'valid'): ?>
-                        <form id="auto-validate-form" method="POST" action="verification.php" style="margin-bottom: 0.65rem;">
+                        <form id="auto-validate-form" method="POST" action="verification" style="margin-bottom: 0.65rem;">
                             <input type="hidden" name="validate_ticket_id" value="<?php echo (int) $tk['id']; ?>">
                             <button type="submit" class="eventia-btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.92rem; font-weight: 800; justify-content: center; border-radius: 10px;">
                                 <i class="fa-solid fa-check"></i> Valider l'Entrée
@@ -359,7 +359,7 @@ $kpi_scans_today = (int) $stmt_scans_today->fetchColumn();
                     <?php endif; ?>
                 <?php endif; ?>
 
-                <a href="verification.php" class="eventia-btn-secondary" style="width: 100%; padding: 0.7rem; font-size: 0.86rem; font-weight: 700; justify-content: center; text-decoration: none; display: inline-flex; border-radius: 10px; box-sizing: border-box;">
+                <a href="verification" class="eventia-btn-secondary" style="width: 100%; padding: 0.7rem; font-size: 0.86rem; font-weight: 700; justify-content: center; text-decoration: none; display: inline-flex; border-radius: 10px; box-sizing: border-box;">
                     <i class="fa-solid fa-rotate-left"></i> Prêt pour le suivant
                 </a>
             </div>
@@ -413,7 +413,7 @@ $kpi_scans_today = (int) $stmt_scans_today->fetchColumn();
                             <label for="code_unique" class="agent-section-label">
                                 <i class="fa-solid fa-barcode" style="margin-right: 4px; color: var(--tikeli-orange, #FF4A0D);"></i> Saisie Manuelle / Douchette Laser
                             </label>
-                            <form method="POST" action="verification.php" class="agent-manual-form">
+                            <form method="POST" action="verification" class="agent-manual-form">
                                 <input type="text" id="code_unique" name="code_unique" required placeholder="Code billet (ex: TK-8F92A7K3)"
                                     autocomplete="off"
                                     class="agent-code-input">
@@ -437,7 +437,7 @@ $kpi_scans_today = (int) $stmt_scans_today->fetchColumn();
                                     <?php echo $kpi_scans_today; ?>
                                 </span>
                             </div>
-                            <a href="historique.php" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; color: var(--tikeli-orange, #FF4A0D); font-weight: 700; text-decoration: none; margin-top: 0.4rem;">
+                            <a href="historique" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; color: var(--tikeli-orange, #FF4A0D); font-weight: 700; text-decoration: none; margin-top: 0.4rem;">
                                 <i class="fa-solid fa-clock-rotate-left"></i> Voir l'historique complet des scans &rarr;
                             </a>
                         </div>
@@ -503,7 +503,7 @@ $kpi_scans_today = (int) $stmt_scans_today->fetchColumn();
                 function (decodedText) {
                     const form = document.createElement('form');
                     form.method = 'POST';
-                    form.action = 'verification.php';
+                    form.action='verification';
 
                     const input = document.createElement('input');
                     input.type = 'hidden';

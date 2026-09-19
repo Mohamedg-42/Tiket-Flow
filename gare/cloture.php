@@ -114,7 +114,7 @@ if ($station_id) {
     </div>
 
     <?php if ($_SESSION['user_role'] === 'admin'): ?>
-        <form method="GET" action="cloture.php" style="margin-bottom: 1rem;">
+        <form method="GET" action="cloture" style="margin-bottom: 1rem;">
             <select name="station_id" onchange="this.form.submit()" style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; font-weight: 700;">
                 <option value="">— Choisir une gare —</option>
                 <?php foreach ($stations_admin_choice as $s): ?>
@@ -157,7 +157,7 @@ if ($station_id) {
                         </div>
                     <?php endforeach; ?>
                 </div>
-                <form method="POST" action="cloture.php">
+                <form method="POST" action="cloture">
                     <input type="hidden" name="action_cloturer" value="1">
                     <input type="hidden" name="station_id" value="<?php echo (int) $station_id; ?>">
                     <button type="submit" style="width: 100%; padding: 0.9rem; background: #FF4A0D; color: #fff; border: none; border-radius: 10px; font-weight: 800; font-size: 0.95rem; cursor: pointer;"

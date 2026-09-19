@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Annuler une demande d'événement / concours / vote
     if ($action === 'annuler_demande_event') {
         $req_id = (int) ($_POST['request_id'] ?? 0);
-        $stmt_del = $pdo->prepare("DELETE FROM event_requests WHERE id = ? AND user_id = ? AND statut IN ('en_attente', 'refuse')");
+        $stmt_del = $pdo->prepare("UPDATE event_requests SET statut = 'supprime', deleted_at = NOW() WHERE id = ? AND user_id = ? AND statut IN ('en_attente', 'refuse')");
         $stmt_del->execute([$req_id, $user_id]);
 
         if ($stmt_del->rowCount() > 0) {
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Annuler une campagne de cotisation
     if ($action === 'annuler_demande_cotisation') {
         $camp_id = (int) ($_POST['campagne_id'] ?? 0);
-        $stmt_del = $pdo->prepare("DELETE FROM cotisation_campagnes WHERE id = ? AND user_id = ? AND statut IN ('en_attente', 'refuse')");
+        $stmt_del = $pdo->prepare("UPDATE cotisation_campagnes SET statut = 'supprime', deleted_at = NOW() WHERE id = ? AND user_id = ? AND statut IN ('en_attente', 'refuse')");
         $stmt_del->execute([$camp_id, $user_id]);
 
         if ($stmt_del->rowCount() > 0) {
@@ -70,7 +70,7 @@ if (!in_array($periode, ['toutes', 'ce_mois', 'cette_annee', '30_jours', '7_jour
 $search_q = trim($_GET['q'] ?? '');
 
 // ---- 1. Récupération de toutes les demandes d'événements du promoteur ----
-$sql_events = "SELECT * FROM event_requests WHERE user_id = ?";
+$sql_events = "SELECT * FROM event_requests WHERE user_id = ? AND deleted_at IS NULL AND statut != 'supprime'";
 $params_events = [$user_id];
 
 if ($filter_statut !== 'tous') {
@@ -122,7 +122,7 @@ try {
                COALESCE((SELECT COUNT(*) FROM cotisations ct
                           WHERE ct.campagne_id = c.id AND ct.statut IN ('en_attente', 'payee')), 0) AS nb_contributeurs
         FROM cotisation_campagnes c
-        WHERE c.user_id = ?
+        WHERE c.user_id = ? AND c.deleted_at IS NULL AND c.statut != 'supprime'
     ";
     $params_cot = [$user_id];
     if ($filter_statut !== 'tous') {
@@ -221,7 +221,7 @@ function get_dem_badge($statut)
                 cotisation.</p>
         </div>
         <div>
-            <a href="export.php?type=demandes&tab=<?php echo urlencode($tab); ?>&statut=<?php echo urlencode($filter_statut); ?>&periode=<?php echo urlencode($periode); ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les demandes sur Excel (CSV)">
+            <a href="export?type=demandes&tab=<?php echo urlencode($tab); ?>&statut=<?php echo urlencode($filter_statut); ?>&periode=<?php echo urlencode($periode); ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.6rem 1.15rem; text-decoration: none;" title="Exporter les demandes sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
         </div>
@@ -382,7 +382,7 @@ function get_dem_badge($statut)
                     demande d'événement trouvée</strong>
                 <p style="font-size: 0.85rem; margin: 0 0 1.25rem;">Proposez votre événement avec ses tarifs et quotas de
                     billets pour ouvrir sa billetterie.</p>
-                <a href="demande-evenement.php?onglet=evenement" class="dash-btn-action btn-primary"
+                <a href="demande-evenement?onglet=evenement" class="dash-btn-action btn-primary"
                     style="display: inline-flex; width: auto;">
                     <i class="fa-solid fa-plus"></i> Proposer un Événement
                 </a>
@@ -455,7 +455,7 @@ function get_dem_badge($statut)
                                             </button>
                                         </form>
                                     <?php elseif ($d['statut'] === 'approuve'): ?>
-                                        <a href="mes-evenements.php" class="dash-btn-action"
+                                        <a href="mes-evenements" class="dash-btn-action"
                                             style="padding: 4px 10px; font-size: 0.78rem; background: #FFF2ED; border: 1px solid #FFF2ED; color: #000000;">
                                             <i class="fa-solid fa-arrow-up-right-from-square"></i> Gérer
                                         </a>
@@ -495,7 +495,7 @@ function get_dem_badge($statut)
                     concours ou vote de réalisation demandé</strong>
                 <p style="font-size: 0.85rem; margin: 0 0 1.25rem;">Lancez une compétition avec candidats ou un plébiscite de
                     spectateurs pour confirmer un projet.</p>
-                <a href="demande-evenement.php?onglet=vote" class="dash-btn-action btn-primary"
+                <a href="demande-evenement?onglet=vote" class="dash-btn-action btn-primary"
                     style="display: inline-flex; width: auto;">
                     <i class="fa-solid fa-plus"></i> Créer un Concours ou Vote
                 </a>
@@ -630,7 +630,7 @@ function get_dem_badge($statut)
                     campagne de cotisation proposée</strong>
                 <p style="font-size: 0.85rem; margin: 0 0 1.25rem;">Lancez une collecte de fonds participative pour financer la
                     réalisation de votre projet.</p>
-                <a href="demande-evenement.php?onglet=cotisation" class="dash-btn-action btn-primary"
+                <a href="demande-evenement?onglet=cotisation" class="dash-btn-action btn-primary"
                     style="display: inline-flex; width: auto;">
                     <i class="fa-solid fa-plus"></i> Proposer une Cotisation
                 </a>

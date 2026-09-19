@@ -12,7 +12,7 @@ header('Content-Type: application/json');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $redir_id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: (int)($_GET['event_id'] ?? 0);
     if ($redir_id > 0) {
-        header('Location: vote.php?id=' . $redir_id);
+        header('Location: vote?id=' . $redir_id);
         exit();
     }
     http_response_code(405);
@@ -28,7 +28,7 @@ if (!$event_id) {
 }
 
 // Vérifier que l'événement existe et est actif (+ visibilité et prix du vote)
-$stmt = $pdo->prepare("SELECT id, nom, prix_vote, visibilite, access_token, type_vote, vote_question FROM events WHERE id = ? AND statut = 'actif'");
+$stmt = $pdo->prepare("SELECT id, nom, prix_vote, visibilite, access_token, type_vote, vote_question FROM events WHERE id = ? AND statut = 'actif' AND deleted_at IS NULL");
 $stmt->execute([$event_id]);
 $event = $stmt->fetch();
 if (!$event) {
@@ -77,7 +77,7 @@ if ($is_private_event) {
     }
 
     // Vérifier l'enregistrement préalable dans la liste des invités de l'événement
-    $stmt_wl = $pdo->prepare("SELECT id, nom, prenom FROM event_guest_whitelist WHERE event_id = ? AND telephone = ?");
+    $stmt_wl = $pdo->prepare("SELECT id, nom, prenom FROM event_guest_whitelist WHERE event_id = ? AND telephone = ? AND deleted_at IS NULL");
     $stmt_wl->execute([$event_id, $verified_tel_clean]);
     $guest_wl = $stmt_wl->fetch(PDO::FETCH_ASSOC);
 
@@ -102,7 +102,7 @@ function vote_existant($pdo, $event_id, $user_id, $visitor_id) {
 
 try {
     // Récupérer les candidats éventuels de l'événement
-    $stmt_cands = $pdo->prepare("SELECT id, nom, description, photo FROM event_candidats WHERE event_id = ? ORDER BY id ASC");
+    $stmt_cands = $pdo->prepare("SELECT id, nom, description, photo FROM event_candidats WHERE event_id = ? AND deleted_at IS NULL ORDER BY id ASC");
     $stmt_cands->execute([$event_id]);
     $candidats = $stmt_cands->fetchAll(PDO::FETCH_ASSOC);
 

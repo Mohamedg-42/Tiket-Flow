@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
             );
 
             // F. Redirection vers la page de connexion avec message de succès
-            header("Location: connexion.php?reset=success");
+            header("Location: connexion?reset=success");
             exit();
         } catch (Throwable $e) {
             error_log("[Password Reset Save Error] " . $e->getMessage());
@@ -135,23 +135,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
 
         body {
             font-family: var(--font-body);
-            background: linear-gradient(135deg, #000000 0%, #000000 50%, #000000 100%);
+            background: var(--eventia-bg, #F5F5F5);
             min-height: 100vh;
             margin: 0;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem 1rem;
+            padding: 2rem 1rem;
             box-sizing: border-box;
             position: relative;
         }
 
         .auth-container {
             width: 100%;
-            max-width: 450px;
-            background: var(--eventia-card-bg);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px -15px rgba(11, 29, 58, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            max-width: 440px;
+            background: #ffffff;
+            border: 1px solid var(--eventia-border, #E5E5E5);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(11, 29, 58, 0.06);
             padding: 2.25rem 2rem;
             box-sizing: border-box;
             position: relative;
@@ -179,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
             align-items: center;
             gap: 8px;
             background: var(--eventia-amber);
-            color: #000000;
+            color: #ffffff;
             font-family: var(--font-heading);
             text-decoration: none;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -200,10 +202,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
 </head>
 
 <body>
+    <!-- Bouton Retour hors de la section -->
+    <div style="width: 100%; max-width: 440px; margin: 0 auto 0.85rem; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;">
+        <a href="connexion"
+            style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 700; color: #000000; text-decoration: none; padding: 7px 14px; border-radius: 10px; background: #ffffff; border: 1px solid var(--eventia-border, #E5E5E5); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04); transition: all 0.2s;"
+            onmouseover="this.style.background='#F5F5F5'; this.style.color='var(--eventia-amber, #FF4A0D)'; this.style.transform='translateX(-2px)';"
+            onmouseout="this.style.background='#ffffff'; this.style.color='#000000'; this.style.transform='none';">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Retour à la connexion</span>
+        </a>
+        <a href="client/accueil"
+            style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 600; color: var(--eventia-muted, #737373); text-decoration: none; padding: 7px 10px; transition: color 0.2s;"
+            onmouseover="this.style.color='#000000';"
+            onmouseout="this.style.color='var(--eventia-muted, #737373)';">
+            <i class="fa-solid fa-house"></i> Accueil
+        </a>
+    </div>
+
     <div class="auth-container">
         <!-- Logo & Titre -->
         <div style="text-align: center; margin-bottom: 1.75rem;">
-            <a href="client/accueil.php" title="Retour à l'accueil" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-bottom: 0.5rem;">
+            <a href="client/accueil" title="Retour à l'accueil" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-bottom: 0.5rem;">
                 <img src="images/logo.png?v=<?php echo defined('APP_VERSION') ? APP_VERSION : '1.1.0'; ?>" alt="TikeWA" style="height: 52px; width: auto; max-width: 190px; object-fit: contain;">
             </a>
             <h1 style="font-size: 1.35rem; font-weight: 800; color: #000000; margin: 0.5rem 0 0.25rem; font-family: var(--font-heading);">
@@ -224,7 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
 
         <?php if ($token_valid): ?>
             <!-- Formulaire de réinitialisation -->
-            <form method="POST" action="reinitialiser-mot-de-passe.php" style="display: flex; flex-direction: column; gap: 1.15rem;">
+            <form method="POST" action="reinitialiser-mot-de-passe" style="display: flex; flex-direction: column; gap: 1.15rem;">
                 <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
                 <input type="hidden" name="email" value="<?php echo htmlspecialchars($email); ?>">
 
@@ -276,7 +295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
         <?php else: ?>
             <!-- Lien expiré ou invalide : bouton pour refaire une demande -->
             <div style="text-align: center; margin-top: 1rem;">
-                <a href="mot-de-passe-oublie.php" class="eventia-btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; font-weight: 800; border-radius: 12px; justify-content: center; box-sizing: border-box;">
+                <a href="mot-de-passe-oublie" class="eventia-btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; font-weight: 800; border-radius: 12px; justify-content: center; box-sizing: border-box;">
                     <i class="fa-solid fa-arrows-rotate"></i> Demander un nouveau lien
                 </a>
             </div>
@@ -285,7 +304,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token_valid) {
         <!-- Footer -->
         <div class="auth-footer"
             style="margin-top: 1.75rem; padding-top: 1.15rem; border-top: 1px solid var(--eventia-border); text-align: center; font-size: 0.86rem; color: var(--eventia-muted);">
-            <a href="connexion.php" style="color: #000000; font-weight: 800; text-decoration: none;">
+            <a href="connexion" style="color: #000000; font-weight: 800; text-decoration: none;">
                 <i class="fa-solid fa-arrow-left"></i> Retour à la connexion
             </a>
         </div>

@@ -294,6 +294,108 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
         grid-template-columns: 1fr;
     }
 }
+
+/* Modals & Dropdown Styles (Garantie de centrage viewport fixe) */
+.dash-modal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.dash-modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(4px) !important;
+    z-index: 1;
+}
+
+.dash-modal-dialog {
+    position: relative !important;
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    max-width: 640px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    overflow: hidden;
+    animation: dashModalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2 !important;
+    box-sizing: border-box;
+    margin: auto;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+@keyframes dashModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dash-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.15rem 1.4rem;
+    border-bottom: 1px solid var(--dash-border, #e2e8f0);
+    background: #ffffff;
+}
+
+.dash-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--dash-text, #0f172a);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+}
+
+.dash-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--dash-muted, #64748b);
+    cursor: pointer;
+    padding: 0 4px;
+    transition: color 0.15s ease;
+}
+
+.dash-modal-close:hover {
+    color: #0f172a;
+}
+
+.dash-modal-body {
+    padding: 1.4rem;
+    max-height: calc(85vh - 120px);
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.dash-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.4rem;
+    background: #F8FAFC;
+    border-top: 1px solid var(--dash-border, #e2e8f0);
+}
 </style>
 
 <div class="dash-container">
@@ -310,7 +412,7 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
         </div>
 
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <a href="export.php?type=utilisateurs&role=promoteur&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action"
+            <a href="export?type=utilisateurs&role=promoteur&statut=<?php echo urlencode($statut_f); ?>&q=<?php echo urlencode($search); ?>" class="dash-btn-action"
                 style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;" title="Exporter les promoteurs sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
@@ -318,7 +420,7 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
                 style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
                 <i class="fa-solid fa-user-plus"></i> Créer un Promoteur
             </button>
-            <a href="demandes-promoteurs.php" class="dash-btn-action"
+            <a href="demandes-promoteurs" class="dash-btn-action"
                 style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-id-card"></i> Dossiers d'Éligibilité
             </a>
@@ -359,7 +461,7 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
         </div>
 
         <!-- À DROITE : RECHERCHE -->
-        <form method="GET" action="promoteurs.php"
+        <form method="GET" action="promoteurs"
             style="display: inline-flex; gap: 6px; align-items: center; margin: 0; flex-wrap: wrap;">
             <input type="hidden" name="statut" value="<?php echo htmlspecialchars($statut_f); ?>">
             <input type="text" name="q" value="<?php echo htmlspecialchars($search); ?>"
@@ -370,7 +472,7 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
                 Filtrer
             </button>
             <?php if ($statut_f !== 'tous' || $search !== ''): ?>
-                <a href="promoteurs.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
+                <a href="promoteurs" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -545,13 +647,13 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
                                             <i class="fa-solid fa-percent" style="color: #FF4A0D;"></i> Taux
                                         </button>
                                         <?php if ($is_susp): ?>
-                                            <a href="promoteurs.php?id=<?php echo $p['id']; ?>&action=activate"
+                                            <a href="promoteurs?id=<?php echo $p['id']; ?>&action=activate"
                                                 onclick="return confirm('Réactiver ce promoteur ?');" class="dash-btn-action"
                                                 style="padding: 0.35rem 0.75rem; font-size: 0.74rem; background: #FFF2ED; color: #000000;">
                                                 <i class="fa-solid fa-unlock"></i> Réactiver
                                             </a>
                                         <?php else: ?>
-                                            <a href="promoteurs.php?id=<?php echo $p['id']; ?>&action=suspend"
+                                            <a href="promoteurs?id=<?php echo $p['id']; ?>&action=suspend"
                                                 onclick="return confirm('Voulez-vous suspendre temporairement ce promoteur ?');"
                                                 class="dash-btn-action"
                                                 style="padding: 0.35rem 0.75rem; font-size: 0.74rem; background: #F5F5F5; color: #000000;">
@@ -622,13 +724,13 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
                                 <i class="fa-solid fa-percent" style="color: #FF4A0D;"></i> Modifier le Taux
                             </button>
                             <?php if ($is_susp): ?>
-                                <a href="promoteurs.php?id=<?php echo $p['id']; ?>&action=activate"
+                                <a href="promoteurs?id=<?php echo $p['id']; ?>&action=activate"
                                     onclick="return confirm('Réactiver ce promoteur ?');" class="dash-btn-action"
                                     style="background: #FFF2ED; color: #000000; font-weight: 800; flex: 1; justify-content: center;">
                                     <i class="fa-solid fa-unlock"></i> Réactiver
                                 </a>
                             <?php else: ?>
-                                <a href="promoteurs.php?id=<?php echo $p['id']; ?>&action=suspend"
+                                <a href="promoteurs?id=<?php echo $p['id']; ?>&action=suspend"
                                     onclick="return confirm('Voulez-vous suspendre temporairement ce promoteur ?');"
                                     class="dash-btn-action"
                                     style="background: #F5F5F5; color: #000000; font-weight: 800; flex: 1; justify-content: center;">
@@ -646,14 +748,15 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
 <!-- ==============================================================================
      MODALE DE CRÉATION DE PROMOTEUR (ADMIN)
      ============================================================================== -->
-<div id="createPromoterModal" class="dash-modal" style="display: none;">
-    <div class="dash-modal-backdrop" onclick="closeCreatePromoterModal()"></div>
-    <div class="dash-modal-dialog" style="max-width: 620px;">
-        <div class="dash-modal-header">
-            <h3><i class="fa-solid fa-user-tie" style="color: #FF4A0D;"></i> Créer un Nouveau Promoteur</h3>
-            <button type="button" class="dash-modal-close" onclick="closeCreatePromoterModal()">&times;</button>
+<div id="createPromoterModal" class="dash-modal" style="display: none; position: fixed; inset: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); z-index: 999999; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box; overflow-y: auto;">
+    <div style="background: #ffffff; width: 100%; max-width: 640px; border-radius: 14px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; margin: auto; position: relative; z-index: 2; max-height: 92vh; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.15rem 1.4rem; border-bottom: 1px solid #E5E5E5; background: #000000; color: #ffffff;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: #ffffff; display: flex; align-items: center; gap: 8px; font-weight: 800;">
+                <i class="fa-solid fa-user-tie" style="color: #FF4A0D;"></i> Créer un Nouveau Promoteur
+            </h3>
+            <button type="button" onclick="closeCreatePromoterModal()" style="background: none; border: none; font-size: 1.5rem; line-height: 1; color: #94A3B8; cursor: pointer; padding: 0 4px; transition: color 0.15s ease;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94A3B8'">&times;</button>
         </div>
-        <form method="POST" action="promoteurs.php" style="padding: 1.5rem;">
+        <form method="POST" action="promoteurs" style="padding: 1.4rem; overflow-y: auto; max-height: calc(92vh - 75px); box-sizing: border-box; margin: 0;">
             <input type="hidden" name="create_promoter" value="1">
 
             <!-- 1. Choix Personne Physique vs Personne Morale -->
@@ -821,7 +924,7 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
             <button type="button" onclick="closeCommissionModal()" style="background: none; border: none; color: #94A3B8; font-size: 1.3rem; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
         </div>
 
-        <form method="POST" action="promoteurs.php" style="padding: 1.35rem;">
+        <form method="POST" action="promoteurs" style="padding: 1.35rem;">
             <input type="hidden" name="action" value="update_commission">
             <input type="hidden" name="promoter_id" id="modal_comm_promoter_id">
 
@@ -910,10 +1013,18 @@ $tot_soldes = (float) $pdo->query("SELECT COALESCE(SUM(solde), 0) FROM promoters
     }
 
     function openCreatePromoterModal() {
-        document.getElementById('createPromoterModal').style.display = 'flex';
+        const m = document.getElementById('createPromoterModal');
+        if (!m) return;
+        if (m.parentElement !== document.body) {
+            document.body.appendChild(m);
+        }
+        m.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
     function closeCreatePromoterModal() {
-        document.getElementById('createPromoterModal').style.display = 'none';
+        const m = document.getElementById('createPromoterModal');
+        if (m) m.style.display = 'none';
+        document.body.style.overflow = '';
     }
     function switchPromoterType(type) {
         const isMorale = (type === 'morale');

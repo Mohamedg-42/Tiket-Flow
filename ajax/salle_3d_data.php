@@ -38,21 +38,53 @@ try {
             $stmt_tt->execute([$event_id]);
             $ticket_types = $stmt_tt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Retrouver la salle officielle associée à l'événement ou fallback automatique
+            // Retrouver la salle officielle enregistrée associée à l'événement
             if (!empty($event['salle_id'])) {
-                $stmt_s = $pdo->prepare("SELECT * FROM salles WHERE id = ?");
+                $stmt_s = $pdo->prepare("SELECT * FROM salles WHERE id = ? AND statut = 'active'");
                 $stmt_s->execute([$event['salle_id']]);
                 $salle = $stmt_s->fetch(PDO::FETCH_ASSOC);
+                // Si la salle n'était pas active ou id non trouvé, essayer sans contrainte statut
+                if (!$salle) {
+                    $stmt_s = $pdo->prepare("SELECT * FROM salles WHERE id = ?");
+                    $stmt_s->execute([$event['salle_id']]);
+                    $salle = $stmt_s->fetch(PDO::FETCH_ASSOC);
+                }
             }
+
+            // Détection par correspondance intelligente sur le lieu
             if (!$salle && !empty($event['lieu'])) {
-                $stmt_s = $pdo->prepare("SELECT * FROM salles WHERE statut = 'active' AND ? ILIKE '%' || nom || '%' ORDER BY id ASC LIMIT 1");
-                $stmt_s->execute([$event['lieu']]);
-                $salle = $stmt_s->fetch(PDO::FETCH_ASSOC);
+                $lieuLower = mb_strtolower($event['lieu']);
+                $allSalles = $pdo->query("SELECT * FROM salles WHERE statut = 'active' ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($allSalles as $candSalle) {
+                    $nomLower = mb_strtolower($candSalle['nom']);
+                    // Vérifier si le début correspond (ex: Palais de la Culture)
+                    if (str_starts_with($lieuLower, 'palais de la culture') && str_starts_with($nomLower, 'palais de la culture')) {
+                        $salle = $candSalle;
+                        break;
+                    }
+                    if (str_contains($lieuLower, 'palais des sport') && str_contains($nomLower, 'dome arena')) {
+                        $salle = $candSalle;
+                        break;
+                    }
+                    if (str_contains($lieuLower, 'houphouet') && str_contains($nomLower, 'houphouet')) {
+                        $salle = $candSalle;
+                        break;
+                    }
+                    if (str_contains($nomLower, $lieuLower) || str_contains($lieuLower, $nomLower)) {
+                        $salle = $candSalle;
+                        break;
+                    }
+                }
             }
-            if (!$salle) {
-                // Fallback sur la première salle active (salle de spectacle standard)
-                $stmt_s = $pdo->query("SELECT * FROM salles WHERE statut = 'active' ORDER BY id ASC LIMIT 1");
-                $salle = $stmt_s->fetch(PDO::FETCH_ASSOC);
+
+            // Si l'événement n'a aucune salle répertoriée et aucun salle_id direct n'est demandé
+            if (!$salle && !$salle_id) {
+                echo json_encode([
+                    'success' => false,
+                    'has_salle_3d' => false,
+                    'message' => "Cet événement est en placement libre. Aucune salle avec modélisation 3D n'est associée."
+                ], JSON_UNESCAPED_UNICODE);
+                exit();
             }
         }
     }
@@ -64,14 +96,18 @@ try {
         $salle = $stmt_s->fetch(PDO::FETCH_ASSOC);
     }
 
-    // 3. Fallback sur une salle par défaut si non spécifié
-    if (!$salle) {
+    // 3. Fallback uniquement si aucun event_id ni salle_id n'a été spécifié (ex: démonstration admin)
+    if (!$salle && !$event_id) {
         $stmt_s = $pdo->query("SELECT * FROM salles WHERE statut = 'active' ORDER BY id ASC LIMIT 1");
         $salle = $stmt_s->fetch(PDO::FETCH_ASSOC);
     }
 
     if (!$salle) {
-        echo json_encode(['success' => false, 'message' => 'Aucune salle trouvée.']);
+        echo json_encode([
+            'success' => false,
+            'has_salle_3d' => false,
+            'message' => 'Aucune salle répertoriée trouvée.'
+        ], JSON_UNESCAPED_UNICODE);
         exit();
     }
 

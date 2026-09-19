@@ -382,7 +382,7 @@ try {
         </div>
 
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-            <a href="export.php?type=tickets<?php echo $selected_event_id ? '&event_id=' . (int)$selected_event_id : ''; ?>" class="dash-btn-action" style="text-decoration: none;" title="Exporter toutes les données de billetterie sur Excel (CSV)">
+            <a href="export?type=tickets<?php echo $selected_event_id ? '&event_id=' . (int)$selected_event_id : ''; ?>" class="dash-btn-action" style="text-decoration: none;" title="Exporter toutes les données de billetterie sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
                 <span>Exporter Excel</span>
             </a>
@@ -391,7 +391,7 @@ try {
                 <i class="fa-solid fa-file-pdf" style="color: #000000;"></i>
                 <span>Rapport PDF</span>
             </button>
-            <a href="evenements.php" class="dash-btn-action btn-primary"
+            <a href="evenements" class="dash-btn-action btn-primary"
                 style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                 <i class="fa-solid fa-calendar-days"></i>
                 <span>Gérer Événements</span>
@@ -435,7 +435,7 @@ try {
         </div>
 
         <!-- À DROITE : SÉLECTEUR ÉVÉNEMENT & INDICATEUR DE ZONE -->
-        <form method="GET" action="dashboard.php" id="filterForm"
+        <form method="GET" action="dashboard" id="filterForm"
             style="display: inline-flex; gap: 8px; align-items: center; margin: 0;">
             <input type="hidden" name="period" value="<?php echo htmlspecialchars($period); ?>">
 
@@ -464,7 +464,7 @@ try {
          2. RACCOURCIS D'ACTIONS RAPIDES
          ============================================================================== -->
     <div class="dash-quick-shortcuts">
-        <a href="demandes.php" class="dash-shortcut-card" title="Examiner les demandes en attente">
+        <a href="demandes" class="dash-shortcut-card" title="Examiner les demandes en attente">
             <div class="dash-shortcut-icon">
                 <i class="fa-solid fa-inbox"></i>
             </div>
@@ -474,7 +474,7 @@ try {
             </div>
         </a>
 
-        <a href="retraits.php" class="dash-shortcut-card" title="Traiter les demandes de retrait">
+        <a href="retraits" class="dash-shortcut-card" title="Traiter les demandes de retrait">
             <div class="dash-shortcut-icon">
                 <i class="fa-solid fa-money-bill-transfer"></i>
             </div>
@@ -484,7 +484,7 @@ try {
             </div>
         </a>
 
-        <a href="commandes.php" class="dash-shortcut-card" title="Consulter les commandes de la période">
+        <a href="commandes" class="dash-shortcut-card" title="Consulter les commandes de la période">
             <div class="dash-shortcut-icon">
                 <i class="fa-solid fa-cart-shopping"></i>
             </div>
@@ -494,7 +494,7 @@ try {
             </div>
         </a>
 
-        <a href="verification.php" class="dash-shortcut-card" title="Accéder au contrôle et scanner de billets">
+        <a href="verification" class="dash-shortcut-card" title="Accéder au contrôle et scanner de billets">
             <div class="dash-shortcut-icon">
                 <i class="fa-solid fa-qrcode"></i>
             </div>
@@ -510,7 +510,7 @@ try {
          ============================================================================== -->
     <div class="dash-kpi-grid-6">
         <!-- 1. Chiffre d'Affaires Brut (KPI Principal - Niveau 1) -->
-        <a href="paiements.php" class="dash-kpi-card is-primary" title="Voir tous les paiements et transactions">
+        <a href="paiements" class="dash-kpi-card is-primary" title="Voir tous les paiements et transactions">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap is-accent">
                     <i class="fa-solid fa-coins"></i>
@@ -531,7 +531,7 @@ try {
         </a>
 
         <!-- 2. Commissions plateforme -->
-        <a href="retraits.php" class="dash-kpi-card" title="Gérer les retraits et commissions">
+        <a href="retraits" class="dash-kpi-card" title="Gérer les retraits et commissions">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-sack-dollar"></i>
@@ -553,7 +553,7 @@ try {
         </a>
 
         <!-- 3. Billets vendus -->
-        <a href="tickets.php" class="dash-kpi-card" title="Gérer les types de billets et tarifs">
+        <a href="tickets" class="dash-kpi-card" title="Gérer les types de billets et tarifs">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-ticket"></i>
@@ -573,7 +573,7 @@ try {
         </a>
 
         <!-- 4. Panier Moyen -->
-        <a href="commandes.php" class="dash-kpi-card" title="Voir toutes les commandes clients">
+        <a href="commandes" class="dash-kpi-card" title="Voir toutes les commandes clients">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-basket-shopping"></i>
@@ -594,7 +594,7 @@ try {
         </a>
 
         <!-- 5. Check-in & Entrées -->
-        <a href="verification.php" class="dash-kpi-card" title="Accéder au scanner et contrôle des accès">
+        <a href="verification" class="dash-kpi-card" title="Accéder au scanner et contrôle des accès">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-user-check"></i>
@@ -614,7 +614,7 @@ try {
         </a>
 
         <!-- 6. Taux de Remplissage -->
-        <a href="evenements.php" class="dash-kpi-card" title="Gérer tous les événements de la plateforme">
+        <a href="evenements" class="dash-kpi-card" title="Gérer tous les événements de la plateforme">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap">
                     <i class="fa-solid fa-percent"></i>
@@ -692,7 +692,7 @@ try {
                     $cfg = $methods_cfg[$key] ?? ['label' => ucfirst($key), 'color' => '#737373'];
                     $pct = ($total_methods > 0) ? round(($amount / $total_methods) * 100) : 0;
                     ?>
-                    <a href="paiements.php" class="dash-legend-entry"
+                    <a href="paiements" class="dash-legend-entry"
                         title="Voir paiements <?php echo htmlspecialchars($cfg['label']); ?>">
                         <div class="dash-legend-name">
                             <span class="dash-legend-bullet" style="background: <?php echo $cfg['color']; ?>;"></span>
@@ -726,7 +726,7 @@ try {
                 </div>
             </div>
             <div class="dash-donut-legend-list" style="margin-top: 0.75rem; gap: 0.45rem;">
-                <a href="commandes.php" class="dash-legend-entry" title="Voir les commandes payées">
+                <a href="commandes" class="dash-legend-entry" title="Voir les commandes payées">
                     <div class="dash-legend-name">
                         <span class="dash-legend-bullet" style="background: #10b981;"></span>
                         <span>Payées</span>
@@ -737,7 +737,7 @@ try {
                             class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_payees / $orders_all) * 100) : 0; ?>%)</span>
                     </div>
                 </a>
-                <a href="commandes.php" class="dash-legend-entry" title="Voir les commandes en attente">
+                <a href="commandes" class="dash-legend-entry" title="Voir les commandes en attente">
                     <div class="dash-legend-name">
                         <span class="dash-legend-bullet" style="background: #f59e0b;"></span>
                         <span>En attente</span>
@@ -748,7 +748,7 @@ try {
                             class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_attente / $orders_all) * 100) : 0; ?>%)</span>
                     </div>
                 </a>
-                <a href="commandes.php" class="dash-legend-entry" title="Voir les commandes annulées">
+                <a href="commandes" class="dash-legend-entry" title="Voir les commandes annulées">
                     <div class="dash-legend-name">
                         <span class="dash-legend-bullet" style="background: #ef4444;"></span>
                         <span>Annulées</span>
@@ -808,7 +808,7 @@ try {
                                 }
                                 ?>
                                 <tr class="dash-clickable-row"
-                                    onclick="window.location='modifier-evenement.php?id=<?php echo $ev['id']; ?>'"
+                                    onclick="window.location='modifier-evenement?id=<?php echo $ev['id']; ?>'"
                                     title="Cliquer pour gérer cet événement">
                                     <td data-label="Événement">
                                         <div class="dash-event-cell">
@@ -884,7 +884,7 @@ try {
             <div class="dash-live-stream">
                 <?php if (!empty($live_activities)): ?>
                     <?php foreach ($live_activities as $act): ?>
-                        <a href="commandes.php" class="dash-stream-card" title="Voir les commandes correspondantes">
+                        <a href="commandes" class="dash-stream-card" title="Voir les commandes correspondantes">
                             <div class="dash-stream-left">
                                 <div class="dash-stream-icon" style="background: #FFF2ED; color: var(--dash-primary);">
                                     <i class="fa-solid fa-ticket"></i>
@@ -947,7 +947,7 @@ try {
                         <?php foreach ($tt_by_event as $tbe): ?>
                             <tr>
                                 <td data-label="Événement">
-                                    <a href="dashboard.php?period=<?php echo urlencode($period); ?>&event_id=<?php echo $tbe['event_id']; ?>"
+                                    <a href="dashboard?period=<?php echo urlencode($period); ?>&event_id=<?php echo $tbe['event_id']; ?>"
                                         style="color: var(--dash-text); text-decoration: none; font-weight: 700;"
                                         title="Filtrer le dashboard sur cet événement">
                                         <?php echo htmlspecialchars($tbe['event_nom']); ?>
@@ -996,7 +996,7 @@ try {
             <span>Dernière mise à jour : <strong><?php echo date('d/m/Y à H:i:s'); ?></strong></span>
         </div>
         <div>
-            <a href="dashboard.php?period=<?php echo urlencode($period); ?><?php echo $selected_event_id ? '&event_id=' . $selected_event_id : ''; ?>"
+            <a href="dashboard?period=<?php echo urlencode($period); ?><?php echo $selected_event_id ? '&event_id=' . $selected_event_id : ''; ?>"
                 style="color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                 <i class="fa-solid fa-rotate"></i> Actualiser instantanément
             </a>

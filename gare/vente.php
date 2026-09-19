@@ -30,11 +30,15 @@ if ($_SESSION['user_role'] === 'admin') {
     $station_id = $station['id'] ?? null;
 }
 
-// Événements publics actifs disponibles à la vente au guichet
+// Événements publics actifs disponibles à la vente au guichet (clôture 4h avant le début)
 $events = $pdo->query("
     SELECT e.id, e.nom, e.date_evenement, e.heure, e.lieu
     FROM events e
-    WHERE e.statut = 'actif' AND e.visibilite = 'public'
+    WHERE e.statut = 'actif' 
+      AND e.visibilite = 'public'
+      AND (
+          ((e.date_evenement + COALESCE(e.heure, '00:00:00'::time)) - INTERVAL '4 hours') > NOW()
+      )
     ORDER BY e.date_evenement ASC
 ")->fetchAll();
 
@@ -67,9 +71,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_vendre'])) {
         $tt = $stmt_ck->fetch();
 
         $stock_dispo = $tt ? ((int) $tt['quantite'] - (int) $tt['quantite_vendue']) : 0;
+        $ev_time = !empty($tt['heure']) ? ($tt['date_evenement'] . ' ' . $tt['heure']) : ($tt['date_evenement'] . ' 00:00:00');
+        $ev_ts = strtotime($ev_time);
+        $ev_cutoff_ts = ($ev_ts !== false) ? ($ev_ts - (4 * 3600)) : false;
 
         if (!$tt) {
             $message = "Type de billet introuvable.";
+            $msg_type = "error";
+        } elseif ($ev_cutoff_ts !== false && $ev_cutoff_ts <= time()) {
+            $message = "Vente fermée au guichet : la billetterie ferme 4 heures avant le début de l'événement.";
             $msg_type = "error";
         } elseif ($quantite > $stock_dispo) {
             $message = "Stock insuffisant (reste $stock_dispo place(s)).";
@@ -149,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_vendre'])) {
     </div>
 
     <?php if ($_SESSION['user_role'] === 'admin'): ?>
-        <form method="GET" action="vente.php" style="margin-bottom: 1rem;">
+        <form method="GET" action="vente" style="margin-bottom: 1rem;">
             <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Gare (mode admin)</label>
             <select name="station_id" onchange="this.form.submit()" style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; font-weight: 700;">
                 <option value="">— Choisir une gare —</option>
@@ -195,13 +205,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_vendre'])) {
             </div>
         <?php endif; ?>
 
-        <form method="POST" action="vente.php" style="background: #fff; border-radius: 16px; padding: 1.5rem;">
+        <form method="POST" action="vente" style="background: #fff; border-radius: 16px; padding: 1.5rem;">
             <input type="hidden" name="action_vendre" value="1">
             <input type="hidden" name="station_id" value="<?php echo (int) $station['id']; ?>">
 
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 4px;">Événement *</label>
-                <select name="event_id" required onchange="window.location.href='vente.php?event_id='+this.value+'&station_id=<?php echo (int) $station['id']; ?>'" style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; font-weight: 700;">
+                <select name="event_id" required onchange="window.location.href='vente?event_id='+this.value+'&station_id=<?php echo (int) $station['id']; ?>'" style="width: 100%; padding: 0.65rem; border: 1px solid #E5E5E5; border-radius: 8px; font-weight: 700;">
                     <option value="">— Choisir un événement —</option>
                     <?php foreach ($events as $ev): ?>
                         <option value="<?php echo $ev['id']; ?>" <?php echo ((int) $ev['id'] === (int) $selected_event_id) ? 'selected' : ''; ?>>

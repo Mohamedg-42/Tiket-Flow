@@ -60,7 +60,7 @@ if (!empty($_SESSION['user_id'])) {
 
     <header class="client-header shared-client-header"
         style="background: var(--tikeli-black, #000000); color: #ffffff; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0.85rem clamp(1rem, 4vw, 2.5rem); display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.12);">
-        <a href="vente.php" class="client-brand" style="text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
+        <a href="vente" class="client-brand" style="text-decoration: none; display: inline-flex; align-items: center; gap: 10px;">
             <span style="font-weight: 800; font-size: 1.05rem; color: #fff;"><i class="fa-solid fa-bus" style="color: #FF4A0D;"></i> Tike WA</span>
             <span style="font-size: 0.72rem; font-weight: 800; background: rgba(255, 74, 13, 0.18); color: var(--tikeli-orange, #FF4A0D); border: 1px solid rgba(255, 74, 13, 0.35); padding: 2px 7px; border-radius: 6px; letter-spacing: 0.5px;">GUICHET</span>
         </a>
@@ -78,15 +78,15 @@ if (!empty($_SESSION['user_id'])) {
         </button>
 
         <nav class="client-nav" id="clientNav" style="display: flex; align-items: center; gap: 8px;">
-            <a href="vente.php" class="<?php echo $current_page === 'vente.php' ? 'active' : ''; ?>"
+            <a href="vente" class="<?php echo $current_page === 'vente.php' ? 'active' : ''; ?>"
                 style="display: inline-flex; align-items: center; gap: 7px; padding: 0.5rem 0.9rem; border-radius: 8px; font-size: 0.86rem; font-weight: 600; text-decoration: none; color: <?php echo $current_page === 'vente.php' ? '#ffffff' : '#737373'; ?>; background: <?php echo $current_page === 'vente.php' ? 'rgba(255,255,255,0.1)' : 'transparent'; ?>; border-bottom: <?php echo $current_page === 'vente.php' ? '2px solid var(--tikeli-orange, #FF4A0D)' : '2px solid transparent'; ?>;">
                 <i class="fa-solid fa-ticket" style="<?php echo $current_page === 'vente.php' ? 'color: var(--tikeli-orange, #FF4A0D);' : ''; ?>"></i> Vente Rapide
             </a>
-            <a href="cloture.php" class="<?php echo $current_page === 'cloture.php' ? 'active' : ''; ?>"
+            <a href="cloture" class="<?php echo $current_page === 'cloture.php' ? 'active' : ''; ?>"
                 style="display: inline-flex; align-items: center; gap: 7px; padding: 0.5rem 0.9rem; border-radius: 8px; font-size: 0.86rem; font-weight: 600; text-decoration: none; color: <?php echo $current_page === 'cloture.php' ? '#ffffff' : '#737373'; ?>; background: <?php echo $current_page === 'cloture.php' ? 'rgba(255,255,255,0.1)' : 'transparent'; ?>; border-bottom: <?php echo $current_page === 'cloture.php' ? '2px solid var(--tikeli-orange, #FF4A0D)' : '2px solid transparent'; ?>;">
                 <i class="fa-solid fa-cash-register" style="<?php echo $current_page === 'cloture.php' ? 'color: var(--tikeli-orange, #FF4A0D);' : ''; ?>"></i> Clôture de Caisse
             </a>
-            <a href="../deconnexion.php" class="client-logout" style="color: #E5E5E5; background: rgba(239, 68, 68, 0.12); padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+            <a href="../deconnexion" class="client-logout" style="color: #E5E5E5; background: rgba(239, 68, 68, 0.12); padding: 0.45rem 0.85rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-right-from-bracket"></i> Déconnexion
             </a>
         </nav>

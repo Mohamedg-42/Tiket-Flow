@@ -135,7 +135,7 @@ try {
                 exit();
             }
 
-            $stmt_del = $pdo->prepare("DELETE FROM guest_whitelists WHERE id = ? AND event_id = ?");
+            $stmt_del = $pdo->prepare("UPDATE guest_whitelists SET deleted_at = NOW() WHERE id = ? AND event_id = ?");
             $stmt_del->execute([$guest_id, $event_id]);
 
             echo json_encode(['success' => true, 'message' => 'Invité retiré de la liste avec succès.']);

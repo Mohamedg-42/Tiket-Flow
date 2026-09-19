@@ -7,7 +7,7 @@
 $admin_page_title = "Mes Tâches - Tike WA";
 include 'header.php';
 
-requireLogin('../connexion.php');
+requireLogin('../connexion');
 
 $current_user_id = (int)$_SESSION['user_id'];
 $message = "";
@@ -67,11 +67,11 @@ $tasks_termine = array_filter($all_my_tasks, fn($t) => $t['statut'] === 'termine
         </div>
 
         <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
-            <a href="export.php?type=taches" class="dash-btn-action" style="text-decoration: none;" title="Exporter les tâches sur Excel (CSV)">
+            <a href="export?type=taches" class="dash-btn-action" style="text-decoration: none;" title="Exporter les tâches sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
             <?php if (hasPermission('tasks.manage')): ?>
-                <a href="taches.php" class="dash-btn-action" style="text-decoration: none;">
+                <a href="taches" class="dash-btn-action" style="text-decoration: none;">
                     <i class="fa-solid fa-list-check"></i> Voir toutes les tâches de l'équipe
                 </a>
             <?php endif; ?>
@@ -203,7 +203,7 @@ function renderTaskCard($t) {
         <?php endif; ?>
 
         <!-- Changement de statut personnel -->
-        <form method="POST" action="mes-taches.php" style="margin: 0; padding-top: 0.65rem; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+        <form method="POST" action="mes-taches" style="margin: 0; padding-top: 0.65rem; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
             <input type="hidden" name="update_my_status" value="1">
             <input type="hidden" name="task_id" value="<?php echo $t['id']; ?>">
             

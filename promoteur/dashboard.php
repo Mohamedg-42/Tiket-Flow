@@ -63,7 +63,7 @@ $sql_ev_filter_tkt = $selected_event_id ? "AND t.event_id = " . $selected_event_
 $sql_ev_filter_cap = $selected_event_id ? "AND tt.event_id = " . $selected_event_id : "";
 
 // Liste des événements du promoteur pour le sélecteur dynamique
-$stmt_my_ev_list = $pdo->prepare("SELECT id, nom FROM events WHERE user_id = ? ORDER BY nom ASC");
+$stmt_my_ev_list = $pdo->prepare("SELECT id, nom FROM events WHERE user_id = ? AND deleted_at IS NULL AND statut != 'supprime' ORDER BY nom ASC");
 $stmt_my_ev_list->execute([$user_id]);
 $my_events_list = $stmt_my_ev_list->fetchAll();
 
@@ -361,7 +361,7 @@ try {
 
         <div class="dash-filter-bar">
             <!-- Formulaire de filtrage dynamique -->
-            <form method="GET" action="dashboard.php" id="promFilterForm"
+            <form method="GET" action="dashboard" id="promFilterForm"
                 style="display: flex; align-items: center; gap: 0.5rem; margin: 0; flex-wrap: wrap;">
                 <!-- Filtre Période -->
                 <div class="dash-control-select" style="padding: 0.4rem 0.8rem;">
@@ -394,7 +394,7 @@ try {
                 </div>
             </form>
 
-            <a href="export.php?type=ventes<?php echo $selected_event_id ? '&event_id=' . (int)$selected_event_id : ''; ?>&period=<?php echo urlencode($period); ?>" class="dash-btn-action" style="text-decoration: none;" title="Exporter les données de billetterie sur Excel (CSV)">
+            <a href="export?type=ventes<?php echo $selected_event_id ? '&event_id=' . (int)$selected_event_id : ''; ?>&period=<?php echo urlencode($period); ?>" class="dash-btn-action" style="text-decoration: none;" title="Exporter les données de billetterie sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
                 <span>Exporter Excel</span>
             </a>
@@ -404,7 +404,7 @@ try {
                 <span>Imprimer Bilan</span>
             </button>
 
-            <a href="demande-evenement.php" class="dash-btn-action btn-primary">
+            <a href="demande-evenement" class="dash-btn-action btn-primary">
                 <i class="fa-solid fa-plus"></i>
                 <span>Créer un Événement</span>
             </a>
@@ -415,7 +415,7 @@ try {
          2. RACCOURCIS D'ACTIONS RAPIDES
          ============================================================================== -->
     <div class="dash-quick-shortcuts">
-        <a href="solde.php" class="dash-shortcut-card">
+        <a href="solde" class="dash-shortcut-card">
             <div class="dash-shortcut-icon" style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D);">
                 <i class="fa-solid fa-wallet"></i>
             </div>
@@ -427,7 +427,7 @@ try {
             </div>
         </a>
 
-        <a href="mes-ventes.php" class="dash-shortcut-card">
+        <a href="mes-ventes" class="dash-shortcut-card">
             <div class="dash-shortcut-icon" style="background: #F5F5F5; color: #000000;">
                 <i class="fa-solid fa-ticket"></i>
             </div>
@@ -437,7 +437,7 @@ try {
             </div>
         </a>
 
-        <a href="mes-evenements.php" class="dash-shortcut-card">
+        <a href="mes-evenements" class="dash-shortcut-card">
             <div class="dash-shortcut-icon" style="background: rgba(255, 74, 13, 0.12); color: var(--tikeli-orange, #FF4A0D);">
                 <i class="fa-solid fa-calendar-days"></i>
             </div>
@@ -447,7 +447,7 @@ try {
             </div>
         </a>
 
-        <a href="agents.php" class="dash-shortcut-card">
+        <a href="agents" class="dash-shortcut-card">
             <div class="dash-shortcut-icon" style="background: #F5F5F5; color: #000000;">
                 <i class="fa-solid fa-users-gear"></i>
             </div>
@@ -463,7 +463,7 @@ try {
          ============================================================================== -->
     <div class="dash-kpi-grid-6">
         <!-- 1. Ventes Brutes -->
-        <a href="mes-ventes.php" class="dash-kpi-card" title="Consulter mes ventes détaillées">
+        <a href="mes-ventes" class="dash-kpi-card" title="Consulter mes ventes détaillées">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap purple">
                     <i class="fa-solid fa-money-bill-wave"></i>
@@ -484,7 +484,7 @@ try {
         </a>
 
         <!-- 2. Revenu Net Promoteur -->
-        <a href="solde.php" class="dash-kpi-card" title="Voir mon solde disponible et demander un retrait">
+        <a href="solde" class="dash-kpi-card" title="Voir mon solde disponible et demander un retrait">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap green">
                     <i class="fa-solid fa-piggy-bank"></i>
@@ -505,7 +505,7 @@ try {
         </a>
 
         <!-- 3. Billets vendus -->
-        <a href="mes-ventes.php" class="dash-kpi-card" title="Gérer mes quotas et types de billets">
+        <a href="mes-ventes" class="dash-kpi-card" title="Gérer mes quotas et types de billets">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap blue">
                     <i class="fa-solid fa-ticket"></i>
@@ -525,7 +525,7 @@ try {
         </a>
 
         <!-- 4. Panier Moyen -->
-        <a href="mes-ventes.php" class="dash-kpi-card" title="Voir les détails de mes ventes">
+        <a href="mes-ventes" class="dash-kpi-card" title="Voir les détails de mes ventes">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap amber">
                     <i class="fa-solid fa-basket-shopping"></i>
@@ -545,7 +545,7 @@ try {
         </a>
 
         <!-- 5. Check-in & Entrées -->
-        <a href="agents.php" class="dash-kpi-card" title="Gérer mes agents de contrôle aux entrées">
+        <a href="agents" class="dash-kpi-card" title="Gérer mes agents de contrôle aux entrées">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap orange">
                     <i class="fa-solid fa-user-check"></i>
@@ -564,7 +564,7 @@ try {
         </a>
 
         <!-- 6. Taux de Remplissage -->
-        <a href="mes-evenements.php" class="dash-kpi-card" title="Consulter et gérer mes événements">
+        <a href="mes-evenements" class="dash-kpi-card" title="Consulter et gérer mes événements">
             <div class="dash-kpi-top">
                 <div class="dash-kpi-icon-wrap pink">
                     <i class="fa-solid fa-percent"></i>
@@ -640,7 +640,7 @@ try {
                     $cfg = $methods_cfg[$key] ?? ['label' => ucfirst($key), 'color' => '#737373'];
                     $pct = ($total_methods > 0) ? round(($amount / $total_methods) * 100) : 0;
                     ?>
-                    <a href="mes-ventes.php" class="dash-legend-entry"
+                    <a href="mes-ventes" class="dash-legend-entry"
                         title="Voir mes ventes <?php echo htmlspecialchars($cfg['label']); ?>">
                         <div class="dash-legend-name">
                             <span class="dash-legend-bullet" style="background: <?php echo $cfg['color']; ?>;"></span>
@@ -674,7 +674,7 @@ try {
                 </div>
             </div>
             <div class="dash-donut-legend-list" style="margin-top: 0.75rem; gap: 0.45rem;">
-                <a href="mes-ventes.php" class="dash-legend-entry" title="Voir mes commandes payées">
+                <a href="mes-ventes" class="dash-legend-entry" title="Voir mes commandes payées">
                     <div class="dash-legend-name">
                         <span class="dash-legend-bullet" style="background: #10b981;"></span>
                         <span>Payées</span>
@@ -685,7 +685,7 @@ try {
                             class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_payees / $orders_all) * 100) : 0; ?>%)</span>
                     </div>
                 </a>
-                <a href="mes-ventes.php" class="dash-legend-entry" title="Voir mes commandes en attente">
+                <a href="mes-ventes" class="dash-legend-entry" title="Voir mes commandes en attente">
                     <div class="dash-legend-name">
                         <span class="dash-legend-bullet" style="background: #f59e0b;"></span>
                         <span>En attente</span>
@@ -696,7 +696,7 @@ try {
                             class="dash-legend-percent">(<?php echo $orders_all > 0 ? round(($orders_attente / $orders_all) * 100) : 0; ?>%)</span>
                     </div>
                 </a>
-                <a href="mes-ventes.php" class="dash-legend-entry" title="Voir mes commandes annulées">
+                <a href="mes-ventes" class="dash-legend-entry" title="Voir mes commandes annulées">
                     <div class="dash-legend-name">
                         <span class="dash-legend-bullet" style="background: #ef4444;"></span>
                         <span>Annulées</span>
@@ -756,7 +756,7 @@ try {
                                 }
                                 ?>
                                 <tr class="dash-clickable-row"
-                                    onclick="window.location='mes-ventes.php?event_id=<?php echo $ev['id']; ?>'"
+                                    onclick="window.location='mes-ventes?event_id=<?php echo $ev['id']; ?>'"
                                     title="Cliquer pour gérer les ventes de cet événement">
                                     <td>
                                         <div class="dash-event-cell">
@@ -788,7 +788,7 @@ try {
                         <?php else: ?>
                             <tr>
                                 <td colspan="5" style="text-align: center; color: var(--dash-muted); padding: 2rem;">
-                                    Vous n'avez pas encore d'événements créés. <a href="demande-evenement.php"
+                                    Vous n'avez pas encore d'événements créés. <a href="demande-evenement"
                                         style="color: var(--dash-primary); font-weight: 700;">Proposer un événement</a>
                                 </td>
                             </tr>
@@ -832,7 +832,7 @@ try {
             <div class="dash-live-stream">
                 <?php if (!empty($live_activities)): ?>
                     <?php foreach ($live_activities as $act): ?>
-                        <a href="mes-ventes.php" class="dash-stream-card" title="Voir mes ventes">
+                        <a href="mes-ventes" class="dash-stream-card" title="Voir mes ventes">
                             <div class="dash-stream-left">
                                 <div class="dash-stream-icon" style="background: #FFF2ED; color: var(--dash-primary);">
                                     <i class="fa-solid fa-ticket"></i>
@@ -875,7 +875,7 @@ try {
             <span>Dernière synchronisation : <strong><?php echo date('d/m/Y à H:i:s'); ?></strong></span>
         </div>
         <div>
-            <a href="dashboard.php?period=<?php echo urlencode($period); ?><?php echo $selected_event_id ? '&event_id=' . $selected_event_id : ''; ?>"
+            <a href="dashboard?period=<?php echo urlencode($period); ?><?php echo $selected_event_id ? '&event_id=' . $selected_event_id : ''; ?>"
                 style="color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                 <i class="fa-solid fa-rotate"></i> Actualiser instantanément
             </a>

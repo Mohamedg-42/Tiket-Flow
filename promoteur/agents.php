@@ -208,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_password_agent'
 // ------------------------------------------------------------------------------
 if (isset($_GET['delete_assign'])) {
     $del_assign_id = (int)$_GET['delete_assign'];
-    $stmt_del = $pdo->prepare("DELETE FROM agent_assignments WHERE id = ? AND promoter_user_id = ?");
+    $stmt_del = $pdo->prepare("UPDATE agent_assignments SET deleted_at = NOW() WHERE id = ? AND promoter_user_id = ?");
     $stmt_del->execute([$del_assign_id, $promoter_user_id]);
     $message = "L'affectation de l'agent a été retirée.";
     $msg_type = "success";
@@ -220,7 +220,7 @@ if (isset($_GET['delete_assign'])) {
 $stmt_ev = $pdo->prepare("
     SELECT id, nom, date_evenement, lieu, statut 
     FROM events 
-    WHERE user_id = ? 
+    WHERE user_id = ? AND deleted_at IS NULL AND statut != 'supprime'
     ORDER BY date_evenement DESC
 ");
 $stmt_ev->execute([$promoter_user_id]);
@@ -247,7 +247,7 @@ $sql_agents = "
     FROM agent_assignments aa
     JOIN users u ON aa.agent_id = u.id
     JOIN events e ON aa.event_id = e.id
-    WHERE aa.promoter_user_id = ?
+    WHERE aa.promoter_user_id = ? AND aa.deleted_at IS NULL AND e.deleted_at IS NULL
 ";
 $params_ag = [$promoter_user_id];
 
@@ -589,13 +589,13 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
             </button>
 
             <!-- Export Excel des agents -->
-            <a href="export.php?type=agents&event_id=<?php echo (int)$filter_event; ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.45rem 0.9rem; font-size: 0.82rem; text-decoration: none; flex-shrink: 0;" title="Exporter la liste des agents sur Excel (CSV)">
+            <a href="export?type=agents&event_id=<?php echo (int)$filter_event; ?>&q=<?php echo urlencode($search_q); ?>" class="dash-btn-action" style="padding: 0.45rem 0.9rem; font-size: 0.82rem; text-decoration: none; flex-shrink: 0;" title="Exporter la liste des agents sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i>
                 <span>Exporter Excel</span>
             </a>
 
             <?php if ($filter_event || $search_q !== ''): ?>
-                <a href="agents.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
+                <a href="agents" style="color: #000000; font-size: 0.78rem; text-decoration: underline; margin-left: 2px;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -612,7 +612,7 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
                 </h3>
                 <small style="color: var(--dash-muted); font-size: 0.78rem;">Chaque agent dispose d'une connexion mobile dédiée pour valider les billets aux portes.</small>
             </div>
-            <a href="../agent/verification.php" target="_blank" class="dash-scanner-link" style="font-size: 0.82rem; color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 0.45rem 0.85rem; background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: 8px; white-space: nowrap;">
+            <a href="../agent/verification" target="_blank" class="dash-scanner-link" style="font-size: 0.82rem; color: var(--dash-primary); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 0.45rem 0.85rem; background: #FFF2ED; border: 1px solid #FFF2ED; border-radius: 8px; white-space: nowrap;">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> <span>Tester l'espace Scanner</span>
             </a>
         </div>
@@ -876,7 +876,7 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
         </div>
 
         <?php if (count($my_events) > 0): ?>
-            <form method="POST" action="agents.php" style="padding: 1.5rem;">
+            <form method="POST" action="agents" style="padding: 1.5rem;">
                 <input type="hidden" name="creer_agent" value="1">
 
                 <div style="margin-bottom: 1rem;">
@@ -943,7 +943,7 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
                 <i class="fa-solid fa-calendar-xmark" style="font-size: 2.5rem; color: #E5E5E5; margin-bottom: 0.75rem; display: block;"></i>
                 <strong style="display: block; font-size: 1rem; color: var(--dash-text); margin-bottom: 0.25rem;">Aucun événement créé</strong>
                 Vous devez d'abord créer ou avoir un événement approuvé pour y affecter des agents.<br><br>
-                <a href="demande-evenement.php" class="dash-btn-action btn-primary" style="display: inline-flex;">
+                <a href="demande-evenement" class="dash-btn-action btn-primary" style="display: inline-flex;">
                     <i class="fa-solid fa-plus"></i> Proposer un Événement
                 </a>
             </div>
@@ -963,7 +963,7 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
             <button type="button" onclick="closeEditAgentModal()" style="border: 0; background: transparent; font-size: 1.2rem; color: var(--dash-muted); cursor: pointer;">&times;</button>
         </div>
 
-        <form method="POST" action="agents.php" style="padding: 1.5rem;">
+        <form method="POST" action="agents" style="padding: 1.5rem;">
             <input type="hidden" name="modifier_agent" value="1">
             <input type="hidden" name="assign_id" id="edit_assign_id" value="">
             <input type="hidden" name="agent_id" id="edit_agent_id" value="">
@@ -1038,7 +1038,7 @@ $taux_presence = $sum_billets_evenements > 0 ? round(($total_billets_scannes / $
             <button type="button" onclick="closeResetPasswordModal()" style="border: 0; background: transparent; font-size: 1.2rem; color: var(--dash-muted); cursor: pointer;">&times;</button>
         </div>
 
-        <form method="POST" action="agents.php" style="padding: 1.5rem;">
+        <form method="POST" action="agents" style="padding: 1.5rem;">
             <input type="hidden" name="reset_password_agent" value="1">
             <input type="hidden" name="agent_id" id="reset_agent_id" value="">
 

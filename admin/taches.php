@@ -105,11 +105,11 @@ if (isset($_GET['set_statut']) && isset($_GET['task_id'])) {
     }
 }
 
-// Action D : Suppression d'une tâche
+// Action D : Suppression d'une tâche (Suppression logique)
 if (isset($_GET['delete_task'])) {
     $del_id = (int) $_GET['delete_task'];
-    $pdo->prepare("DELETE FROM tasks WHERE id = ?")->execute([$del_id]);
-    logActivity('task.delete', 'task', $del_id, "Suppression de la tâche #$del_id");
+    $pdo->prepare("UPDATE tasks SET statut = 'supprime', deleted_at = NOW() WHERE id = ?")->execute([$del_id]);
+    logActivity('task.soft_delete', 'task', $del_id, "Suppression logique de la tâche #$del_id");
     $message = "Tâche supprimée avec succès.";
     $msg_type = "success";
 }
@@ -129,7 +129,7 @@ $sql = "
     FROM tasks t
     LEFT JOIN users u ON t.user_id = u.id
     LEFT JOIN users c ON t.created_by = c.id
-    WHERE 1=1
+    WHERE t.deleted_at IS NULL AND t.statut != 'supprime'
 ";
 $params = [];
 
@@ -183,10 +183,10 @@ $tot_retard = (int) $pdo->query("SELECT COUNT(*) FROM tasks WHERE statut IN ('a_
         </div>
 
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-            <a href="export.php?type=taches" class="dash-btn-action" style="text-decoration: none;" title="Exporter toutes les tâches sur Excel (CSV)">
+            <a href="export?type=taches" class="dash-btn-action" style="text-decoration: none;" title="Exporter toutes les tâches sur Excel (CSV)">
                 <i class="fa-solid fa-file-excel" style="color: #FF4A0D;"></i> Exporter Excel
             </a>
-            <a href="mes-taches.php" class="dash-btn-action" style="text-decoration: none;">
+            <a href="mes-taches" class="dash-btn-action" style="text-decoration: none;">
                 <i class="fa-solid fa-thumbtack" style="color: #FF4A0D;"></i> Mes Propres Tâches
             </a>
             <button type="button" onclick="openCreateTaskModal()" class="dash-btn-action btn-primary"
@@ -269,7 +269,7 @@ $tot_retard = (int) $pdo->query("SELECT COUNT(*) FROM tasks WHERE statut IN ('a_
         </div>
 
         <!-- Formulaire filtres déroulants -->
-        <form method="GET" action="taches.php"
+        <form method="GET" action="taches"
             style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 0;">
             <input type="hidden" name="statut" value="<?php echo htmlspecialchars($filtre_statut); ?>">
 
@@ -299,7 +299,7 @@ $tot_retard = (int) $pdo->query("SELECT COUNT(*) FROM tasks WHERE statut IN ('a_
             <button type="submit" class="dash-btn-action"
                 style="padding: 0.4rem 0.75rem; font-size: 0.8rem; background: var(--primary); color: #ffffff;">Filtrer</button>
             <?php if ($filtre_user > 0 || $filtre_statut !== '' || $filtre_priorite !== '' || $search !== ''): ?>
-                <a href="taches.php" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
+                <a href="taches" style="color: #000000; font-size: 0.78rem; text-decoration: underline;">Effacer</a>
             <?php endif; ?>
         </form>
     </div>
@@ -400,7 +400,7 @@ $tot_retard = (int) $pdo->query("SELECT COUNT(*) FROM tasks WHERE statut IN ('a_
                                 <td>
                                     <!-- Sélecteur rapide de statut -->
                                     <select
-                                        onchange="window.location.href='taches.php?task_id=<?php echo $t['id']; ?>&set_statut=' + this.value"
+                                        onchange="window.location.href='taches?task_id=<?php echo $t['id']; ?>&set_statut=' + this.value"
                                         style="padding: 2px 6px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; border: 1px solid rgba(0,0,0,0.06); cursor: pointer; <?php echo $s_css; ?>">
                                         <option value="a_faire" <?php echo $t['statut'] === 'a_faire' ? 'selected' : ''; ?>>À
                                             faire</option>
@@ -420,7 +420,7 @@ $tot_retard = (int) $pdo->query("SELECT COUNT(*) FROM tasks WHERE statut IN ('a_
                                             onclick='openEditTaskModal(<?php echo json_encode($t, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>)'>
                                             <i class="fa-solid fa-pen-to-square"></i>
                                         </button>
-                                        <a href="taches.php?delete_task=<?php echo $t['id']; ?>" class="dash-btn-action"
+                                        <a href="taches?delete_task=<?php echo $t['id']; ?>" class="dash-btn-action"
                                             style="padding: 0.35rem 0.6rem; font-size: 0.74rem; color: #000000;"
                                             onclick="return confirm('Supprimer cette tâche ?');">
                                             <i class="fa-solid fa-trash"></i>
@@ -446,7 +446,7 @@ $tot_retard = (int) $pdo->query("SELECT COUNT(*) FROM tasks WHERE statut IN ('a_
             <h3><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Attribuer une Nouvelle Tâche</h3>
             <button type="button" class="dash-modal-close" onclick="closeCreateTaskModal()">&times;</button>
         </div>
-        <form method="POST" action="taches.php">
+        <form method="POST" action="taches">
             <input type="hidden" name="create_task" value="1">
             <div class="dash-modal-body" style="display: grid; gap: 0.85rem;">
                 <div class="form-group">
@@ -513,7 +513,7 @@ $tot_retard = (int) $pdo->query("SELECT COUNT(*) FROM tasks WHERE statut IN ('a_
             <h3><i class="fa-solid fa-pen-to-square" style="color: var(--primary);"></i> Modifier la Tâche</h3>
             <button type="button" class="dash-modal-close" onclick="closeEditTaskModal()">&times;</button>
         </div>
-        <form method="POST" action="taches.php">
+        <form method="POST" action="taches">
             <input type="hidden" name="update_task" value="1">
             <input type="hidden" name="task_id" id="edit_task_id">
             <div class="dash-modal-body" style="display: grid; gap: 0.85rem;">
